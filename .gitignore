@@ -1,0 +1,7 @@
+# build outputs
+bin/
+obj/
+
+# user settings
+*.suo
+*.user
