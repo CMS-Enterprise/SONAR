@@ -26,17 +26,21 @@ By default this will build the Debug version of all components. To generate a Re
 dotnet build -c Release
 ```
 
-## Run the API
+## Run the Agent or API
 
 From the root of the repository run:
 
+```
+dotnet run --project sonar-agent
+```
+or
 ```
 dotnet run --project sonar-api
 ```
 
 The API will now be listening for connections on `localhost:8081`
 
-Alternatively, from the `sonar-api` folder you can just use.
+Alternatively, from the `sonar-api` or the `sonar-agent` folder you can just use.
 
 ```
 dotnet run
