@@ -1,4 +1,5 @@
 using System;
+using Cms.BatCave.Sonar.Configuration;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,6 +17,9 @@ public static class Program {
     // Enable OpenAPI documentation
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
+
+    // Register all Configuration Option Classes for dependency injection
+    new ConfigurationDependencyRegistration(builder.Configuration).RegisterDependencies(builder.Services);
 
     builder.WebHost.UseUrls("http://localhost:8081");
 
