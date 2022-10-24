@@ -1,15 +1,21 @@
+using System;
 using Cms.BatCave.Sonar.Configuration;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Npgsql;
 
 namespace Cms.BatCave.Sonar.Data;
 
 public class DataContext : DbContext {
-  private readonly IOptions<DatabaseConfiguration> _configuration;
+  public const String CaseInsensitiveCollation = "ci_collation";
 
-  public DataContext(IOptions<DatabaseConfiguration> configuration) {
+  private readonly IOptions<DatabaseConfiguration> _configuration;
+  private readonly ILoggerFactory _loggerFactory;
+
+  public DataContext(IOptions<DatabaseConfiguration> configuration, ILoggerFactory loggerFactory) {
     this._configuration = configuration;
+    this._loggerFactory = loggerFactory;
   }
 
   protected override void OnConfiguring(DbContextOptionsBuilder options) {
@@ -27,10 +33,25 @@ public class DataContext : DbContext {
       .UseNpgsql(connectionStringBuilder.ToString())
       .UseSnakeCaseNamingConvention()
       .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+
+    if (configInstance.DbLogging) {
+      options.UseLoggerFactory(this._loggerFactory);
+    }
+  }
+
+  protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder) {
+    base.ConfigureConventions(configurationBuilder);
+    // Make all string properties case insensitive.
+    configurationBuilder.Properties<String>().UseCollation(CaseInsensitiveCollation);
   }
 
   protected override void OnModelCreating(ModelBuilder modelBuilder) {
     modelBuilder
+      // Collation info: https://www.npgsql.org/efcore/misc/collations-and-case-sensitivity.html
+      // More (horrible) documentation: https://www.unicode.org/reports/tr35/tr35-collation.html#Setting_Options
+      // Root: English - with modifiers - comparison strength - case insensitive, accent & punctuation sensitive
+      //       en      -       u        -          ks         -     level2
+      .HasCollation(CaseInsensitiveCollation, locale: "en-u-ks-level2", provider: "icu", deterministic: false)
       .Entity<ServiceRelationship>(entity => {
         entity.HasOne<Service>()
           .WithMany().HasForeignKey(sr => sr.ServiceId);

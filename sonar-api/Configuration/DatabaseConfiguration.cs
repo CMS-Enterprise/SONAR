@@ -1,4 +1,5 @@
 using System;
+using Microsoft.Extensions.Logging;
 
 namespace Cms.BatCave.Sonar.Configuration;
 
@@ -7,4 +8,5 @@ public record DatabaseConfiguration(
   UInt16 Port = 5432,
   String Username = "root",
   String Password = "password",
-  String Database = "sonar");
+  String Database = "sonar",
+  Boolean DbLogging = false);

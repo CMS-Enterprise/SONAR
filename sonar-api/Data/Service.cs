@@ -14,10 +14,10 @@ public class Service {
   [StringLength(100)]
   public String Name { get; init; }
   public String DisplayName { get; init; }
-  public String Description { get; init; }
+  public String? Description { get; init; }
 
   [StringLength(2048)]
-  public Uri Url { get; init; }
+  public Uri? Url { get; init; }
   public Boolean IsRootService { get; init; }
 
   public Service(

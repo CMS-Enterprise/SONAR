@@ -12,12 +12,12 @@ namespace Cms.BatCave.Sonar.Configuration;
 
 public static class RecordConfigurationExtensions {
   /// <summary>
-  /// Performs the necessary dependency injection for initializing the specified type from
-  /// configuration.
+  ///   Performs the necessary dependency injection for initializing the specified type from
+  ///   configuration.
   /// </summary>
   /// <remarks>
-  /// To use the <typeparamref name="TOptions" /> instance that this method configures, use
-  /// <see cref="IOptions{TOptions}" /> as your dependency.
+  ///   To use the <typeparamref name="TOptions" /> instance that this method configures, use
+  ///   <see cref="IOptions{TOptions}" /> as your dependency.
   /// </remarks>
   /// <param name="services">The dependency service collection.</param>
   /// <param name="configuration">The application configuration.</param>
@@ -30,22 +30,22 @@ public static class RecordConfigurationExtensions {
   }
 
   /// <summary>
-  /// Instantiates an object from an <see cref="IConfiguration"/> instance by matching and invoking
-  /// a constructor.
+  ///   Instantiates an object from an <see cref="IConfiguration" /> instance by matching and invoking
+  ///   a constructor.
   /// </summary>
   /// <remarks>
-  /// In .Net 6.0 in order to bind configuration to an object the object must have a default
-  /// constructor and be mutable. This method allows configuration binding to be performed on
-  /// immutable types such as records.
+  ///   In .Net 6.0 in order to bind configuration to an object the object must have a default
+  ///   constructor and be mutable. This method allows configuration binding to be performed on
+  ///   immutable types such as records.
   /// </remarks>
   /// <param name="configuration">The configuration to read values from.</param>
   /// <typeparam name="T">The type of object to initialize.</typeparam>
   /// <returns>
-  /// An instance of the type <typeparamref name="T" /> that has been initialized using values from
-  /// the specified <paramref name="configuration" />.
+  ///   An instance of the type <typeparamref name="T" /> that has been initialized using values from
+  ///   the specified <paramref name="configuration" />.
   /// </returns>
   /// <exception cref="InvalidOperationException">
-  /// The configuration could not be converted to the specified type.
+  ///   The configuration could not be converted to the specified type.
   /// </exception>
   [return: NotNull]
   public static T BindCtor<T>(this IConfiguration configuration) {
@@ -95,6 +95,13 @@ public static class RecordConfigurationExtensions {
               parameters = parameters.Add(param.Name, new Uri(value));
             } else if (param.ParameterType == typeof(Guid)) {
               parameters = parameters.Add(param.Name, Guid.Parse(value));
+            } else if (param.ParameterType.IsEnum) {
+              parameters = parameters.Add(param.Name, Enum.Parse(param.ParameterType, value));
+            } else if (
+              typeof(Nullable<>).IsAssignableFrom(param.ParameterType) &&
+              param.ParameterType.GetGenericArguments()[0].IsEnum) {
+
+              parameters = parameters.Add(param.Name, Enum.Parse(param.ParameterType.GetGenericArguments()[0], value));
             } else {
               parameters = parameters.Add(param.Name, Convert.ChangeType(value, param.ParameterType));
             }

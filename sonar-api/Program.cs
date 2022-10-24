@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
+using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Options;
 using CommandLine;
 using Microsoft.AspNetCore.Builder;
@@ -25,12 +26,17 @@ public class Program {
           consoleOptions.LogToStandardErrorThreshold = LogLevel.Error;
         });
     });
-    builder.Services.AddDbContext<DataContext>();
-    builder.Services.AddControllers();
 
+    builder.Services.AddControllers(options => {
+      options.ReturnHttpNotAcceptable = true;
+      options.Filters.Add<ProblemDetailExceptionFilterAttribute>();
+    });
 
     // Register all Configuration Option Classes for dependency injection
     new ConfigurationDependencyRegistration(builder.Configuration).RegisterDependencies(builder.Services);
+    // Register DataContext and DbSet<> dependencies
+    DataDependencyRegistration.RegisterDependencies(builder.Services);
+
     return await HandleCommandLine(args,
       async opts => {
         // Web API Specific Dependencies
