@@ -3,8 +3,10 @@ using CommandLine;
 
 namespace Cms.BatCave.Sonar.Options;
 
-[Verb("init", HelpText = "Initialize the database.")]
+[Verb(VerbName, HelpText = "Initialize the database.")]
 public class InitOptions : CommonOptions {
+  public const String VerbName = "init";
+
   [Option('f', "force" )]
   public Boolean Force { get; }
 

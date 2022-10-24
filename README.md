@@ -51,10 +51,10 @@ dotnet run
 To run the API with live reloading while doing active development use:
 
 ```
-dotnet watch --project sonar-api
+dotnet watch run --project sonar-api -- serve
 ```
 
-_Note: When using live reloading, code changes to the application start up code will not autmatically take effect, so if you change code invoked during application startup you will still need to force reload with `Ctrl+R`_
+_Note: When using live reloading, code changes to the application start up code will not automatically take effect, so if you change code invoked during application startup you will still need to force reload with `Ctrl+R`_
 
 ### Launch Profiles
 

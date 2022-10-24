@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Configuration;
@@ -29,30 +28,66 @@ public class Program {
     builder.Services.AddDbContext<DataContext>();
     builder.Services.AddControllers();
 
-    // Enable OpenAPI documentation
-    builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
 
     // Register all Configuration Option Classes for dependency injection
     new ConfigurationDependencyRegistration(builder.Configuration).RegisterDependencies(builder.Services);
+    return await HandleCommandLine(args,
+      async opts => {
+        // Web API Specific Dependencies
 
+        // Enable OpenAPI documentation
+        builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddSwaggerGen();
 
-    // Disable un-awaited task warning because we actually await
-    var (errors, result) =
-      await Parser.Default.ParseArguments<ServeOptions, InitOptions>(args)
-        .MapResult<ServeOptions, InitOptions, Task<(IEnumerable<Error>?, Int32?)>>(
-          async opts => {
-            builder.WebHost.UseUrls("http://localhost:8081");
-            await using var app = builder.Build();
-            return (null, await RunServe(app, opts));
-          },
-          async opts => {
-            await using var app = builder.Build();
-            return (null, await RunInit(app, opts));
-          },
-          err => Task.FromResult<(IEnumerable<Error>?, Int32?)>((err, null)));
+        builder.WebHost.UseUrls("http://localhost:8081");
 
-    return errors?.Any() == true ? 1 : result.GetValueOrDefault(0);
+        await using var app = builder.Build();
+        return await RunServe(app, opts);
+      },
+      async opts => {
+        await using var app = builder.Build();
+        return await RunInit(app, opts);
+      }
+    );
+  }
+
+  private static Task<Int32> HandleCommandLine(
+    String[] args,
+    Func<ServeOptions, Task<Int32>> runServe,
+    Func<InitOptions, Task<Int32>> runInit) {
+
+    var useDefaultVerb = ShouldUseDefaultVerb(args);
+
+    var parser = new Parser(settings => {
+      // Assume that unknown arguments will be handled by the dotnet Command-line configuration provider
+      settings.IgnoreUnknownArguments = true;
+      settings.HelpWriter = Console.Error;
+    });
+    var parserResult =
+      parser.ParseArguments<ServeOptions, InitOptions>(useDefaultVerb ? args.Prepend(ServeOptions.VerbName) : args);
+    return parserResult
+      .MapResult(
+        runServe,
+        runInit,
+        _ => Task.FromResult<Int32>(1)
+      );
+  }
+
+  private static Boolean ShouldUseDefaultVerb(String[] args) {
+    // Unfortunately setting the Verb.IsDefault to true causes the verb to be selected even when
+    // an unknown verb is specified, which could lead to unexpected behavior given typos. This code
+    // detects if no verb is specified so that we can inject the default.
+    var preParser = new Parser(settings => {
+      settings.IgnoreUnknownArguments = true;
+      settings.AutoHelp = false;
+    });
+    var preParseResult = preParser.ParseArguments<ServeOptions, InitOptions>(args);
+    var preParseErrors = preParseResult.Errors?.ToList();
+    var useDefaultVerb =
+      preParseErrors is { Count: 1 } &&
+      (preParseErrors[0] is NoVerbSelectedError ||
+        preParseErrors[0] is BadVerbSelectedError badVerbError && badVerbError.Token.StartsWith("--"));
+    return useDefaultVerb;
   }
 
   private static async Task<Int32> RunServe(WebApplication app, ServeOptions options) {
