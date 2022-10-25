@@ -1,4 +1,5 @@
 using System;
+using Cms.BatCave.Sonar.Enumeration;
 
 namespace Cms.BatCave.Sonar.Data;
 

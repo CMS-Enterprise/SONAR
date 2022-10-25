@@ -1,8 +1,8 @@
-namespace Cms.BatCave.Sonar.Data;
+namespace Cms.BatCave.Sonar.Enumeration;
 
 public enum HealthOperator
 {
-  Equal,
+  Equal = 0,
   NotEqual,
   GreaterThan,
   GreaterThanOrEqual,
