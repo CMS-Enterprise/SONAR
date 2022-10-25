@@ -20,4 +20,6 @@ public class Environment {
     this.Id = id;
     this.Name = name;
   }
+
+  public static Environment New(String name) => new Environment(Guid.Empty, name);
 }

@@ -25,8 +25,8 @@ public class Service {
     Guid tenantId,
     String name,
     String displayName,
-    String description,
-    Uri url,
+    String? description,
+    Uri? url,
     Boolean isRootService) {
 
     this.Id = id;
@@ -37,4 +37,13 @@ public class Service {
     this.Url = url;
     this.IsRootService = isRootService;
   }
+
+  public static Service New(
+    Guid tenantId,
+    String name,
+    String displayName,
+    String? description,
+    Uri? url,
+    Boolean isRootService) =>
+    new Service(Guid.Empty, tenantId, name, displayName, description, url, isRootService);
 }

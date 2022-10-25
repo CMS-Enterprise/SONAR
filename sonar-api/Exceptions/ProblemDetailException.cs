@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Net;
 using System.Runtime.Serialization;
+using Cms.BatCave.Sonar.Extensions;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Cms.BatCave.Sonar.Exceptions;
 
@@ -10,7 +13,7 @@ public abstract class ProblemDetailException : Exception {
 
   public abstract String ErrorType { get; }
 
-  public ProblemDetailException(HttpStatusCode status, String message) : base(message) {
+  protected ProblemDetailException(HttpStatusCode status, String message) : base(message) {
     this.Status = status;
   }
 
@@ -23,7 +26,20 @@ public abstract class ProblemDetailException : Exception {
     info.AddValue(nameof(this.Status), this.Status);
   }
 
-  public virtual IDictionary<String, Object> GetExtensions() {
-    return new Dictionary<String, Object>();
+  public ProblemDetails ToProblemDetails() {
+    var detail = new ProblemDetails {
+      Status = (Int32)this.Status,
+      Title = this.Message,
+      Type = this.ErrorType
+    };
+    foreach (var kvp in this.GetExtensions()) {
+      detail.Extensions.Add(kvp.Key.ToCamelCase(), kvp.Value);
+    }
+
+    return detail;
+  }
+
+  protected virtual IDictionary<String, Object?> GetExtensions() {
+    return ImmutableDictionary<String, Object?>.Empty;
   }
 }

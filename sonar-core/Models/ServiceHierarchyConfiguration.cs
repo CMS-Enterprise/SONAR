@@ -6,7 +6,7 @@ namespace Cms.BatCave.Sonar.Models;
 
 public record ServiceHierarchyConfiguration(
   [Required]
-  IImmutableDictionary<String, ServiceConfiguration> Services,
+  IImmutableList<ServiceConfiguration> Services,
   [Required]
   IImmutableSet<String> RootServices
 );

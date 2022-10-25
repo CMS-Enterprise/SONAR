@@ -1,0 +1,118 @@
+{
+	"info": {
+		"_postman_id": "18fc30cf-d567-464c-8485-58e2989527ec",
+		"name": "SONAR",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "20614257"
+	},
+	"item": [
+		{
+			"name": "Get Service Hierarchy",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8081/api/v2/config/foo/tenants/bar",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"v2",
+						"config",
+						"foo",
+						"tenants",
+						"bar"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Service Hierarchy",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"services\": [\n        {\n            \"name\": \"my-root\",\n            \"displayName\": \"My Root Service\",\n            \"description\": \"Example root service\",\n            \"url\": null,\n            \"children\": [\n                \"my-child\"\n            ]\n        },\n        {\n            \"name\": \"my-child\",\n            \"displayName\": \"My Child Service\",\n            \"description\": \"Example child service\",\n            \"url\": null,\n            \"children\": null\n        }\n    ],\n    \"rootServices\": [\n        \"my-root\"\n    ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8081/api/v2/config/foo/tenants/baz",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"v2",
+						"config",
+						"foo",
+						"tenants",
+						"baz"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update Service Hierarchy",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"services\": [\n        {\n            \"name\": \"my-root\",\n            \"displayName\": \"My Root Service\",\n            \"description\": \"Example root service\",\n            \"url\": null,\n            \"children\": [\"my-CHILD\"]\n        },\n        {\n            \"name\": \"MY-child\",\n            \"displayName\": \"My Child Service!!!!\",\n            \"description\": \"Example child service NEAT!\",\n            \"url\": null,\n            \"children\": [\"sub-SUB-service\"]\n        },\n        {\n            \"name\": \"sub-sub-service\",\n            \"displayName\": \"New Sub Service\",\n            \"description\": \"Example sub-sub-service.\",\n            \"url\": null,\n            \"children\": []\n        },\n        {\n            \"name\": \"another-root\",\n            \"displayName\": \"My Second Root Service\"\n        }\n    ],\n    \"rootServices\": [\n        \"my-ROOT\",\n        \"another-ROOT\"\n    ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8081/api/v2/config/foo/tenants/baz",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"v2",
+						"config",
+						"foo",
+						"tenants",
+						"baz"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

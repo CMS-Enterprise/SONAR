@@ -20,4 +20,6 @@ public class Tenant {
     this.EnvironmentId = environmentId;
     this.Name = name;
   }
+
+  public static Tenant New(Guid environmentId, String name) => new Tenant(Guid.Empty, environmentId, name);
 }
