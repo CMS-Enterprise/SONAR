@@ -1,7 +1,6 @@
 namespace Cms.BatCave.Sonar.Enumeration;
 
-public enum HealthOperator
-{
+public enum HealthOperator {
   Equal = 0,
   NotEqual,
   GreaterThan,

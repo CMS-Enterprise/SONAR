@@ -7,8 +7,7 @@ namespace Cms.BatCave.Sonar.Data;
 
 [Table("health")]
 [Index(propertyNames: new[] { nameof(ServiceId), nameof(Name) }, IsUnique = true)]
-public class Health
-{
+public class Health {
   public Guid Id { get; init; }
 
   public Guid ServiceId { get; init; }
@@ -23,8 +22,7 @@ public class Health
     Guid serviceId,
     String name,
     String description,
-    HealthDefinition definition)
-  {
+    HealthDefinition definition) {
 
     this.Id = id;
     this.ServiceId = serviceId;

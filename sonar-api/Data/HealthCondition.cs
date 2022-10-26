@@ -3,8 +3,7 @@ using Cms.BatCave.Sonar.Enumeration;
 
 namespace Cms.BatCave.Sonar.Data;
 
-public class HealthCondition
-{
+public class HealthCondition {
   public HealthOperator HealthOperator { get; init; }
   public Double Threshold { get; init; }
   public HealthStatus HealthStatus { get; init; }
