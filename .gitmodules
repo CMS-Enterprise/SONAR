@@ -1,0 +1,6 @@
+[submodule "lib/prometheus"]
+	path = lib/prometheus
+	url = https://github.com/prometheus/prometheus.git
+[submodule "lib/gogo-protobuf"]
+	path = lib/gogo-protobuf
+	url = https://github.com/gogo/protobuf

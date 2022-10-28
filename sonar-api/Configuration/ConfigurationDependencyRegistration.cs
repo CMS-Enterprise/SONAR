@@ -12,5 +12,6 @@ public class ConfigurationDependencyRegistration {
 
   public void RegisterDependencies(IServiceCollection services) {
     services.ConfigureRecord<DatabaseConfiguration>(this._configuration.GetSection("Database"));
+    services.ConfigureRecord<PrometheusConfiguration>(this._configuration.GetSection("Prometheus"));
   }
 }

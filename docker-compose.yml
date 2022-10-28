@@ -12,9 +12,27 @@ services:
       - "dataVolume:/var/lib/postgresql/data:rw"
     networks:
       - "shared"
+        
+  prometheus:
+    image: prom/prometheus:v2.38.0
+    restart: always
+    ports: ["9090:9090"]
+    volumes:
+      - "./config/development/prometheus.yml:/etc/prometheus/prometheus.yml:ro"
+      - "tsdbVolume:/prometheus:rw"
+    command:
+      - "--web.enable-remote-write-receiver"
+      - "--storage.tsdb.retention.time=10d"
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+    networks:
+      - "shared"
 
 volumes:
   dataVolume: {}
+  tsdbVolume: {}
 
 networks:
   shared:

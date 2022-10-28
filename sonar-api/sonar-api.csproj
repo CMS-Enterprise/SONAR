@@ -20,8 +20,66 @@
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="EFCore.NamingConventions" Version="6.0.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.21.9" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="6.0.7" />
+    <PackageReference Include="Snappy.Standard" Version="0.2.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf.Tools" Version="3.21.9" GeneratePathProperty="true" />
+  </ItemGroup>
+  
+  <Choose>
+    <When Condition="'$(OS)' == 'Windows_NT' And $([System.Environment]::Is64BitOperatingSystem)">
+      <PropertyGroup>
+        <ProtocToolPath>windows_x64/protoc.exe</ProtocToolPath>
+      </PropertyGroup>
+    </When>
+    <When Condition="'$(OS)' == 'Windows_NT' And !($([System.Environment]::Is64BitOperatingSystem))">
+      <PropertyGroup>
+        <ProtocToolPath>windows_x86/protoc.exe</ProtocToolPath>
+      </PropertyGroup>
+    </When>
+    <When Condition="$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux))) And $([System.Environment]::Is64BitOperatingSystem)">
+      <PropertyGroup>
+        <ProtocToolPath>linux_x64/protoc</ProtocToolPath>
+      </PropertyGroup>
+    </When>
+    <When Condition="$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux))) And !($([System.Environment]::Is64BitOperatingSystem))">
+      <PropertyGroup>
+        <ProtocToolPath>linux_x86/protoc</ProtocToolPath>
+      </PropertyGroup>
+    </When>
+    <When Condition="$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))">
+      <PropertyGroup>
+        <ProtocToolPath>macosx_x64/protoc</ProtocToolPath>
+      </PropertyGroup>
+    </When>
+  </Choose>
+  
+  <PropertyGroup>
+    <ProtocArguments_Prometheus_Remote>
+      --csharp_out=./Protobuf/Prometheus
+      --csharp_opt=file_extension=.g.cs
+      --proto_path=../lib/prometheus/prompb
+      --proto_path=../lib/gogo-protobuf
+      --proto_path=../lib/gogo-protobuf/protobuf
+      ../lib/prometheus/prompb/remote.proto  ../lib/prometheus/prompb/types.proto
+    </ProtocArguments_Prometheus_Remote>
+    <ProtocArguments_Prometheus_Gogoproto>
+      --csharp_out=./Protobuf/Gogoproto
+      --csharp_opt=file_extension=.g.cs
+      --proto_path=../lib/gogo-protobuf
+      --proto_path=../lib/gogo-protobuf/protobuf
+      ../lib/gogo-protobuf/gogoproto/gogo.proto
+    </ProtocArguments_Prometheus_Gogoproto>
+  </PropertyGroup>
+  
+  <Target Name="generate_prometheus_types">
+    <Message Text="Generating C# Data Types for Prometheus Remote Write..." Importance="high" />
+    <Exec Command="$(PkgGoogle_Protobuf_Tools)/tools/$(ProtocToolPath) $(ProtocArguments_Prometheus_Gogoproto.Replace('%0a', '').Trim())" />
+    <Exec Command="$(PkgGoogle_Protobuf_Tools)/tools/$(ProtocToolPath) $(ProtocArguments_Prometheus_Remote.Replace('%0a', '').Trim())" />
+  </Target>
 
 </Project>
