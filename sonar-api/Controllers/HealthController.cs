@@ -237,6 +237,8 @@ public class HealthController : ControllerBase {
     HealthStatus currentStatus,
     params Label[] labels) {
 
+    var timestampMs = (Int64)timestamp.ToUniversalTime().Subtract(DateTime.UnixEpoch).TotalMilliseconds;
+
     return Enum.GetValues<HealthStatus>().Select(status => {
       var ts = new TimeSeries {
         Labels = {
@@ -245,7 +247,7 @@ public class HealthController : ControllerBase {
         },
         Samples = {
           new Sample {
-            Timestamp = (Int64)timestamp.ToUniversalTime().Subtract(DateTime.UnixEpoch).TotalMilliseconds,
+            Timestamp = timestampMs,
             Value = currentStatus == status ? 1 : 0
           }
         }

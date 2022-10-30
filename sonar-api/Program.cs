@@ -1,10 +1,13 @@
 using System;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Exceptions;
+using Cms.BatCave.Sonar.OpenApi;
 using Cms.BatCave.Sonar.Options;
 using CommandLine;
 using Microsoft.AspNetCore.Builder;
@@ -12,6 +15,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Models;
 
 namespace Cms.BatCave.Sonar;
 
@@ -49,7 +53,21 @@ public class Program {
 
         // Enable OpenAPI documentation
         builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
+        builder.Services.AddSwaggerGen(options => {
+          options.SwaggerDoc(
+            name: "v2",
+            new OpenApiInfo {
+              Title = "SONAR API v2",
+              Version = "v2"
+            }
+          );
+          options.IncludeXmlComments(Path.Combine(
+            AppContext.BaseDirectory,
+            $"{Assembly.GetExecutingAssembly().GetName().Name}.xml"
+          ));
+
+          options.OperationFilter<DefaultContentTypeOperationFilter>();
+        });
 
         builder.WebHost.UseUrls("http://localhost:8081");
 
@@ -109,7 +127,7 @@ public class Program {
     });
     if (app.Environment.IsDevelopment()) {
       app.UseSwaggerUI(swaggerUiOptions => {
-        swaggerUiOptions.SwaggerEndpoint("/api/doc/v1/open-api.json", "v1");
+        swaggerUiOptions.SwaggerEndpoint("/api/doc/v2/open-api.json", "v2");
         swaggerUiOptions.RoutePrefix = "api/doc-ui";
       });
     }

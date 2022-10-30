@@ -40,8 +40,17 @@ public class ConfigurationController : ControllerBase {
     this._relationshipsTable = relationshipsTable;
   }
 
+  /// <summary>
+  ///   Retrieves the configuration for the specified environment and tenant.
+  /// </summary>
+  /// <param name="environment">The name of the environment.</param>
+  /// <param name="tenant">The name of the tenant.</param>
+  /// <param name="cancellationToken"></param>
+  /// <response code="200">The tenant configuration was found and will be returned.</response>
+  /// <response code="404">The specified environment or tenant was not found.</response>
   [HttpGet("{environment}/tenants/{tenant}")]
   [ProducesResponseType(typeof(ServiceHierarchyConfiguration), statusCode: 200)]
+  [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
   public async Task<ActionResult> GetConfiguration(
     [FromRoute] String environment,
     [FromRoute] String tenant,
@@ -57,8 +66,24 @@ public class ConfigurationController : ControllerBase {
     return this.Ok(ConfigurationController.CreateServiceHierarchy(serviceMap, serviceRelationshipsByParent));
   }
 
+  /// <summary>
+  ///   Sets the configuration for a new environment or tenant.
+  /// </summary>
+  /// <param name="environment">The name of the environment.</param>
+  /// <param name="tenant">The name of the tenant.</param>
+  /// <param name="hierarchy">The new service hierarchy configuration.</param>
+  /// <param name="cancellationToken"></param>
+  /// <response code="201">The tenant configuration successfully created.</response>
+  /// <response code="409">
+  ///   Configuration for the specified environment and tenant already exists. Use the PUT HTTP Method to
+  ///   update this configuration.
+  /// </response>
+  /// <response code="400">The specified service hierarchy configuration is not valid.</response>
   [HttpPost("{environment}/tenants/{tenant}")]
+  [Consumes(typeof(ServiceHierarchyConfiguration), contentType: "application/json")]
   [ProducesResponseType(typeof(ServiceHierarchyConfiguration), statusCode: 201)]
+  [ProducesResponseType(typeof(ProblemDetails), statusCode: 400)]
+  [ProducesResponseType(typeof(ProblemDetails), statusCode: 409)]
   public async Task<ActionResult> CreateConfiguration(
     [FromRoute] [RegularExpression("^[0-9a-zA-Z_-]+$")]
     String environment,
@@ -190,12 +215,25 @@ public class ConfigurationController : ControllerBase {
     return response;
   }
 
+  /// <summary>
+  ///   Updates the configuration for an existing tenant.
+  /// </summary>
+  /// <param name="environment">The name of the environment.</param>
+  /// <param name="tenant">The name of the tenant.</param>
+  /// <param name="hierarchy">The updated service hierarchy configuration.</param>
+  /// <param name="cancellationToken"></param>
+  /// <response code="200">The tenant configuration was found and will be returned.</response>
+  /// <response code="404">The specified environment or tenant was not found.</response>
+  /// <response code="400">The specified service hierarchy configuration is not valid.</response>
   [HttpPut("{environment}/tenants/{tenant}")]
-  [ProducesResponseType(typeof(ServiceHierarchyConfiguration), statusCode: 201)]
+  [Consumes(typeof(ServiceHierarchyConfiguration), contentType: "application/json")]
+  [ProducesResponseType(typeof(ServiceHierarchyConfiguration), statusCode: 200)]
+  [ProducesResponseType(typeof(ProblemDetails), statusCode: 400)]
+  [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
   public async Task<ActionResult> UpdateConfiguration(
-    [FromRoute, RegularExpression("^[0-9a-zA-Z_-]+$")]
+    [FromRoute]
     String environment,
-    [FromRoute, RegularExpression("^[0-9a-zA-Z_-]+$")]
+    [FromRoute]
     String tenant,
     [FromBody] ServiceHierarchyConfiguration hierarchy,
     CancellationToken cancellationToken = default) {
