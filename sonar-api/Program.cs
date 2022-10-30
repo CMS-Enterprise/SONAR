@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
@@ -27,9 +28,14 @@ public class Program {
         });
     });
 
-    builder.Services.AddControllers(options => {
+    var mvcBuilder = builder.Services.AddControllers(options => {
       options.ReturnHttpNotAcceptable = true;
       options.Filters.Add<ProblemDetailExceptionFilterAttribute>();
+    });
+
+    mvcBuilder.AddJsonOptions(options => {
+      // Serialize c# enums as strings
+      options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 
     // Register all Configuration Option Classes for dependency injection
