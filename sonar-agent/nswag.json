@@ -1,0 +1,22 @@
+{
+  "runtime": "Net60",
+  "defaultVariables": null,
+  "documentGenerator": {
+    "fromDocument": {
+      "url": "http://localhost:8081/api/doc/v2/open-api.json"
+    }
+  },
+  "codeGenerators": {
+    "openApiToCSharpClient": {
+      "additionalNamespaceUsages": [
+        "Cms.BatCave.Sonar.Models"
+      ],
+      "namespace": "Cms.BatCave.Sonar.Agent",
+      "className": "SonarClient",
+      "generateClientInterfaces": true,
+      "jsonLibrary": "SystemTextJson",
+      "generateDtoTypes": false,
+      "output": "SonarClient.g.cs"
+    }
+  }
+}

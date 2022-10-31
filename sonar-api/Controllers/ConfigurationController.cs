@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Environment = Cms.BatCave.Sonar.Data.Environment;
+using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
 
 namespace Cms.BatCave.Sonar.Controllers;
 
@@ -48,7 +49,7 @@ public class ConfigurationController : ControllerBase {
   /// <param name="cancellationToken"></param>
   /// <response code="200">The tenant configuration was found and will be returned.</response>
   /// <response code="404">The specified environment or tenant was not found.</response>
-  [HttpGet("{environment}/tenants/{tenant}")]
+  [HttpGet("{environment}/tenants/{tenant}", Name = "GetTenant")]
   [ProducesResponseType(typeof(ServiceHierarchyConfiguration), statusCode: 200)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
   public async Task<ActionResult> GetConfiguration(
@@ -79,7 +80,7 @@ public class ConfigurationController : ControllerBase {
   ///   update this configuration.
   /// </response>
   /// <response code="400">The specified service hierarchy configuration is not valid.</response>
-  [HttpPost("{environment}/tenants/{tenant}")]
+  [HttpPost("{environment}/tenants/{tenant}", Name = "CreateTenant")]
   [Consumes(typeof(ServiceHierarchyConfiguration), contentType: "application/json")]
   [ProducesResponseType(typeof(ServiceHierarchyConfiguration), statusCode: 201)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 400)]
@@ -225,7 +226,7 @@ public class ConfigurationController : ControllerBase {
   /// <response code="200">The tenant configuration was found and will be returned.</response>
   /// <response code="404">The specified environment or tenant was not found.</response>
   /// <response code="400">The specified service hierarchy configuration is not valid.</response>
-  [HttpPut("{environment}/tenants/{tenant}")]
+  [HttpPut("{environment}/tenants/{tenant}", Name = "UpdateTenant")]
   [Consumes(typeof(ServiceHierarchyConfiguration), contentType: "application/json")]
   [ProducesResponseType(typeof(ServiceHierarchyConfiguration), statusCode: 200)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 400)]

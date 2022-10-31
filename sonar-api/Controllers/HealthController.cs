@@ -20,6 +20,7 @@ using Microsoft.Extensions.Options;
 using Snappy;
 using Prometheus;
 using Environment = Cms.BatCave.Sonar.Data.Environment;
+using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
 
 namespace Cms.BatCave.Sonar.Controllers;
 
@@ -65,7 +66,7 @@ public class HealthController : ControllerBase {
   /// <response code="400">The service health status provided is not valid.</response>
   /// <response code="404">The specified environment, tenant, or service was not found.</response>
   /// <response code="500">An internal error occurred attempting to record the service health status.</response>
-  [HttpPost("{environment}/tenants/{tenant}/services/{service}")]
+  [HttpPost("{environment}/tenants/{tenant}/services/{service}", Name = "RecordStatus")]
   [Consumes(typeof(ServiceHealth), contentType: "application/json")]
   [ProducesResponseType(statusCode: 204)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 400)]
