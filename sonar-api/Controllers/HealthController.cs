@@ -1,23 +1,16 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Extensions;
+using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
-using Google.Protobuf;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Snappy;
 using Prometheus;
 using Environment = Cms.BatCave.Sonar.Data.Environment;
 using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
@@ -33,24 +26,18 @@ public class HealthController : ControllerBase {
   private readonly DbSet<Environment> _environmentsTable;
   private readonly DbSet<Tenant> _tenantsTable;
   private readonly DbSet<Service> _servicesTable;
-  private readonly ILogger<HealthController> _logger;
-  private readonly Uri _prometheusUrl;
+  private readonly PrometheusRemoteWriteClient _remoteWriteClient;
 
   public HealthController(
-    IOptions<PrometheusConfiguration> prometheusConfig,
     DbSet<Environment> environmentsTable,
     DbSet<Tenant> tenantsTable,
     DbSet<Service> servicesTable,
-    ILogger<HealthController> logger) {
+    PrometheusRemoteWriteClient remoteWriteClient) {
 
     this._environmentsTable = environmentsTable;
     this._tenantsTable = tenantsTable;
     this._servicesTable = servicesTable;
-    this._logger = logger;
-    this._prometheusUrl =
-      new Uri(
-        $"{prometheusConfig.Value.Protocol}://{prometheusConfig.Value.Host}:{prometheusConfig.Value.Port}/api/v1/write"
-      );
+    this._remoteWriteClient = remoteWriteClient;
   }
 
   /// <summary>
@@ -73,14 +60,10 @@ public class HealthController : ControllerBase {
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 500)]
   public async Task<IActionResult> RecordStatus(
-    [FromRoute]
-    String environment,
-    [FromRoute]
-    String tenant,
-    [FromRoute]
-    String service,
-    [FromBody]
-    ServiceHealth value,
+    [FromRoute] String environment,
+    [FromRoute] String tenant,
+    [FromRoute] String service,
+    [FromBody] ServiceHealth value,
     CancellationToken cancellationToken = default) {
 
     // Ensure the specified service exists
@@ -129,70 +112,12 @@ public class HealthController : ControllerBase {
       )
     );
 
-    using var httpClient = new HttpClient();
-
-    using var buffer = new MemoryStream();
-    using var protobufWriter = new CodedOutputStream(buffer);
-    writeData.WriteTo(protobufWriter);
-    protobufWriter.Flush();
-
-    // Compress
-    var compressedData = SnappyCodec.Compress(buffer.ToArray());
-    using var compressedBuffer = new MemoryStream(compressedData);
-
-    var response = await httpClient.PostAsync(
-      this._prometheusUrl,
-      new StreamContent(compressedBuffer) {
-        Headers = {
-          { "Content-Type", "application/x-protobuf" },
-          { "Content-Encoding", "snappy" }
-        }
-      },
-      cancellationToken
-    );
-
-    if (!response.IsSuccessStatusCode) {
-      var message = await response.Content.ReadAsStringAsync(cancellationToken);
-
-      void HandleErrorMessageAndLog(ProblemDetails problemDetails, LogLevel level) {
-        if (!String.IsNullOrWhiteSpace(message)) {
-          message = message.Trim();
-          problemDetails.Extensions.Add(key: "message", message);
-          this._logger.Log(
-            level,
-            message: "Non-success response from Prometheus ({StatusCode}): {Message}",
-            response.StatusCode,
-            message
-          );
-        } else {
-          this._logger.Log(
-            level,
-            message: "Non-success response from Prometheus ({StatusCode})",
-            response.StatusCode
-          );
-        }
-      }
-
-      if ((response.StatusCode == HttpStatusCode.BadRequest) && !String.IsNullOrWhiteSpace(message)) {
-        var problem = new ProblemDetails {
-          Title = "Bad Request",
-          Status = 400,
-          Detail = "Invalid service health status."
-        };
-        HandleErrorMessageAndLog(problem, LogLevel.Debug);
-      return this.BadRequest(problem);
-      } else {
-        var problem = new ProblemDetails {
-          Title = "Internal Server Error",
-          Status = 500,
-          Detail = $"Unexpected response from Prometheus ({response.StatusCode})"
-        };
-        HandleErrorMessageAndLog(problem, LogLevel.Error);
-        return this.StatusCode(statusCode: 500, problem);
-      }
+    var problem = await this._remoteWriteClient.RemoteWriteRequest(writeData, cancellationToken);
+    if (problem == null) {
+      return this.NoContent();
     }
 
-    return this.NoContent();
+    return this.StatusCode(problem.Status ?? 500, problem);
   }
 
   private async Task<Service> FetchExistingService(
@@ -214,8 +139,8 @@ public class HealthController : ControllerBase {
           leftKeySelector: row => row.Tenant != null ? row.Tenant.Id : (Guid?)null,
           rightKeySelector: svc => svc.TenantId,
           resultSelector: (row, svc) => new {
-            Environment = row.Environment,
-            Tenant = row.Tenant,
+            row.Environment,
+            row.Tenant,
             Service = svc
           })
         .ToListAsync(cancellationToken);

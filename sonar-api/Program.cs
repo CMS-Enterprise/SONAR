@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Exceptions;
+using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.OpenApi;
 using Cms.BatCave.Sonar.Options;
 using CommandLine;
@@ -31,6 +32,8 @@ public class Program {
           consoleOptions.LogToStandardErrorThreshold = LogLevel.Error;
         });
     });
+
+    builder.Services.AddScoped<PrometheusRemoteWriteClient>();
 
     var mvcBuilder = builder.Services.AddControllers(options => {
       options.ReturnHttpNotAcceptable = true;
