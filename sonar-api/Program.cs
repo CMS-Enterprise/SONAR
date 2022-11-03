@@ -8,6 +8,7 @@ using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Helpers;
+using Cms.BatCave.Sonar.Json;
 using Cms.BatCave.Sonar.OpenApi;
 using Cms.BatCave.Sonar.Options;
 using CommandLine;
@@ -43,6 +44,7 @@ public class Program {
     mvcBuilder.AddJsonOptions(options => {
       // Serialize c# enums as strings
       options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+      options.JsonSerializerOptions.Converters.Add(new ArrayTupleConverterFactory());
     });
 
     // Register all Configuration Option Classes for dependency injection
