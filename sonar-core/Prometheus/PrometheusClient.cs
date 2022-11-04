@@ -9,6 +9,7 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Http;
+using Cms.BatCave.Sonar.Json;
 
 namespace Cms.BatCave.Sonar.Prometheus;
 
@@ -21,8 +22,8 @@ public class PrometheusClient : IPrometheusClient {
   private readonly HttpClient _client;
   private readonly JsonSerializerOptions _serializerOptions;
 
-  private static readonly JsonSerializerOptions defaultSerializerOptions = new JsonSerializerOptions {
-    Converters = { new JsonStringEnumConverter() },
+  private static readonly JsonSerializerOptions DefaultSerializerOptions = new() {
+    Converters = { new JsonStringEnumConverter(), new ArrayTupleConverterFactory() },
     PropertyNameCaseInsensitive = true
   };
 
@@ -31,7 +32,7 @@ public class PrometheusClient : IPrometheusClient {
     this._serializerOptions = serializerOptions;
   }
 
-  public PrometheusClient(HttpClient client) : this(client, defaultSerializerOptions) {
+  public PrometheusClient(HttpClient client) : this(client, PrometheusClient.DefaultSerializerOptions) {
 
   }
 
