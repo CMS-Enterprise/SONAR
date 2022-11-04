@@ -8,7 +8,7 @@ public interface IPrometheusClient {
   Task<ResponseEnvelope<QueryResults>> QueryAsync(
     String query,
     DateTime timestamp,
-    TimeSpan timeout,
+    TimeSpan? timeout = null,
     CancellationToken cancellationToken = default);
 
   Task<ResponseEnvelope<QueryResults>> QueryPostAsync(
@@ -20,7 +20,7 @@ public interface IPrometheusClient {
     DateTime start,
     DateTime end,
     TimeSpan step,
-    TimeSpan timeout,
+    TimeSpan? timeout = null,
     CancellationToken cancellationToken = default);
 
   Task<ResponseEnvelope<QueryResults>> QueryRangePostAsync(

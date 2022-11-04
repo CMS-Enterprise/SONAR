@@ -7,4 +7,4 @@ public record QueryRangePostRequest(
   DateTime Start,
   DateTime End,
   TimeSpan Step,
-  TimeSpan Timeout);
+  TimeSpan? Timeout);

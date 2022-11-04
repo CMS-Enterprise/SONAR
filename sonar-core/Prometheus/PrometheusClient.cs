@@ -38,14 +38,17 @@ public class PrometheusClient : IPrometheusClient {
   public async Task<ResponseEnvelope<QueryResults>> QueryAsync(
     String query,
     DateTime timestamp,
-    TimeSpan timeout,
+    TimeSpan? timeout = null,
     CancellationToken cancellationToken = default) {
 
     var parameters = new QueryStringParameterCollection {
       { "query", query },
-      { "timestamp", timestamp },
-      { "timeout", PrometheusClient.ToPrometheusDuration(timeout) }
+      { "time", timestamp },
     };
+
+    if (timeout.HasValue) {
+      parameters.Add(key: "timeout", PrometheusClient.ToPrometheusDuration(timeout.Value));
+    }
 
     var response = await this._client.GetAsync(
       $"{PrometheusClient.BaseUrlPath}{PrometheusClient.QueryUrlPath}?{parameters}",
@@ -61,9 +64,11 @@ public class PrometheusClient : IPrometheusClient {
 
     var content = new QueryStringParameterCollection {
       { "query", request.Query },
-      { "timestamp", request.Timestamp },
-      { "timeout", PrometheusClient.ToPrometheusDuration(request.Timeout) }
+      { "time", request.Timestamp },
     };
+    if (request.Timeout.HasValue) {
+      content.Add(key: "timeout", PrometheusClient.ToPrometheusDuration(request.Timeout.Value));
+    }
 
     var response = await this._client.PostAsync(
       $"{PrometheusClient.BaseUrlPath}{PrometheusClient.QueryUrlPath}",
@@ -107,7 +112,7 @@ public class PrometheusClient : IPrometheusClient {
     DateTime start,
     DateTime end,
     TimeSpan step,
-    TimeSpan timeout,
+    TimeSpan? timeout,
     CancellationToken cancellationToken = default) {
 
     var parameters = new QueryStringParameterCollection {
@@ -115,8 +120,11 @@ public class PrometheusClient : IPrometheusClient {
       { "start", start },
       { "end", end },
       { "step", step.TotalSeconds },
-      { "timeout", PrometheusClient.ToPrometheusDuration(timeout) }
     };
+
+    if (timeout.HasValue) {
+      parameters.Add(key: "timeout", PrometheusClient.ToPrometheusDuration(timeout.Value));
+    }
 
     var response = await this._client.GetAsync(
       $"{PrometheusClient.BaseUrlPath}{PrometheusClient.QueryRangeUrlPath}?{parameters}",
@@ -135,8 +143,11 @@ public class PrometheusClient : IPrometheusClient {
       { "start", request.Start },
       { "end", request.End },
       { "step", request.Step.TotalSeconds },
-      { "timeout", PrometheusClient.ToPrometheusDuration(request.Timeout) }
     };
+
+    if (request.Timeout.HasValue) {
+      content.Add(key: "timeout", PrometheusClient.ToPrometheusDuration(request.Timeout.Value));
+    }
 
     var response = await this._client.PostAsync(
       $"{PrometheusClient.BaseUrlPath}{PrometheusClient.QueryRangeUrlPath}",
@@ -154,6 +165,18 @@ public class PrometheusClient : IPrometheusClient {
     var parts = new List<String>();
     if (timeout.Days > 0) {
       parts.Add($"{timeout.Days}d");
+    }
+    if (timeout.Hours > 0) {
+      parts.Add($"{timeout.Hours}h");
+    }
+    if (timeout.Minutes > 0) {
+      parts.Add($"{timeout.Minutes}m");
+    }
+    if (timeout.Seconds > 0) {
+      parts.Add($"{timeout.Seconds}s");
+    }
+    if (timeout.Milliseconds > 0) {
+      parts.Add($"{timeout.Milliseconds}ms");
     }
 
     return String.Join(separator: " ", parts);
