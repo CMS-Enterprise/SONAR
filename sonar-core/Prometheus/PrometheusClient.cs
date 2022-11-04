@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text;
@@ -42,14 +41,14 @@ public class PrometheusClient : IPrometheusClient {
     TimeSpan timeout,
     CancellationToken cancellationToken = default) {
 
+    var parameters = new QueryStringParameterCollection {
+      { "query", query },
+      { "timestamp", timestamp },
+      { "timeout", PrometheusClient.ToPrometheusDuration(timeout) }
+    };
+
     var response = await this._client.GetAsync(
-      new UriBuilder($"{PrometheusClient.BaseUrlPath}{PrometheusClient.QueryUrlPath}") {
-        Query = new QueryStringParameterCollection {
-          { "query", query },
-          { "timestamp", timestamp },
-          { "timeout", PrometheusClient.ToPrometheusDuration(timeout) }
-        }
-      }.Uri,
+      $"{PrometheusClient.BaseUrlPath}{PrometheusClient.QueryUrlPath}?{parameters}",
       cancellationToken
     );
 
@@ -110,21 +109,21 @@ public class PrometheusClient : IPrometheusClient {
     TimeSpan step,
     TimeSpan timeout,
     CancellationToken cancellationToken = default) {
+
+    var parameters = new QueryStringParameterCollection {
+      { "query", query },
+      { "start", start },
+      { "end", end },
+      { "step", step.TotalSeconds },
+      { "timeout", PrometheusClient.ToPrometheusDuration(timeout) }
+    };
+
     var response = await this._client.GetAsync(
-      new UriBuilder($"{PrometheusClient.BaseUrlPath}{PrometheusClient.QueryUrlPath}") {
-        Query = new QueryStringParameterCollection {
-          { "query", query },
-          { "start", start },
-          { "end", end },
-          { "step", step.TotalSeconds },
-          { "timeout", PrometheusClient.ToPrometheusDuration(timeout) }
-        }
-      }.Uri,
+      $"{PrometheusClient.BaseUrlPath}{PrometheusClient.QueryRangeUrlPath}?{parameters}",
       cancellationToken
     );
 
     return await this.HandleQueryResponse(response, cancellationToken);
-
   }
 
   public async Task<ResponseEnvelope<QueryResults>> QueryRangePostAsync(
@@ -140,7 +139,7 @@ public class PrometheusClient : IPrometheusClient {
     };
 
     var response = await this._client.PostAsync(
-      $"{PrometheusClient.BaseUrlPath}{PrometheusClient.QueryUrlPath}",
+      $"{PrometheusClient.BaseUrlPath}{PrometheusClient.QueryRangeUrlPath}",
       new StringContent(
         content.ToString(),
         Encoding.UTF8,
