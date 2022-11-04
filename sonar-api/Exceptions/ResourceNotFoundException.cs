@@ -44,8 +44,8 @@ public class ResourceNotFoundException : ProblemDetailException {
     info.AddValue(nameof(this.ResourceId), this.ResourceId);
   }
 
-  protected override IDictionary<String, Object> GetExtensions() {
-    return new Dictionary<String, Object> {
+  protected override IDictionary<String, Object?> GetExtensions() {
+    return new Dictionary<String, Object?> {
       { "resourceId", this.ResourceId }
     };
   }

@@ -35,6 +35,7 @@ public class Program {
     });
 
     builder.Services.AddScoped<PrometheusRemoteWriteClient>();
+    builder.Services.AddScoped<ServiceDataHelper>();
 
     var mvcBuilder = builder.Services.AddControllers(options => {
       options.ReturnHttpNotAcceptable = true;

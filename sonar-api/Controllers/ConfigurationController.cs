@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Extensions;
+using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +29,7 @@ public class ConfigurationController : ControllerBase {
   private readonly DbSet<Service> _servicesTable;
   private readonly DbSet<ServiceRelationship> _relationshipsTable;
   private readonly DbSet<HealthCheck> _healthsTable;
+  private readonly ServiceDataHelper _serviceDataHelper;
 
   public ConfigurationController(
     DataContext dbContext,
@@ -35,7 +37,8 @@ public class ConfigurationController : ControllerBase {
     DbSet<Tenant> tenantsTable,
     DbSet<Service> servicesTable,
     DbSet<ServiceRelationship> relationshipsTable,
-    DbSet<HealthCheck> healthsTable) {
+    DbSet<HealthCheck> healthsTable,
+    ServiceDataHelper serviceDataHelper) {
 
     this._dbContext = dbContext;
     this._environmentsTable = environmentsTable;
@@ -43,6 +46,7 @@ public class ConfigurationController : ControllerBase {
     this._servicesTable = servicesTable;
     this._relationshipsTable = relationshipsTable;
     this._healthsTable = healthsTable;
+    this._serviceDataHelper = serviceDataHelper;
   }
 
   /// <summary>
@@ -61,15 +65,15 @@ public class ConfigurationController : ControllerBase {
     [FromRoute] String tenant,
     CancellationToken cancellationToken = default) {
 
-    var (_, _, serviceMap) = await this.FetchExistingConfiguration(environment, tenant, cancellationToken);
+    var (_, _, serviceMap) = await this._serviceDataHelper.FetchExistingConfiguration(environment, tenant, cancellationToken);
 
 
     var serviceRelationshipsByParent =
-      (await this.FetchExistingRelationships(serviceMap.Keys, cancellationToken))
+      (await this._serviceDataHelper.FetchExistingRelationships(serviceMap.Keys, cancellationToken))
       .ToLookup(r => r.ParentServiceId);
 
     var healthCheckByService =
-      (await this.FetchExistingHealthChecks(serviceMap.Keys, cancellationToken))
+      (await this._serviceDataHelper.FetchExistingHealthChecks(serviceMap.Keys, cancellationToken))
       .ToLookup(hc => hc.ServiceId);
 
     return this.Ok(ConfigurationController.CreateServiceHierarchy(serviceMap, healthCheckByService, serviceRelationshipsByParent));
@@ -269,8 +273,8 @@ public class ConfigurationController : ControllerBase {
     await using var tx =
       await this._dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
     try {
-      var (existingEnv, existingTenant, serviceMap) =
-        await this.FetchExistingConfiguration(environment, tenant, cancellationToken);
+      var (_, existingTenant, serviceMap) =
+        await this._serviceDataHelper.FetchExistingConfiguration(environment, tenant, cancellationToken);
 
       // Identify services removed, created, updated
 
@@ -302,7 +306,7 @@ public class ConfigurationController : ControllerBase {
 
       // Fetch the existing relationships
       var serviceRelationships =
-        await this.FetchExistingRelationships(serviceMap.Keys, cancellationToken);
+        await this._serviceDataHelper.FetchExistingRelationships(serviceMap.Keys, cancellationToken);
 
       // build the map of name => set of names for the existing configuration
       var existingRelationships =
@@ -370,7 +374,7 @@ public class ConfigurationController : ControllerBase {
 
       // Fetch all of existing health check and
       var existingHealthChecks =
-        await this.FetchExistingHealthChecks(serviceMap.Keys, cancellationToken);
+        await this._serviceDataHelper.FetchExistingHealthChecks(serviceMap.Keys, cancellationToken);
 
       // Allow for lookup by name
       var existingHealthCheckLookup =
@@ -499,11 +503,11 @@ public class ConfigurationController : ControllerBase {
 
       // re-read everything after updates.
       var (_, _, updatedServiceMap) =
-        await this.FetchExistingConfiguration(environment, tenant, cancellationToken);
+        await this._serviceDataHelper.FetchExistingConfiguration(environment, tenant, cancellationToken);
       var updatedHealthChecks =
-        await this.FetchExistingHealthChecks(updatedServiceMap.Keys, cancellationToken);
+        await this._serviceDataHelper.FetchExistingHealthChecks(updatedServiceMap.Keys, cancellationToken);
       var updatedRelationships =
-        await this.FetchExistingRelationships(updatedServiceMap.Keys, cancellationToken);
+        await this._serviceDataHelper.FetchExistingRelationships(updatedServiceMap.Keys, cancellationToken);
 
       response = this.Ok(ConfigurationController.CreateServiceHierarchy(
         updatedServiceMap,
@@ -541,7 +545,7 @@ public class ConfigurationController : ControllerBase {
       hierarchy.Services
         .Select(svc =>
           new {
-            Name = svc.Name,
+            svc.Name,
             Children = svc.Children?.Where(child => !serviceNames.Contains(child)).ToImmutableList()
           })
         .Where(v => v.Children?.Any() == true)
@@ -556,67 +560,6 @@ public class ConfigurationController : ControllerBase {
         }
       );
     }
-  }
-
-  private async Task<(Environment, Tenant, ImmutableDictionary<Guid, Service>)> FetchExistingConfiguration(
-    String environmentName,
-    String tenantName,
-    CancellationToken cancellationToken) {
-
-    var results =
-      await this._environmentsTable
-        .Where(e => e.Name == environmentName)
-        .LeftJoin(
-          this._tenantsTable.Where(t => t.Name == tenantName),
-          leftKeySelector: e => e.Id,
-          rightKeySelector: t => t.EnvironmentId,
-          resultSelector: (env, t) => new { Environment = env, Tenant = t })
-        .LeftJoin(
-          this._servicesTable,
-          leftKeySelector: row => row.Tenant != null ? row.Tenant.Id : (Guid?)null,
-          rightKeySelector: svc => svc.TenantId,
-          resultSelector: (row, svc) => new {
-            Environment = row.Environment,
-            Tenant = row.Tenant,
-            Service = svc
-          })
-        .ToListAsync(cancellationToken);
-
-    var environment = results.FirstOrDefault()?.Environment;
-    var tenant = results.FirstOrDefault()?.Tenant;
-    if (environment == null) {
-      throw new ResourceNotFoundException(nameof(Environment), environmentName);
-    } else if (tenant == null) {
-      throw new ResourceNotFoundException(nameof(Tenant), tenantName);
-    }
-
-    var serviceMap =
-      results
-        .Select(r => r.Service)
-        .NotNull()
-        .ToImmutableDictionary(svc => svc.Id);
-
-    return (environment, tenant, serviceMap);
-  }
-
-  private async Task<IList<ServiceRelationship>> FetchExistingRelationships(
-    IEnumerable<Guid> serviceIds,
-    CancellationToken cancellationToken) {
-
-    return
-      await this._relationshipsTable
-        .Where(r => serviceIds.Contains(r.ParentServiceId))
-        .ToListAsync(cancellationToken);
-  }
-
-  private async Task<IList<HealthCheck>> FetchExistingHealthChecks(
-    IEnumerable<Guid> serviceIds,
-    CancellationToken cancellationToken) {
-
-    return
-      await this._healthsTable
-        .Where(hc => serviceIds.Contains(hc.ServiceId))
-        .ToListAsync(cancellationToken);
   }
 
   //Converts to Model

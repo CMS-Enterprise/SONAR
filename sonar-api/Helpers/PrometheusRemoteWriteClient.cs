@@ -19,7 +19,8 @@ public class PrometheusRemoteWriteClient {
   private readonly ILogger<PrometheusRemoteWriteClient> _logger;
 
   public PrometheusRemoteWriteClient(
-    IOptions<PrometheusConfiguration> prometheusConfig, ILogger<PrometheusRemoteWriteClient> logger) {
+    IOptions<PrometheusConfiguration> prometheusConfig,
+    ILogger<PrometheusRemoteWriteClient> logger) {
     this._prometheusUrl =
       new Uri(
         $"{prometheusConfig.Value.Protocol}://{prometheusConfig.Value.Host}:{prometheusConfig.Value.Port}/api/v1/write"

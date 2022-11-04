@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 namespace Cms.BatCave.Sonar.Json;
 
 public class ArrayTupleConverter<TTuple> : JsonConverter<TTuple> where TTuple : ITuple {
-  public override TTuple? Read(
+  public override TTuple Read(
     ref Utf8JsonReader reader,
     Type typeToConvert,
     JsonSerializerOptions options) {
@@ -42,7 +42,7 @@ public class ArrayTupleConverter<TTuple> : JsonConverter<TTuple> where TTuple : 
     return (TTuple)TupleCreator.CreateTuple(
       typeToConvert,
       arguments.ToArray()
-    )!;
+    );
   }
 
   public override void Write(
@@ -58,7 +58,7 @@ public class ArrayTupleConverter<TTuple> : JsonConverter<TTuple> where TTuple : 
       for (var i = 0; i < tuple.Length; i++) {
         JsonSerializer.Serialize(
           writer,
-          value,
+          value[i],
           tupleTypeArguments[i],
           options
         );
@@ -169,7 +169,7 @@ public class ArrayTupleConverter<TTuple> : JsonConverter<TTuple> where TTuple : 
 public static class ArrayTupleConverter {
   public static JsonConverter ForType(Type typeToConvert) {
     return ((JsonConverter)ArrayTupleConverter.ForTypeMethod.MakeGenericMethod(typeToConvert)
-      .Invoke(obj: null, Array.Empty<Object?>())!)!;
+      .Invoke(obj: null, Array.Empty<Object?>())!);
   }
 
   private static readonly MethodInfo ForTypeMethod =
