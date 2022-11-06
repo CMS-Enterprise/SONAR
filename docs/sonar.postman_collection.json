@@ -1,9 +1,8 @@
 {
 	"info": {
-		"_postman_id": "18fc30cf-d567-464c-8485-58e2989527ec",
+		"_postman_id": "f00cb31a-8bde-4c21-acc0-301dd8285178",
 		"name": "SONAR",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "20614257"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
@@ -18,7 +17,7 @@
 					}
 				],
 				"url": {
-					"raw": "http://localhost:8081/api/v2/config/foo/tenants/bar",
+					"raw": "http://localhost:8081/api/v2/config/foo/tenants/baz",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -30,7 +29,7 @@
 						"config",
 						"foo",
 						"tenants",
-						"bar"
+						"baz"
 					]
 				}
 			},
@@ -49,7 +48,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"services\": [\n        {\n            \"name\": \"my-root\",\n            \"displayName\": \"My Root Service\",\n            \"description\": \"Example root service\",\n            \"url\": null,\n            \"children\": [\n                \"my-child\"\n            ]\n        },\n        {\n            \"name\": \"my-child\",\n            \"displayName\": \"My Child Service\",\n            \"description\": \"Example child service\",\n            \"url\": null,\n            \"children\": null\n        }\n    ],\n    \"rootServices\": [\n        \"my-root\"\n    ]\n}",
+					"raw": "{\n    \"services\": [\n        {\n            \"name\": \"my-root\",\n            \"displayName\": \"My Root Service\",\n            \"description\": \"Example root service\",\n            \"url\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"Root-Health\",\n                    \"description\": \"Desc\",\n                    \"definition\": {\n                        \"duration\": \"1.03:14:56.1667000\",\n                        \"expression\": \"An expresso\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"NotEqual\",\n                                \"threshold\": 1.0,\n                                \"healthStatus\": \"Offline\"\n                            }\n                        ]\n                    }\n                },\n                {\n                    \"name\": \"Root-Health2\",\n                    \"description\": \"What Another Health Check?\",\n                    \"definition\": {\n                        \"duration\": \"420.03:14:56.1667000\",\n                        \"expression\": \"Expression\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"GreaterThan\",\n                                \"threshold\": 1.0,\n                                \"healthStatus\": \"Online\"\n                            }\n                        ]\n                    }\n                }\n            ],\n            \"children\": [\n                \"my-child\", \"my-child2\"\n            ]\n        },\n        {\n            \"name\": \"my-child\",\n            \"displayName\": \"My Child Service\",\n            \"description\": \"Example child service\",\n            \"url\": null,\n            \"children\": null\n        },\n        {\n            \"name\": \"my-child2\",\n            \"displayName\": \"My Child Service2\",\n            \"description\": \"Example child service2\",\n            \"url\": null,\n            \"children\": null\n        }\n    ],\n    \"rootServices\": [\n        \"my-root\"\n    ]\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -88,7 +87,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"services\": [\n        {\n            \"name\": \"my-root\",\n            \"displayName\": \"My Root Service\",\n            \"description\": \"Example root service\",\n            \"url\": null,\n            \"children\": [\"my-CHILD\"]\n        },\n        {\n            \"name\": \"MY-child\",\n            \"displayName\": \"My Child Service!!!!\",\n            \"description\": \"Example child service NEAT!\",\n            \"url\": null,\n            \"children\": [\"sub-SUB-service\"]\n        },\n        {\n            \"name\": \"sub-sub-service\",\n            \"displayName\": \"New Sub Service\",\n            \"description\": \"Example sub-sub-service.\",\n            \"url\": null,\n            \"children\": []\n        },\n        {\n            \"name\": \"another-root\",\n            \"displayName\": \"My Second Root Service\"\n        }\n    ],\n    \"rootServices\": [\n        \"my-ROOT\",\n        \"another-ROOT\"\n    ]\n}",
+					"raw": "{\n    \"services\": [\n        {\n            \"name\": \"my-root\",\n            \"displayName\": \"My Root Service\",\n            \"description\": \"Example root service\",\n            \"url\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"Root-Health2\",\n                    \"description\": \"What Another Health Check?\",\n                    \"definition\": {\n                        \"duration\": \"420.03:14:56.1667000\",\n                        \"expression\": \"Expression\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"GreaterThan\",\n                                \"threshold\": 1.0,\n                                \"healthStatus\": \"Online\"\n                            }\n                        ]\n                    }\n                }\n            ],\n            \"children\": [\"my-CHILD\"]\n        },\n        {\n            \"name\": \"MY-child\",\n            \"displayName\": \"My Child Service!!!!\",\n            \"description\": \"Example child service NEAT!\",\n            \"url\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"Not-RootHealth\",\n                    \"description\": \"Moved from Root\",\n                    \"definition\": {\n                        \"duration\": \"1.03:14:56.1667000\",\n                        \"expression\": \"Not expresso, Expression!!!\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"NotEqual\",\n                                \"threshold\": 1,\n                                \"healthStatus\": \"Degraded\"\n                            }\n                        ]\n                    }\n                }\n            ],\n            \"children\": [\"sub-SUB-service\"]\n        },\n        {\n            \"name\": \"MY-child2\",\n            \"displayName\": \"My Child Service2!!!!\",\n            \"description\": \"Example child service NEAT2!\",\n            \"url\": null,\n            \"children\": [\"sub-SUB-service\"]\n        },\n        {\n            \"name\": \"sub-sub-service\",\n            \"displayName\": \"New Sub Service\",\n            \"description\": \"Example sub-sub-service.\",\n            \"url\": null,\n            \"children\": []\n        },\n        {\n            \"name\": \"another-root\",\n            \"displayName\": \"My Second Root Service\"\n        }\n    ],\n    \"rootServices\": [\n        \"my-ROOT\",\n        \"another-ROOT\"\n    ]\n}",
 					"options": {
 						"raw": {
 							"language": "json"

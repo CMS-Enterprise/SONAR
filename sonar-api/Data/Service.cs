@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Cms.BatCave.Sonar.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cms.BatCave.Sonar.Data;

@@ -13,5 +13,6 @@ public record ServiceConfiguration(
   String DisplayName,
   String? Description,
   Uri? Url,
+  IImmutableList<HealthCheckModel>? HealthChecks,
   IImmutableSet<String>? Children
 );

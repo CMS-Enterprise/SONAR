@@ -15,6 +15,7 @@ using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Environment = Cms.BatCave.Sonar.Data.Environment;
 using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
+using HealthCheck = Cms.BatCave.Sonar.Data.HealthCheck;
 
 namespace Cms.BatCave.Sonar.Controllers;
 
@@ -26,19 +27,22 @@ public class ConfigurationController : ControllerBase {
   private readonly DbSet<Tenant> _tenantsTable;
   private readonly DbSet<Service> _servicesTable;
   private readonly DbSet<ServiceRelationship> _relationshipsTable;
+  private readonly DbSet<HealthCheck> _healthsTable;
 
   public ConfigurationController(
     DataContext dbContext,
     DbSet<Environment> environmentsTable,
     DbSet<Tenant> tenantsTable,
     DbSet<Service> servicesTable,
-    DbSet<ServiceRelationship> relationshipsTable) {
+    DbSet<ServiceRelationship> relationshipsTable,
+    DbSet<HealthCheck> healthsTable) {
 
     this._dbContext = dbContext;
     this._environmentsTable = environmentsTable;
     this._tenantsTable = tenantsTable;
     this._servicesTable = servicesTable;
     this._relationshipsTable = relationshipsTable;
+    this._healthsTable = healthsTable;
   }
 
   /// <summary>
@@ -64,7 +68,11 @@ public class ConfigurationController : ControllerBase {
       (await this.FetchExistingRelationships(serviceMap.Keys, cancellationToken))
       .ToLookup(r => r.ParentServiceId);
 
-    return this.Ok(ConfigurationController.CreateServiceHierarchy(serviceMap, serviceRelationshipsByParent));
+    var healthCheckByService =
+      (await this.FetchExistingHealthChecks(serviceMap.Keys, cancellationToken))
+      .ToLookup(hc => hc.ServiceId);
+
+    return this.Ok(ConfigurationController.CreateServiceHierarchy(serviceMap, healthCheckByService, serviceRelationshipsByParent));
   }
 
   /// <summary>
@@ -166,9 +174,23 @@ public class ConfigurationController : ControllerBase {
       var servicesByName =
         createdServices.ToImmutableDictionary(keySelector: svc => svc.Name);
 
+      var createdHealthChecks = await this._healthsTable.AddAllAsync(
+        hierarchy.Services.SelectMany(svc =>
+          svc.HealthChecks != null ?
+            svc.HealthChecks.Select(hc => HealthCheck.New(
+              servicesByName[svc.Name].Id,
+              hc.Name,
+              hc.Description,
+              HealthCheck.SerializeDefinition(hc.Definition)
+            )) :
+            Enumerable.Empty<HealthCheck>()
+        ),
+        cancellationToken
+      );
+
       // Create the service_relationships based on children lists
       var createdRelationships = await this._relationshipsTable.AddAllAsync(
-        hierarchy.Services.SelectMany<ServiceConfiguration, ServiceRelationship>(svc =>
+        hierarchy.Services.SelectMany(svc =>
           svc.Children != null ?
             svc.Children.Select(child => new ServiceRelationship(
               servicesByName[svc.Name].Id,
@@ -185,6 +207,7 @@ public class ConfigurationController : ControllerBase {
         this.Url.Action(nameof(this.GetConfiguration), new { environment, tenant }) ?? String.Empty,
         ConfigurationController.CreateServiceHierarchy(
           servicesByName.Values.ToImmutableDictionary(svc => svc.Id),
+          createdHealthChecks.ToLookup(hc => hc.ServiceId),
           createdRelationships.ToLookup(rel => rel.ParentServiceId)
         )
       );
@@ -335,6 +358,62 @@ public class ConfigurationController : ControllerBase {
         }
       }
 
+      var healthChecksToAdd = new List<(String serviceName, HealthCheckModel newHealthCheck)>();
+      var healthChecksToRemove = new List<HealthCheck>();
+      var healthChecksToUpdate = new List<(HealthCheck existingHealthCheck, HealthCheckModel updatedHealthCheck)>();
+
+      // Transform new services collection into a Dictionary to be able to search by name of services for list of health checks.
+      var newHealthCheck =
+        hierarchy.Services.ToImmutableDictionary(
+          svc => svc.Name,
+          svc => svc.HealthChecks?.ToImmutableList() ?? ImmutableList<HealthCheckModel>.Empty);
+
+      // Fetch all of existing health check and
+      var existingHealthChecks =
+        await this.FetchExistingHealthChecks(serviceMap.Keys, cancellationToken);
+
+      // Allow for lookup by name
+      var existingHealthCheckLookup =
+        existingHealthChecks.ToLookup(
+          hc => serviceMap[hc.ServiceId].Name,
+          StringComparer.OrdinalIgnoreCase);
+
+      // foreach the existing relationships
+      foreach (var serviceHealthChecks in existingHealthCheckLookup) {
+        // Search by Key (Service Name)
+        if (newHealthCheck.TryGetValue(serviceHealthChecks.Key, out var newHealthChecks)) {
+          // Handle existing relationships, for a service that no longer exists (add to health checks to remove)
+          var existingChecks = serviceHealthChecks.ToImmutableList();
+          foreach (var existingCheck in existingChecks) {
+            //Search in the health check model where the names match the health check data.
+            var newCheck = newHealthChecks.Find(
+              newhc => (newhc.Name.Equals(existingCheck.Name, StringComparison.OrdinalIgnoreCase)));
+            if (newCheck != null) {
+              // Existing healthcheck has new service present payload and existing service healthcheck (update)
+              healthChecksToUpdate.Add((existingCheck, newCheck));
+            } else {
+              healthChecksToRemove.Add(existingCheck);
+            }
+          }
+        } else {
+          // Service exists but does not have a health check (remove)
+          healthChecksToRemove.AddRange(serviceHealthChecks);
+        }
+      }
+
+      // for each health check in payload, if does not exist in existing lookup then add
+      foreach (var newHealthChecks in newHealthCheck) {
+        if (!existingHealthCheckLookup.Contains(newHealthChecks.Key)) {
+          healthChecksToAdd.AddRange(newHealthChecks.Value.Select(hcm => (newHealthChecks.Key, hcm)));
+        } else {
+          foreach (var check in newHealthChecks.Value) {
+            if (!existingHealthCheckLookup[newHealthChecks.Key].Any(existingCheck => existingCheck.Name.Equals(check.Name, StringComparison.OrdinalIgnoreCase))) {
+              healthChecksToAdd.Add((newHealthChecks.Key, check));
+            }
+          }
+        }
+      }
+
       // Insert servicesToAdd services into the DB
 
       var createdServices = await this._servicesTable.AddAllAsync(
@@ -386,6 +465,33 @@ public class ConfigurationController : ControllerBase {
         cancellationToken
       );
 
+      //Apply changes to health checks to tables.
+      this._healthsTable.RemoveRange(healthChecksToRemove);
+
+      // Add relationshipsToAdd
+      await this._healthsTable.AddAllAsync(
+        healthChecksToAdd.Select(healthCheck => HealthCheck.New(
+          existingServicesByName[healthCheck.serviceName].Id,
+          healthCheck.newHealthCheck.Name,
+          healthCheck.newHealthCheck.Description,
+          HealthCheck.SerializeDefinition(healthCheck.newHealthCheck.Definition)
+        )),
+        cancellationToken
+      );
+
+      //Update Table
+      this._healthsTable.UpdateRange(
+        healthChecksToUpdate.Select(hc => {
+          return new HealthCheck(
+            hc.existingHealthCheck.Id,
+            hc.existingHealthCheck.ServiceId,
+            hc.updatedHealthCheck.Name,
+            hc.updatedHealthCheck.Description,
+            HealthCheck.SerializeDefinition(hc.updatedHealthCheck.Definition)
+          );
+        })
+      );
+
       // Delete servicesToDelete
       this._servicesTable.RemoveRange(servicesToDelete);
 
@@ -394,11 +500,14 @@ public class ConfigurationController : ControllerBase {
       // re-read everything after updates.
       var (_, _, updatedServiceMap) =
         await this.FetchExistingConfiguration(environment, tenant, cancellationToken);
+      var updatedHealthChecks =
+        await this.FetchExistingHealthChecks(updatedServiceMap.Keys, cancellationToken);
       var updatedRelationships =
         await this.FetchExistingRelationships(updatedServiceMap.Keys, cancellationToken);
 
       response = this.Ok(ConfigurationController.CreateServiceHierarchy(
         updatedServiceMap,
+        updatedHealthChecks.ToLookup(hc => hc.ServiceId),
         updatedRelationships.ToLookup(rel => rel.ParentServiceId)
       ));
 
@@ -500,8 +609,20 @@ public class ConfigurationController : ControllerBase {
         .ToListAsync(cancellationToken);
   }
 
+  private async Task<IList<HealthCheck>> FetchExistingHealthChecks(
+    IEnumerable<Guid> serviceIds,
+    CancellationToken cancellationToken) {
+
+    return
+      await this._healthsTable
+        .Where(hc => serviceIds.Contains(hc.ServiceId))
+        .ToListAsync(cancellationToken);
+  }
+
+  //Converts to Model
   private static ServiceHierarchyConfiguration CreateServiceHierarchy(
     IImmutableDictionary<Guid, Service> serviceMap,
+    ILookup<Guid, HealthCheck> healthCheckByService,
     ILookup<Guid, ServiceRelationship> serviceRelationshipsByParent) {
     return new ServiceHierarchyConfiguration(
       serviceMap.Values
@@ -510,6 +631,14 @@ public class ConfigurationController : ControllerBase {
           svc.DisplayName,
           svc.Description,
           svc.Url,
+          healthCheckByService[svc.Id]
+            .Select(check => new HealthCheckModel(
+              check.Name,
+              check.Description,
+              check.DeserializeDefinition()
+              ))
+            .NullIfEmpty()
+            ?.ToImmutableList(),
           serviceRelationshipsByParent[svc.Id]
             .Select(id => serviceMap[id.ServiceId].Name)
             .NullIfEmpty()
