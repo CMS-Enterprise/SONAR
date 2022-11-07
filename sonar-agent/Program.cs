@@ -280,7 +280,7 @@ internal static class Program {
   }
 
   private static Boolean EvaluateSamples(
-    HealthOperator op, IImmutableList<(Int64 Timestamp, String Value)> values, Double threshold) {
+    HealthOperator op, IImmutableList<(Decimal Timestamp, String Value)> values, Double threshold) {
     // delegate functions for comparison
     Func<Double, Double, Boolean> equalTo = (x, y) => x == y;
     Func<Double, Double, Boolean> notEqual = (x, y) => x != y;
