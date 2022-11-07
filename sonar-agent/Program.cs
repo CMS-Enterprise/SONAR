@@ -205,7 +205,7 @@ internal static class Program {
     }
 
     // Iterate through list, if all meet condition, return true, else return false if ANY don't meet condition
-    return !values.TakeWhile(val => !comparison(Convert.ToDouble(val.Value), threshold)).Any();
+    return !values.Any(val => !comparison(Convert.ToDouble(val.Value), threshold));
   }
 }
 
