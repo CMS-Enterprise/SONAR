@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "587817b4-a221-4782-b996-e886f070e0f2",
+		"_postman_id": "25ccde80-afca-4116-a86d-c3b10a2d5dff",
 		"name": "SONAR",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "12742716"
@@ -18,7 +18,7 @@
 					}
 				],
 				"url": {
-					"raw": "http://localhost:8081/api/v2/config/foo/tenants/bar",
+					"raw": "http://localhost:8081/api/v2/config/foo/tenants/baz",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -30,98 +30,98 @@
 						"config",
 						"foo",
 						"tenants",
-						"bar"
+						"baz"
 					]
 				}
 			},
 			"response": []
 		},
-    {
-      "name": "Create Service Hierarchy",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Accept",
-            "value": "application/json",
-            "type": "text"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n    \"services\": [\n        {\n            \"name\": \"my-root\",\n            \"displayName\": \"My Root Service\",\n            \"description\": \"Example root service\",\n            \"url\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"Root-Health\",\n                    \"description\": \"Desc\",\n                    \"definition\": {\n                        \"duration\": \"1.03:14:56.1667000\",\n                        \"expression\": \"An expresso\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"NotEqual\",\n                                \"threshold\": 1.0,\n                                \"healthStatus\": \"Offline\"\n                            }\n                        ]\n                    }\n                },\n                {\n                    \"name\": \"Root-Health2\",\n                    \"description\": \"What Another Health Check?\",\n                    \"definition\": {\n                        \"duration\": \"420.03:14:56.1667000\",\n                        \"expression\": \"Expression\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"GreaterThan\",\n                                \"threshold\": 1.0,\n                                \"healthStatus\": \"Online\"\n                            }\n                        ]\n                    }\n                }\n            ],\n            \"children\": [\n                \"my-child\", \"my-child2\"\n            ]\n        },\n        {\n            \"name\": \"my-child\",\n            \"displayName\": \"My Child Service\",\n            \"description\": \"Example child service\",\n            \"url\": null,\n            \"children\": null\n        },\n        {\n            \"name\": \"my-child2\",\n            \"displayName\": \"My Child Service2\",\n            \"description\": \"Example child service2\",\n            \"url\": null,\n            \"children\": null\n        }\n    ],\n    \"rootServices\": [\n        \"my-root\"\n    ]\n}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
-        },
-        "url": {
-          "raw": "http://localhost:8081/api/v2/config/foo/tenants/baz",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "8081",
-          "path": [
-            "api",
-            "v2",
-            "config",
-            "foo",
-            "tenants",
-            "baz"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Update Service Hierarchy",
-      "request": {
-        "method": "PUT",
-        "header": [
-          {
-            "key": "Accept",
-            "value": "application/json",
-            "type": "text"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n    \"services\": [\n        {\n            \"name\": \"my-root\",\n            \"displayName\": \"My Root Service\",\n            \"description\": \"Example root service\",\n            \"url\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"Root-Health2\",\n                    \"description\": \"What Another Health Check?\",\n                    \"definition\": {\n                        \"duration\": \"420.03:14:56.1667000\",\n                        \"expression\": \"Expression\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"GreaterThan\",\n                                \"threshold\": 1.0,\n                                \"healthStatus\": \"Online\"\n                            }\n                        ]\n                    }\n                }\n            ],\n            \"children\": [\"my-CHILD\"]\n        },\n        {\n            \"name\": \"MY-child\",\n            \"displayName\": \"My Child Service!!!!\",\n            \"description\": \"Example child service NEAT!\",\n            \"url\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"Not-RootHealth\",\n                    \"description\": \"Moved from Root\",\n                    \"definition\": {\n                        \"duration\": \"1.03:14:56.1667000\",\n                        \"expression\": \"Not expresso, Expression!!!\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"NotEqual\",\n                                \"threshold\": 1,\n                                \"healthStatus\": \"Degraded\"\n                            }\n                        ]\n                    }\n                }\n            ],\n            \"children\": [\"sub-SUB-service\"]\n        },\n        {\n            \"name\": \"MY-child2\",\n            \"displayName\": \"My Child Service2!!!!\",\n            \"description\": \"Example child service NEAT2!\",\n            \"url\": null,\n            \"children\": [\"sub-SUB-service\"]\n        },\n        {\n            \"name\": \"sub-sub-service\",\n            \"displayName\": \"New Sub Service\",\n            \"description\": \"Example sub-sub-service.\",\n            \"url\": null,\n            \"children\": []\n        },\n        {\n            \"name\": \"another-root\",\n            \"displayName\": \"My Second Root Service\"\n        }\n    ],\n    \"rootServices\": [\n        \"my-ROOT\",\n        \"another-ROOT\"\n    ]\n}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
-        },
-        "url": {
-          "raw": "http://localhost:8081/api/v2/config/foo/tenants/baz",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "8081",
-          "path": [
-            "api",
-            "v2",
-            "config",
-            "foo",
-            "tenants",
-            "baz"
-          ]
-        }
-      },
-      "response": []
-    },
 		{
-			"name": "Create Prometheus Test Data",
+			"name": "Create Service Hierarchy",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"services\": [\n        {\n            \"name\": \"my-root\",\n            \"displayName\": \"My Root Service\",\n            \"description\": \"Example root service\",\n            \"url\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"RootHealth\",\n                    \"description\": \"Desc\",\n                    \"definition\": {\n                        \"duration\": \"08:00:00\",\n                        \"expression\": \"promExpression1\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"NotEqual\",\n                                \"threshold\": 1.0,\n                                \"healthStatus\": \"Offline\"\n                            }\n                        ]\n                    }\n                },\n                {\n                    \"name\": \"RootHealth2\",\n                    \"description\": \"What Another Health Check?\",\n                    \"definition\": {\n                        \"duration\": \"08:00:00\",\n                        \"expression\": \"promExpression2\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"GreaterThan\",\n                                \"threshold\": 1.0,\n                                \"healthStatus\": \"Online\"\n                            }\n                        ]\n                    }\n                }\n            ],\n            \"children\": [\n                \"my-child\", \"my-child2\"\n            ]\n        },\n        {\n            \"name\": \"my-child\",\n            \"displayName\": \"My Child Service\",\n            \"description\": \"Example child service\",\n            \"url\": null,\n            \"children\": null\n        },\n        {\n            \"name\": \"my-child2\",\n            \"displayName\": \"My Child Service2\",\n            \"description\": \"Example child service2\",\n            \"url\": null,\n            \"children\": null\n        }\n    ],\n    \"rootServices\": [\n        \"my-root\"\n    ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8081/api/v2/config/foo/tenants/baz",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"v2",
+						"config",
+						"foo",
+						"tenants",
+						"baz"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update Service Hierarchy",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"services\": [\n        {\n            \"name\": \"my-root\",\n            \"displayName\": \"My Root Service\",\n            \"description\": \"Example root service\",\n            \"url\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"Root-Health2\",\n                    \"description\": \"What Another Health Check?\",\n                    \"definition\": {\n                        \"duration\": \"420.03:14:56.1667000\",\n                        \"expression\": \"Expression\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"GreaterThan\",\n                                \"threshold\": 1.0,\n                                \"healthStatus\": \"Online\"\n                            }\n                        ]\n                    }\n                }\n            ],\n            \"children\": [\"my-CHILD\"]\n        },\n        {\n            \"name\": \"MY-child\",\n            \"displayName\": \"My Child Service!!!!\",\n            \"description\": \"Example child service NEAT!\",\n            \"url\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"Not-RootHealth\",\n                    \"description\": \"Moved from Root\",\n                    \"definition\": {\n                        \"duration\": \"1.03:14:56.1667000\",\n                        \"expression\": \"Not expresso, Expression!!!\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"NotEqual\",\n                                \"threshold\": 1,\n                                \"healthStatus\": \"Degraded\"\n                            }\n                        ]\n                    }\n                }\n            ],\n            \"children\": [\"sub-SUB-service\"]\n        },\n        {\n            \"name\": \"MY-child2\",\n            \"displayName\": \"My Child Service2!!!!\",\n            \"description\": \"Example child service NEAT2!\",\n            \"url\": null,\n            \"children\": [\"sub-SUB-service\"]\n        },\n        {\n            \"name\": \"sub-sub-service\",\n            \"displayName\": \"New Sub Service\",\n            \"description\": \"Example sub-sub-service.\",\n            \"url\": null,\n            \"children\": []\n        },\n        {\n            \"name\": \"another-root\",\n            \"displayName\": \"My Second Root Service\"\n        }\n    ],\n    \"rootServices\": [\n        \"my-ROOT\",\n        \"another-ROOT\"\n    ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8081/api/v2/config/foo/tenants/baz",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"v2",
+						"config",
+						"foo",
+						"tenants",
+						"baz"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Prometheus Test Data (Root-Health)",
 			"request": {
 				"method": "POST",
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"MetricName\": \"test\",\n    \"MetricType\": \"Gauge\",\n    \"HelpText\": \"example help text\",\n    \"Labels\": {\n        \"__name__\": \"test\",\n        \"foo2\": \"val\"\n    },\n    \"Timeseries\": [\n        [\"2022-11-03T18:32:00Z\", 3.14],\n        [\"2022-11-03T18:32:05Z\", 3.15],\n        [\"2022-11-03T18:32:10Z\", 3.16]\n    ]\n}",
+					"raw": "{\n    \"MetricName\": \"promExpression1\",\n    \"MetricType\": \"Gauge\",\n    \"HelpText\": \"example help text\",\n    \"Labels\": {\n        \"__name__\": \"promExpression1\",\n        \"foo2\": \"val\"\n    },\n    \"Timeseries\": [\n        [\"2022-11-08T00:09:00Z\", 0.97],\n        [\"2022-11-08T00:09:05Z\", 0.98],\n        [\"2022-11-08T00:09:10Z\", 0.99]\n    ]\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -140,6 +140,115 @@
 						"v2",
 						"test",
 						"data"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Prometheus Test Data (Root-Health2)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"MetricName\": \"promExpression2\",\n    \"MetricType\": \"Gauge\",\n    \"HelpText\": \"example help text\",\n    \"Labels\": {\n        \"__name__\": \"promExpression2\",\n        \"foo2\": \"val\"\n    },\n    \"Timeseries\": [\n       [\"2022-11-08T00:09:00Z\", 1.97],\n        [\"2022-11-08T00:09:05Z\", 1.98],\n        [\"2022-11-08T00:09:10Z\", 1.99]\n    ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8081/api/v2/test/data",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"v2",
+						"test",
+						"data"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Prometheus Test Data (promExpression1)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:9090/api/v1/query_range?query=promExpression1&start=2022-11-08T12:09:00Z&end=2022-11-08T12:09:10Z&step=1s",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "9090",
+					"path": [
+						"api",
+						"v1",
+						"query_range"
+					],
+					"query": [
+						{
+							"key": "query",
+							"value": "promExpression1"
+						},
+						{
+							"key": "start",
+							"value": "2022-11-08T12:09:00Z"
+						},
+						{
+							"key": "end",
+							"value": "2022-11-08T12:09:10Z"
+						},
+						{
+							"key": "step",
+							"value": "1s"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Prometheus Test Data (promExpression2)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:9090/api/v1/query_range?query=promExpression2&start=2022-11-08T12:09:00Z&end=2022-11-08T12:09:10Z&step=1s",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "9090",
+					"path": [
+						"api",
+						"v1",
+						"query_range"
+					],
+					"query": [
+						{
+							"key": "query",
+							"value": "promExpression2"
+						},
+						{
+							"key": "start",
+							"value": "2022-11-08T12:09:00Z"
+						},
+						{
+							"key": "end",
+							"value": "2022-11-08T12:09:10Z"
+						},
+						{
+							"key": "step",
+							"value": "1s"
+						}
 					]
 				}
 			},
