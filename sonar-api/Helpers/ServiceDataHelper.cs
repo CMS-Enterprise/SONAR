@@ -48,7 +48,7 @@ public class ServiceDataHelper {
           resultSelector: (env, t) => new { Environment = env, Tenant = t })
         .LeftJoin(
           this._servicesTable,
-          leftKeySelector: row => row.Tenant != null ? row.Tenant.Id : (Guid?)null,
+          leftKeySelector: row => (row.Tenant != null) ? row.Tenant.Id : (Guid?)null,
           rightKeySelector: svc => svc.TenantId,
           resultSelector: (row, svc) => new {
             row.Environment,
@@ -90,7 +90,7 @@ public class ServiceDataHelper {
           resultSelector: (env, t) => new { Environment = env, Tenant = t })
         .LeftJoin(
           this._servicesTable.Where(svc => svc.Name == serviceName),
-          leftKeySelector: row => row.Tenant != null ? row.Tenant.Id : (Guid?)null,
+          leftKeySelector: row => (row.Tenant != null) ? row.Tenant.Id : (Guid?)null,
           rightKeySelector: svc => svc.TenantId,
           resultSelector: (row, svc) => new {
             row.Environment,
