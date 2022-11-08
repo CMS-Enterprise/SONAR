@@ -11,3 +11,14 @@ Since the SONAR API exposes OpenApi documentation metadata, it is possible to au
 # accessible via http://localhost:8081/
 dotnet msbuild -target:NSwag
 ```
+
+## Run SONAR Agent
+
+Prequisites: database and SONAR API must be up.
+
+To run the SONAR Agent, add the configuration file path as the first command line argument.
+Example:
+```
+dotnet run service-config.json
+```
+

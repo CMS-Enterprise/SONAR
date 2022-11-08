@@ -5,14 +5,17 @@ using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Enumeration;
+using Cms.BatCave.Sonar.Models;
 using Cms.BatCave.Sonar.Prometheus;
 using Microsoft.Extensions.Configuration;
 
 namespace Cms.BatCave.Sonar.Agent;
+
 internal static class Program {
   private static async Task Main(String[] args) {
     // API Configuration
@@ -28,15 +31,6 @@ internal static class Program {
     var source = new CancellationTokenSource();
     CancellationToken token = source.Token;
 
-    // Hard coded 10 second interval
-    var interval = TimeSpan.FromSeconds(10);
-    Console.WriteLine("Initializing SONAR Agent...");
-
-    // Run task that calls Health Check function
-    var task = Task.Run (async delegate {
-      await RunScheduledHealthCheck(interval, token, apiConfig);
-    }, token);
-
     // Event handler for SIGINT
     // Traps SIGINT to perform necessary cleanup
     Console.CancelKeyPress += delegate {
@@ -45,17 +39,126 @@ internal static class Program {
     };
 
     try {
+      var configFilePath = args[0];
+      var servicesHierarchy = await Program.LoadAndValidateJsonServiceConfig(configFilePath, token);
+
+      Console.WriteLine("Services:");
+      foreach (var service in servicesHierarchy.Services) {
+        Console.WriteLine($"- Name: {service.Name}");
+        Console.WriteLine($"  DisplayName: {service.DisplayName}");
+        Console.WriteLine($"  Description: {service.Description}");
+        Console.WriteLine($"  Url: {service.Url}");
+        if ((service.Children != null) && (service.Children.Count > 0)) {
+          Console.WriteLine($"  Children:");
+          foreach (var child in service.Children) {
+            Console.WriteLine($"  - {child}");
+          }
+        }
+        else {
+          Console.WriteLine($"  Children: {service.Children}");
+        }
+      }
+
+      Console.WriteLine("Root Services:");
+      foreach (var rootService in servicesHierarchy.RootServices) {
+        Console.WriteLine($"- {rootService}");
+      }
+
+      // Configure service hierarchy
+      Console.WriteLine("Configuring services....");
+      await Program.ConfigureServices(apiConfig, servicesHierarchy, token);
+
+      // Hard coded 10 second interval
+      var interval = TimeSpan.FromSeconds(10);
+      Console.WriteLine("Initializing SONAR Agent...");
+
+      // Run task that calls Health Check function
+      var task = Task.Run(async delegate { await RunScheduledHealthCheck(interval, token, apiConfig); }, token);
+
       await task;
+    } catch (IndexOutOfRangeException) {
+      Console.Error.WriteLine("First command line argument must be service configuration file path.");
     } catch (OperationCanceledException e) {
-      Console.WriteLine(e.Message);
-      Console.WriteLine($"{nameof(OperationCanceledException)} thrown with message: {e.Message}");
+      Console.Error.WriteLine(e.Message);
+      Console.Error.WriteLine($"{nameof(OperationCanceledException)} thrown with message: {e.Message}");
       // Additional cleanup goes here
     } finally {
-        source.Dispose();
+      source.Dispose();
     }
   }
 
-  private static async Task RunScheduledHealthCheck(TimeSpan interval, CancellationToken token, ApiConfiguration config) {
+  private static async Task<ServiceHierarchyConfiguration> LoadAndValidateJsonServiceConfig(
+    String configFilePath,
+    CancellationToken token) {
+
+    await using var inputStream = new FileStream(configFilePath, FileMode.Open, FileAccess.Read);
+    using JsonDocument document = await JsonDocument.ParseAsync(inputStream, cancellationToken: token);
+    var configRoot = document.RootElement;
+
+    try
+    {
+      var serviceHierarchy = JsonSerializer.Deserialize<ServiceHierarchyConfiguration>(configRoot);
+      var listServiceConfig = serviceHierarchy.Services;
+      if (listServiceConfig == null) {
+        throw new OperationCanceledException("There is no configuration for services.");
+      }
+
+      var listRootServices = serviceHierarchy.RootServices;
+      if (listRootServices == null) {
+        throw new OperationCanceledException("There is no configuration for root services.");
+      }
+
+      var servicesList = new List<String>();
+
+      // Check if a child service exists as a service
+      foreach (var service in listServiceConfig) {
+        servicesList.Add(service.Name);
+
+        if (service.Children != null) {
+          foreach (var child in service.Children) {
+            if (!servicesList.Contains(child)) {
+              throw new OperationCanceledException($"{child} does not exist as a service in the configuration file.");
+            }
+          }
+        }
+      }
+
+      // Check if root service exists as a service
+      foreach (var rootService in listRootServices) {
+        if (!servicesList.Contains(rootService)) {
+          throw new OperationCanceledException($"{rootService} does not exist as a service in the configuration file.");
+        }
+      }
+
+      Console.WriteLine("Service configuration is valid.");
+      return serviceHierarchy;
+    } catch (KeyNotFoundException) {
+      throw new OperationCanceledException("Service configuration is invalid.");
+    }
+  }
+
+  private static async Task ConfigureServices(ApiConfiguration apiConfig,
+    ServiceHierarchyConfiguration servicesHierarchy,
+    CancellationToken token) {
+
+    // SONAR client
+    using var http = new HttpClient();
+    var client = new SonarClient(apiConfig.BaseUrl, http);
+    await client.ReadyAsync(token);
+
+    try {
+      // Set up service configuration for specified environment and tenant
+      await client.CreateTenantAsync(apiConfig.Environment, apiConfig.Tenant, servicesHierarchy, token);
+    } catch (ApiException requestException) {
+      if (requestException.StatusCode == 409) {
+        // Update service configuration for existing environment and tenant
+        await client.UpdateTenantAsync(apiConfig.Environment, apiConfig.Tenant, servicesHierarchy, token);
+      }
+    }
+  }
+
+  private static async Task RunScheduledHealthCheck(
+    TimeSpan interval, CancellationToken token, ApiConfiguration config) {
     Console.WriteLine($"Environment: {config.Environment}, Tenant: {config.Tenant}");
     // SONAR client
     var client = new SonarClient(baseUrl: "http://localhost:8081/", new HttpClient());
@@ -134,7 +237,7 @@ internal static class Program {
           //   TimeSpan.FromMilliseconds(1000), token);
           // var sample = qResult.Data.Result[0].Value;
           var qrResult = await promClient.QueryRangeAsync("test", Convert.ToDateTime("2022-11-03T18:32:00Z"),
-            Convert.ToDateTime("2022-11-03T18:32:10Z"), TimeSpan.FromSeconds(1), null ,token);
+            Convert.ToDateTime("2022-11-03T18:32:10Z"), TimeSpan.FromSeconds(1), null, token);
 
           var samples = qrResult.Data.Result[0].Values;
 
@@ -148,18 +251,23 @@ internal static class Program {
             if (evaluation) {
               currCheck = condition.status;
               // Console.WriteLine($"Sample {sample?.Value} was {(HealthOperator)condition.op} {condition.threshold}");
-              Console.WriteLine($"Service: {config.Environment}/{config.Tenant}/{service.Name}; Check: {healthCheck.name}; Status: {currCheck}");
+              Console.WriteLine(
+                $"Service: {config.Environment}/{config.Tenant}/{service.Name}; Check: {healthCheck.name}; Status: {currCheck}");
               break;
             }
           }
+
           if (currCheck == HealthStatus.Online) {
             Console.WriteLine($"No conditions were met... service is online");
-            Console.WriteLine($"Service: {config.Environment}/{config.Tenant}/{service.Name}; Check: {healthCheck.name}; Status: {currCheck}");
+            Console.WriteLine(
+              $"Service: {config.Environment}/{config.Tenant}/{service.Name}; Check: {healthCheck.name}; Status: {currCheck}");
           }
+
           if ((Int32)currCheck > (aggStatus ?? 0)) {
             aggStatus = (Int32)currCheck;
           }
         }
+
         Console.WriteLine(
           $"Service: {config.Environment}/{config.Tenant}/{service.Name}; AggStatus: {(aggStatus != null ? ((HealthStatus)aggStatus).ToString() : "Unknown")};"
         );
@@ -171,14 +279,15 @@ internal static class Program {
     }
   }
 
-  private static Boolean EvaluateSamples(HealthOperator op, IImmutableList<(Int64 Timestamp, String Value)> values, Double threshold) {
+  private static Boolean EvaluateSamples(
+    HealthOperator op, IImmutableList<(Int64 Timestamp, String Value)> values, Double threshold) {
     // delegate functions for comparison
-    Func<Double, Double, Boolean> equalTo = (x,y) => x == y;
-    Func<Double, Double, Boolean> notEqual = (x,y) => x != y;
-    Func<Double, Double, Boolean> greaterThan = (x,y) => x > y;
-    Func<Double, Double, Boolean> greaterThanOrEqual = (x,y) => x >= y;
-    Func<Double, Double, Boolean> lessThan = (x,y) => x < y;
-    Func<Double, Double, Boolean> lessThanOrEqual = (x,y) => x <= y;
+    Func<Double, Double, Boolean> equalTo = (x, y) => x == y;
+    Func<Double, Double, Boolean> notEqual = (x, y) => x != y;
+    Func<Double, Double, Boolean> greaterThan = (x, y) => x > y;
+    Func<Double, Double, Boolean> greaterThanOrEqual = (x, y) => x >= y;
+    Func<Double, Double, Boolean> lessThan = (x, y) => x < y;
+    Func<Double, Double, Boolean> lessThanOrEqual = (x, y) => x <= y;
 
     Func<Double, Double, Boolean> comparison;
     switch (op) {
@@ -208,4 +317,3 @@ internal static class Program {
     return !values.Any(val => !comparison(Convert.ToDouble(val.Value), threshold));
   }
 }
-
