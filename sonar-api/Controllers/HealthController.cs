@@ -73,10 +73,8 @@ public class HealthController : ControllerBase {
     [FromBody] ServiceHealth value,
     CancellationToken cancellationToken = default) {
 
-    // Ensure the specified service exists
-    await this._serviceDataHelper.FetchExistingService(environment, tenant, service, cancellationToken);
-
-    // TODO(BATAPI-95): validate the list of health checks against the service configuration.
+    //Validation
+    var canonicalHeathStatusDictionary = await ValidateHealthStatus(environment, tenant, service, value, cancellationToken);
 
     var writeData =
       new WriteRequest {
@@ -106,7 +104,7 @@ public class HealthController : ControllerBase {
     );
 
     writeData.Timeseries.AddRange(
-      value.HealthChecks.SelectMany(kvp =>
+      canonicalHeathStatusDictionary.SelectMany(kvp =>
         HealthController.CreateHealthStatusMetric(
           HealthController.ServiceHealthCheckMetricName,
           value.Timestamp,
@@ -406,6 +404,36 @@ public class HealthController : ControllerBase {
 
       return ts;
     });
+  }
+
+  private async Task<IDictionary<String, HealthStatus>> ValidateHealthStatus(String environment, String tenant, String service, ServiceHealth value,
+    CancellationToken cancellationToken) {
+
+    // Ensure the specified service exists
+    var existingService =
+      await this._serviceDataHelper.FetchExistingService(environment, tenant, service, cancellationToken);
+
+    var existingHealthChecks =
+      await this._serviceDataHelper.FetchExistingHealthChecks(new []{existingService.Id}, cancellationToken);
+
+    var existingHealthCheckDictionary =
+      existingHealthChecks.ToImmutableDictionary(hc => hc.Name, StringComparer.OrdinalIgnoreCase);
+
+    var newHealthStatusByName = new Dictionary<String, HealthStatus>(StringComparer.OrdinalIgnoreCase);
+    foreach (var healthCheck in value.HealthChecks) {
+      if (existingHealthCheckDictionary.TryGetValue(healthCheck.Key, out var existingHealthCheck)) {
+        newHealthStatusByName.Add(existingHealthCheck.Name, healthCheck.Value);
+      } else {
+        throw new BadRequestException(
+          message: "Health Check not present in Configuration",
+          new Dictionary<String, Object?> {
+            { nameof(HealthCheck), healthCheck.Key }
+          }
+        );
+      }
+    }
+
+    return newHealthStatusByName;
   }
 
   private static class MetricLabelKeys {
