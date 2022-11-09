@@ -215,8 +215,8 @@ internal static class Program {
             // Bad config, multiple time series returned
             Console.Error.WriteLine($"Invalid Prometheus configuration, multiple time series returned for health check: {healthCheck.Name}");
             currCheck = HealthStatus.Unknown;
-          } else if (qrResult.Data.Result.Count == 0 || qrResult.Data.Result[0].Values == null ||
-                     qrResult.Data.Result[0].Values!.Count == 0) {
+          } else if ((qrResult.Data.Result.Count == 0 || qrResult.Data.Result[0].Values == null) ||
+                     (qrResult.Data.Result[0].Values!.Count == 0)) {
             // No samples
             Console.Error.WriteLine($"Prometheus returned no samples for health check: {healthCheck.Name}");
             currCheck = HealthStatus.Unknown;
@@ -244,7 +244,7 @@ internal static class Program {
           // If currCheck is Unknown or currCheck is worse than aggStatus (as long as aggStatus is not Unknown)
           // set aggStatus to currCheck
           if ((currCheck == HealthStatus.Unknown) ||
-              (aggStatus != HealthStatus.Unknown && currCheck > (aggStatus ?? 0))) {
+              ((aggStatus != HealthStatus.Unknown) && (currCheck > (aggStatus ?? 0)))) {
             aggStatus = currCheck;
           }
           // Set checkResults
