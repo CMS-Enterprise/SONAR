@@ -216,7 +216,7 @@ internal static class Program {
             Console.Error.WriteLine($"Invalid Prometheus configuration, multiple time series returned for health check: {healthCheck.Name}");
             currCheck = HealthStatus.Unknown;
           } else if ((qrResult.Data.Result.Count == 0 || qrResult.Data.Result[0].Values == null) ||
-                     (qrResult.Data.Result[0].Values!.Count == 0)) {
+                     qrResult.Data.Result[0].Values!.Count == 0) {
             // No samples
             Console.Error.WriteLine($"Prometheus returned no samples for health check: {healthCheck.Name}");
             currCheck = HealthStatus.Unknown;
