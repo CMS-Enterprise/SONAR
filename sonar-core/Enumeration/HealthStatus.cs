@@ -9,7 +9,8 @@ namespace Cms.BatCave.Sonar.Enumeration;
 ///   additional entries may be added in the future.
 /// </remarks>
 public enum HealthStatus {
-  Online = 1,
+  Unknown = 0,
+  Online,
   AtRisk,
   Degraded,
   Offline

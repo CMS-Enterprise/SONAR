@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Collections.ObjectModel;
 using System.Dynamic;
 using System.IO;
 using System.Linq;
@@ -159,17 +160,17 @@ internal static class Program {
 
   private static async Task RunScheduledHealthCheck(
     TimeSpan interval, CancellationToken token, ApiConfiguration config) {
-    Console.WriteLine($"Environment: {config.Environment}, Tenant: {config.Tenant}");
+    // Configs
+    var env = config.Environment;
+    var tenant = config.Tenant;
     // SONAR client
     var client = new SonarClient(baseUrl: "http://localhost:8081/", new HttpClient());
     await client.ReadyAsync(token);
     var i = 0;
-
     // Prometheus client
     using var httpClient = new HttpClient();
     httpClient.BaseAddress = new Uri("http://localhost:9090/");
     var promClient = new PrometheusClient(httpClient);
-
     // If SIGINT received before interval starts, throw exception
     if (token.IsCancellationRequested) {
       Console.WriteLine("Health check task was cancelled before it got started.");
@@ -181,86 +182,97 @@ internal static class Program {
         Console.WriteLine("cancelled");
         throw new OperationCanceledException();
       }
-
       // Get service hierarchy for given env and tenant
-      var tenant = await client.GetTenantAsync(config.Environment, config.Tenant, token);
-      Console.WriteLine($"Service Count: {tenant.Services.Count}");
-
-      foreach (var service in tenant.Services) {
-        Console.WriteLine($"SONAR_AGENT: Evaluating health for Service: {service.Name}.");
-        Int32? aggStatus = null;
+      var tenantResult = await client.GetTenantAsync(config.Environment, config.Tenant, token);
+      Console.WriteLine($"Service Count: {tenantResult.Services.Count}");
+      // Iterate over each service
+      foreach (var service in tenantResult.Services) {
+        // Initialize aggStatus to null
+        HealthStatus? aggStatus = null;
         // Get service's health checks here
         var healthChecks = service.HealthChecks;
-
+        var checkResults = new Dictionary<String, HealthStatus>();
+        // If no checks are returned, log error and continue
         if (healthChecks == null) {
           Console.WriteLine("No Health Checks associated with this service.");
           continue;
         }
-
         foreach (var healthCheck in healthChecks) {
           var currCheck = HealthStatus.Online;
           // Set start and end for date range, Get Prometheus samples
           var end = DateTime.UtcNow;
           var start = end.Subtract(healthCheck.Definition.Duration);
-          var qrResult = await promClient.QueryRangeAsync(healthCheck.Definition.Expression, start,
-            end, TimeSpan.FromHours(1), null, token);
+          var qrResult = await promClient.QueryRangeAsync(
+            healthCheck.Definition.Expression, start, end, TimeSpan.FromSeconds(1), null, token
+          );
 
           // Error handling
           if (qrResult.Data == null) {
             // No data, bad request
             Console.Error.WriteLine($"Prometheus returned nothing for health check: {healthCheck.Name}");
-            continue;
-          }
-
-          if (qrResult.Data.Result.Count > 1) {
+            currCheck = HealthStatus.Unknown;
+          } else if (qrResult.Data.Result.Count > 1) {
             // Bad config, multiple time series returned
             Console.Error.WriteLine($"Invalid Prometheus configuration, multiple time series returned for health check: {healthCheck.Name}");
-            continue;
-          }
-
-          if (qrResult.Data.Result.Count == 0 || qrResult.Data.Result[0].Values == null ||
-              qrResult.Data.Result[0].Values!.Count == 0) {
+            currCheck = HealthStatus.Unknown;
+          } else if (qrResult.Data.Result.Count == 0 || qrResult.Data.Result[0].Values == null ||
+                     qrResult.Data.Result[0].Values!.Count == 0) {
             // No samples
             Console.Error.WriteLine($"Prometheus returned no samples for health check: {healthCheck.Name}");
-            continue;
-          }
-
-          var samples = qrResult.Data.Result[0].Values;
-
-          Console.WriteLine($"Evaluating PromQL Expression: {healthCheck.Definition.Expression} ");
-
-          foreach (var condition in healthCheck.Definition.Conditions) {
-            // Determine which comparison to execute
-            // Evaluate all PromQL samples
-            var evaluation = EvaluateSamples(condition.HealthOperator, samples, condition.Threshold);
-
-            // If evaluation is true, set the current check to the condition's status
-            // and output to Stdout
-            if (evaluation) {
-              currCheck = condition.HealthStatus;
-              Console.WriteLine($"Service: {config.Environment}/{config.Tenant}/{service.Name}; Check: {healthCheck.Name}; Status: {currCheck}");
-              break;
+            currCheck = HealthStatus.Unknown;
+          } else {
+            // Successfully obtained samples from PromQL, evaluate against all conditions for given check
+            var samples = qrResult.Data.Result[0].Values;
+            foreach (var condition in healthCheck.Definition.Conditions) {
+              // Determine which comparison to execute
+              // Evaluate all PromQL samples
+              var evaluation = EvaluateSamples(condition.HealthOperator, samples, condition.Threshold);
+              // If evaluation is true, set the current check to the condition's status
+              // and output to Stdout
+              if (evaluation) {
+                currCheck = condition.HealthStatus;
+                break;
+              }
+            }
+            if (currCheck == HealthStatus.Online) {
+              Console.WriteLine($"Service {service.Name} is online");
+            } else {
+              Console.WriteLine($"Service {service.Name} has status of {currCheck}");
             }
           }
 
-          if (currCheck == HealthStatus.Online) {
-            Console.WriteLine($"No conditions were met... service is online");
-            Console.WriteLine($"Service: {config.Environment}/{config.Tenant}/{service.Name}; Check: {healthCheck.Name}; Status: {currCheck}");
+          // If currCheck is Unknown or currCheck is worse than aggStatus (as long as aggStatus is not Unknown)
+          // set aggStatus to currCheck
+          if ((currCheck == HealthStatus.Unknown) ||
+              (aggStatus != HealthStatus.Unknown && currCheck > (aggStatus ?? 0))) {
+            aggStatus = currCheck;
           }
-
-          if ((Int32)currCheck > (aggStatus ?? 0)) {
-            aggStatus = (Int32)currCheck;
-          }
+          // Set checkResults
+          checkResults.Add(healthCheck.Name, currCheck);
         }
-
-        Console.WriteLine(
-          $"Service: {config.Environment}/{config.Tenant}/{service.Name}; AggStatus: {(aggStatus != null ? ((HealthStatus)aggStatus).ToString() : "Unknown")};"
-        );
+        // Send result data here
+        if (aggStatus != null) {
+          await SendHealthData(env, tenant, service.Name, checkResults, client, aggStatus ?? HealthStatus.Unknown, token);
+        }
       }
-
       Console.WriteLine($"Iteration {i} of health check.");
       await Task.Delay(interval, token);
       i++;
+    }
+  }
+
+  private static async Task SendHealthData(String env, String tenant, String service,
+    Dictionary<String, HealthStatus> results, SonarClient client, HealthStatus aggStatus, CancellationToken token) {
+    var ts = DateTime.UtcNow;
+    var healthChecks = new ReadOnlyDictionary<String, HealthStatus>(results);
+    ServiceHealth body = new ServiceHealth(ts, aggStatus, healthChecks);
+
+    Console.WriteLine($"Env: {env}, Tenant: {tenant}, Service: {service}, Time: {body.Timestamp}, AggStatus: {body.AggregateStatus}");
+    body.HealthChecks.ToList().ForEach(x => Console.WriteLine($"{x.Key}: {x.Value}"));
+    try {
+      await client.RecordStatusAsync(env, tenant, service, body, token);
+    } catch (ApiException e) {
+      Console.Error.WriteLine($"HTTP Request Error, Code: {e.StatusCode}, Message: {e.Message}");
     }
   }
 
