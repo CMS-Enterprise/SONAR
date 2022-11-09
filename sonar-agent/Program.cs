@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Configuration;
@@ -18,6 +19,11 @@ using Microsoft.Extensions.Configuration;
 namespace Cms.BatCave.Sonar.Agent;
 
 internal static class Program {
+  private static readonly JsonSerializerOptions ConfigSerializerOptions = new JsonSerializerOptions {
+    PropertyNameCaseInsensitive = true,
+    Converters = { new JsonStringEnumConverter() }
+  };
+
   private static async Task Main(String[] args) {
     // API Configuration
     var builder = new ConfigurationBuilder()
@@ -98,7 +104,8 @@ internal static class Program {
 
     try
     {
-      var serviceHierarchy = JsonSerializer.Deserialize<ServiceHierarchyConfiguration>(configRoot);
+      var serviceHierarchy =
+        JsonSerializer.Deserialize<ServiceHierarchyConfiguration>(configRoot, Program.ConfigSerializerOptions);
       var listServiceConfig = serviceHierarchy.Services;
       if (listServiceConfig == null) {
         throw new OperationCanceledException("There is no configuration for services.");

@@ -1,3 +1,11 @@
 global:
-  scrape_interval: 15s
+  scrape_interval: 5s
   evaluation_interval: 30s
+
+scrape_configs:
+- job_name: test-metric-app
+  dns_sd_configs:
+  - names:
+    - test-metric-app
+    type: A
+    port: 2020

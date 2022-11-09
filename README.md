@@ -32,27 +32,44 @@ By default this will build the Debug version of all components. To generate a Re
 dotnet build -c Release
 ```
 
-## Run the Agent or API
+## Run the API
 
-From the root of the repository run:
-
-```
-dotnet run --project sonar-agent
-```
-or
-```
-dotnet run --project sonar-api
-```
-
-The API will now be listening for connections on `localhost:8081`
-
-Alternatively, from the `sonar-api` or the `sonar-agent` folder you can just use.
+From the `sonar-api` folder:
 
 ```
 dotnet run
 ```
 
+or
+
+```
+dotnet run -- serve
+```
+
+The API will now be listening for connections on `localhost:8081`
 For more information on configuring and running the API see [the sonar-api README](sonar-api/README.md).
+
+## Run the Agent
+
+From the `sonar-agent` folder:
+
+```
+dotnet run ./service-config.json
+```
+
+## Dependencies & Docker Compose
+
+The SONAR API and Agent have two critical dependencies: PostgreSQL and Prometheus. Both of these can be run via Docker Compose using the `docker-compose.yml` file in the root of the repo:
+
+```
+docker-compose up -d prometheus postgresql
+```
+
+There is also an example application that generates Prometheus metrics that can be used when testing SONAR health checks. To run this application in in Docker as well run:
+
+```
+docker-compose up -d test-metric-app
+```
 
 ## Versioning
 
