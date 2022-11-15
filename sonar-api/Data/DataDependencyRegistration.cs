@@ -8,8 +8,9 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Cms.BatCave.Sonar.Data;
 
 public static class DataDependencyRegistration {
-  public static void RegisterDependencies(IServiceCollection services) {
-    services.AddDbContext<DataContext>();
+  public static void RegisterDependencies<TDataContext>(IServiceCollection services)
+    where TDataContext : DataContext {
+    services.AddDbContext<DataContext, TDataContext>();
     var entityTypes =
       typeof(DataContext).Assembly.GetTypes()
         .Where(t => t.IsClass && !t.IsAbstract && (t.GetCustomAttribute<TableAttribute>() != null));

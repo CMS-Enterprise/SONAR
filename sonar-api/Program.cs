@@ -23,35 +23,7 @@ namespace Cms.BatCave.Sonar;
 
 public class Program {
   public static async Task<Int32> Main(String[] args) {
-    var builder = WebApplication.CreateBuilder(args);
-
-    // Add services to the container.
-
-    builder.Services.AddLogging(logging => {
-      logging
-        .AddConsole(consoleOptions => {
-          consoleOptions.LogToStandardErrorThreshold = LogLevel.Error;
-        });
-    });
-
-    builder.Services.AddScoped<PrometheusRemoteWriteClient>();
-    builder.Services.AddScoped<ServiceDataHelper>();
-
-    var mvcBuilder = builder.Services.AddControllers(options => {
-      options.ReturnHttpNotAcceptable = true;
-      options.Filters.Add<ProblemDetailExceptionFilterAttribute>();
-    });
-
-    mvcBuilder.AddJsonOptions(options => {
-      // Serialize c# enums as strings
-      options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-      options.JsonSerializerOptions.Converters.Add(new ArrayTupleConverterFactory());
-    });
-
-    // Register all Configuration Option Classes for dependency injection
-    new ConfigurationDependencyRegistration(builder.Configuration).RegisterDependencies(builder.Services);
-    // Register DataContext and DbSet<> dependencies
-    DataDependencyRegistration.RegisterDependencies(builder.Services);
+    var builder = Program.CreateWebApplicationBuilder(args, new Dependencies());
 
     return await HandleCommandLine(args,
       async opts => {
@@ -86,6 +58,39 @@ public class Program {
       }
     );
   }
+
+  public static WebApplicationBuilder CreateWebApplicationBuilder(
+    String[] args,
+    Dependencies dependencies) {
+
+    var builder = WebApplication.CreateBuilder(args);
+
+    // Add services to the container.
+    builder.Services.AddLogging(logging => {
+      logging
+        .AddConsole(consoleOptions => {
+          consoleOptions.LogToStandardErrorThreshold = LogLevel.Error;
+        });
+    });
+
+    dependencies.RegisterDependencies(builder);
+
+    var mvcBuilder = builder.Services.AddControllers(options => {
+      options.ReturnHttpNotAcceptable = true;
+      options.Filters.Add<ProblemDetailExceptionFilterAttribute>();
+    });
+
+    mvcBuilder.AddJsonOptions(options => {
+      // Serialize c# enums as strings
+      options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+      options.JsonSerializerOptions.Converters.Add(new ArrayTupleConverterFactory());
+    });
+
+    mvcBuilder.AddApplicationPart(typeof(Program).Assembly);
+
+    return builder;
+  }
+
 
   private static Task<Int32> HandleCommandLine(
     String[] args,
