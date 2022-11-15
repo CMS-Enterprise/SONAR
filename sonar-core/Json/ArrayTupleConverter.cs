@@ -15,7 +15,8 @@ public class ArrayTupleConverter<TTuple> : JsonConverter<TTuple> where TTuple : 
     JsonSerializerOptions options) {
 
     Debug.Assert(reader.TokenType == JsonTokenType.StartArray);
-    Debug.Assert(reader.Read());
+    var readStartArray = reader.Read();
+    Debug.Assert(readStartArray);
 
     var tupleArgumentTypes = typeToConvert.GetGenericArguments();
     var arguments = new List<Object?>();
