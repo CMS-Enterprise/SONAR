@@ -47,7 +47,7 @@ internal static class Program {
     };
 
     try {
-      var configFilePath = args[0];
+      var configFilePath = args;
       var servicesHierarchy = await Program.LoadAndValidateJsonServiceConfig(configFilePath, token);
 
       Console.WriteLine("Services:");
@@ -81,9 +81,9 @@ internal static class Program {
       Console.WriteLine("Initializing SONAR Agent...");
 
       // Run task that calls Health Check function
-      var task = Task.Run(async delegate { await RunScheduledHealthCheck(interval, token, apiConfig, promConfig); }, token);
-
-      await task;
+      // var task = Task.Run(async delegate { await RunScheduledHealthCheck(interval, token, apiConfig); }, token);
+      //
+      // await task;
     } catch (IndexOutOfRangeException) {
       Console.Error.WriteLine("First command line argument must be service configuration file path.");
     } catch (OperationCanceledException e) {
@@ -96,55 +96,92 @@ internal static class Program {
   }
 
   private static async Task<ServiceHierarchyConfiguration> LoadAndValidateJsonServiceConfig(
-    String configFilePath,
+    String[] configFilePath,
     CancellationToken token) {
 
-    await using var inputStream = new FileStream(configFilePath, FileMode.Open, FileAccess.Read);
-    using JsonDocument document = await JsonDocument.ParseAsync(inputStream, cancellationToken: token);
-    var configRoot = document.RootElement;
+    List<ServiceHierarchyConfiguration> validConfigs = new List<ServiceHierarchyConfiguration>();
+    foreach (var config in configFilePath) {
+      await using var inputStream = new FileStream(config, FileMode.Open, FileAccess.Read);
+      using JsonDocument document = await JsonDocument.ParseAsync(inputStream, cancellationToken: token);
+      var configRoot = document.RootElement;
 
-    try
-    {
-      var serviceHierarchy =
-        JsonSerializer.Deserialize<ServiceHierarchyConfiguration>(configRoot, Program.ConfigSerializerOptions);
-      var listServiceConfig = serviceHierarchy.Services;
-      if (listServiceConfig == null) {
-        throw new OperationCanceledException("There is no configuration for services.");
-      }
+      try
+      {
+        var serviceHierarchy =
+          JsonSerializer.Deserialize<ServiceHierarchyConfiguration>(configRoot, Program.ConfigSerializerOptions);
+        var listServiceConfig = serviceHierarchy.Services;
+        if (listServiceConfig == null) {
+          throw new OperationCanceledException("There is no configuration for services.");
+        }
 
-      var listRootServices = serviceHierarchy.RootServices;
-      if (listRootServices == null) {
-        throw new OperationCanceledException("There is no configuration for root services.");
-      }
+        var listRootServices = serviceHierarchy.RootServices;
+        if (listRootServices == null) {
+          throw new OperationCanceledException("There is no configuration for root services.");
+        }
 
-      var servicesList = new List<String>();
+        var servicesList = new List<String>();
 
-      // Check if a child service exists as a service
-      foreach (var service in listServiceConfig) {
-        servicesList.Add(service.Name);
+        // Check if a child service exists as a service
+        foreach (var service in listServiceConfig) {
+          servicesList.Add(service.Name);
 
-        if (service.Children != null) {
-          foreach (var child in service.Children) {
-            if (!servicesList.Contains(child)) {
-              throw new OperationCanceledException($"{child} does not exist as a service in the configuration file.");
+          if (service.Children != null) {
+            foreach (var child in service.Children) {
+              if (!servicesList.Contains(child)) {
+                throw new OperationCanceledException($"{child} does not exist as a service in the configuration file.");
+              }
             }
           }
         }
-      }
 
-      // Check if root service exists as a service
-      foreach (var rootService in listRootServices) {
-        if (!servicesList.Contains(rootService)) {
-          throw new OperationCanceledException($"{rootService} does not exist as a service in the configuration file.");
+        // Check if root service exists as a service
+        foreach (var rootService in listRootServices) {
+          if (!servicesList.Contains(rootService)) {
+            throw new OperationCanceledException($"{rootService} does not exist as a service in the configuration file.");
+          }
         }
-      }
 
-      Console.WriteLine("Service configuration is valid.");
-      return serviceHierarchy;
-    } catch (KeyNotFoundException) {
-      throw new OperationCanceledException("Service configuration is invalid.");
+        Console.WriteLine("Service configuration is valid.");
+        // Add valid config to list
+        validConfigs.Add(serviceHierarchy);
+      } catch (KeyNotFoundException) {
+        throw new OperationCanceledException("Service configuration is invalid.");
+      }
     }
+    // merge valid configs into single ServiceHierarchyConfiguration
+    ServiceHierarchyConfiguration result = validConfigs.Aggregate(MergeConfigurations);
+    return result;
   }
+
+  private static ServiceHierarchyConfiguration MergeConfigurations(ServiceHierarchyConfiguration prev,
+    ServiceHierarchyConfiguration next) {
+    // Compare services
+    var serviceResults = prev.Services;
+    foreach (var currService in next.Services) {
+      // If current service was not in previous service list, add to current service list
+      var existingService = prev.Services.SingleOrDefault(x => String.Equals(x.Name, currService.Name, StringComparison.OrdinalIgnoreCase));
+      if (existingService == null) {
+        serviceResults = serviceResults.Add(currService);
+      } else {
+        // current service exists in previous list, replace with newer version
+        Console.WriteLine($"service {existingService.Name} already exists, replacing with newer version.");
+        serviceResults = serviceResults.Select(x => {
+          if (String.Equals(x.Name, currService.Name, StringComparison.OrdinalIgnoreCase)) {
+            return currService;
+          } else {
+            return x;
+          }
+        }).ToImmutableList();
+      }
+    }
+
+    // Replace Root Services
+    var rootServiceResults = next.RootServices;
+    ServiceHierarchyConfiguration result = new ServiceHierarchyConfiguration(serviceResults, rootServiceResults);
+    return result;
+  }
+
+
 
   private static async Task ConfigureServices(ApiConfiguration apiConfig,
     ServiceHierarchyConfiguration servicesHierarchy,
@@ -322,3 +359,4 @@ internal static class Program {
     return !values.Any(val => !comparison(Convert.ToDouble(val.Value), threshold));
   }
 }
+
