@@ -1,0 +1,37 @@
+{
+  "services": [
+    {
+      "name": "test-metric-APP2",
+      "displayName": "Test Application REPLACE",
+      "description": "A test application that generates arbitrary metrics for testing purpose",
+      "url": "http://localhost:2020/metrics",
+      "children": null,
+      "healthChecks": [
+        {
+          "name": "example REPLACED",
+          "description": "Degraded and Offline periodically based on an example metric.",
+          "definition": {
+            "duration": "0.00:00:20",
+            "expression": "example_saw_wave",
+            "conditions": [
+              {
+                "healthOperator": "GreaterThan",
+                "threshold": 60,
+                "healthStatus": "Offline"
+              },
+              {
+                "healthOperator": "GreaterThan",
+                "threshold": 20,
+                "healthStatus": "Degraded"
+              }
+            ]
+          }
+
+        }
+      ]
+    }
+  ],
+  "rootServices": [
+    "test-metric-APP2"
+  ]
+}
