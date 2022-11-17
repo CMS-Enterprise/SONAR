@@ -71,6 +71,17 @@ There is also an example application that generates Prometheus metrics that can 
 docker-compose up -d test-metric-app
 ```
 
+To build Docker images via Docker Compose, run the following command:
+
+```
+docker-compose build
+```
+
+To selectively run services via Docker Compose, run the following command:
+
+```
+docker-compose up sonar-api sonar-agent test-metric-app
+```
 ## Versioning
 
 ### Assembly & Package Versioning

@@ -47,7 +47,7 @@ public class Program {
           options.OperationFilter<DefaultContentTypeOperationFilter>();
         });
 
-        builder.WebHost.UseUrls("http://localhost:8081");
+        builder.WebHost.UseUrls("http://0.0.0.0:8081");
 
         await using var app = builder.Build();
         return await RunServe(app, opts);

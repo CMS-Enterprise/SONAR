@@ -33,6 +33,7 @@ internal static class Program {
       .AddCommandLine(args);
     IConfigurationRoot configuration = builder.Build();
     var apiConfig = configuration.GetSection("ApiConfig").BindCtor<ApiConfiguration>();
+    var promConfig = configuration.GetSection("Prometheus").BindCtor<PrometheusConfiguration>();
 
     // Create cancellation source, token, new task
     var source = new CancellationTokenSource();
@@ -80,7 +81,7 @@ internal static class Program {
       Console.WriteLine("Initializing SONAR Agent...");
 
       // Run task that calls Health Check function
-      var task = Task.Run(async delegate { await RunScheduledHealthCheck(interval, token, apiConfig); }, token);
+      var task = Task.Run(async delegate { await RunScheduledHealthCheck(interval, token, apiConfig, promConfig); }, token);
 
       await task;
     } catch (IndexOutOfRangeException) {
@@ -166,17 +167,17 @@ internal static class Program {
   }
 
   private static async Task RunScheduledHealthCheck(
-    TimeSpan interval, CancellationToken token, ApiConfiguration config) {
+    TimeSpan interval, CancellationToken token, ApiConfiguration config, PrometheusConfiguration pConfig) {
     // Configs
     var env = config.Environment;
     var tenant = config.Tenant;
     // SONAR client
-    var client = new SonarClient(baseUrl: "http://localhost:8081/", new HttpClient());
+    var client = new SonarClient(baseUrl: config.BaseUrl, new HttpClient());
     await client.ReadyAsync(token);
     var i = 0;
     // Prometheus client
     using var httpClient = new HttpClient();
-    httpClient.BaseAddress = new Uri("http://localhost:9090/");
+    httpClient.BaseAddress = new Uri($"{pConfig.Protocol}://{pConfig.Host}:{pConfig.Port}/");
     var promClient = new PrometheusClient(httpClient);
     // If SIGINT received before interval starts, throw exception
     if (token.IsCancellationRequested) {

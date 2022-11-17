@@ -1,0 +1,19 @@
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+WORKDIR /sonar/sonar-api
+COPY sonar-api/sonar-api.csproj .
+RUN mkdir /sonar/sonar-core
+COPY sonar-core/sonar-core.csproj /sonar/sonar-core
+COPY shared.props /sonar
+RUN dotnet restore
+COPY sonar-api .
+COPY sonar-core /sonar/sonar-core
+RUN dotnet build -c Release
+
+FROM mcr.microsoft.com/dotnet/aspnet:6.0
+
+RUN apt-get update && apt-get install -y libsnappy1v5 libsnappy-dev && rm -rf /var/lib/apt/lists/*
+WORKDIR /sonar/sonar-api
+COPY --from=build /sonar/sonar-api/bin/Release/net6.0/* .
+COPY --from=build /sonar/sonar-api/appsettings.json .
+EXPOSE 8081
+ENTRYPOINT ["dotnet", "cms.batcave.sonar.api.dll"]

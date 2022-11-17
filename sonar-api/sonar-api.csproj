@@ -27,11 +27,11 @@
     <PackageReference Include="Snappy.Standard" Version="0.2.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <PackageReference Include="Google.Protobuf.Tools" Version="3.21.9" GeneratePathProperty="true" />
   </ItemGroup>
-  
+
   <Choose>
     <When Condition="'$(OS)' == 'Windows_NT' And $([System.Environment]::Is64BitOperatingSystem)">
       <PropertyGroup>
@@ -59,7 +59,7 @@
       </PropertyGroup>
     </When>
   </Choose>
-  
+
   <PropertyGroup>
     <ProtocArguments_Prometheus_Remote>
       --csharp_out=./Protobuf/Prometheus
@@ -77,7 +77,7 @@
       ../lib/gogo-protobuf/gogoproto/gogo.proto
     </ProtocArguments_Prometheus_Gogoproto>
   </PropertyGroup>
-  
+
   <Target Name="generate_prometheus_types">
     <Message Text="Generating C# Data Types for Prometheus Remote Write..." Importance="high" />
     <Exec Command="$(PkgGoogle_Protobuf_Tools)/tools/$(ProtocToolPath) $(ProtocArguments_Prometheus_Gogoproto.Replace('%0a', '').Trim())" />
