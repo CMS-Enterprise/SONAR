@@ -34,11 +34,9 @@ internal static class Program {
     IConfigurationRoot configuration = builder.Build();
     var apiConfig = configuration.GetSection("ApiConfig").BindCtor<ApiConfiguration>();
     var promConfig = configuration.GetSection("Prometheus").BindCtor<PrometheusConfiguration>();
-
     // Create cancellation source, token, new task
     var source = new CancellationTokenSource();
     CancellationToken token = source.Token;
-
     // Event handler for SIGINT
     // Traps SIGINT to perform necessary cleanup
     Console.CancelKeyPress += delegate {
@@ -48,42 +46,17 @@ internal static class Program {
 
     try {
       var configFilePath = args;
+      // Load and merge configs
       var servicesHierarchy = await Program.LoadAndValidateJsonServiceConfig(configFilePath, token);
-
-      Console.WriteLine("Services:");
-      foreach (var service in servicesHierarchy.Services) {
-        Console.WriteLine($"- Name: {service.Name}");
-        Console.WriteLine($"  DisplayName: {service.DisplayName}");
-        Console.WriteLine($"  Description: {service.Description}");
-        Console.WriteLine($"  Url: {service.Url}");
-        if ((service.Children != null) && (service.Children.Count > 0)) {
-          Console.WriteLine($"  Children:");
-          foreach (var child in service.Children) {
-            Console.WriteLine($"  - {child}");
-          }
-        }
-        else {
-          Console.WriteLine($"  Children: {service.Children}");
-        }
-      }
-
-      Console.WriteLine("Root Services:");
-      foreach (var rootService in servicesHierarchy.RootServices) {
-        Console.WriteLine($"- {rootService}");
-      }
-
       // Configure service hierarchy
       Console.WriteLine("Configuring services....");
       await Program.ConfigureServices(apiConfig, servicesHierarchy, token);
-
       // Hard coded 10 second interval
       var interval = TimeSpan.FromSeconds(10);
       Console.WriteLine("Initializing SONAR Agent...");
-
       // Run task that calls Health Check function
-      // var task = Task.Run(async delegate { await RunScheduledHealthCheck(interval, token, apiConfig); }, token);
-      //
-      // await task;
+      var task = Task.Run(async delegate { await RunScheduledHealthCheck(interval, apiConfig, promConfig, token); }, token);
+      await task;
     } catch (IndexOutOfRangeException) {
       Console.Error.WriteLine("First command line argument must be service configuration file path.");
     } catch (OperationCanceledException e) {
@@ -150,6 +123,29 @@ internal static class Program {
     }
     // merge valid configs into single ServiceHierarchyConfiguration
     ServiceHierarchyConfiguration result = validConfigs.Aggregate(MergeConfigurations);
+    // Print merged services and root services to console
+    Console.WriteLine("Services:");
+    foreach (var service in result.Services) {
+      Console.WriteLine($"- Name: {service.Name}");
+      Console.WriteLine($"  DisplayName: {service.DisplayName}");
+      Console.WriteLine($"  Description: {service.Description}");
+      Console.WriteLine($"  Url: {service.Url}");
+      if ((service.Children != null) && (service.Children.Count > 0)) {
+        Console.WriteLine($"  Children:");
+        foreach (var child in service.Children) {
+          Console.WriteLine($"  - {child}");
+        }
+      }
+      else {
+        Console.WriteLine($"  Children: {service.Children}");
+      }
+    }
+
+    Console.WriteLine("Root Services:");
+    foreach (var rootService in result.RootServices) {
+      Console.WriteLine($"- {rootService}");
+    }
+
     return result;
   }
 
@@ -204,7 +200,7 @@ internal static class Program {
   }
 
   private static async Task RunScheduledHealthCheck(
-    TimeSpan interval, CancellationToken token, ApiConfiguration config, PrometheusConfiguration pConfig) {
+    TimeSpan interval, ApiConfiguration config, PrometheusConfiguration pConfig, CancellationToken token) {
     // Configs
     var env = config.Environment;
     var tenant = config.Tenant;
