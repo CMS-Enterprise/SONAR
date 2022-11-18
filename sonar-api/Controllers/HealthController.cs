@@ -136,59 +136,129 @@ public class HealthController : ControllerBase {
 
     var (_, _, services) =
       await this._serviceDataHelper.FetchExistingConfiguration(environment, tenant, cancellationToken);
-    var serviceRelationships =
-      await this._serviceDataHelper.FetchExistingRelationships(services.Keys, cancellationToken);
-    var serviceHealthChecks =
-      await this._serviceDataHelper.FetchExistingHealthChecks(services.Keys, cancellationToken);
 
-    using var httpClient = new HttpClient();
-    httpClient.BaseAddress = this._prometheusUrl;
-    var prometheusClient = new PrometheusClient(httpClient);
-
-    var serviceStatuses =
-      await this.ProcessPrometheusQuery(
-        prometheusClient,
-        $"{HealthController.ServiceHealthAggregateMetricName}{{environment=\"{environment}\", tenant=\"{tenant}\"}}",
-        processResult: results => {
-          // StateSet metrics are split into separate metric per-state
-          // This code groups all the metrics for a given service and then determines which state is currently set.
-          var metricByService =
-            results.Result
-              .Where(metric => metric.Value.HasValue) // Ignore non-scalar metrics
-              .Select(metric => (metric.Labels, metric.Value!.Value))
-              .ToLookup(
-                keySelector: metric =>
-                  metric.Labels.TryGetValue(MetricLabelKeys.Service, out var serviceName) ? serviceName : null,
-                StringComparer.OrdinalIgnoreCase);
-
-          var healthMapping =
-            new Dictionary<String, (DateTime Timestamp, HealthStatus Status)>(StringComparer.OrdinalIgnoreCase);
-          foreach (var group in metricByService) {
-            if (group.Key == null) {
-              // This group contains metrics that are missing the service name label. These should not exist.
-              continue;
-            }
-
-            var healthStatus =
-              HealthController.GetEffectiveHealthStatus(HealthController.ServiceHealthAggregateMetricName, group);
-
-            if (healthStatus.HasValue) {
-              healthMapping[group.Key] = healthStatus.Value;
-            }
-          }
-
-          return healthMapping;
-        },
-        cancellationToken
+    var (httpClient, prometheusClient) = HealthController.GetPrometheusClient(this._prometheusUrl);
+    using (httpClient) {
+      var serviceStatuses = await this.GetServiceStatuses(
+        prometheusClient, environment, tenant, cancellationToken
+      );
+      var healthCheckStatus = await this.GetHealthCheckStatus(
+        prometheusClient, environment, tenant, cancellationToken
       );
 
-    (String? Service, String? HealthCheck) GetHealthCheckKey(IImmutableDictionary<String, String> labels) {
-      labels.TryGetValue(MetricLabelKeys.Service, out var serviceName);
-      labels.TryGetValue(MetricLabelKeys.HealthCheck, out var checkName);
+      var serviceChildIdsLookup = await this.GetServiceChildIdsLookup(services, cancellationToken);
+      var healthChecksByService = await this.GetHealthChecksByService(services, cancellationToken);
 
-      return (serviceName, checkName);
+      return this.Ok(
+        services.Values.Where(svc => svc.IsRootService)
+          .Select(svc => HealthController.ToServiceHealth(
+            svc, services, serviceStatuses, serviceChildIdsLookup, healthChecksByService, healthCheckStatus)
+          )
+          .ToArray()
+      );
     }
+  }
 
+  [HttpGet("{environment}/tenants/{tenant}/services/{*servicePath}", Name = "GetSpecificServiceHierarchyHealth")]
+  [ProducesResponseType(typeof(ServiceHierarchyHealth[]), statusCode: 200)]
+  [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
+  [ProducesResponseType(500)]
+  public async Task<IActionResult> GetSpecificServiceHierarchyHealth(
+    [FromRoute] String environment,
+    [FromRoute] String tenant,
+    [FromRoute] String servicePath,
+    CancellationToken cancellationToken) {
+
+    var (_, _, services) =
+      await this._serviceDataHelper.FetchExistingConfiguration(environment, tenant, cancellationToken);
+    var serviceChildIdsLookup = await this.GetServiceChildIdsLookup(services, cancellationToken);
+
+    // Validate specified service
+    Service? existingService =
+      await this.GetSpecificService(environment, tenant, servicePath, serviceChildIdsLookup, cancellationToken);
+
+    var (httpClient, prometheusClient) = HealthController.GetPrometheusClient(this._prometheusUrl);
+    using (httpClient) {
+      var serviceStatuses = await this.GetServiceStatuses(
+        prometheusClient, environment, tenant, cancellationToken
+      );
+      var healthCheckStatus = await this.GetHealthCheckStatus(
+        prometheusClient, environment, tenant, cancellationToken
+      );
+      var healthChecksByService = await this.GetHealthChecksByService(services, cancellationToken);
+
+      return this.Ok(HealthController.ToServiceHealth(
+        services.Values.Single(svc => svc.Id == existingService.Id),
+        services, serviceStatuses, serviceChildIdsLookup, healthChecksByService, healthCheckStatus)
+      );
+    }
+  }
+
+  private static (HttpClient, IPrometheusClient) GetPrometheusClient(Uri prometheusUrl) {
+    var httpClient = new HttpClient();
+    httpClient.BaseAddress = prometheusUrl;
+    return (httpClient, new PrometheusClient(httpClient));
+  }
+
+  private async Task<Dictionary<String, (DateTime Timestamp, HealthStatus Status)>> GetServiceStatuses(
+    IPrometheusClient prometheusClient,
+    String environment,
+    String tenant,
+    CancellationToken cancellationToken) {
+    var serviceStatuses =
+      await this.ProcessPrometheusQuery(
+      prometheusClient,
+      $"{HealthController.ServiceHealthAggregateMetricName}{{environment=\"{environment}\", tenant=\"{tenant}\"}}",
+      processResult: results => {
+        // StateSet metrics are split into separate metric per-state
+        // This code groups all the metrics for a given service and then determines which state is currently set.
+        var metricByService =
+          results.Result
+            .Where(metric => metric.Value.HasValue) // Ignore non-scalar metrics
+            .Select(metric => (metric.Labels, metric.Value!.Value))
+            .ToLookup(
+              keySelector: metric =>
+                metric.Labels.TryGetValue(MetricLabelKeys.Service, out var serviceName) ? serviceName : null,
+              StringComparer.OrdinalIgnoreCase
+            );
+
+        var healthMapping =
+          new Dictionary<String, (DateTime Timestamp, HealthStatus Status)>(StringComparer.OrdinalIgnoreCase);
+        foreach (var group in metricByService) {
+          if (group.Key == null) {
+            // This group contains metrics that are missing the service name label. These should not exist.
+            continue;
+          }
+
+          var healthStatus =
+            HealthController.GetEffectiveHealthStatus(HealthController.ServiceHealthAggregateMetricName, group);
+
+          if (healthStatus.HasValue) {
+            healthMapping[group.Key] = healthStatus.Value;
+          }
+        }
+
+        return healthMapping;
+      },
+      cancellationToken
+    );
+
+    return serviceStatuses;
+  }
+
+  private static (String? Service, String? HealthCheck) GetHealthCheckKey(IImmutableDictionary<String, String> labels) {
+    labels.TryGetValue(MetricLabelKeys.Service, out var serviceName);
+    labels.TryGetValue(MetricLabelKeys.HealthCheck, out var checkName);
+
+    return (serviceName, checkName);
+  }
+
+  private async Task<Dictionary<(String Service, String HealthCheck), (DateTime Timestamp, HealthStatus Status)>>
+    GetHealthCheckStatus(
+      IPrometheusClient prometheusClient,
+      String environment,
+      String tenant,
+      CancellationToken cancellationToken) {
     var healthCheckStatus =
       await this.ProcessPrometheusQuery(
         prometheusClient,
@@ -202,7 +272,8 @@ public class HealthController : ControllerBase {
               .Select(metric => (metric.Labels, metric.Value!.Value))
               .ToLookup(
                 keySelector: metric => GetHealthCheckKey(metric.Labels),
-                TupleComparer.From(StringComparer.OrdinalIgnoreCase, StringComparer.OrdinalIgnoreCase));
+                TupleComparer.From(StringComparer.OrdinalIgnoreCase, StringComparer.OrdinalIgnoreCase)
+              );
 
           var healthMapping =
             new Dictionary<(String Service, String HealthCheck), (DateTime Timestamp, HealthStatus Status)>(
@@ -228,86 +299,147 @@ public class HealthController : ControllerBase {
         cancellationToken
       );
 
-    var serviceChildIdsLookup =
-      serviceRelationships.ToLookup(
-        keySelector: svc => svc.ParentServiceId,
-        elementSelector: svc => svc.ServiceId);
+    return healthCheckStatus;
+  }
+
+  private async Task<ILookup<Guid, Guid>> GetServiceChildIdsLookup(
+    ImmutableDictionary<Guid, Service> services,
+    CancellationToken cancellationToken) {
+    var serviceRelationships =
+      await this._serviceDataHelper.FetchExistingRelationships(services.Keys, cancellationToken);
+
+    var serviceChildIdsLookup = serviceRelationships.ToLookup(
+      keySelector: svc => svc.ParentServiceId,
+      elementSelector: svc => svc.ServiceId
+    );
+
+    return serviceChildIdsLookup;
+  }
+
+  private async Task<Service?> GetSpecificService(
+    String environment,
+    String tenant,
+    String servicePath,
+    ILookup<Guid, Guid> serviceChildIds,
+    CancellationToken cancellationToken) {
+
+    // Validate root service
+    var servicesInPath = servicePath.Split("/");
+    var firstService = servicesInPath[0];
+    Service existingService =
+      await this._serviceDataHelper.FetchExistingService(environment, tenant, firstService, cancellationToken);
+    if (!existingService.IsRootService) {
+      throw new ResourceNotFoundException(nameof(Service), firstService);
+    }
+
+    // If specified service is not root service, validate each subsequent service in given path
+    if (servicesInPath.Length > 1) {
+      var currParent = existingService;
+
+      foreach (var currService in servicesInPath.Skip(1)) {
+        // Ensure current service name matches an existing service
+        existingService =
+          await this._serviceDataHelper.FetchExistingService(environment, tenant, currService, cancellationToken);
+
+        // Ensure current service is a child of the current parent
+        if (!(serviceChildIds[currParent.Id].Contains(existingService.Id))) {
+          return null;
+        }
+
+        currParent = existingService;
+      }
+    }
+
+    return existingService;
+  }
+
+  private async Task<ILookup<Guid, HealthCheck>> GetHealthChecksByService(
+    ImmutableDictionary<Guid, Service> services,
+    CancellationToken cancellationToken) {
+    var serviceHealthChecks =
+      await this._serviceDataHelper.FetchExistingHealthChecks(services.Keys, cancellationToken);
 
     var healthChecksByService = serviceHealthChecks.ToLookup(hc => hc.ServiceId);
 
-    // Recursively creates a ServiceHierarchyHealth for the specified service.
-    //
-    // For each service there are potentially two components that determine its
-    // aggregate health status:
-    // 1) The health recorded in Prometheus which will be based on the health
-    //    checks defined for that service.
-    // 2) The aggregate health status of each of its child services.
-    //
-    // The aggregate health status of a service is always the "worst" of the
-    // health check and child service statuses. If *any* health information is
-    // missing, then the aggregate health status will be null.
-    ServiceHierarchyHealth ToServiceHealth(Service service) {
-      // The service will have its own status if it has health checks that have recorded status.
-      var hasServiceStatus = serviceStatuses.TryGetValue(service.Name, out var serviceStatus);
+    return healthChecksByService;
+  }
 
-      var children =
-        serviceChildIdsLookup[service.Id].Select(sid => ToServiceHealth(services[sid])).ToImmutableHashSet();
+  // Recursively creates a ServiceHierarchyHealth for the specified service.
+  //
+  // For each service there are potentially two components that determine its
+  // aggregate health status:
+  // 1) The health recorded in Prometheus which will be based on the health
+  //    checks defined for that service.
+  // 2) The aggregate health status of each of its child services.
+  //
+  // The aggregate health status of a service is always the "worst" of the
+  // health check and child service statuses. If *any* health information is
+  // missing, then the aggregate health status will be null.
+  private static ServiceHierarchyHealth ToServiceHealth(
+    Service service,
+    ImmutableDictionary<Guid, Service> services,
+    Dictionary<String, (DateTime Timestamp, HealthStatus Status)> serviceStatuses,
+    ILookup<Guid, Guid> serviceChildIdsLookup,
+    ILookup<Guid, HealthCheck> healthChecksByService,
+    Dictionary<(String Service, String HealthCheck), (DateTime Timestamp, HealthStatus Status)> healthCheckStatus) {
+    // The service will have its own status if it has health checks that have recorded status.
+    var hasServiceStatus = serviceStatuses.TryGetValue(service.Name, out var serviceStatus);
 
-      HealthStatus? aggregateStatus = hasServiceStatus ? serviceStatus.Status : null;
-      DateTime? statusTimestamp = hasServiceStatus ? serviceStatus.Timestamp : null;
+    var children =
+      serviceChildIdsLookup[service.Id].Select(sid => ToServiceHealth(
+          services[sid], services, serviceStatuses, serviceChildIdsLookup, healthChecksByService, healthCheckStatus
+          )
+        )
+        .ToImmutableHashSet();
 
-      var healthChecks = healthChecksByService[service.Id].ToImmutableList();
-      // Only aggregate the status of the children if the current service either
-      // has a recorded status based on it's health checks, or has no health
-      // checks. (If there is missing information for the health check based
-      // service then there is no point considering the status of the children).
-      if (hasServiceStatus || !healthChecks.Any()) {
-        // If this service has a status
-        foreach (var child in children) {
-          if (child.AggregateStatus.HasValue) {
-            if ((aggregateStatus == null) || (aggregateStatus.Value < child.AggregateStatus.Value)) {
-              aggregateStatus = child.AggregateStatus;
-            }
+    HealthStatus? aggregateStatus = hasServiceStatus ? serviceStatus.Status : null;
+    DateTime? statusTimestamp = hasServiceStatus ? serviceStatus.Timestamp : null;
 
-            // The child service should always have a timestamp here, but double check anyway
-            if (child.Timestamp.HasValue &&
-              (!statusTimestamp.HasValue || (child.Timestamp.Value < statusTimestamp.Value))) {
-
-              // The status timestamp should always be the *oldest* of the
-              // recorded status data points.
-              statusTimestamp = child.Timestamp.Value;
-            }
-          } else {
-            // One of the child services has an "unknown" status, that means
-            // this service will also have the "unknown" status.
-            aggregateStatus = null;
-            statusTimestamp = null;
-            break;
+    var healthChecks = healthChecksByService[service.Id].ToImmutableList();
+    // Only aggregate the status of the children if the current service either
+    // has a recorded status based on it's health checks, or has no health
+    // checks. (If there is missing information for the health check based
+    // service then there is no point considering the status of the children).
+    if (hasServiceStatus || !healthChecks.Any()) {
+      // If this service has a status
+      foreach (var child in children) {
+        if (child.AggregateStatus.HasValue) {
+          if ((aggregateStatus == null) || (aggregateStatus.Value < child.AggregateStatus.Value)) {
+            aggregateStatus = child.AggregateStatus;
           }
+
+          // The child service should always have a timestamp here, but double check anyway
+          if (child.Timestamp.HasValue &&
+            (!statusTimestamp.HasValue || (child.Timestamp.Value < statusTimestamp.Value))) {
+
+            // The status timestamp should always be the *oldest* of the
+            // recorded status data points.
+            statusTimestamp = child.Timestamp.Value;
+          }
+        } else {
+          // One of the child services has an "unknown" status, that means
+          // this service will also have the "unknown" status.
+          aggregateStatus = null;
+          statusTimestamp = null;
+          break;
         }
       }
-
-      return new ServiceHierarchyHealth(
-        service.Name,
-        service.DisplayName,
-        service.Description,
-        service.Url,
-        statusTimestamp,
-        aggregateStatus,
-        healthChecks.ToImmutableDictionary(
-          hc => hc.Name,
-          hc => healthCheckStatus.TryGetValue((service.Name, hc.Name), out var checkStatus) ?
-            checkStatus :
-            ((DateTime, HealthStatus)?)null
-        ),
-        children
-      );
     }
 
-    return this.Ok(
-      services.Values.Where(svc => svc.IsRootService)
-        .Select(ToServiceHealth)
-        .ToArray()
+    return new ServiceHierarchyHealth(
+      service.Name,
+      service.DisplayName,
+      service.Description,
+      service.Url,
+      statusTimestamp,
+      aggregateStatus,
+      healthChecks.ToImmutableDictionary(
+        hc => hc.Name,
+        hc => healthCheckStatus.TryGetValue((service.Name, hc.Name), out var checkStatus) ?
+          checkStatus :
+          ((DateTime, HealthStatus)?)null
+      ),
+      children
     );
   }
 
