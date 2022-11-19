@@ -78,8 +78,7 @@ internal static class Program {
       using JsonDocument document = await JsonDocument.ParseAsync(inputStream, cancellationToken: token);
       var configRoot = document.RootElement;
 
-      try
-      {
+      try {
         var serviceHierarchy =
           JsonSerializer.Deserialize<ServiceHierarchyConfiguration>(configRoot, Program.ConfigSerializerOptions);
         var listServiceConfig = serviceHierarchy.Services;

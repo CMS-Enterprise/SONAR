@@ -8,7 +8,7 @@
       "children": null,
       "healthChecks": [
         {
-          "name": "example REPLACED",
+          "name": "example-check-name-REPLACED",
           "description": "Degraded and Offline periodically based on an example metric.",
           "definition": {
             "duration": "0.00:00:20",

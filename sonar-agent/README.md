@@ -21,4 +21,7 @@ Example:
 ```
 dotnet run service-config.json
 ```
-
+To run the SONAR Agent with layered configuration (multiple config files), follow the example below:
+```
+dotnet run service-config.json service-config2.json service-config3.json
+```
