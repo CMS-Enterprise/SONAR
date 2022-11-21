@@ -34,9 +34,11 @@ internal static class Program {
     IConfigurationRoot configuration = builder.Build();
     var apiConfig = configuration.GetSection("ApiConfig").BindCtor<ApiConfiguration>();
     var promConfig = configuration.GetSection("Prometheus").BindCtor<PrometheusConfiguration>();
+
     // Create cancellation source, token, new task
     var source = new CancellationTokenSource();
     CancellationToken token = source.Token;
+
     // Event handler for SIGINT
     // Traps SIGINT to perform necessary cleanup
     Console.CancelKeyPress += delegate {
@@ -45,9 +47,8 @@ internal static class Program {
     };
 
     try {
-      var configFilePath = args;
       // Load and merge configs
-      var servicesHierarchy = await Program.LoadAndValidateJsonServiceConfig(configFilePath, token);
+      var servicesHierarchy = await Program.LoadAndValidateJsonServiceConfig(args, token);
       // Configure service hierarchy
       Console.WriteLine("Configuring services....");
       await Program.ConfigureServices(apiConfig, servicesHierarchy, token);
@@ -69,11 +70,11 @@ internal static class Program {
   }
 
   private static async Task<ServiceHierarchyConfiguration> LoadAndValidateJsonServiceConfig(
-    String[] configFilePath,
+    String[] args,
     CancellationToken token) {
 
     List<ServiceHierarchyConfiguration> validConfigs = new List<ServiceHierarchyConfiguration>();
-    foreach (var config in configFilePath) {
+    foreach (var config in args) {
       await using var inputStream = new FileStream(config, FileMode.Open, FileAccess.Read);
       using JsonDocument document = await JsonDocument.ParseAsync(inputStream, cancellationToken: token);
       var configRoot = document.RootElement;
@@ -171,9 +172,7 @@ internal static class Program {
     }
 
     // Replace Root Services
-    var rootServiceResults = next.RootServices;
-    ServiceHierarchyConfiguration result = new ServiceHierarchyConfiguration(serviceResults, rootServiceResults);
-    return result;
+    return new ServiceHierarchyConfiguration(serviceResults, next.RootServices);;
   }
 
 
