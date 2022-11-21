@@ -11,7 +11,7 @@ namespace Cms.BatCave.Sonar.Exceptions;
 public abstract class ProblemDetailException : Exception {
   public HttpStatusCode Status { get; }
 
-  public abstract String ErrorType { get; }
+  public abstract String ProblemType { get; }
 
   protected ProblemDetailException(HttpStatusCode status, String message) : base(message) {
     this.Status = status;
@@ -30,7 +30,7 @@ public abstract class ProblemDetailException : Exception {
     var detail = new ProblemDetails {
       Status = (Int32)this.Status,
       Title = this.Message,
-      Type = this.ErrorType
+      Type = this.ProblemType
     };
     foreach (var kvp in this.GetExtensions()) {
       detail.Extensions.Add(kvp.Key.ToCamelCase(), kvp.Value);

@@ -232,7 +232,8 @@ public class ConfigurationController : ControllerBase {
       await tx.RollbackAsync(cancellationToken);
 
       response = this.BadRequest(new ProblemDetails {
-        Title = "The specified list of services contained multiple services with the same name."
+        Title = "The specified list of services contained multiple services with the same name.",
+        Type = ProblemTypes.InvalidConfiguration
       });
     } catch {
       await tx.RollbackAsync(cancellationToken);
@@ -535,6 +536,7 @@ public class ConfigurationController : ControllerBase {
     if (missingRootServices.Any()) {
       throw new BadRequestException(
         message: "One or more of the specified root services do not exist in the services array.",
+        ProblemTypes.InvalidConfiguration,
         new Dictionary<String, Object?> {
           { nameof(ServiceHierarchyConfiguration.RootServices), missingRootServices }
         }
@@ -555,6 +557,7 @@ public class ConfigurationController : ControllerBase {
       throw new BadRequestException(
         message:
         "One or more of the specified services contained a reference to a child service that did not exist in the services array.",
+        ProblemTypes.InvalidConfiguration,
         new Dictionary<String, Object?> {
           { nameof(ServiceHierarchyConfiguration.Services), missingChildServices }
         }

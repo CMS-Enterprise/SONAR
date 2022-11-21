@@ -12,5 +12,5 @@ public record ServiceHierarchyHealth(
   Uri? Url,
   DateTime? Timestamp,
   HealthStatus? AggregateStatus,
-  IReadOnlyDictionary<String, (DateTime, HealthStatus)?>? HealthChecks,
+  IReadOnlyDictionary<String, (DateTime Timestamp, HealthStatus Status)?>? HealthChecks,
   IImmutableSet<ServiceHierarchyHealth>? Children);

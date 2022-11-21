@@ -161,22 +161,32 @@ public class PrometheusClient : IPrometheusClient {
     return await this.HandleQueryResponse(response, cancellationToken);
   }
 
-  private static String ToPrometheusDuration(TimeSpan timeout) {
+  /// <summary>
+  ///   Converts a C# <see cref="TimeSpan" /> to a
+  ///   <a href="https://prometheus.io/docs/prometheus/latest/querying/basics/#time-durations">
+  ///     Prometheus duration string
+  ///   </a>
+  ///   consisting of integer numbers time units.
+  /// </summary>
+  /// <remarks>
+  ///   The maximum supported unit in the output is days.
+  /// </remarks>
+  public static String ToPrometheusDuration(TimeSpan duration) {
     var parts = new List<String>();
-    if (timeout.Days > 0) {
-      parts.Add($"{timeout.Days}d");
+    if (duration.Days > 0) {
+      parts.Add($"{duration.Days}d");
     }
-    if (timeout.Hours > 0) {
-      parts.Add($"{timeout.Hours}h");
+    if (duration.Hours > 0) {
+      parts.Add($"{duration.Hours}h");
     }
-    if (timeout.Minutes > 0) {
-      parts.Add($"{timeout.Minutes}m");
+    if (duration.Minutes > 0) {
+      parts.Add($"{duration.Minutes}m");
     }
-    if (timeout.Seconds > 0) {
-      parts.Add($"{timeout.Seconds}s");
+    if (duration.Seconds > 0) {
+      parts.Add($"{duration.Seconds}s");
     }
-    if (timeout.Milliseconds > 0) {
-      parts.Add($"{timeout.Milliseconds}ms");
+    if (duration.Milliseconds > 0) {
+      parts.Add($"{duration.Milliseconds}ms");
     }
 
     return String.Join(separator: " ", parts);

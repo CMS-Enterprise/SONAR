@@ -7,11 +7,13 @@ using System.Runtime.Serialization;
 namespace Cms.BatCave.Sonar.Exceptions;
 
 public class ResourceNotFoundException : ProblemDetailException {
+  public const String ProblemTypeName = "ResourceNotFound";
+
   private const String IdTypeKey = "IdType";
   public String TypeName { get; }
   public Object ResourceId { get; }
 
-  public override String ErrorType => "ResourceNotFound";
+  public override String ProblemType => ResourceNotFoundException.ProblemTypeName;
 
   public ResourceNotFoundException(String typeName, Object resourceId) :
     base(HttpStatusCode.NotFound, $"{typeName} Not Found") {
@@ -46,6 +48,7 @@ public class ResourceNotFoundException : ProblemDetailException {
 
   protected override IDictionary<String, Object?> GetExtensions() {
     return new Dictionary<String, Object?> {
+      { "resourceType", this.TypeName },
       { "resourceId", this.ResourceId }
     };
   }

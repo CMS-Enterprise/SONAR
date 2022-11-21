@@ -10,7 +10,7 @@ public class InternalServerErrorException : ProblemDetailException {
   public InternalServerErrorException(String errorType, String message) :
     base(HttpStatusCode.InternalServerError, message) {
 
-    this.ErrorType = errorType;
+    this.ProblemType = errorType;
   }
 
   public InternalServerErrorException(String message) :
@@ -18,8 +18,8 @@ public class InternalServerErrorException : ProblemDetailException {
   }
 
   public InternalServerErrorException(SerializationInfo info, StreamingContext context) : base(info, context) {
-    this.ErrorType = info.GetString(nameof(this.ErrorType)) ?? InternalServerErrorException.DefaultErrorType;
+    this.ProblemType = info.GetString(nameof(this.ProblemType)) ?? InternalServerErrorException.DefaultErrorType;
   }
 
-  public override String ErrorType { get; }
+  public override String ProblemType { get; }
 }

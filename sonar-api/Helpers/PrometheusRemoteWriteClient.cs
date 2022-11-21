@@ -74,10 +74,11 @@ public class PrometheusRemoteWriteClient {
       }
 
       if ((response.StatusCode == HttpStatusCode.BadRequest) && !String.IsNullOrWhiteSpace(message)) {
+        var detail = await response.Content.ReadAsStringAsync(cancellationToken);
         var problem = new ProblemDetails {
           Title = "Bad Request",
           Status = 400,
-          Detail = "Invalid service health status."
+          Detail = $"Invalid service health status: {detail}"
         };
         HandleErrorMessageAndLog(problem, LogLevel.Debug);
         return problem;

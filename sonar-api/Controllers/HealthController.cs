@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,6 +27,11 @@ namespace Cms.BatCave.Sonar.Controllers;
 public class HealthController : ControllerBase {
   private const String ServiceHealthAggregateMetricName = "sonar_service_status";
   private const String ServiceHealthCheckMetricName = "sonar_service_health_check_status";
+
+  // When querying for the services current health, the maximum age of data
+  // points from Prometheus to consider. If there are no data points newer than
+  // this the services health status will be unknown.
+  private static readonly TimeSpan MaximumServiceHealthAge = TimeSpan.FromHours(1);
 
   private readonly PrometheusRemoteWriteClient _remoteWriteClient;
   private readonly ILogger<HealthController> _logger;
@@ -122,7 +128,10 @@ public class HealthController : ControllerBase {
       return this.NoContent();
     }
 
-    return this.StatusCode(problem.Status ?? 500, problem);
+    if (problem.Status == (Int32)HttpStatusCode.BadRequest) {
+      problem.Type = ProblemTypes.InvalidData;
+    }
+    return this.StatusCode(problem.Status ?? (Int32)HttpStatusCode.InternalServerError, problem);
   }
 
   [HttpGet("{environment}/tenants/{tenant}", Name = "GetServiceHierarchyHealth")]
@@ -205,8 +214,7 @@ public class HealthController : ControllerBase {
     String environment,
     String tenant,
     CancellationToken cancellationToken) {
-    var serviceStatuses =
-      await this.ProcessPrometheusQuery(
+    var serviceStatuses = await this.ProcessPrometheusQuery(
       prometheusClient,
       $"{HealthController.ServiceHealthAggregateMetricName}{{environment=\"{environment}\", tenant=\"{tenant}\"}}",
       processResult: results => {
@@ -214,8 +222,8 @@ public class HealthController : ControllerBase {
         // This code groups all the metrics for a given service and then determines which state is currently set.
         var metricByService =
           results.Result
-            .Where(metric => metric.Value.HasValue) // Ignore non-scalar metrics
-            .Select(metric => (metric.Labels, metric.Value!.Value))
+            .Where(metric => metric.Values != null)
+            .Select(metric => (metric.Labels, metric.Values!.Single()))
             .ToLookup(
               keySelector: metric =>
                 metric.Labels.TryGetValue(MetricLabelKeys.Service, out var serviceName) ? serviceName : null,
@@ -268,8 +276,8 @@ public class HealthController : ControllerBase {
           // This code groups all the metrics for a given state.
           var metricByHealthCheck =
             results.Result
-              .Where(metric => metric.Value.HasValue) // Ignore non-scalar metrics
-              .Select(metric => (metric.Labels, metric.Value!.Value))
+              .Where(metric => metric.Values != null)
+              .Select(metric => (metric.Labels, metric.Values!.Single()))
               .ToLookup(
                 keySelector: metric => GetHealthCheckKey(metric.Labels),
                 TupleComparer.From(StringComparer.OrdinalIgnoreCase, StringComparer.OrdinalIgnoreCase)
@@ -397,14 +405,17 @@ public class HealthController : ControllerBase {
 
     var healthChecks = healthChecksByService[service.Id].ToImmutableList();
     // Only aggregate the status of the children if the current service either
-    // has a recorded status based on it's health checks, or has no health
+    // has a recorded status based on its health checks, or has no health
     // checks. (If there is missing information for the health check based
     // service then there is no point considering the status of the children).
     if (hasServiceStatus || !healthChecks.Any()) {
       // If this service has a status
       foreach (var child in children) {
         if (child.AggregateStatus.HasValue) {
-          if ((aggregateStatus == null) || (aggregateStatus.Value < child.AggregateStatus.Value)) {
+          if ((aggregateStatus == null) ||
+            (aggregateStatus.Value < child.AggregateStatus.Value) ||
+            (child.AggregateStatus == HealthStatus.Unknown)) {
+
             aggregateStatus = child.AggregateStatus;
           }
 
@@ -450,7 +461,8 @@ public class HealthController : ControllerBase {
     CancellationToken cancellationToken) {
 
     var response = await prometheusClient.QueryAsync(
-      promQuery,
+      // metric{tag="value"}[time_window]
+      promQuery + $"[{PrometheusClient.ToPrometheusDuration(HealthController.MaximumServiceHealthAge)}]",
       DateTime.UtcNow,
       cancellationToken: cancellationToken
     );
@@ -558,6 +570,7 @@ public class HealthController : ControllerBase {
       } else {
         throw new BadRequestException(
           message: "Health Check not present in Configuration",
+          ProblemTypes.InconsistentData,
           new Dictionary<String, Object?> {
             { nameof(HealthCheck), healthCheck.Key }
           }
