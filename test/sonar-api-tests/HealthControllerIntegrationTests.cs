@@ -33,11 +33,12 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
     new(
       HealthControllerIntegrationTests.TestHealthCheckName,
       Description: "Health Check Description",
-      new HealthDefinition(
+      HealthCheckType.PrometheusMetric,
+      new PrometheusHealthCheckDefinition(
         TimeSpan.FromMinutes(1),
         Expression: "test_metric",
         ImmutableList.Create(
-          new HealthCondition(HealthOperator.GreaterThan, Threshold: 42.0, HealthStatus.Offline)))
+          new MetricHealthCondition(HealthOperator.GreaterThan, Threshold: 42.0, HealthStatus.Offline)))
     );
 
   private static readonly ServiceHierarchyConfiguration TestRootOnlyConfiguration = new(

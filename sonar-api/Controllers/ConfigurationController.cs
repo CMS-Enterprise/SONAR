@@ -185,7 +185,8 @@ public class ConfigurationController : ControllerBase {
               servicesByName[svc.Name].Id,
               hc.Name,
               hc.Description,
-              HealthCheck.SerializeDefinition(hc.Definition)
+              hc.Type,
+              HealthCheck.SerializeDefinition(hc.Type, hc.Definition)
             )) :
             Enumerable.Empty<HealthCheck>()
         ),
@@ -479,7 +480,8 @@ public class ConfigurationController : ControllerBase {
           existingServicesByName[healthCheck.serviceName].Id,
           healthCheck.newHealthCheck.Name,
           healthCheck.newHealthCheck.Description,
-          HealthCheck.SerializeDefinition(healthCheck.newHealthCheck.Definition)
+          healthCheck.newHealthCheck.Type,
+          HealthCheck.SerializeDefinition(healthCheck.newHealthCheck.Type, healthCheck.newHealthCheck.Definition)
         )),
         cancellationToken
       );
@@ -492,7 +494,8 @@ public class ConfigurationController : ControllerBase {
             hc.existingHealthCheck.ServiceId,
             hc.updatedHealthCheck.Name,
             hc.updatedHealthCheck.Description,
-            HealthCheck.SerializeDefinition(hc.updatedHealthCheck.Definition)
+            hc.updatedHealthCheck.Type,
+            HealthCheck.SerializeDefinition(hc.updatedHealthCheck.Type, hc.updatedHealthCheck.Definition)
           );
         })
       );
@@ -581,6 +584,7 @@ public class ConfigurationController : ControllerBase {
             .Select(check => new HealthCheckModel(
               check.Name,
               check.Description,
+              check.Type,
               check.DeserializeDefinition()
               ))
             .NullIfEmpty()

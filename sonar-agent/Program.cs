@@ -56,7 +56,9 @@ internal static class Program {
       var interval = TimeSpan.FromSeconds(10);
       Console.WriteLine("Initializing SONAR Agent...");
       // Run task that calls Health Check function
-      var task = Task.Run(async delegate { await RunScheduledHealthCheck(interval, apiConfig, promConfig, token); }, token);
+      var task = Task.Run(async delegate {
+        await RunScheduledHealthCheck(interval, apiConfig, promConfig, token);
+      }, token);
       await task;
     } catch (IndexOutOfRangeException) {
       Console.Error.WriteLine("First command line argument must be service configuration file path.");
@@ -110,7 +112,8 @@ internal static class Program {
         // Check if root service exists as a service
         foreach (var rootService in listRootServices) {
           if (!servicesList.Contains(rootService)) {
-            throw new OperationCanceledException($"{rootService} does not exist as a service in the configuration file.");
+            throw new OperationCanceledException(
+              $"{rootService} does not exist as a service in the configuration file.");
           }
         }
 
@@ -121,6 +124,7 @@ internal static class Program {
         throw new OperationCanceledException("Service configuration is invalid.");
       }
     }
+
     // merge valid configs into single ServiceHierarchyConfiguration
     ServiceHierarchyConfiguration result = validConfigs.Aggregate(MergeConfigurations);
     // Print merged services and root services to console
@@ -135,8 +139,7 @@ internal static class Program {
         foreach (var child in service.Children) {
           Console.WriteLine($"  - {child}");
         }
-      }
-      else {
+      } else {
         Console.WriteLine($"  Children: {service.Children}");
       }
     }
@@ -149,13 +152,15 @@ internal static class Program {
     return result;
   }
 
-  private static ServiceHierarchyConfiguration MergeConfigurations(ServiceHierarchyConfiguration prev,
+  private static ServiceHierarchyConfiguration MergeConfigurations(
+    ServiceHierarchyConfiguration prev,
     ServiceHierarchyConfiguration next) {
     // Compare services
     var serviceResults = prev.Services;
     foreach (var currService in next.Services) {
       // If current service was not in previous service list, add to current service list
-      var existingService = prev.Services.SingleOrDefault(x => String.Equals(x.Name, currService.Name, StringComparison.OrdinalIgnoreCase));
+      var existingService = prev.Services.SingleOrDefault(x =>
+        String.Equals(x.Name, currService.Name, StringComparison.OrdinalIgnoreCase));
       if (existingService == null) {
         serviceResults = serviceResults.Add(currService);
       } else {
@@ -172,12 +177,14 @@ internal static class Program {
     }
 
     // Replace Root Services
-    return new ServiceHierarchyConfiguration(serviceResults, next.RootServices);;
+    return new ServiceHierarchyConfiguration(serviceResults, next.RootServices);
+
+    ;
   }
 
 
-
-  private static async Task ConfigureServices(ApiConfiguration apiConfig,
+  private static async Task ConfigureServices(
+    ApiConfiguration apiConfig,
     ServiceHierarchyConfiguration servicesHierarchy,
     CancellationToken token) {
 
@@ -221,6 +228,7 @@ internal static class Program {
         Console.WriteLine("cancelled");
         throw new OperationCanceledException();
       }
+
       // Get service hierarchy for given env and tenant
       var tenantResult = await client.GetTenantAsync(config.Environment, config.Tenant, token);
       Console.WriteLine($"Service Count: {tenantResult.Services.Count}");
@@ -236,77 +244,105 @@ internal static class Program {
           Console.WriteLine("No Health Checks associated with this service.");
           continue;
         }
+
         foreach (var healthCheck in healthChecks) {
-          var currCheck = HealthStatus.Online;
-          // Set start and end for date range, Get Prometheus samples
-          var end = DateTime.UtcNow;
-          var start = end.Subtract(healthCheck.Definition.Duration);
-          var qrResult = await promClient.QueryRangeAsync(
-            healthCheck.Definition.Expression, start, end, TimeSpan.FromSeconds(1), null, token
-          );
+          switch (healthCheck.Type) {
+            case HealthCheckType.PrometheusMetric:
+              var definition = (PrometheusHealthCheckDefinition)healthCheck.Definition;
+              var currCheck = await Program.RunHealthCheck(promClient, service, healthCheck, definition, token);
 
-          // Error handling
-          if (qrResult.Data == null) {
-            // No data, bad request
-            Console.Error.WriteLine($"Prometheus returned nothing for health check: {healthCheck.Name}");
-            currCheck = HealthStatus.Unknown;
-          } else if (qrResult.Data.Result.Count > 1) {
-            // Bad config, multiple time series returned
-            Console.Error.WriteLine($"Invalid Prometheus configuration, multiple time series returned for health check: {healthCheck.Name}");
-            currCheck = HealthStatus.Unknown;
-          } else if ((qrResult.Data.Result.Count == 0 || qrResult.Data.Result[0].Values == null) ||
-                     qrResult.Data.Result[0].Values!.Count == 0) {
-            // No samples
-            Console.Error.WriteLine($"Prometheus returned no samples for health check: {healthCheck.Name}");
-            currCheck = HealthStatus.Unknown;
-          } else {
-            // Successfully obtained samples from PromQL, evaluate against all conditions for given check
-            var samples = qrResult.Data.Result[0].Values;
-            foreach (var condition in healthCheck.Definition.Conditions) {
-              // Determine which comparison to execute
-              // Evaluate all PromQL samples
-              var evaluation = EvaluateSamples(condition.HealthOperator, samples, condition.Threshold);
-              // If evaluation is true, set the current check to the condition's status
-              // and output to Stdout
-              if (evaluation) {
-                currCheck = condition.HealthStatus;
-                break;
+              // If currCheck is Unknown or currCheck is worse than aggStatus (as long as aggStatus is not Unknown)
+              // set aggStatus to currCheck
+              if ((currCheck == HealthStatus.Unknown) ||
+                ((aggStatus != HealthStatus.Unknown) && (currCheck > (aggStatus ?? 0)))) {
+                aggStatus = currCheck;
               }
-            }
-            if (currCheck == HealthStatus.Online) {
-              Console.WriteLine($"Service {service.Name} is online");
-            } else {
-              Console.WriteLine($"Service {service.Name} has status of {currCheck}");
-            }
-          }
 
-          // If currCheck is Unknown or currCheck is worse than aggStatus (as long as aggStatus is not Unknown)
-          // set aggStatus to currCheck
-          if ((currCheck == HealthStatus.Unknown) ||
-              ((aggStatus != HealthStatus.Unknown) && (currCheck > (aggStatus ?? 0)))) {
-            aggStatus = currCheck;
+              // Set checkResults
+              checkResults.Add(healthCheck.Name, currCheck);
+
+              break;
           }
-          // Set checkResults
-          checkResults.Add(healthCheck.Name, currCheck);
         }
+
         // Send result data here
         if (aggStatus != null) {
-          await SendHealthData(env, tenant, service.Name, checkResults, client, aggStatus ?? HealthStatus.Unknown, token);
+          await SendHealthData(env, tenant, service.Name, checkResults, client, aggStatus ?? HealthStatus.Unknown,
+            token);
         }
       }
+
       Console.WriteLine($"Iteration {i} of health check.");
       await Task.Delay(interval, token);
       i++;
     }
   }
 
-  private static async Task SendHealthData(String env, String tenant, String service,
+  private static async Task<HealthStatus> RunHealthCheck(
+    IPrometheusClient promClient,
+    ServiceConfiguration service,
+    HealthCheckModel healthCheck,
+    PrometheusHealthCheckDefinition definition,
+    CancellationToken token) {
+
+    var currCheck = HealthStatus.Online;
+    // Set start and end for date range, Get Prometheus samples
+    var end = DateTime.UtcNow;
+    var start = end.Subtract(definition.Duration);
+    var qrResult = await promClient.QueryRangeAsync(
+      definition.Expression, start, end, TimeSpan.FromSeconds(1), null, token
+    );
+
+    // Error handling
+    if (qrResult.Data == null) {
+      // No data, bad request
+      Console.Error.WriteLine($"Prometheus returned nothing for health check: {healthCheck.Name}");
+      currCheck = HealthStatus.Unknown;
+    } else if (qrResult.Data.Result.Count > 1) {
+      // Bad config, multiple time series returned
+      Console.Error.WriteLine(
+        $"Invalid Prometheus configuration, multiple time series returned for health check: {healthCheck.Name}");
+      currCheck = HealthStatus.Unknown;
+    } else if ((qrResult.Data.Result.Count == 0) ||
+      (qrResult.Data.Result[0].Values == null) ||
+      (qrResult.Data.Result[0].Values!.Count == 0)) {
+      // No samples
+      Console.Error.WriteLine($"Prometheus returned no samples for health check: {healthCheck.Name}");
+      currCheck = HealthStatus.Unknown;
+    } else {
+      // Successfully obtained samples from PromQL, evaluate against all conditions for given check
+      var samples = qrResult.Data.Result[0].Values;
+      foreach (var condition in definition.Conditions) {
+        // Determine which comparison to execute
+        // Evaluate all PromQL samples
+        var evaluation = Program.EvaluateSamples(condition.HealthOperator, samples!, condition.Threshold);
+        // If evaluation is true, set the current check to the condition's status
+        // and output to Stdout
+        if (evaluation) {
+          currCheck = condition.HealthStatus;
+          break;
+        }
+      }
+
+      if (currCheck == HealthStatus.Online) {
+        Console.WriteLine($"Service {service.Name} is online");
+      } else {
+        Console.WriteLine($"Service {service.Name} has status of {currCheck}");
+      }
+    }
+
+    return currCheck;
+  }
+
+  private static async Task SendHealthData(
+    String env, String tenant, String service,
     Dictionary<String, HealthStatus> results, SonarClient client, HealthStatus aggStatus, CancellationToken token) {
     var ts = DateTime.UtcNow;
     var healthChecks = new ReadOnlyDictionary<String, HealthStatus>(results);
     ServiceHealth body = new ServiceHealth(ts, aggStatus, healthChecks);
 
-    Console.WriteLine($"Env: {env}, Tenant: {tenant}, Service: {service}, Time: {body.Timestamp}, AggStatus: {body.AggregateStatus}");
+    Console.WriteLine(
+      $"Env: {env}, Tenant: {tenant}, Service: {service}, Time: {body.Timestamp}, AggStatus: {body.AggregateStatus}");
     body.HealthChecks.ToList().ForEach(x => Console.WriteLine($"{x.Key}: {x.Value}"));
     try {
       await client.RecordStatusAsync(env, tenant, service, body, token);
@@ -353,4 +389,3 @@ internal static class Program {
     return !values.Any(val => !comparison(Convert.ToDouble(val.Value), threshold));
   }
 }
-
