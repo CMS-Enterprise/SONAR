@@ -10,12 +10,28 @@ SONAR is an API endpoint and dashboard UI for monitoring the health of both BatC
 
 ## Prerequisites
 
+### dotnet SDK
+
 Install the [dotnet SDK 6.x](https://dotnet.microsoft.com/en-us/download) (note: in some cases just the dotnet CLI will suffice, but for development it is usually preferable to have the SDK installed).
 
 On MacOS you can also install the .Net SDK via Homebrew:
 
 ```
 brew install dotnet-sdk
+```
+
+### snappy
+
+The snappy compression library is a prerequisite for the SONAR API (use for Prometheus integration). To install this library on MacOS:
+
+```
+brew install snappy
+```
+
+On linux distros installation steps may vary, but something like:
+
+```
+apt-get install libsnappy1v5 libsnappy-dev
 ```
 
 ## Build (Optional)
