@@ -73,6 +73,21 @@ public class HealthCheckModelJsonConverter : JsonConverter<HealthCheckModel> {
               );
             }
             break;
+          case HealthCheckType.HttpRequest:
+            if (!element.TryGetProperty(nameof(HealthCheckModel.Definition), ignoreCase: true, out var httpDefinitionElement)) {
+              throw new JsonException($"The {nameof(HealthCheckModel.Definition)} property is required.");
+            }
+
+            definition = httpDefinitionElement.Deserialize<HttpHealthCheckDefinition>(options) ??
+                         throw new JsonException($"The {nameof(HealthCheckModel.Definition)} property is required.");
+            var httpContext = new ValidationContext(definition);
+            var httpResults = new List<ValidationResult>();
+            if (!Validator.TryValidateObject(definition, httpContext, httpResults, validateAllProperties: true)) {
+              throw new JsonException(
+                $"Invalid health check definition: {httpResults.First().ErrorMessage}"
+              );
+            }
+            break;
           default:
             throw new ArgumentOutOfRangeException();
         }
@@ -128,6 +143,9 @@ public class HealthCheckModelJsonConverter : JsonConverter<HealthCheckModel> {
     switch (value.Type) {
       case HealthCheckType.PrometheusMetric:
         JsonSerializer.Serialize(writer, (PrometheusHealthCheckDefinition)value.Definition, options);
+        break;
+      case HealthCheckType.HttpRequest:
+        JsonSerializer.Serialize(writer, (HttpHealthCheckDefinition)value.Definition, options);
         break;
       default:
         throw new NotSupportedException(
