@@ -2,6 +2,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.EntityFrameworkCore;
@@ -38,10 +39,10 @@ public class HealthCheck {
   public HealthCheckDefinition DeserializeDefinition() {
     return this.Type switch {
       HealthCheckType.PrometheusMetric =>
-        JsonSerializer.Deserialize<PrometheusHealthCheckDefinition>(this.Definition) ??
+        JsonSerializer.Deserialize<PrometheusHealthCheckDefinition>(this.Definition, DefinitionSerializerOptions) ??
         throw new InvalidOperationException("Definition deserialized to null."),
       HealthCheckType.HttpRequest =>
-        JsonSerializer.Deserialize<HttpHealthCheckDefinition>(this.Definition) ??
+        JsonSerializer.Deserialize<HttpHealthCheckDefinition>(this.Definition, DefinitionSerializerOptions) ??
         throw new InvalidOperationException("Definition deserialized to null."),
       _ => throw new NotSupportedException(
         $"Unable to deserialize definition. Unsupported health check type: {this.Type}")
@@ -50,11 +51,17 @@ public class HealthCheck {
 
   public static String SerializeDefinition(HealthCheckType type, HealthCheckDefinition def) {
     return type switch {
-      HealthCheckType.PrometheusMetric => JsonSerializer.Serialize((PrometheusHealthCheckDefinition)def),
-      HealthCheckType.HttpRequest => JsonSerializer.Serialize((HttpHealthCheckDefinition)def),
+      HealthCheckType.PrometheusMetric => JsonSerializer.Serialize((PrometheusHealthCheckDefinition)def, DefinitionSerializerOptions),
+      HealthCheckType.HttpRequest => JsonSerializer.Serialize((HttpHealthCheckDefinition)def, DefinitionSerializerOptions),
       _ => throw new ArgumentOutOfRangeException(nameof(type), type, $"Invalid value for {nameof(HealthCheckType)}")
     };
   }
+
+  public static readonly JsonSerializerOptions DefinitionSerializerOptions = new JsonSerializerOptions {
+    Converters = { new JsonStringEnumConverter() },
+    PropertyNameCaseInsensitive = true,
+    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+  };
 
   public static HealthCheck New(
     Guid serviceId,

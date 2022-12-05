@@ -6,6 +6,7 @@ using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
@@ -217,6 +218,9 @@ internal static class Program {
     using var httpClient = new HttpClient();
     httpClient.BaseAddress = new Uri($"{pConfig.Protocol}://{pConfig.Host}:{pConfig.Port}/");
     var promClient = new PrometheusClient(httpClient);
+    // HTTP Metric client
+    using var httpMetricClient = new HttpClient();
+    httpMetricClient.Timeout = TimeSpan.FromSeconds(5);
     // If SIGINT received before interval starts, throw exception
     if (token.IsCancellationRequested) {
       Console.WriteLine("Health check task was cancelled before it got started.");
@@ -260,7 +264,26 @@ internal static class Program {
 
               // Set checkResults
               checkResults.Add(healthCheck.Name, currCheck);
+              break;
 
+            case HealthCheckType.HttpRequest:
+              var httpDefinition = (HttpHealthCheckDefinition)healthCheck.Definition;
+              var currHttpCheck = await Program.RunHttpHealthCheck(
+                httpMetricClient,
+                service,
+                healthCheck,
+                httpDefinition,
+                token);
+
+              // If currCheck is Unknown or currCheck is worse than aggStatus (as long as aggStatus is not Unknown)
+              // set aggStatus to currCheck
+              if ((currHttpCheck == HealthStatus.Unknown) ||
+                  ((aggStatus != HealthStatus.Unknown) && (currHttpCheck > (aggStatus ?? 0)))) {
+                aggStatus = currHttpCheck;
+              }
+
+              // Set checkResults
+              checkResults.Add(healthCheck.Name, currHttpCheck);
               break;
           }
         }
@@ -328,6 +351,66 @@ internal static class Program {
         Console.WriteLine($"Service {service.Name} is online");
       } else {
         Console.WriteLine($"Service {service.Name} has status of {currCheck}");
+      }
+    }
+
+    return currCheck;
+  }
+
+  private static async Task<HealthStatus> RunHttpHealthCheck(
+    HttpClient client,
+    ServiceConfiguration service,
+    HealthCheckModel healthCheck,
+    HttpHealthCheckDefinition definition,
+    CancellationToken token) {
+
+    var currCheck = HealthStatus.Online;
+
+    // Initialize variables needed for Http request and request duration calculation.
+    TimeSpan duration;
+    HttpResponseMessage response;
+
+    try {
+      // Send request to url specified in definition, calculate duration of request
+      DateTime now = DateTime.Now;
+      response = await client.GetAsync(definition.Url, token);
+      duration = DateTime.Now - now;
+    } catch (HttpRequestException e) {
+
+      // Request failed, set currCheck to offline and return.
+      return HealthStatus.Offline;
+    } catch (InvalidOperationException e) {
+
+      // Error with requestURI, log and return unknown status.
+      Console.Error.WriteLine($"Invalid request URI: ${definition.Url}");
+      return HealthStatus.Unknown;
+    } catch (UriFormatException e) {
+
+      // Invalid request URI format, log and return unknown status.
+      Console.Error.WriteLine($"Invalid request URI format: {definition.Url}");
+      return HealthStatus.Unknown;
+    }
+
+    // Passed error handling, get status code from response.
+    var statusCode = (ushort)response.StatusCode;
+
+    // Evaluate response based on conditions
+    //  If there is a ResponseTimeCondition, evaluate.
+    //  If there is a StatusCodeCondition, evaluate.
+    foreach (var condition in definition.Conditions) {
+      // Evaluate conditions based on http condition type.
+      if (condition.Type == HttpHealthCheckConditionType.HttpResponseTime) {
+        var responseCondition = (ResponseTimeCondition)condition;
+        if (duration > responseCondition.ResponseTime) {
+          Console.WriteLine("Request duration exceeded threshold.");
+          currCheck = responseCondition.Status;
+        }
+      } else if (condition.Type == HttpHealthCheckConditionType.HttpStatusCode) {
+        var statusCondition = (StatusCodeCondition)condition;
+        if (statusCondition.StatusCodes.Contains(statusCode)) {
+          Console.WriteLine($"Request status code {statusCode} met condition.");
+          currCheck = statusCondition.Status;
+        }
       }
     }
 

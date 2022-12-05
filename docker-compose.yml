@@ -37,6 +37,13 @@ services:
     networks:
       - "shared"
 
+  http-metric-test-app:
+    build: ./test/http-metric-test-app
+    restart: unless-stopped
+    ports: ["8082:8082"]
+    networks:
+      - "shared"
+
   sonar-agent:
     build:
       context: ./
