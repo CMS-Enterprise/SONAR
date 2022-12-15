@@ -130,4 +130,79 @@ public class ServiceDataHelper {
         .Where(hc => serviceIds.Contains(hc.ServiceId))
         .ToListAsync(cancellationToken);
   }
+
+  public async Task<ILookup<Guid, Guid>> GetServiceChildIdsLookup(
+    ImmutableDictionary<Guid, Service> services,
+    CancellationToken cancellationToken) {
+    var serviceRelationships =
+      await this.FetchExistingRelationships(services.Keys, cancellationToken);
+
+    var serviceChildIdsLookup = serviceRelationships.ToLookup(
+      keySelector: svc => svc.ParentServiceId,
+      elementSelector: svc => svc.ServiceId
+    );
+
+    return serviceChildIdsLookup;
+  }
+
+  public async Task<Service?> GetSpecificService(
+    String environment,
+    String tenant,
+    String servicePath,
+    ILookup<Guid, Guid> serviceChildIds,
+    CancellationToken cancellationToken) {
+
+    // Validate root service
+    var servicesInPath = servicePath.Split("/");
+    var firstService = servicesInPath[0];
+    Service existingService =
+      await this.FetchExistingService(environment, tenant, firstService, cancellationToken);
+    if (!existingService.IsRootService) {
+      throw new ResourceNotFoundException(nameof(Service), firstService);
+    }
+
+    // If specified service is not root service, validate each subsequent service in given path
+    if (servicesInPath.Length > 1) {
+      var currParent = existingService;
+
+      foreach (var currService in servicesInPath.Skip(1)) {
+        // Ensure current service name matches an existing service
+        existingService =
+          await this.FetchExistingService(environment, tenant, currService, cancellationToken);
+
+        // Ensure current service is a child of the current parent
+        if (!(serviceChildIds[currParent.Id].Contains(existingService.Id))) {
+          return null;
+        }
+
+        currParent = existingService;
+      }
+    }
+
+    return existingService;
+  }
+
+  public async Task<List<Service>> TraverseServiceFamilyTree(
+    Service existingService,
+    ImmutableDictionary<Guid, Service> services,
+    CancellationToken cancellationToken) {
+
+    var serviceRelationships =
+      await this.FetchExistingRelationships(services.Keys, cancellationToken);
+    var serviceList = new List<Service>();
+    // Add existing service
+    serviceList.Add(existingService);
+    // Get children of existing service.
+    var children = GetChildren(serviceRelationships, existingService.Id);
+    serviceList.AddRange(children.Select(x => services[x.ServiceId]));
+    return serviceList;
+  }
+
+  public static List<ServiceRelationship> GetChildren(IList<ServiceRelationship> relationships, Guid id) {
+    return relationships
+      .Where(x => x.ParentServiceId == id)
+      .Union(relationships.Where(x => x.ParentServiceId == id)
+        .SelectMany(y => GetChildren(relationships, y.ServiceId))
+      ).ToList();
+  }
 }

@@ -25,8 +25,8 @@ namespace Cms.BatCave.Sonar.Controllers;
 [ApiController]
 [Route("api/v2/health")]
 public class HealthController : ControllerBase {
-  private const String ServiceHealthAggregateMetricName = "sonar_service_status";
-  private const String ServiceHealthCheckMetricName = "sonar_service_health_check_status";
+  public const String ServiceHealthAggregateMetricName = "sonar_service_status";
+  public const String ServiceHealthCheckMetricName = "sonar_service_health_check_status";
 
   // When querying for the services current health, the maximum age of data
   // points from Prometheus to consider. If there are no data points newer than
@@ -155,7 +155,7 @@ public class HealthController : ControllerBase {
         prometheusClient, environment, tenant, cancellationToken
       );
 
-      var serviceChildIdsLookup = await this.GetServiceChildIdsLookup(services, cancellationToken);
+      var serviceChildIdsLookup = await this._serviceDataHelper.GetServiceChildIdsLookup(services, cancellationToken);
       var healthChecksByService = await this.GetHealthChecksByService(services, cancellationToken);
 
       return this.Ok(
@@ -180,11 +180,11 @@ public class HealthController : ControllerBase {
 
     var (_, _, services) =
       await this._serviceDataHelper.FetchExistingConfiguration(environment, tenant, cancellationToken);
-    var serviceChildIdsLookup = await this.GetServiceChildIdsLookup(services, cancellationToken);
+    var serviceChildIdsLookup = await this._serviceDataHelper.GetServiceChildIdsLookup(services, cancellationToken);
 
     // Validate specified service
     Service? existingService =
-      await this.GetSpecificService(environment, tenant, servicePath, serviceChildIdsLookup, cancellationToken);
+      await this._serviceDataHelper.GetSpecificService(environment, tenant, servicePath, serviceChildIdsLookup, cancellationToken);
 
     var (httpClient, prometheusClient) = HealthController.GetPrometheusClient(this._prometheusUrl);
     using (httpClient) {
@@ -308,57 +308,6 @@ public class HealthController : ControllerBase {
       );
 
     return healthCheckStatus;
-  }
-
-  private async Task<ILookup<Guid, Guid>> GetServiceChildIdsLookup(
-    ImmutableDictionary<Guid, Service> services,
-    CancellationToken cancellationToken) {
-    var serviceRelationships =
-      await this._serviceDataHelper.FetchExistingRelationships(services.Keys, cancellationToken);
-
-    var serviceChildIdsLookup = serviceRelationships.ToLookup(
-      keySelector: svc => svc.ParentServiceId,
-      elementSelector: svc => svc.ServiceId
-    );
-
-    return serviceChildIdsLookup;
-  }
-
-  private async Task<Service?> GetSpecificService(
-    String environment,
-    String tenant,
-    String servicePath,
-    ILookup<Guid, Guid> serviceChildIds,
-    CancellationToken cancellationToken) {
-
-    // Validate root service
-    var servicesInPath = servicePath.Split("/");
-    var firstService = servicesInPath[0];
-    Service existingService =
-      await this._serviceDataHelper.FetchExistingService(environment, tenant, firstService, cancellationToken);
-    if (!existingService.IsRootService) {
-      throw new ResourceNotFoundException(nameof(Service), firstService);
-    }
-
-    // If specified service is not root service, validate each subsequent service in given path
-    if (servicesInPath.Length > 1) {
-      var currParent = existingService;
-
-      foreach (var currService in servicesInPath.Skip(1)) {
-        // Ensure current service name matches an existing service
-        existingService =
-          await this._serviceDataHelper.FetchExistingService(environment, tenant, currService, cancellationToken);
-
-        // Ensure current service is a child of the current parent
-        if (!(serviceChildIds[currParent.Id].Contains(existingService.Id))) {
-          return null;
-        }
-
-        currParent = existingService;
-      }
-    }
-
-    return existingService;
   }
 
   private async Task<ILookup<Guid, HealthCheck>> GetHealthChecksByService(
