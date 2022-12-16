@@ -214,7 +214,7 @@ public class HealthController : ControllerBase {
     String environment,
     String tenant,
     CancellationToken cancellationToken) {
-    var serviceStatuses = await this.ProcessPrometheusQuery(
+    var serviceStatuses = await this.GetLatestValuePrometheusQuery(
       prometheusClient,
       $"{HealthController.ServiceHealthAggregateMetricName}{{environment=\"{environment}\", tenant=\"{tenant}\"}}",
       processResult: results => {
@@ -222,8 +222,8 @@ public class HealthController : ControllerBase {
         // This code groups all the metrics for a given service and then determines which state is currently set.
         var metricByService =
           results.Result
-            .Where(metric => metric.Values != null)
-            .Select(metric => (metric.Labels, metric.Values!.Single()))
+            .Where(metric => metric.Value != null)
+            .Select(metric => (metric.Labels, metric.Value!.Value))
             .ToLookup(
               keySelector: metric =>
                 metric.Labels.TryGetValue(MetricLabelKeys.Service, out var serviceName) ? serviceName : null,
@@ -268,7 +268,7 @@ public class HealthController : ControllerBase {
       String tenant,
       CancellationToken cancellationToken) {
     var healthCheckStatus =
-      await this.ProcessPrometheusQuery(
+      await this.GetLatestValuePrometheusQuery(
         prometheusClient,
         $"{HealthController.ServiceHealthCheckMetricName}{{environment=\"{environment}\", tenant=\"{tenant}\"}}",
         processResult: results => {
@@ -403,15 +403,15 @@ public class HealthController : ControllerBase {
     );
   }
 
-  private async Task<T> ProcessPrometheusQuery<T>(
+  private async Task<T> GetLatestValuePrometheusQuery<T>(
     IPrometheusClient prometheusClient,
     String promQuery,
     Func<QueryResults, T> processResult,
     CancellationToken cancellationToken) {
 
     var response = await prometheusClient.QueryAsync(
-      // metric{tag="value"}[time_window]
-      promQuery + $"[{PrometheusClient.ToPrometheusDuration(HealthController.MaximumServiceHealthAge)}]",
+      // last_over_time(metric{tag="value"}[time_window])
+      $"last_over_time({promQuery}[{PrometheusClient.ToPrometheusDuration(HealthController.MaximumServiceHealthAge)}])",
       DateTime.UtcNow,
       cancellationToken: cancellationToken
     );
