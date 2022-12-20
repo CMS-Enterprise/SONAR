@@ -78,7 +78,7 @@ dotnet run ./service-config.json
 The SONAR API and Agent have two critical dependencies: PostgreSQL and Prometheus. Both of these can be run via Docker Compose using the `docker-compose.yml` file in the root of the repo:
 
 ```
-docker-compose up -d prometheus postgresql
+docker-compose up -d prometheus postgresql loki grafana
 ```
 
 There is also an example application that generates Prometheus metrics that can be used when testing SONAR health checks. To run this application in in Docker as well run:

@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Cms.BatCave.Sonar.Query;
 
 namespace Cms.BatCave.Sonar.Prometheus;
 

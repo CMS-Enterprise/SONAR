@@ -2,7 +2,7 @@ using System;
 using System.Collections.Immutable;
 using System.Text.Json.Serialization;
 
-namespace Cms.BatCave.Sonar.Prometheus;
+namespace Cms.BatCave.Sonar.Query;
 
 public record ResultData(
   [property:JsonPropertyName("metric")]

@@ -26,7 +26,7 @@ The SONAR API requires connectivity to a PostgreSQL database. There is a [`docke
 
 ### Database Configuration
 
-Configuration settings for the SONAR API database connectivity are defined in [`DatabaseConfiguration.cs`](sonar-api/Configuration/DatabaseConfiguration.cs). Values for the configuration settings defined in this file can be supplied via the `appsettings.{environmnet}.json` file for the applicable environment, environment variables, or command line arguments.
+Configuration settings for the SONAR API database connectivity are defined in [`DatabaseConfiguration.cs`](sonar-api/Configuration/DatabaseConfiguration.cs). Values for the configuration settings defined in this file can be supplied via the `appsettings.{environment}.json` file for the applicable environment, environment variables, or command line arguments.
 
 ```shell
 # Via environment variable:

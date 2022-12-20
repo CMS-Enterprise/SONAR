@@ -73,6 +73,22 @@ public class HealthCheckModelJsonConverter : JsonConverter<HealthCheckModel> {
               );
             }
             break;
+          case HealthCheckType.LokiMetric:
+            if (!element.TryGetProperty(nameof(HealthCheckModel.Definition), ignoreCase: true, out var def)) {
+              throw new JsonException($"The {nameof(HealthCheckModel.Definition)} property is required.");
+            }
+
+            definition = def.Deserialize<LokiHealthCheckDefinition>(options) ??
+                         throw new JsonException($"The {nameof(HealthCheckModel.Definition)} property is required.");
+
+            var ctx = new ValidationContext(definition);
+            var res = new List<ValidationResult>();
+            if (!Validator.TryValidateObject(definition, ctx, res, validateAllProperties: true)) {
+              throw new JsonException(
+                $"Invalid health check definition: {res.First().ErrorMessage}"
+              );
+            }
+            break;
           case HealthCheckType.HttpRequest:
             if (!element.TryGetProperty(nameof(HealthCheckModel.Definition), ignoreCase: true, out var httpDefinitionElement)) {
               throw new JsonException($"The {nameof(HealthCheckModel.Definition)} property is required.");
@@ -143,6 +159,9 @@ public class HealthCheckModelJsonConverter : JsonConverter<HealthCheckModel> {
     switch (value.Type) {
       case HealthCheckType.PrometheusMetric:
         JsonSerializer.Serialize(writer, (PrometheusHealthCheckDefinition)value.Definition, options);
+        break;
+      case HealthCheckType.LokiMetric:
+        JsonSerializer.Serialize(writer, (LokiHealthCheckDefinition)value.Definition, options);
         break;
       case HealthCheckType.HttpRequest:
         JsonSerializer.Serialize(writer, (HttpHealthCheckDefinition)value.Definition, options);

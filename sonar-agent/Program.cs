@@ -13,8 +13,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Enumeration;
+using Cms.BatCave.Sonar.Loki;
 using Cms.BatCave.Sonar.Models;
 using Cms.BatCave.Sonar.Prometheus;
+using Cms.BatCave.Sonar.Query;
 using Microsoft.Extensions.Configuration;
 
 namespace Cms.BatCave.Sonar.Agent;
@@ -30,12 +32,13 @@ internal static class Program {
     var builder = new ConfigurationBuilder()
       .SetBasePath(Directory.GetCurrentDirectory())
       .AddJsonFile("appsettings.json", false, true)
+      .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ENVIRONMENT")}.json", true, true)
       .AddEnvironmentVariables()
       .AddCommandLine(args);
     IConfigurationRoot configuration = builder.Build();
     var apiConfig = configuration.GetSection("ApiConfig").BindCtor<ApiConfiguration>();
     var promConfig = configuration.GetSection("Prometheus").BindCtor<PrometheusConfiguration>();
-
+    var lokiConfig = configuration.GetSection("Loki").BindCtor<LokiConfiguration>();
     // Create cancellation source, token, new task
     var source = new CancellationTokenSource();
     CancellationToken token = source.Token;
@@ -58,7 +61,7 @@ internal static class Program {
       Console.WriteLine("Initializing SONAR Agent...");
       // Run task that calls Health Check function
       var task = Task.Run(async delegate {
-        await RunScheduledHealthCheck(interval, apiConfig, promConfig, token);
+        await RunScheduledHealthCheck(interval, apiConfig, promConfig, lokiConfig, token);
       }, token);
       await task;
     } catch (IndexOutOfRangeException) {
@@ -179,8 +182,6 @@ internal static class Program {
 
     // Replace Root Services
     return new ServiceHierarchyConfiguration(serviceResults, next.RootServices);
-
-    ;
   }
 
 
@@ -206,7 +207,7 @@ internal static class Program {
   }
 
   private static async Task RunScheduledHealthCheck(
-    TimeSpan interval, ApiConfiguration config, PrometheusConfiguration pConfig, CancellationToken token) {
+    TimeSpan interval, ApiConfiguration config, PrometheusConfiguration pConfig, LokiConfiguration lConfig, CancellationToken token) {
     // Configs
     var env = config.Environment;
     var tenant = config.Tenant;
@@ -214,10 +215,15 @@ internal static class Program {
     var client = new SonarClient(baseUrl: config.BaseUrl, new HttpClient());
     await client.ReadyAsync(token);
     var i = 0;
+
     // Prometheus client
-    using var httpClient = new HttpClient();
-    httpClient.BaseAddress = new Uri($"{pConfig.Protocol}://{pConfig.Host}:{pConfig.Port}/");
-    var promClient = new PrometheusClient(httpClient);
+    using var promHttpClient = new HttpClient();
+    promHttpClient.BaseAddress = new Uri($"{pConfig.Protocol}://{pConfig.Host}:{pConfig.Port}/");
+    var promClient = new PrometheusClient(promHttpClient);
+    // Loki Client
+    using var lokiHttpClient = new HttpClient();
+    lokiHttpClient.BaseAddress = new Uri($"{lConfig.Protocol}://{lConfig.Host}:{lConfig.Port}/");
+    var lokiClient = new LokiClient(lokiHttpClient);
     // HTTP Metric client
     using var httpMetricClient = new HttpClient();
     httpMetricClient.Timeout = TimeSpan.FromSeconds(5);
@@ -250,42 +256,38 @@ internal static class Program {
         }
 
         foreach (var healthCheck in healthChecks) {
+          HealthStatus currCheck;
+
           switch (healthCheck.Type) {
             case HealthCheckType.PrometheusMetric:
               var definition = (PrometheusHealthCheckDefinition)healthCheck.Definition;
-              var currCheck = await Program.RunHealthCheck(promClient, service, healthCheck, definition, token);
-
-              // If currCheck is Unknown or currCheck is worse than aggStatus (as long as aggStatus is not Unknown)
-              // set aggStatus to currCheck
-              if ((currCheck == HealthStatus.Unknown) ||
-                ((aggStatus != HealthStatus.Unknown) && (currCheck > (aggStatus ?? 0)))) {
-                aggStatus = currCheck;
-              }
-
-              // Set checkResults
-              checkResults.Add(healthCheck.Name, currCheck);
+              currCheck = await Program.RunHealthCheck(promClient, service, healthCheck, definition, token);
               break;
-
+            case HealthCheckType.LokiMetric:
+              var lokiDefinition = (LokiHealthCheckDefinition)healthCheck.Definition;
+              currCheck = await Program.RunLokiHealthCheck(lokiClient, service, healthCheck, lokiDefinition, token);
+              break;
             case HealthCheckType.HttpRequest:
               var httpDefinition = (HttpHealthCheckDefinition)healthCheck.Definition;
-              var currHttpCheck = await Program.RunHttpHealthCheck(
+              currCheck = await Program.RunHttpHealthCheck(
                 httpMetricClient,
                 service,
                 healthCheck,
                 httpDefinition,
                 token);
-
-              // If currCheck is Unknown or currCheck is worse than aggStatus (as long as aggStatus is not Unknown)
-              // set aggStatus to currCheck
-              if ((currHttpCheck == HealthStatus.Unknown) ||
-                  ((aggStatus != HealthStatus.Unknown) && (currHttpCheck > (aggStatus ?? 0)))) {
-                aggStatus = currHttpCheck;
-              }
-
-              // Set checkResults
-              checkResults.Add(healthCheck.Name, currHttpCheck);
               break;
+            default:
+              throw new NotSupportedException("Healthcheck Type is not supported.");
           }
+          // If currCheck is Unknown or currCheck is worse than aggStatus (as long as aggStatus is not Unknown)
+          // set aggStatus to currCheck
+          if ((currCheck == HealthStatus.Unknown) ||
+              ((aggStatus != HealthStatus.Unknown) && (currCheck > (aggStatus ?? 0)))) {
+            aggStatus = currCheck;
+          }
+
+          // Set checkResults
+          checkResults.Add(healthCheck.Name, currCheck);
         }
 
         // Send result data here
@@ -308,7 +310,6 @@ internal static class Program {
     PrometheusHealthCheckDefinition definition,
     CancellationToken token) {
 
-    var currCheck = HealthStatus.Online;
     // Set start and end for date range, Get Prometheus samples
     var end = DateTime.UtcNow;
     var start = end.Subtract(definition.Duration);
@@ -316,26 +317,53 @@ internal static class Program {
       definition.Expression, start, end, TimeSpan.FromSeconds(1), null, token
     );
 
+    return ProcessQueryResults(service, healthCheck, definition.Conditions, qrResult);
+  }
+
+  private static async Task<HealthStatus> RunLokiHealthCheck(
+    ILokiClient lokiClient,
+    ServiceConfiguration service,
+    HealthCheckModel healthCheck,
+    LokiHealthCheckDefinition definition,
+    CancellationToken token) {
+
+    // Set start and end for date range, Get Prometheus samples
+    var end = DateTime.UtcNow;
+    var start = end.Subtract(definition.Duration);
+    var qrResult = await lokiClient.QueryRangeAsync(
+      definition.Expression, start, end, direction: Direction.Forward, cancellationToken: token
+    );
+
+    return ProcessQueryResults(service, healthCheck, definition.Conditions, qrResult);
+  }
+
+  private static HealthStatus ProcessQueryResults(
+    ServiceConfiguration service,
+    HealthCheckModel healthCheck,
+    IImmutableList<MetricHealthCondition> conditions,
+    ResponseEnvelope<QueryResults> qrResult) {
+
     // Error handling
+    var currCheck = HealthStatus.Online;
     if (qrResult.Data == null) {
       // No data, bad request
-      Console.Error.WriteLine($"Prometheus returned nothing for health check: {healthCheck.Name}");
+      Console.Error.WriteLine($"Returned nothing for health check: {healthCheck.Name}");
       currCheck = HealthStatus.Unknown;
     } else if (qrResult.Data.Result.Count > 1) {
       // Bad config, multiple time series returned
       Console.Error.WriteLine(
-        $"Invalid Prometheus configuration, multiple time series returned for health check: {healthCheck.Name}");
+        $"Invalid configuration, multiple time series returned for health check: {healthCheck.Name}");
       currCheck = HealthStatus.Unknown;
     } else if ((qrResult.Data.Result.Count == 0) ||
-      (qrResult.Data.Result[0].Values == null) ||
-      (qrResult.Data.Result[0].Values!.Count == 0)) {
+               (qrResult.Data.Result[0].Values == null) ||
+               (qrResult.Data.Result[0].Values!.Count == 0)) {
       // No samples
-      Console.Error.WriteLine($"Prometheus returned no samples for health check: {healthCheck.Name}");
+      Console.Error.WriteLine($"Returned no samples for health check: {healthCheck.Name}");
       currCheck = HealthStatus.Unknown;
     } else {
       // Successfully obtained samples from PromQL, evaluate against all conditions for given check
       var samples = qrResult.Data.Result[0].Values;
-      foreach (var condition in definition.Conditions) {
+      foreach (var condition in conditions) {
         // Determine which comparison to execute
         // Evaluate all PromQL samples
         var evaluation = Program.EvaluateSamples(condition.HealthOperator, samples!, condition.Threshold);
@@ -346,18 +374,12 @@ internal static class Program {
           break;
         }
       }
-
-      if (currCheck == HealthStatus.Online) {
-        Console.WriteLine($"Service {service.Name} is online");
-      } else {
-        Console.WriteLine($"Service {service.Name} has status of {currCheck}");
-      }
     }
 
     return currCheck;
   }
 
-  private static async Task<HealthStatus> RunHttpHealthCheck(
+    private static async Task<HealthStatus> RunHttpHealthCheck(
     HttpClient client,
     ServiceConfiguration service,
     HealthCheckModel healthCheck,

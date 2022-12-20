@@ -30,10 +30,29 @@ services:
     networks:
       - "shared"
 
+  loki:
+    image: grafana/loki:2.6.1
+    restart: always
+    ports: [ "3100:3100" ]
+    volumes:
+      - "./config/development/loki.yml:/etc/loki/local-config.yaml:ro"
+      - "lokiVolume:/loki:rw"
+    networks:
+      - "shared"
+
+  grafana:
+    image: grafana/grafana
+    restart: unless-stopped
+    ports: [ "3000:3000" ]
+    networks:
+      - "shared"
+
   test-metric-app:
     build: ./test/test-metric-app
     restart: unless-stopped
     ports: ["2020:2020"]
+    environment:
+      ENVIRONMENT: "DockerCompose"
     networks:
       - "shared"
 
@@ -53,8 +72,7 @@ services:
     command: "/sonar/config/service-config.json"
     restart: unless-stopped
     environment:
-      APICONFIG__BASEURL: "http://sonar-api:8081/"
-      PROMETHEUS__HOST: "prometheus"
+      ENVIRONMENT: "DockerCompose"
     volumes:
       - "./sonar-agent/service-config.json:/sonar/config/service-config.json:ro"
     networks:
@@ -76,6 +94,7 @@ services:
 volumes:
   dataVolume: {}
   tsdbVolume: {}
+  lokiVolume: {}
 
 networks:
   shared:

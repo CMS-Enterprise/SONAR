@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Http;
 using Cms.BatCave.Sonar.Json;
+using Cms.BatCave.Sonar.Query;
 
 namespace Cms.BatCave.Sonar.Prometheus;
 
@@ -41,7 +42,7 @@ public class PrometheusClient : IPrometheusClient {
     TimeSpan? timeout = null,
     CancellationToken cancellationToken = default) {
 
-    var parameters = new QueryStringParameterCollection {
+    var parameters = new UriQueryStringParameterCollection {
       { "query", query },
       { "time", timestamp },
     };
@@ -62,7 +63,7 @@ public class PrometheusClient : IPrometheusClient {
     QueryPostRequest request,
     CancellationToken cancellationToken = default) {
 
-    var content = new QueryStringParameterCollection {
+    var content = new UriQueryStringParameterCollection {
       { "query", request.Query },
       { "time", request.Timestamp },
     };
@@ -115,7 +116,7 @@ public class PrometheusClient : IPrometheusClient {
     TimeSpan? timeout,
     CancellationToken cancellationToken = default) {
 
-    var parameters = new QueryStringParameterCollection {
+    var parameters = new UriQueryStringParameterCollection {
       { "query", query },
       { "start", start },
       { "end", end },
@@ -138,7 +139,7 @@ public class PrometheusClient : IPrometheusClient {
     QueryRangePostRequest request,
     CancellationToken cancellationToken = default) {
 
-    var content = new QueryStringParameterCollection {
+    var content = new UriQueryStringParameterCollection {
       { "query", request.Query },
       { "start", request.Start },
       { "end", request.End },

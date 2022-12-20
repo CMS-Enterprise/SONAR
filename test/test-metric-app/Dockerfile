@@ -2,8 +2,11 @@ FROM mcr.microsoft.com/dotnet/sdk:6.0 as build
 
 WORKDIR /test-metric-app
 COPY test-metric-app.csproj .
+
 RUN dotnet restore
 COPY *.cs .
+COPY appsettings.json .
+COPY appsettings.*.json .
 RUN dotnet build -c Release
 
 FROM mcr.microsoft.com/dotnet/aspnet:6.0

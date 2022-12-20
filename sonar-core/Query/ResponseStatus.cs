@@ -1,4 +1,4 @@
-namespace Cms.BatCave.Sonar.Prometheus;
+namespace Cms.BatCave.Sonar.Query;
 
 public enum ResponseStatus {
   Error = 0,

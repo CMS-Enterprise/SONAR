@@ -8,7 +8,7 @@ using System.Text.Json;
 
 namespace Cms.BatCave.Sonar.Http;
 
-public class QueryStringParameterCollection : IEnumerable<KeyValuePair<String, Object>>, ILookup<String, Object> {
+public class UriQueryStringParameterCollection : IEnumerable<KeyValuePair<String, Object>>, ILookup<String, Object> {
   private readonly JsonSerializerOptions _options;
   private readonly IDictionary<String, List<Object>> _values = new Dictionary<String, List<Object>>();
 
@@ -19,15 +19,15 @@ public class QueryStringParameterCollection : IEnumerable<KeyValuePair<String, O
       val :
       Enumerable.Empty<Object>();
 
-  public QueryStringParameterCollection() {
+  public UriQueryStringParameterCollection() {
     this._options = new JsonSerializerOptions();
   }
 
-  public QueryStringParameterCollection(JsonSerializerOptions options) {
+  public UriQueryStringParameterCollection(JsonSerializerOptions options) {
     this._options = options;
   }
 
-  public static implicit operator String(QueryStringParameterCollection collection) {
+  public static implicit operator String(UriQueryStringParameterCollection collection) {
     return collection.ToString();
   }
 

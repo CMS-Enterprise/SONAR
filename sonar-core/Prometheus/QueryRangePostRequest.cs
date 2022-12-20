@@ -1,6 +1,6 @@
 using System;
 
-namespace Cms.BatCave.Sonar.Prometheus;
+namespace Cms.BatCave.Sonar.Query;
 
 public record QueryRangePostRequest(
   String Query,

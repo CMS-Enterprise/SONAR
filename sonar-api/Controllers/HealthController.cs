@@ -13,6 +13,7 @@ using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
 using Cms.BatCave.Sonar.Prometheus;
+using Cms.BatCave.Sonar.Query;
 using Cms.BatCave.Sonar.System;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;

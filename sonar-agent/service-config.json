@@ -27,6 +27,32 @@
             ]
           },
           "type": "prometheusMetric"
+        },
+        {
+          "name": "example-loki",
+          "description": "Example Loki Metric",
+          "definition": {
+            "duration": "0.00:00:10",
+            "expression": "sum by (job) (count_over_time({job=\"Example.LokiLogMessage\", level=\"Error\"}[30s]))",
+            "conditions": [
+              {
+                "healthOperator": "GreaterThan",
+                "threshold": 4,
+                "healthStatus": "Offline"
+              },
+              {
+                "healthOperator": "GreaterThan",
+                "threshold": 3,
+                "healthStatus": "Degraded"
+              },
+              {
+                "healthOperator": "GreaterThan",
+                "threshold": 2,
+                "healthStatus": "AtRisk"
+              }
+            ]
+          },
+          "type": "lokiMetric"
         }
       ]
     },
