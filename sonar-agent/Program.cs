@@ -27,6 +27,9 @@ internal static class Program {
     Converters = { new JsonStringEnumConverter() }
   };
 
+  private static Dictionary<String, IImmutableList<(Decimal Timestamp, String Value)>> _cache =
+    new Dictionary<string, IImmutableList<(decimal Timestamp, string Value)>>();
+
   private static async Task Main(String[] args) {
     // API Configuration
     var builder = new ConfigurationBuilder()
@@ -310,14 +313,27 @@ internal static class Program {
     PrometheusHealthCheckDefinition definition,
     CancellationToken token) {
 
-    // Set start and end for date range, Get Prometheus samples
+    var currCheck = HealthStatus.Online;
+    // Get Prometheus samples
+    //  Compute start and end date based on cache
+    DateTime start;
     var end = DateTime.UtcNow;
-    var start = end.Subtract(definition.Duration);
+    var duration = definition.Duration;
+
+    // If no cached values, subtract duration from end date to get start date value.
+    //  Else, cached values exist, calculate start date from last cached value.
+    if (!_cache.ContainsKey(service.Name)) {
+      start = end.Subtract(duration);
+    } else {
+      DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+      start =  UnixEpoch.AddSeconds((double)_cache[service.Name].Last().Timestamp);
+    }
+
     var qrResult = await promClient.QueryRangeAsync(
       definition.Expression, start, end, TimeSpan.FromSeconds(1), null, token
     );
 
-    return ProcessQueryResults(service, healthCheck, definition.Conditions, qrResult);
+    return ProcessQueryResults(service, healthCheck, definition.Conditions, duration, qrResult);
   }
 
   private static async Task<HealthStatus> RunLokiHealthCheck(
@@ -334,13 +350,14 @@ internal static class Program {
       definition.Expression, start, end, direction: Direction.Forward, cancellationToken: token
     );
 
-    return ProcessQueryResults(service, healthCheck, definition.Conditions, qrResult);
+    return ProcessQueryResults(service, healthCheck, definition.Conditions, definition.Duration, qrResult);
   }
 
   private static HealthStatus ProcessQueryResults(
     ServiceConfiguration service,
     HealthCheckModel healthCheck,
     IImmutableList<MetricHealthCondition> conditions,
+    TimeSpan duration,
     ResponseEnvelope<QueryResults> qrResult) {
 
     // Error handling
@@ -361,8 +378,10 @@ internal static class Program {
       Console.Error.WriteLine($"Returned no samples for health check: {healthCheck.Name}");
       currCheck = HealthStatus.Unknown;
     } else {
+
       // Successfully obtained samples from PromQL, evaluate against all conditions for given check
-      var samples = qrResult.Data.Result[0].Values;
+      var samples = ComputeCache(qrResult, service, duration.Seconds);
+
       foreach (var condition in conditions) {
         // Determine which comparison to execute
         // Evaluate all PromQL samples
@@ -492,5 +511,35 @@ internal static class Program {
 
     // Iterate through list, if all meet condition, return true, else return false if ANY don't meet condition
     return !values.Any(val => !comparison(Convert.ToDouble(val.Value), threshold));
+  }
+
+  private static IImmutableList<(Decimal Timestamp, String Value)> ComputeCache(
+    ResponseEnvelope<QueryResults> response,
+    ServiceConfiguration service,
+    Decimal duration) {
+
+    // If cache does not contain key, insert entire response envelope into dictionary.
+    //  Else, cache contains service, truncate and concat.
+    var newResults = response.Data.Result[0].Values;
+    var key = service.Name;
+    if (!_cache.ContainsKey(key)) {
+      _cache.Add(service.Name, newResults);
+    } else {
+      var cachedValues = _cache[key];
+      var endValue = newResults.Last().Timestamp;
+
+      // Check for duplicate values, remove
+      if (newResults.First().Timestamp == cachedValues.Last().Timestamp) {
+        cachedValues = cachedValues.RemoveAt(cachedValues.Count - 1);
+      }
+
+      // Concat new results to cache
+      cachedValues = cachedValues.Concat(newResults).ToImmutableList();
+      // Truncate old values
+      cachedValues = cachedValues.SkipWhile(val => val.Timestamp < (endValue - duration)).ToImmutableList();
+      _cache[key] = cachedValues;
+    }
+
+    return _cache[key];
   }
 }
