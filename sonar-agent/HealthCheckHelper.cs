@@ -84,8 +84,6 @@ public class HealthCheckHelper {
               var httpDefinition = (HttpHealthCheckDefinition)healthCheck.Definition;
               currCheck = await RunHttpHealthCheck(
                 httpMetricClient,
-                service,
-                healthCheck,
                 httpDefinition,
                 token);
               break;
@@ -222,8 +220,6 @@ public class HealthCheckHelper {
 
     private static async Task<HealthStatus> RunHttpHealthCheck(
     HttpClient client,
-    ServiceConfiguration service,
-    HealthCheckModel healthCheck,
     HttpHealthCheckDefinition definition,
     CancellationToken token) {
 
