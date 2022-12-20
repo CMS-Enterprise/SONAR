@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
-using LokiLoggingProvider.Options;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Prometheus;
@@ -36,25 +35,14 @@ internal class Program {
     // Loki
     int count = 0, numOfErrors = 0;
     using ILoggerFactory loggerFactory = LoggerFactory.Create(loggingBuilder => {
-      StaticLabelOptions sl = new StaticLabelOptions {
-        JobName = "Example.LokiLogMessage"
-      };
-      DynamicLabelOptions dl = new DynamicLabelOptions {
-        IncludeLogLevel = true
-      };
-
-      loggingBuilder.AddLoki(configure => {
-        configure.Client = PushClient.Http;
-        configure.StaticLabels = sl;
-        configure.DynamicLabels = dl;
-        configure.Http.Address = configuration.GetValue("LokiAddress", "http://localhost:3100");
-      });
+      loggingBuilder.AddConfiguration(configuration.GetSection("Logging"));
+      loggingBuilder.AddConsole();
+      loggingBuilder.AddLoki();
     });
 
     var logger = loggerFactory.CreateLogger<Program>();
 
     Console.WriteLine("Test Metrics App Running (press Ctrl+C to stop)...");
-    logger.LogDebug("Test Log Message.");
 
     while (true) {
       // Update example_saw_wave
