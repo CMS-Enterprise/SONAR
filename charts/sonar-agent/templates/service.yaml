@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "sonar-agent.fullname" . }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    {{- include "sonar-agent.selectorLabels" . | nindent 4 }}
+  ports: []
