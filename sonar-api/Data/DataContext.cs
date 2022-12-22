@@ -73,6 +73,11 @@ public class DataContext : DbContext {
         entity.HasOne<Service>()
           .WithMany()
           .HasForeignKey(hc => hc.ServiceId);
+      })
+      .Entity<ApiKey>(entity => {
+        entity.HasOne<Tenant>()
+          .WithMany()
+          .HasForeignKey(t => t.TenantId);
       });
   }
 }

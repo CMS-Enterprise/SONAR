@@ -1,23 +1,30 @@
 using System;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
+using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Json;
+using Cms.BatCave.Sonar.Middlewares;
 using Cms.BatCave.Sonar.OpenApi;
 using Cms.BatCave.Sonar.Options;
 using CommandLine;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using Environment = System.Environment;
 
 namespace Cms.BatCave.Sonar;
 
@@ -143,6 +150,7 @@ public class Program {
       });
     }
 
+    app.UseMiddleware<ApiKeyMiddleware>();
     app.UseAuthorization();
     // Route requests based on Controller attribute annotations
     app.MapControllers();
@@ -173,6 +181,76 @@ public class Program {
       logger.LogError(ex, "An unexpected error occurred creating the database");
     }
 
+    // Extract API key from configuration
+    var builder = new ConfigurationBuilder()
+      .SetBasePath(Directory.GetCurrentDirectory())
+      .AddJsonFile("appsettings.json", false, true)
+      .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}.json", true)
+      .AddEnvironmentVariables();
+    IConfigurationRoot configuration = builder.Build();
+
+    if (!configuration.GetSection("ApiKey").Exists()) {
+      logger.LogError("Default ApiKey not set in configuration");
+    }
+
+    // Validate API key
+    var requestApiKey = configuration.GetSection("ApiKey").Value;
+    if (Program.LoadAndValidateApiKeyConfig(requestApiKey)) {
+      logger.LogInformation("Default API key extracted");
+
+      await Program.RecordApiKey(db, scope, requestApiKey, logger);
+
+    } else {
+      logger.LogError("Could not extract default API key");
+    }
+
     return 0;
+  }
+
+  private static Boolean LoadAndValidateApiKeyConfig(
+    String configApiKey) {
+    Int32 apiKeyByteLength = 32;
+    Boolean apiKeyIsValid = false;
+
+    // Check if configured API key is Base64 and of correct length
+    try {
+      var decodedBytes = Convert.FromBase64String(configApiKey);
+
+      if (decodedBytes.Length != apiKeyByteLength) {
+        Console.Error.WriteLine("Invalid length for API key.");
+      }
+
+      apiKeyIsValid = true;
+    } catch {
+      Console.Error.WriteLine("API key is not Base64 encoded.");
+    }
+
+    return apiKeyIsValid;
+  }
+
+  private static async Task RecordApiKey(
+    DataContext db,
+    IServiceScope scope,
+    String requestApiKey,
+    ILogger<Program> logger) {
+    // Create cancellation source, token, new task
+    var source = new CancellationTokenSource();
+    CancellationToken cancellationToken = source.Token;
+
+    await using var tx =
+      await db.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
+
+    try {
+      // Record API key
+      var apiKeysTable = scope.ServiceProvider.GetRequiredService<DbSet<ApiKey>>();
+      await apiKeysTable.AddAsync(
+        new ApiKey(requestApiKey, ApiKeyType.Admin, null),
+        cancellationToken);
+      await db.SaveChangesAsync(cancellationToken);
+      await tx.CommitAsync(cancellationToken);
+      logger.LogInformation("Default API key recorded");
+    } catch {
+      await tx.RollbackAsync(cancellationToken);
+    }
   }
 }

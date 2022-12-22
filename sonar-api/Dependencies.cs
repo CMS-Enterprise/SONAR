@@ -10,6 +10,7 @@ public class Dependencies {
   public virtual void RegisterDependencies(WebApplicationBuilder builder) {
     builder.Services.AddScoped<PrometheusRemoteWriteClient>();
     builder.Services.AddScoped<ServiceDataHelper>();
+    builder.Services.AddScoped<ApiKeyDataHelper>();
     // Register all Configuration Option Classes for dependency injection
     new ConfigurationDependencyRegistration(builder.Configuration).RegisterDependencies(builder.Services);
     // Register DataContext and DbSet<> dependencies

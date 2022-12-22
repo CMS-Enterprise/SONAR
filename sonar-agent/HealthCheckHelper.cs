@@ -12,6 +12,7 @@ using Cms.BatCave.Sonar.Loki;
 using Cms.BatCave.Sonar.Models;
 using Cms.BatCave.Sonar.Prometheus;
 using Cms.BatCave.Sonar.Query;
+using Microsoft.Extensions.Configuration;
 
 namespace Cms.BatCave.Sonar.Agent;
 
@@ -20,12 +21,17 @@ public static class HealthCheckHelper {
     new Dictionary<string, IImmutableList<(decimal Timestamp, string Value)>>();
 
     public static async Task RunScheduledHealthCheck(
-    TimeSpan interval, ApiConfiguration config, PrometheusConfiguration pConfig, LokiConfiguration lConfig, CancellationToken token) {
+    TimeSpan interval,
+    IConfigurationRoot configRoot,
+    ApiConfiguration config,
+    PrometheusConfiguration pConfig,
+    LokiConfiguration lConfig,
+    CancellationToken token) {
     // Configs
     var env = config.Environment;
     var tenant = config.Tenant;
     // SONAR client
-    var client = new SonarClient(baseUrl: config.BaseUrl, new HttpClient());
+    var client = new SonarClient(configRoot, baseUrl: config.BaseUrl, new HttpClient());
     await client.ReadyAsync(token);
     var i = 0;
 

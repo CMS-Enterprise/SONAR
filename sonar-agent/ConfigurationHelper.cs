@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Models;
+using Microsoft.Extensions.Configuration;
 
 namespace Cms.BatCave.Sonar.Agent;
 
@@ -129,13 +130,14 @@ public static class ConfigurationHelper {
   }
 
   public static async Task ConfigureServices(
+    IConfigurationRoot configRoot,
     ApiConfiguration apiConfig,
     ServiceHierarchyConfiguration servicesHierarchy,
     CancellationToken token) {
 
     // SONAR client
     using var http = new HttpClient();
-    var client = new SonarClient(apiConfig.BaseUrl, http);
+    var client = new SonarClient(configRoot, apiConfig.BaseUrl, http);
     await client.ReadyAsync(token);
 
     try {

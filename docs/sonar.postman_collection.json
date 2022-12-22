@@ -253,6 +253,126 @@
         }
       },
       "response": []
+    },
+    {
+      "name": "Create API Key",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "ApiKey",
+            "value": "<get from appsettings.json>",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"apikeytype\": \"Standard\",\n    \"environment\": \"foo\",\n    \"tenant\": \"baz\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8081/api/key",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8081",
+          "path": [
+            "api",
+            "key"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update API Key",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "ApiKey",
+            "value": "<get from appsettings.json>",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"apikey\": \"<existing API key>\",\n    \"apikeytype\": \"Admin\",\n    \"environment\": \"foo\",\n    \"tenant\": \"baz\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8081/api/key",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8081",
+          "path": [
+            "api",
+            "key"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete API Key",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          },
+          {
+            "key": "ApiKey",
+            "value": "<get from appsettings.json>",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"apikey\": \"<existing API key>\",\n    \"apikeytype\": \"Admin\",\n    \"environment\": \"foo\",\n    \"tenant\": \"baz\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:8081/api/key",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8081",
+          "path": [
+            "api",
+            "key"
+          ]
+        }
+      },
+      "response": []
     }
   ]
 }

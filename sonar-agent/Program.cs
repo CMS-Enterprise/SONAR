@@ -37,13 +37,13 @@ internal static class Program {
       var servicesHierarchy = await ConfigurationHelper.LoadAndValidateJsonServiceConfig(args, token);
       // Configure service hierarchy
       Console.WriteLine("Configuring services....");
-      await ConfigurationHelper.ConfigureServices(apiConfig, servicesHierarchy, token);
+      await ConfigurationHelper.ConfigureServices(configuration, apiConfig, servicesHierarchy, token);
       // Hard coded 10 second interval
       var interval = TimeSpan.FromSeconds(10);
       Console.WriteLine("Initializing SONAR Agent...");
       // Run task that calls Health Check function
       var task = Task.Run(async delegate {
-        await HealthCheckHelper.RunScheduledHealthCheck(interval, apiConfig, promConfig, lokiConfig, token);
+        await HealthCheckHelper.RunScheduledHealthCheck(interval, configuration, apiConfig, promConfig, lokiConfig, token);
       }, token);
       await task;
     } catch (IndexOutOfRangeException) {
