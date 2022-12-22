@@ -13,13 +13,13 @@ using Cms.BatCave.Sonar.Models;
 
 namespace Cms.BatCave.Sonar.Agent;
 
-public class ConfigurationHelper {
+public static class ConfigurationHelper {
   private static readonly JsonSerializerOptions ConfigSerializerOptions = new JsonSerializerOptions {
     PropertyNameCaseInsensitive = true,
     Converters = { new JsonStringEnumConverter() }
   };
 
-  public async Task<ServiceHierarchyConfiguration> LoadAndValidateJsonServiceConfig(
+  public static async Task<ServiceHierarchyConfiguration> LoadAndValidateJsonServiceConfig(
     String[] args,
     CancellationToken token) {
 
@@ -128,7 +128,7 @@ public class ConfigurationHelper {
     return new ServiceHierarchyConfiguration(serviceResults, next.RootServices);
   }
 
-  public async Task ConfigureServices(
+  public static async Task ConfigureServices(
     ApiConfiguration apiConfig,
     ServiceHierarchyConfiguration servicesHierarchy,
     CancellationToken token) {
