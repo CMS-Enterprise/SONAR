@@ -21,10 +21,6 @@ internal static class Program {
     var promConfig = configuration.GetSection("Prometheus").BindCtor<PrometheusConfiguration>();
     var lokiConfig = configuration.GetSection("Loki").BindCtor<LokiConfiguration>();
 
-    // Instantiate helper classes.
-    var healthCheckHelper = new HealthCheckHelper();
-    var configHelper = new ConfigurationHelper();
-
     // Create cancellation source, token, new task
     var source = new CancellationTokenSource();
     CancellationToken token = source.Token;
@@ -38,16 +34,16 @@ internal static class Program {
 
     try {
       // Load and merge configs
-      var servicesHierarchy = await configHelper.LoadAndValidateJsonServiceConfig(args, token);
+      var servicesHierarchy = await ConfigurationHelper.LoadAndValidateJsonServiceConfig(args, token);
       // Configure service hierarchy
       Console.WriteLine("Configuring services....");
-      await configHelper.ConfigureServices(apiConfig, servicesHierarchy, token);
+      await ConfigurationHelper.ConfigureServices(apiConfig, servicesHierarchy, token);
       // Hard coded 10 second interval
       var interval = TimeSpan.FromSeconds(10);
       Console.WriteLine("Initializing SONAR Agent...");
       // Run task that calls Health Check function
       var task = Task.Run(async delegate {
-        await healthCheckHelper.RunScheduledHealthCheck(interval, apiConfig, promConfig, lokiConfig, token);
+        await HealthCheckHelper.RunScheduledHealthCheck(interval, apiConfig, promConfig, lokiConfig, token);
       }, token);
       await task;
     } catch (IndexOutOfRangeException) {

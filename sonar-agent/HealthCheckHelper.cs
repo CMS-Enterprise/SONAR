@@ -15,11 +15,11 @@ using Cms.BatCave.Sonar.Query;
 
 namespace Cms.BatCave.Sonar.Agent;
 
-public class HealthCheckHelper {
+public static class HealthCheckHelper {
   private static Dictionary<String, IImmutableList<(Decimal Timestamp, String Value)>> _cache =
     new Dictionary<string, IImmutableList<(decimal Timestamp, string Value)>>();
 
-    public async Task RunScheduledHealthCheck(
+    public static async Task RunScheduledHealthCheck(
     TimeSpan interval, ApiConfiguration config, PrometheusConfiguration pConfig, LokiConfiguration lConfig, CancellationToken token) {
     // Configs
     var env = config.Environment;
@@ -345,16 +345,16 @@ public class HealthCheckHelper {
     } else {
       var cachedValues = _cache[key];
       var endValue = newResults.Last().Timestamp;
+      var beginning = newResults.First().Timestamp;
 
-      // Check for duplicate values, remove
-      if (newResults.First().Timestamp == cachedValues.Last().Timestamp) {
-        cachedValues = cachedValues.RemoveAt(cachedValues.Count - 1);
-      }
+      // Skip old cached samples that came before the current time window
+      cachedValues.SkipWhile(val => val.Timestamp < (endValue - duration))
+        // If there is overlapping data from the cache and the new results, drop the duplicate samples from the cache
+        .TakeWhile(d => d.Timestamp < beginning)
+        // Concatenate the cached data with the new results
+        .Concat(newResults)
+        .ToImmutableList();
 
-      // Concat new results to cache
-      cachedValues = cachedValues.Concat(newResults).ToImmutableList();
-      // Truncate old values
-      cachedValues = cachedValues.SkipWhile(val => val.Timestamp < (endValue - duration)).ToImmutableList();
       _cache[key] = cachedValues;
     }
 
