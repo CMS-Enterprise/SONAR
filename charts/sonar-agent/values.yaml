@@ -27,3 +27,16 @@ resources: {}
   #   memory: 128Mi
 
 tolerations: []
+
+apiConfig:
+  environment: foo
+  tenant: baz
+  baseUrl: http://localhost:8081
+
+prometheus:
+  name: prometheus
+  host: localhost
+
+loki:
+  name: loki
+  host: localhost

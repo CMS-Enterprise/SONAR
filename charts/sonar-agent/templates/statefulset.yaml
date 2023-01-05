@@ -49,6 +49,21 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.tolerations }}
+        - volumeMounts:
+          - name: appsettings-configmap
+            mountPath: /sonar-agent
+        - env:
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sonar-agent-secrets
+                  key: apiKey
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      volumes:
+        - name: appsettings-configmap
+          configMap:
+            name: appsettings-configmap
+
+
