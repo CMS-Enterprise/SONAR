@@ -223,8 +223,8 @@ public class HealthController : ControllerBase {
         // This code groups all the metrics for a given service and then determines which state is currently set.
         var metricByService =
           results.Result
-            .Where(metric => metric.Value != null)
-            .Select(metric => (metric.Labels, metric.Value!.Value))
+            .Where(metric => metric.Values != null)
+            .Select(metric => (metric.Labels, metric.Values!.OrderByDescending(v => v.Timestamp).FirstOrDefault()))
             .ToLookup(
               keySelector: metric =>
                 metric.Labels.TryGetValue(MetricLabelKeys.Service, out var serviceName) ? serviceName : null,
@@ -278,9 +278,9 @@ public class HealthController : ControllerBase {
           var metricByHealthCheck =
             results.Result
               .Where(metric => metric.Values != null)
-              .Select(metric => (metric.Labels, metric.Values!.Single()))
+              .Select(metric => (metric.Labels, metric.Values!.OrderByDescending(v => v.Timestamp).FirstOrDefault()))
               .ToLookup(
-                keySelector: metric => GetHealthCheckKey(metric.Labels),
+                keySelector: metric => HealthController.GetHealthCheckKey(metric.Labels),
                 TupleComparer.From(StringComparer.OrdinalIgnoreCase, StringComparer.OrdinalIgnoreCase)
               );
 
@@ -411,8 +411,8 @@ public class HealthController : ControllerBase {
     CancellationToken cancellationToken) {
 
     var response = await prometheusClient.QueryAsync(
-      // last_over_time(metric{tag="value"}[time_window])
-      $"last_over_time({promQuery}[{PrometheusClient.ToPrometheusDuration(HealthController.MaximumServiceHealthAge)}])",
+      // metric{tag="value"}[time_window]
+      $"{promQuery}[{PrometheusClient.ToPrometheusDuration(HealthController.MaximumServiceHealthAge)}]",
       DateTime.UtcNow,
       cancellationToken: cancellationToken
     );
