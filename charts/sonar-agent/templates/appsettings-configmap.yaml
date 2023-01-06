@@ -1,19 +1,19 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: appsettings-configmap
+  name: appsettings-configmap-file
 data:
-  appsettings.json: |
+  appsettings.k8s.json: |
     {
       "ApiConfig": {
-        "Environment": {{ .Values.apiConfig.environment }},
-        "Tenant": {{ .Values.apiConfig.tenant }},
-        "BaseUrl": {{ .Values.apiConfig.baseUrl }}
+        "Environment": {{ quote .Values.apiConfig.environment }},
+        "Tenant": {{ quote .Values.apiConfig.tenant }},
+        "BaseUrl": {{ quote .Values.apiConfig.baseUrl }}
       },
       "Prometheus": {
-        "Host": {{ .Values.prometheus.host }}
+        "Host": {{ quote .Values.prometheus.host }}
       },
       "Loki": {
-        "Host": {{ .Values.loki.host }}
+        "Host": {{ quote .Values.loki.host }}
       }
     }

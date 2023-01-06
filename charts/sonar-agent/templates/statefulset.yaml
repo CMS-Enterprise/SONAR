@@ -18,52 +18,50 @@ spec:
       labels:
         {{- include "sonar-agent.selectorLabels" . | nindent 8 }}
     spec:
-      volumes:
-        # You set volumes at the Pod level, then mount them into containers inside that Pod
-        - name: sonar-agent-config
-          configMap:
-            # Provide the name of the ConfigMap you want to mount.
-            name: sonar-agent
-            # An array of keys from the ConfigMap to create as files
-            items:
-              {{- range $config := .Values.configs }}
-              - key: {{ $config.key }}
-                path: {{ $config.key }}.yaml
-              {{- end}}
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      containers:
-        - name: {{ .Chart.Name }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command:
-            {{- range $config := .Values.configs }}
-            - {{ printf "./service-config/%s.yaml" $config.key | quote }}
-            {{- end }}
-          volumeMounts:
-            - name: config
-              mountPath: "/sonar/sonar-agent/service-config"
-              readOnly: true
-          resources:
-            {{- toYaml .Values.resources | nindent 12 }}
-      {{- with .Values.tolerations }}
-        - volumeMounts:
-          - name: appsettings-configmap
-            mountPath: /sonar-agent
-        - env:
-            - name: API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: sonar-agent-secrets
-                  key: apiKey
-      tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes:
         - name: appsettings-configmap
           configMap:
-            name: appsettings-configmap
-
+            name: appsettings-configmap-file
+        # You set volumes at the Pod level, then mount them into containers inside that Pod
+        - name: service-configmap
+          configMap:
+            # Provide the name of the ConfigMap you want to mount.
+            name: service-configmap-file
+            # An array of keys from the ConfigMap to create as files
+            items:
+              {{- range $config := .Values.configs }}
+              - key: {{ $config.key }}
+                path: {{ $config.key }}.yaml
+              {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            {{- range $config := .Values.configs }}
+            - {{ printf "./service-config/%s.yaml" $config.key | quote }}
+            {{- end }}
+          volumeMounts:
+            - name: appsettings-configmap
+              mountPath: /sonar/sonar-agent/setting
+            - name: service-configmap
+              mountPath: /sonar/sonar-agent/service-config
+          env:
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: sonar-agent-secrets
+                  key: apiKey
+            - name: ENVIRONMENT
+              value: k8s
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
 

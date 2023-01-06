@@ -47,5 +47,5 @@ docker push sonar-registry:{PORT_NUMBER_FROM_STEP_2}/sonar-agent:testing
 ### 5. Install the Helm Chart Using the local image
 
 ```shell
-helm install my-sonar-agent . --set image.repository=sonar-registry:54339/sonar-agent --set image.tag=testing
+helm install my-sonar-agent . --set image.repository=sonar-registry:{PORT_NUMBER_FROM_STEP_2}/sonar-agent --set image.tag=testing
 ```

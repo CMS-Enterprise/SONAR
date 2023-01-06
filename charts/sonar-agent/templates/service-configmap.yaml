@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: sonar-agent-configmap
+  name: service-configmap-file
 data:
   {{- range $obj := .Values.configs }}
     {{ $obj.key }}: {{ $obj.config | toJson | quote | indent 4 | trim  }}

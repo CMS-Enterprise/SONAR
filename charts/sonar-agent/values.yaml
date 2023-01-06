@@ -40,3 +40,5 @@ prometheus:
 loki:
   name: loki
   host: localhost
+
+"apikey": test+api+key+do+not+use+in+production+xxxxx=
