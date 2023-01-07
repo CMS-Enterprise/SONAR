@@ -1,0 +1,8 @@
+networkPolicies:
+  additionalEgressRules:
+    - to:
+        - ipBlock:
+            cidr: 146.75.0.0/16
+      ports:
+        - protocol: TCP
+          port: 80

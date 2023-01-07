@@ -4,6 +4,12 @@ image:
   repository: artifactory.cloud.cms.gov/batcave-docker/ado-repositories/oit/sonar/sonar
   pullPolicy: IfNotPresent
 
+networkPolicies:
+  enabled: true
+  defaultAllowWithinCluster: true
+  additionalEgressRules: []
+  additionalIngressRules: []
+
 imagePullSecrets: []
 
 podAnnotations: {}

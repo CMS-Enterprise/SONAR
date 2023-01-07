@@ -1,0 +1,9 @@
+networkPolicies:
+  additionalIngressRules:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: default
+      ports:
+        - port: 2701
+          protocol: TCP
