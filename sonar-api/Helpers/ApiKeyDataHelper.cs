@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Data;
+using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Extensions;
 using Microsoft.EntityFrameworkCore;
@@ -48,5 +49,38 @@ public class ApiKeyDataHelper {
     }
 
     return result.Tenant.Id;
+  }
+
+  public async Task ValidateAdminPermission(
+    String headerApiKey,
+    String adminActivity,
+    CancellationToken cancellationToken) {
+
+    var existingApiKey = await this._apiKeysTable
+      .Where(k => k.Key == headerApiKey)
+      .SingleOrDefaultAsync(cancellationToken);
+
+    if (existingApiKey.Type != ApiKeyType.Admin) {
+      throw new UnauthorizedException($"API key in header is not authorized to {adminActivity}.");
+    }
+  }
+
+  public async Task ValidateUpdatePermission(
+    String headerApiKey,
+    String environment,
+    String tenant,
+    CancellationToken cancellationToken) {
+
+    var existingApiKey = await this._apiKeysTable
+      .Where(k => k.Key == headerApiKey)
+      .SingleOrDefaultAsync(cancellationToken);
+
+    Guid? tenantId = await this.FetchExistingTenantId(environment, tenant, cancellationToken);
+
+    if ((existingApiKey.Type != ApiKeyType.Admin) &&
+        (existingApiKey.TenantId != tenantId)) {
+      throw new UnauthorizedException(
+        "API key in header is not authorized to update a tenant's configuration.");
+    }
   }
 }

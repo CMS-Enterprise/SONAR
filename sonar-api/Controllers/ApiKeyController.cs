@@ -66,13 +66,23 @@ public class ApiKeyController : ControllerBase {
   /// <param name="cancellationToken"></param>
   /// <response code="200">The API key details led to a successful API key creation.</response>
   /// <response code="400">The API key details are not valid.</response>
+  /// <response code="401">The API key in the header is not authorized for creating an API key.</response>
   [HttpPost]
   [Consumes(typeof(ApiKeyDetails), contentType: "application/json")]
   [ProducesResponseType(typeof(ApiKey), statusCode: 201)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 400)]
+  [ProducesResponseType(typeof(ProblemDetails), statusCode: 401)]
   public async Task<ActionResult> CreateApiKey(
     [FromBody] ApiKeyDetails apiKeyDetails,
     CancellationToken cancellationToken = default) {
+
+    ActionResult response;
+
+    // Validate
+    await this._apiKeyDataHelper.ValidateAdminPermission(
+      Request.Headers["ApiKey"].Single(),
+      "create an API key",
+      cancellationToken);
 
     // Check if both environment and tenant are detailed
     if ((apiKeyDetails.Environment == null) && (apiKeyDetails.Tenant != null)) {
@@ -87,7 +97,6 @@ public class ApiKeyController : ControllerBase {
       );
     }
 
-    ActionResult response;
     await using var tx =
       await this._dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
 
@@ -125,6 +134,7 @@ public class ApiKeyController : ControllerBase {
   /// <param name="cancellationToken"></param>
   /// <response code="200">The API key configuration led to a successful update.</response>
   /// <response code="400">The API key configuration is not valid.</response>
+  /// <response code="401">The API key in the header is not authorized for updating an API key.</response>
   /// <response code="404">The specified API key, environment, or tenant was not found.</response>
   [HttpPut]
   [Consumes(typeof(ApiKeyConfiguration), contentType: "application/json")]
@@ -135,10 +145,15 @@ public class ApiKeyController : ControllerBase {
     [FromBody] ApiKeyConfiguration apiKeyConfig,
     CancellationToken cancellationToken = default) {
 
+    ActionResult response;
+
     // Validate
+    await this._apiKeyDataHelper.ValidateAdminPermission(
+      Request.Headers["ApiKey"].Single(),
+      "update an API key",
+      cancellationToken);
     ApiKeyController.ValidateApiKeyConfig(apiKeyConfig);
 
-    ActionResult response;
     await using var tx =
       await this._dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
 
@@ -191,6 +206,7 @@ public class ApiKeyController : ControllerBase {
   /// <param name="cancellationToken"></param>
   /// <response code="200">The API key configuration led to a successful deletion.</response>
   /// <response code="400">The API key configuration is not valid.</response>
+  /// <response code="401">The API key in the header is not authorized for deleting an API key.</response>
   /// <response code="404">The specified API key, environment, or tenant was not found.</response>
   [HttpDelete]
   [Consumes(typeof(ApiKeyConfiguration), contentType: "application/json")]
@@ -202,9 +218,12 @@ public class ApiKeyController : ControllerBase {
     CancellationToken cancellationToken = default) {
 
     // Validate
+    await this._apiKeyDataHelper.ValidateAdminPermission(
+      Request.Headers["ApiKey"].Single(),
+      "delete an API key",
+      cancellationToken);
     ApiKeyController.ValidateApiKeyConfig(apiKeyConfig);
 
-    ActionResult response;
     await using var tx =
       await this._dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
 
@@ -248,14 +267,13 @@ public class ApiKeyController : ControllerBase {
 
       // Save
       await this._dbContext.SaveChangesAsync(cancellationToken);
-      response = this.Ok($"API key {apiKeyConfig.ApiKey} was successfully deleted.");
       await tx.CommitAsync(cancellationToken);
     } catch {
       await tx.RollbackAsync(cancellationToken);
       throw;
     }
 
-    return response;
+    return this.StatusCode((Int32)HttpStatusCode.OK);
   }
 
   private static void ValidateApiKeyConfig(ApiKeyConfiguration apiKeyConfig) {
