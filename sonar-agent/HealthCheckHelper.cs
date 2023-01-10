@@ -17,16 +17,16 @@ using Microsoft.Extensions.Configuration;
 namespace Cms.BatCave.Sonar.Agent;
 
 public static class HealthCheckHelper {
-  private static Dictionary<String, IImmutableList<(Decimal Timestamp, String Value)>> _cache =
-    new Dictionary<string, IImmutableList<(decimal Timestamp, string Value)>>();
+  private static readonly Dictionary<String, IImmutableList<(Decimal Timestamp, String Value)>> _cache = new();
 
-    public static async Task RunScheduledHealthCheck(
+  public static async Task RunScheduledHealthCheck(
     TimeSpan interval,
     IConfigurationRoot configRoot,
     ApiConfiguration config,
     PrometheusConfiguration pConfig,
     LokiConfiguration lConfig,
     CancellationToken token) {
+
     // Configs
     var env = config.Environment;
     var tenant = config.Tenant;
@@ -46,11 +46,6 @@ public static class HealthCheckHelper {
     // HTTP Metric client
     using var httpMetricClient = new HttpClient();
     httpMetricClient.Timeout = TimeSpan.FromSeconds(5);
-    // If SIGINT received before interval starts, throw exception
-    if (token.IsCancellationRequested) {
-      Console.WriteLine("Health check task was cancelled before it got started.");
-      throw new OperationCanceledException();
-    }
 
     while (true) {
       if (token.IsCancellationRequested) {
@@ -80,15 +75,27 @@ public static class HealthCheckHelper {
           switch (healthCheck.Type) {
             case HealthCheckType.PrometheusMetric:
               var definition = (PrometheusHealthCheckDefinition)healthCheck.Definition;
-              currCheck = await RunPrometheusHealthCheck(promClient, service, healthCheck, definition, token);
+              currCheck = await HealthCheckHelper.RunPrometheusHealthCheck(
+                promClient,
+                service,
+                healthCheck,
+                definition,
+                token
+              );
               break;
             case HealthCheckType.LokiMetric:
               var lokiDefinition = (LokiHealthCheckDefinition)healthCheck.Definition;
-              currCheck = await RunLokiHealthCheck(lokiClient, service, healthCheck, lokiDefinition, token);
+              currCheck = await HealthCheckHelper.RunLokiHealthCheck(
+                lokiClient,
+                service,
+                healthCheck,
+                lokiDefinition,
+                token
+              );
               break;
             case HealthCheckType.HttpRequest:
               var httpDefinition = (HttpHealthCheckDefinition)healthCheck.Definition;
-              currCheck = await RunHttpHealthCheck(
+              currCheck = await HealthCheckHelper.RunHttpHealthCheck(
                 httpMetricClient,
                 httpDefinition,
                 token);
@@ -96,10 +103,11 @@ public static class HealthCheckHelper {
             default:
               throw new NotSupportedException("Healthcheck Type is not supported.");
           }
+
           // If currCheck is Unknown or currCheck is worse than aggStatus (as long as aggStatus is not Unknown)
           // set aggStatus to currCheck
           if ((currCheck == HealthStatus.Unknown) ||
-              ((aggStatus != HealthStatus.Unknown) && (currCheck > (aggStatus ?? 0)))) {
+            ((aggStatus != HealthStatus.Unknown) && (currCheck > (aggStatus ?? 0)))) {
             aggStatus = currCheck;
           }
 
@@ -109,12 +117,18 @@ public static class HealthCheckHelper {
 
         // Send result data here
         if (aggStatus != null) {
-          await SendHealthData(env, tenant, service.Name, checkResults, client, aggStatus ?? HealthStatus.Unknown,
-            token);
+          await HealthCheckHelper.SendHealthData(
+            env,
+            tenant,
+            service.Name,
+            checkResults,
+            client,
+            aggStatus.Value,
+            token
+          );
         }
       }
 
-      Console.WriteLine($"Iteration {i} of health check.");
       await Task.Delay(interval, token);
       i++;
     }
@@ -127,19 +141,18 @@ public static class HealthCheckHelper {
     PrometheusHealthCheckDefinition definition,
     CancellationToken token) {
 
-    var currCheck = HealthStatus.Online;
     // Get Prometheus samples
     //  Compute start and end date based on cache
 
     var end = DateTime.UtcNow;
     var duration = definition.Duration;
-    DateTime start = GetStartDate(service.Name, end, duration);
+    var start = HealthCheckHelper.GetStartDate(service.Name, end, duration);
 
     var qrResult = await promClient.QueryRangeAsync(
-      definition.Expression, start, end, TimeSpan.FromSeconds(1), null, token
+      definition.Expression, start, end, TimeSpan.FromSeconds(1), timeout: null, token
     );
 
-    return ProcessQueryResults(service, healthCheck, definition.Conditions, duration, qrResult);
+    return HealthCheckHelper.ProcessQueryResults(service, healthCheck, definition.Conditions, duration, qrResult);
   }
 
   private static DateTime GetStartDate(
@@ -150,11 +163,10 @@ public static class HealthCheckHelper {
     DateTime start;
     // If no cached values, subtract duration from end date to get start date value.
     //  Else, cached values exist, calculate start date from last cached value.
-    if (!_cache.ContainsKey(key)) {
+    if (!HealthCheckHelper._cache.ContainsKey(key)) {
       start = end.Subtract(duration);
     } else {
-      DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-      start =  UnixEpoch.AddSeconds((double)_cache[key].Last().Timestamp);
+      start = DateTime.UnixEpoch.AddSeconds((Double)HealthCheckHelper._cache[key].Last().Timestamp);
     }
 
     return start;
@@ -170,13 +182,19 @@ public static class HealthCheckHelper {
     // Set start and end for date range, Get Prometheus samples
     var end = DateTime.UtcNow;
     var duration = definition.Duration;
-    DateTime start = GetStartDate(service.Name, end, duration);
+    var start = HealthCheckHelper.GetStartDate(service.Name, end, duration);
 
     var qrResult = await lokiClient.QueryRangeAsync(
       definition.Expression, start, end, direction: Direction.Forward, cancellationToken: token
     );
 
-    return ProcessQueryResults(service, healthCheck, definition.Conditions, definition.Duration, qrResult);
+    return HealthCheckHelper.ProcessQueryResults(
+      service,
+      healthCheck,
+      definition.Conditions,
+      definition.Duration,
+      qrResult
+    );
   }
 
   private static HealthStatus ProcessQueryResults(
@@ -198,20 +216,19 @@ public static class HealthCheckHelper {
         $"Invalid configuration, multiple time series returned for health check: {healthCheck.Name}");
       currCheck = HealthStatus.Unknown;
     } else if ((qrResult.Data.Result.Count == 0) ||
-               (qrResult.Data.Result[0].Values == null) ||
-               (qrResult.Data.Result[0].Values!.Count == 0)) {
+      (qrResult.Data.Result[0].Values == null) ||
+      (qrResult.Data.Result[0].Values!.Count == 0)) {
       // No samples
       Console.Error.WriteLine($"Returned no samples for health check: {healthCheck.Name}");
       currCheck = HealthStatus.Unknown;
     } else {
-
       // Successfully obtained samples from PromQL, evaluate against all conditions for given check
-      var samples = ComputeCache(qrResult, service, duration.Seconds);
+      var samples = HealthCheckHelper.ComputeCache(qrResult.Data.Result[0].Values!, service, duration.Seconds);
 
       foreach (var condition in conditions) {
         // Determine which comparison to execute
         // Evaluate all PromQL samples
-        var evaluation = EvaluateSamples(condition.HealthOperator, samples!, condition.Threshold);
+        var evaluation = HealthCheckHelper.EvaluateSamples(condition.HealthOperator, samples, condition.Threshold);
         // If evaluation is true, set the current check to the condition's status
         // and output to Stdout
         if (evaluation) {
@@ -224,7 +241,7 @@ public static class HealthCheckHelper {
     return currCheck;
   }
 
-    private static async Task<HealthStatus> RunHttpHealthCheck(
+  private static async Task<HealthStatus> RunHttpHealthCheck(
     HttpClient client,
     HttpHealthCheckDefinition definition,
     CancellationToken token) {
@@ -257,24 +274,31 @@ public static class HealthCheckHelper {
     }
 
     // Passed error handling, get status code from response.
-    var statusCode = (ushort)response.StatusCode;
+    var statusCode = (UInt16)response.StatusCode;
 
     // Evaluate response based on conditions
     //  If there is a ResponseTimeCondition, evaluate.
     //  If there is a StatusCodeCondition, evaluate.
     foreach (var condition in definition.Conditions) {
-      // Evaluate conditions based on http condition type.
-      if (condition.Type == HttpHealthCheckConditionType.HttpResponseTime) {
-        var responseCondition = (ResponseTimeCondition)condition;
-        if (duration > responseCondition.ResponseTime) {
-          Console.WriteLine("Request duration exceeded threshold.");
-          currCheck = responseCondition.Status;
+      switch (condition.Type) {
+        // Evaluate conditions based on http condition type.
+        case HttpHealthCheckConditionType.HttpResponseTime: {
+          var responseCondition = (ResponseTimeCondition)condition;
+          if (duration > responseCondition.ResponseTime) {
+            Console.WriteLine("Request duration exceeded threshold.");
+            currCheck = responseCondition.Status;
+          }
+
+          break;
         }
-      } else if (condition.Type == HttpHealthCheckConditionType.HttpStatusCode) {
-        var statusCondition = (StatusCodeCondition)condition;
-        if (statusCondition.StatusCodes.Contains(statusCode)) {
-          Console.WriteLine($"Request status code {statusCode} met condition.");
-          currCheck = statusCondition.Status;
+        case HttpHealthCheckConditionType.HttpStatusCode: {
+          var statusCondition = (StatusCodeCondition)condition;
+          if (statusCondition.StatusCodes.Contains(statusCode)) {
+            Console.WriteLine($"Request status code {statusCode} met condition.");
+            currCheck = statusCondition.Status;
+          }
+
+          break;
         }
       }
     }
@@ -284,10 +308,14 @@ public static class HealthCheckHelper {
 
   private static async Task SendHealthData(
     String env, String tenant, String service,
-    Dictionary<String, HealthStatus> results, SonarClient client, HealthStatus aggStatus, CancellationToken token) {
+    Dictionary<String, HealthStatus> results,
+    SonarClient client,
+    HealthStatus aggStatus,
+    CancellationToken token) {
+
     var ts = DateTime.UtcNow;
     var healthChecks = new ReadOnlyDictionary<String, HealthStatus>(results);
-    ServiceHealth body = new ServiceHealth(ts, aggStatus, healthChecks);
+    var body = new ServiceHealth(ts, aggStatus, healthChecks);
 
     Console.WriteLine(
       $"Env: {env}, Tenant: {tenant}, Service: {service}, Time: {body.Timestamp}, AggStatus: {body.AggregateStatus}");
@@ -300,16 +328,16 @@ public static class HealthCheckHelper {
   }
 
   private static Boolean EvaluateSamples(
-    HealthOperator op, IImmutableList<(Decimal Timestamp, String Value)> values, Double threshold) {
+    HealthOperator op, IImmutableList<(Decimal Timestamp, String Value)> values, Decimal threshold) {
     // delegate functions for comparison
-    Func<Double, Double, Boolean> equalTo = (x, y) => x == y;
-    Func<Double, Double, Boolean> notEqual = (x, y) => x != y;
-    Func<Double, Double, Boolean> greaterThan = (x, y) => x > y;
-    Func<Double, Double, Boolean> greaterThanOrEqual = (x, y) => x >= y;
-    Func<Double, Double, Boolean> lessThan = (x, y) => x < y;
-    Func<Double, Double, Boolean> lessThanOrEqual = (x, y) => x <= y;
+    Func<Decimal, Decimal, Boolean> equalTo = (x, y) => x == y;
+    Func<Decimal, Decimal, Boolean> notEqual = (x, y) => x != y;
+    Func<Decimal, Decimal, Boolean> greaterThan = (x, y) => x > y;
+    Func<Decimal, Decimal, Boolean> greaterThanOrEqual = (x, y) => x >= y;
+    Func<Decimal, Decimal, Boolean> lessThan = (x, y) => x < y;
+    Func<Decimal, Decimal, Boolean> lessThanOrEqual = (x, y) => x <= y;
 
-    Func<Double, Double, Boolean> comparison;
+    Func<Decimal, Decimal, Boolean> comparison;
     switch (op) {
       case HealthOperator.Equal:
         comparison = equalTo;
@@ -334,22 +362,21 @@ public static class HealthCheckHelper {
     }
 
     // Iterate through list, if all meet condition, return true, else return false if ANY don't meet condition
-    return !values.Any(val => !comparison(Convert.ToDouble(val.Value), threshold));
+    return !values.Any(val => !comparison(Convert.ToDecimal(val.Value), threshold));
   }
 
   private static IImmutableList<(Decimal Timestamp, String Value)> ComputeCache(
-    ResponseEnvelope<QueryResults> response,
+    IImmutableList<(Decimal Timestamp, String Value)> newResults,
     ServiceConfiguration service,
     Decimal duration) {
 
     // If cache does not contain key, insert entire response envelope into dictionary.
     //  Else, cache contains service, truncate and concat.
-    var newResults = response.Data.Result[0].Values;
     var key = service.Name;
-    if (!_cache.ContainsKey(key)) {
-      _cache.Add(service.Name, newResults);
+    if (!HealthCheckHelper._cache.ContainsKey(key)) {
+      HealthCheckHelper._cache.Add(service.Name, newResults);
     } else {
-      var cachedValues = _cache[key];
+      var cachedValues = HealthCheckHelper._cache[key];
       var endValue = newResults.Last().Timestamp;
       var beginning = newResults.First().Timestamp;
 
@@ -361,9 +388,9 @@ public static class HealthCheckHelper {
         .Concat(newResults)
         .ToImmutableList();
 
-      _cache[key] = cachedValues;
+      HealthCheckHelper._cache[key] = cachedValues;
     }
 
-    return _cache[key];
+    return HealthCheckHelper._cache[key];
   }
 }

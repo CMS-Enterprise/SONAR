@@ -30,7 +30,7 @@ public class HealthCheckModelJsonConverterTest {
   private static readonly TimeSpan TestPrometheusHealthCheckDuration = TimeSpan.Parse("1.23:00:01");
   private const String TestPrometheusHealthCheckExpression = "test_metric";
   private const HealthOperator TestPrometheusHealthCheckOperator = HealthOperator.GreaterThan;
-  private const Double TestPrometheusHealthCheckThreshold = 3.14;
+  private const Decimal TestPrometheusHealthCheckThreshold = 3.14m;
   private const HealthStatus TestPrometheusHealthCheckStatus = HealthStatus.Degraded;
 
   private static readonly String ValidPrometheusHealthCheck =

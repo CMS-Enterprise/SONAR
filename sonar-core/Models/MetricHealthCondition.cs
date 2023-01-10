@@ -5,5 +5,5 @@ namespace Cms.BatCave.Sonar.Models;
 
 public record MetricHealthCondition(
   HealthOperator HealthOperator,
-  Double Threshold,
+  Decimal Threshold,
   HealthStatus HealthStatus);

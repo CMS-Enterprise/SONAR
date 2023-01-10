@@ -49,7 +49,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
         TimeSpan.FromMinutes(1),
         Expression: "test_metric",
         ImmutableList.Create(
-          new MetricHealthCondition(HealthOperator.GreaterThan, Threshold: 42.0, HealthStatus.Offline)))
+          new MetricHealthCondition(HealthOperator.GreaterThan, Threshold: 42.0m, HealthStatus.Offline)))
     );
 
   private static readonly ServiceHierarchyConfiguration TestRootChildConfiguration = new(

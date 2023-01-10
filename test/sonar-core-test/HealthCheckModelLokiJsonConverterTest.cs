@@ -31,7 +31,7 @@ public class HealthCheckModelLokiJsonConverterTest {
   private static readonly TimeSpan TestLokiDuration = TimeSpan.Parse("1.23:00:01");
   private const String TestLokiHealthCheckExpression = "test_metric";
   private const HealthOperator TestLokiHealthCheckOperator = HealthOperator.GreaterThan;
-  private const Double TestLokiHealthCheckThreshold = 3.23;
+  private const Decimal TestLokiHealthCheckThreshold = 3.23m;
   private const HealthStatus TestLokiHealthCheckStatus = HealthStatus.Degraded;
 
   private const Int32 TestLokiLogLimit = 12;
