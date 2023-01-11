@@ -17,25 +17,22 @@ using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
 namespace Cms.BatCave.Sonar.Controllers;
 
 [ApiController]
-[Route("api/key")]
+[Route("api/v2/keys")]
 public class ApiKeyController : ControllerBase {
   private readonly DataContext _dbContext;
-  private readonly DbSet<Environment> _environmentsTable;
-  private readonly DbSet<Tenant> _tenantsTable;
   private readonly DbSet<ApiKey> _apiKeysTable;
+  private readonly TenantDataHelper _tenantDataHelper;
   private readonly ApiKeyDataHelper _apiKeyDataHelper;
 
   public ApiKeyController(
     DataContext dbContext,
-    DbSet<Environment> environmentsTable,
-    DbSet<Tenant> tenantsTable,
     DbSet<ApiKey> apiKeysTable,
+    TenantDataHelper tenantDataHelper,
     ApiKeyDataHelper apiKeyDataHelper) {
 
     this._dbContext = dbContext;
-    this._environmentsTable = environmentsTable;
-    this._tenantsTable = tenantsTable;
     this._apiKeysTable = apiKeysTable;
+    this._tenantDataHelper = tenantDataHelper;
     this._apiKeyDataHelper = apiKeyDataHelper;
   }
 
@@ -80,7 +77,7 @@ public class ApiKeyController : ControllerBase {
 
     // Validate
     await this._apiKeyDataHelper.ValidateAdminPermission(
-      Request.Headers["ApiKey"].Single(),
+      Request.Headers["ApiKey"].SingleOrDefault(),
       "create an API key",
       cancellationToken);
 
@@ -104,10 +101,11 @@ public class ApiKeyController : ControllerBase {
       // Obtain Tenant ID if tenant is in configuration
       Guid? tenantId = null;
       if (apiKeyDetails.Tenant != null) {
-        tenantId = await this._apiKeyDataHelper.FetchExistingTenantId(
-          apiKeyDetails.Environment,
+        var tenant = await this._tenantDataHelper.FetchExistingTenantAsync(
+          apiKeyDetails.Environment!,
           apiKeyDetails.Tenant,
           cancellationToken);
+        tenantId = tenant.Id;
       }
 
       // Record new API key
@@ -149,7 +147,7 @@ public class ApiKeyController : ControllerBase {
 
     // Validate
     await this._apiKeyDataHelper.ValidateAdminPermission(
-      Request.Headers["ApiKey"].Single(),
+      Request.Headers["ApiKey"].SingleOrDefault(),
       "update an API key",
       cancellationToken);
     ApiKeyController.ValidateApiKeyConfig(apiKeyConfig);
@@ -172,15 +170,14 @@ public class ApiKeyController : ControllerBase {
       }
 
       // Check tenant
-      Guid? tenantId = null;
       if (apiKeyConfig.Tenant != null) {
-        tenantId = await this._apiKeyDataHelper.FetchExistingTenantId(
-          apiKeyConfig.Environment,
+        var tenant = await this._tenantDataHelper.FetchExistingTenantAsync(
+          apiKeyConfig.Environment!,
           apiKeyConfig.Tenant,
           cancellationToken);
 
-        if (existingApiKey.TenantId != tenantId) {
-          existingApiKey.TenantId = tenantId;
+        if (existingApiKey.TenantId != tenant.Id) {
+          existingApiKey.TenantId = tenant.Id;
         }
       }
 
@@ -219,7 +216,7 @@ public class ApiKeyController : ControllerBase {
 
     // Validate
     await this._apiKeyDataHelper.ValidateAdminPermission(
-      Request.Headers["ApiKey"].Single(),
+      Request.Headers["ApiKey"].SingleOrDefault(),
       "delete an API key",
       cancellationToken);
     ApiKeyController.ValidateApiKeyConfig(apiKeyConfig);
@@ -247,14 +244,13 @@ public class ApiKeyController : ControllerBase {
       }
 
       // Check tenant
-      Guid? tenantId = null;
       if (apiKeyConfig.Tenant != null) {
-        tenantId = await this._apiKeyDataHelper.FetchExistingTenantId(
-          apiKeyConfig.Environment,
+        var tenant = await this._tenantDataHelper.FetchExistingTenantAsync(
+          apiKeyConfig.Environment!,
           apiKeyConfig.Tenant,
           cancellationToken);
 
-        if (existingApiKey.TenantId != tenantId) {
+        if (existingApiKey.TenantId != tenant.Id) {
           throw new BadRequestException(
             message: "Provided API key tenant does not match.",
             ProblemTypes.InvalidConfiguration

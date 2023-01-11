@@ -5,7 +5,6 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using Cms.BatCave.Sonar.Controllers;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
@@ -272,7 +271,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
         ImmutableHashSet<String>.Empty));
 
     var getResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      this.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .AddHeader(name: "Accept", value: "application/json")
         .GetAsync();
 
@@ -330,7 +329,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
     var testTenant = Guid.NewGuid().ToString();
 
     var createConfigResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      this.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(
             ConfigurationControllerIntegrationTests.TestNoRootServiceMatchConfiguration);
@@ -362,7 +361,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
     var testTenant = Guid.NewGuid().ToString();
 
     var createConfigResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      this.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(
             ConfigurationControllerIntegrationTests.TestNoChildServiceMatchConfiguration);
@@ -394,7 +393,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
     var testTenant = Guid.NewGuid().ToString();
 
     var createConfigResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      this.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(
             ConfigurationControllerIntegrationTests.TestDuplicateServiceNamesConfiguration);
@@ -475,7 +474,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
 
     // Attempt to create configuration with services for existing Tenant
     var createConfigResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      this.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(
             ConfigurationControllerIntegrationTests.TestRootChildConfiguration);
@@ -503,7 +502,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
     var testTenant = Guid.NewGuid().ToString();
 
     var createConfigResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      this.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(
             ConfigurationControllerIntegrationTests.TestRootServiceCasingMismatchConfiguration);
@@ -521,7 +520,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
     var testTenant = Guid.NewGuid().ToString();
 
     var createConfigResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      this.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(
             ConfigurationControllerIntegrationTests.TestDiffServiceDiffCasingConfiguration);
@@ -559,7 +558,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       await this.CreateEmptyTestConfiguration();
 
     var updateConfigResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      this.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(
             ConfigurationControllerIntegrationTests.TestNoRootServiceMatchConfiguration);
@@ -591,7 +590,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       await this.CreateEmptyTestConfiguration();
 
     var updateConfigResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      this.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(
             ConfigurationControllerIntegrationTests.TestNoChildServiceMatchConfiguration);
@@ -623,7 +622,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       await this.CreateEmptyTestConfiguration();
 
     var updateConfigResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}")
+      this.CreateAdminRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}")
         .And(req => {
           req.Content = JsonContent.Create(
             ConfigurationControllerIntegrationTests.TestServiceNameOver100CharConfiguration);
@@ -656,7 +655,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       await this.CreateEmptyTestConfiguration();
 
     var updateConfigResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}")
+      this.CreateAdminRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}")
         .And(req => {
           req.Content = JsonContent.Create(
             ConfigurationControllerIntegrationTests.TestServiceNameNotUrlSafe);
@@ -675,7 +674,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
 
     var missingEnvironmentName = Guid.NewGuid().ToString();
     var updateConfigResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/config/{missingEnvironmentName}/tenants/foo")
+      this.CreateAdminRequest($"/api/v2/config/{missingEnvironmentName}/tenants/foo")
         .And(req => {
           req.Content = JsonContent.Create(
             ConfigurationControllerIntegrationTests.TestRootChildConfiguration);
@@ -712,7 +711,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
 
     var missingTenantName = Guid.NewGuid().ToString();
     var updateConfigResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/config/{existingEnvironment}/tenants/{missingTenantName}")
+      this.CreateAdminRequest($"/api/v2/config/{existingEnvironment}/tenants/{missingTenantName}")
         .And(req => {
           req.Content = JsonContent.Create(
             ConfigurationControllerIntegrationTests.TestRootChildConfiguration);
@@ -748,7 +747,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       await this.CreateEmptyTestConfiguration();
 
     var updateConfigResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      this.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(
             ConfigurationControllerIntegrationTests.TestRootServiceCasingMismatchConfiguration);
@@ -766,7 +765,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       await this.CreateEmptyTestConfiguration();
 
     var getResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}")
+      this.CreateAdminRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}")
         .AddHeader(name: "Accept", value: "application/json")
         .GetAsync();
 
@@ -785,7 +784,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
     Assert.Empty(body.RootServices);
 
     var updateConfigResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}")
+      this.CreateAdminRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}")
         .And(req => {
           req.Content = JsonContent.Create(
             ConfigurationControllerIntegrationTests.TestRootChildConfiguration);
@@ -823,7 +822,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
     var testTenant = Guid.NewGuid().ToString();
 
     var createConfigResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      this.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(configuration);
         })
@@ -843,7 +842,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
     var testTenant = Guid.NewGuid().ToString();
 
     var createConfigResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      this.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(new ServiceHierarchyConfiguration(
             ImmutableArray<ServiceConfiguration>.Empty,

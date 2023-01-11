@@ -183,7 +183,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
     var testTenant = Guid.NewGuid().ToString();
 
     var createConfigResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      this.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(HealthControllerIntegrationTests.TestRootOnlyConfiguration);
         })
@@ -525,7 +525,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
     var testTenant = Guid.NewGuid().ToString();
 
     var createConfigResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      this.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(new ServiceHierarchyConfiguration(
             ImmutableArray<ServiceConfiguration>.Empty,
@@ -720,7 +720,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
     var testTenant = Guid.NewGuid().ToString();
 
     var createConfigResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      this.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(configuration);
         })

@@ -113,7 +113,7 @@ public class ConfigurationController : ControllerBase {
 
     // Validation
     await this._apiKeyDataHelper.ValidateAdminPermission(
-      Request.Headers["ApiKey"].Single(),
+      Request.Headers["ApiKey"].SingleOrDefault(),
       "create a new tenant configuration",
       cancellationToken);
     ConfigurationController.ValidateServiceHierarchy(hierarchy);
@@ -280,10 +280,11 @@ public class ConfigurationController : ControllerBase {
     ActionResult response;
 
     // Validate
-    await this._apiKeyDataHelper.ValidateUpdatePermission(
-      Request.Headers["ApiKey"].Single(),
+    await this._apiKeyDataHelper.ValidateTenantPermission(
+      Request.Headers["ApiKey"].SingleOrDefault(),
       environment,
       tenant,
+      "update configuration",
       cancellationToken);
     ConfigurationController.ValidateServiceHierarchy(hierarchy);
 

@@ -33,7 +33,7 @@ public sealed class ApiIntegrationTestFixture : IDisposable, IAsyncDisposable {
 
     // Use the in-process ASP.NET TestServer instead of the normal HTTP server.
     builder.WebHost.UseTestServer();
-    this._app = builder.Build();
+    this._app = Program.BuildApplication(builder);
 
     using (var scope = this._app.Services.CreateScope()) {
       var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
@@ -56,6 +56,15 @@ public sealed class ApiIntegrationTestFixture : IDisposable, IAsyncDisposable {
   public void WithDependencies(Action<IServiceProvider> action) {
     using var scope = this._app.Services.CreateScope();
     action(scope.ServiceProvider);
+  }
+
+  /// <summary>
+  ///   Runs a function with an <see cref="IServiceProvider" /> that can be used to create dependencies
+  ///   normally available in the SONAR API application.
+  /// </summary>
+  public TResult WithDependencies<TResult>(Func<IServiceProvider, TResult> func) {
+    using var scope = this._app.Services.CreateScope();
+    return func(scope.ServiceProvider);
   }
 
   /// <summary>
