@@ -74,11 +74,10 @@ public class PrometheusRemoteWriteClient {
       }
 
       if ((response.StatusCode == HttpStatusCode.BadRequest) && !String.IsNullOrWhiteSpace(message)) {
-        var detail = await response.Content.ReadAsStringAsync(cancellationToken);
         var problem = new ProblemDetails {
           Title = "Bad Request",
           Status = 400,
-          Detail = $"Invalid service health status: {detail}"
+          Detail = $"Invalid service health status: {message}"
         };
         HandleErrorMessageAndLog(problem, LogLevel.Debug);
         return problem;
@@ -86,7 +85,7 @@ public class PrometheusRemoteWriteClient {
         var problem = new ProblemDetails {
           Title = "Internal Server Error",
           Status = 500,
-          Detail = $"Unexpected response from Prometheus ({response.StatusCode})"
+          Detail = $"Unexpected response from Prometheus ({response.StatusCode}): {message}"
         };
         HandleErrorMessageAndLog(problem, LogLevel.Error);
         return problem;

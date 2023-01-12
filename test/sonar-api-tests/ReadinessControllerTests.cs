@@ -4,11 +4,13 @@ using System.Net.Http.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Cms.BatCave.Sonar.Tests;
 
 public class ReadinessControllerTests : ApiControllerTestsBase {
-  public ReadinessControllerTests(ApiIntegrationTestFixture fixture) : base(fixture) {
+  public ReadinessControllerTests(ApiIntegrationTestFixture fixture, ITestOutputHelper outputHelper) :
+    base(fixture, outputHelper) {
   }
 
   [Fact]

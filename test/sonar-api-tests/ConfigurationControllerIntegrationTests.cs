@@ -13,6 +13,7 @@ using Cms.BatCave.Sonar.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
+using Xunit.Abstractions;
 using Environment = Cms.BatCave.Sonar.Data.Environment;
 using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
 
@@ -176,7 +177,8 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
     ImmutableHashSet<String>.Empty.Add(ConfigurationControllerIntegrationTests.TestServiceNameOver100Char)
   );
 
-  public ConfigurationControllerIntegrationTests(ApiIntegrationTestFixture fixture) : base(fixture) { }
+  public ConfigurationControllerIntegrationTests(ApiIntegrationTestFixture fixture, ITestOutputHelper outputHelper) :
+    base(fixture, outputHelper) { }
 
   // GetConfiguration scenarios
   //    Missing Environment - 404

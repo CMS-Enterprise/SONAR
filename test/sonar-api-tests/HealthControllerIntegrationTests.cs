@@ -14,6 +14,7 @@ using Cms.BatCave.Sonar.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
+using Xunit.Abstractions;
 using Environment = Cms.BatCave.Sonar.Data.Environment;
 using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
 
@@ -75,7 +76,8 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
     ImmutableHashSet<String>.Empty.Add(HealthControllerIntegrationTests.TestRootServiceName)
   );
 
-  public HealthControllerIntegrationTests(ApiIntegrationTestFixture fixture) : base(fixture) {
+  public HealthControllerIntegrationTests(ApiIntegrationTestFixture fixture, ITestOutputHelper outputHelper) :
+    base(fixture, outputHelper) {
   }
 
   // RecordServiceHealth scenarios
