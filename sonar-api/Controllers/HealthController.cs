@@ -38,12 +38,14 @@ public class HealthController : ControllerBase {
   private readonly ILogger<HealthController> _logger;
   private readonly ServiceDataHelper _serviceDataHelper;
   private readonly Uri _prometheusUrl;
+  private readonly ApiKeyDataHelper _apiKeyDataHelper;
 
   public HealthController(
     ServiceDataHelper serviceDataHelper,
     PrometheusRemoteWriteClient remoteWriteClient,
     IOptions<PrometheusConfiguration> prometheusConfig,
-    ILogger<HealthController> logger) {
+    ILogger<HealthController> logger,
+    ApiKeyDataHelper apiKeyDataHelper) {
 
     this._serviceDataHelper = serviceDataHelper;
     this._remoteWriteClient = remoteWriteClient;
@@ -52,6 +54,7 @@ public class HealthController : ControllerBase {
       new Uri(
         $"{prometheusConfig.Value.Protocol}://{prometheusConfig.Value.Host}:{prometheusConfig.Value.Port}"
       );
+    this._apiKeyDataHelper = apiKeyDataHelper;
   }
 
   /// <summary>
@@ -65,6 +68,7 @@ public class HealthController : ControllerBase {
   /// </remarks>
   /// <response code="204">The service health status was successfully recorded.</response>
   /// <response code="400">The service health status provided is not valid.</response>
+  /// <response code="401">The API key in the header is not authorized for recording.</response>
   /// <response code="404">The specified environment, tenant, or service was not found.</response>
   /// <response code="500">An internal error occurred attempting to record the service health status.</response>
   [HttpPost("{environment}/tenants/{tenant}/services/{service}", Name = "RecordStatus")]
@@ -81,6 +85,12 @@ public class HealthController : ControllerBase {
     CancellationToken cancellationToken = default) {
 
     //Validation
+    await this._apiKeyDataHelper.ValidateTenantPermission(
+      Request.Headers["ApiKey"].Single(),
+      environment,
+      tenant,
+      "record a health status",
+      cancellationToken);
     var canonicalHeathStatusDictionary = await ValidateHealthStatus(environment, tenant, service, value, cancellationToken);
 
     var writeData =
