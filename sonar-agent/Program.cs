@@ -72,11 +72,9 @@ internal static class Program {
       var interval = TimeSpan.FromSeconds(10);
       Console.WriteLine("Initializing SONAR Agent...");
       // Run task that calls Health Check function
-      var task = Task.Run(
-        async delegate {
-          await HealthCheckHelper.RunScheduledHealthCheck(interval, configuration, apiConfig, promConfig,
-            lokiConfig, token);
-        }, token);
+      var task = Task.Run(async delegate {
+        await HealthCheckHelper.RunScheduledHealthCheck(interval, configuration, apiConfig, promConfig, lokiConfig, token);
+      }, token);
       await task;
     } catch (IndexOutOfRangeException) {
       Console.Error.WriteLine("First command line argument must be service configuration file path.");
