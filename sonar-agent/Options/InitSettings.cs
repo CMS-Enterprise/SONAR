@@ -5,7 +5,6 @@ using CommandLine;
 namespace Cms.BatCave.Sonar.Agent.Options;
 
 public class InitSettings {
-  //[Value(0,  HelpText = "AppSetting file Location.")]
   [Option("appsetting-location", HelpText = "AppSetting file Location.", Default = ".")]
   public String AppSettingLocation { get; set; }
 

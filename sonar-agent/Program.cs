@@ -17,11 +17,10 @@ internal static class Program {
     var test= await HandleCommandLine(args,
       async opts => await RunSettings(opts));
   }
+
   private static Task<Int32> HandleCommandLine(
     String[] args,
     Func<InitSettings, Task<Int32>> runSettings) {
-
-    var useDefaultVerb = ShouldUseDefaultVerb(args);
 
     var parser = new Parser(settings => {
       // Assume that unknown arguments will be handled by the dotnet Command-line configuration provider
@@ -35,23 +34,6 @@ internal static class Program {
         runSettings,
         _ => Task.FromResult<Int32>(1)
       );
-  }
-
-  private static Boolean ShouldUseDefaultVerb(String[] args) {
-    // Unfortunately setting the Verb.IsDefault to true causes the verb to be selected even when
-    // an unknown verb is specified, which could lead to unexpected behavior given typos. This code
-    // detects if no verb is specified so that we can inject the default.
-    var preParser = new Parser(settings => {
-      settings.IgnoreUnknownArguments = true;
-      settings.AutoHelp = false;
-    });
-    var preParseResult = preParser.ParseArguments<InitSettings>(args);
-    var preParseErrors = preParseResult.Errors?.ToList();
-    var useDefaultVerb =
-      preParseErrors is { Count: 1 } &&
-      (preParseErrors[0] is NoVerbSelectedError ||
-       preParseErrors[0] is BadVerbSelectedError badVerbError && badVerbError.Token.StartsWith("--"));
-    return useDefaultVerb;
   }
 
   private static async Task<Int32> RunSettings(InitSettings opts) {
@@ -96,16 +78,13 @@ internal static class Program {
             lokiConfig, token);
         }, token);
       await task;
-    }
-    catch (IndexOutOfRangeException) {
+    } catch (IndexOutOfRangeException) {
       Console.Error.WriteLine("First command line argument must be service configuration file path.");
-    }
-    catch (OperationCanceledException e) {
+    } catch (OperationCanceledException e) {
       Console.Error.WriteLine(e.Message);
       Console.Error.WriteLine($"{nameof(OperationCanceledException)} thrown with message: {e.Message}");
       // Additional cleanup goes here
-    }
-    finally {
+    } finally {
       source.Dispose();
     }
 
