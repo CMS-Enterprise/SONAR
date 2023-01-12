@@ -32,6 +32,8 @@ apiConfig:
   environment: foo
   tenant: baz
   baseUrl: http://localhost:8081
+  appsettingLocation: setting
+  serviceConfigLocation: service-config
 
 prometheus:
   name: prometheus
@@ -41,4 +43,4 @@ loki:
   name: loki
   host: localhost
 
-"apikey": test+api+key+do+not+use+in+production+xxxxx=
+apikey: test+api+key+do+not+use+in+production+xxxxx=
