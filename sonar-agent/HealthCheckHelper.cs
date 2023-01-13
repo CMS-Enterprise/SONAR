@@ -31,21 +31,25 @@ public static class HealthCheckHelper {
     var env = config.Environment;
     var tenant = config.Tenant;
     // SONAR client
-    var client = new SonarClient(configRoot, baseUrl: config.BaseUrl, new HttpClient());
+    using var sonarHttpClient = new HttpClient();
+    sonarHttpClient.Timeout = interval;
+    var client = new SonarClient(configRoot, baseUrl: config.BaseUrl, sonarHttpClient);
     await client.ReadyAsync(token);
     var i = 0;
 
     // Prometheus client
     using var promHttpClient = new HttpClient();
+    promHttpClient.Timeout = interval;
     promHttpClient.BaseAddress = new Uri($"{pConfig.Protocol}://{pConfig.Host}:{pConfig.Port}/");
     var promClient = new PrometheusClient(promHttpClient);
     // Loki Client
     using var lokiHttpClient = new HttpClient();
+    lokiHttpClient.Timeout = interval;
     lokiHttpClient.BaseAddress = new Uri($"{lConfig.Protocol}://{lConfig.Host}:{lConfig.Port}/");
     var lokiClient = new LokiClient(lokiHttpClient);
     // HTTP Metric client
     using var httpMetricClient = new HttpClient();
-    httpMetricClient.Timeout = TimeSpan.FromSeconds(5);
+    httpMetricClient.Timeout = interval;
 
     while (true) {
       if (token.IsCancellationRequested) {
@@ -148,9 +152,25 @@ public static class HealthCheckHelper {
     var duration = definition.Duration;
     var start = HealthCheckHelper.GetStartDate(service.Name, end, duration);
 
-    var qrResult = await promClient.QueryRangeAsync(
-      definition.Expression, start, end, TimeSpan.FromSeconds(1), timeout: null, token
-    );
+    ResponseEnvelope<QueryResults> qrResult;
+    try {
+      qrResult = await promClient.QueryRangeAsync(
+        definition.Expression, start, end, TimeSpan.FromSeconds(1), null, token
+      );
+    } catch (HttpRequestException e) {
+      Console.WriteLine($"HttpRequestException: {e.Message}");
+      return HealthStatus.Unknown;
+    } catch (TaskCanceledException e) {
+      if (token.IsCancellationRequested) {
+        throw;
+      } else {
+        Console.WriteLine("Prometheus query request timed out.");
+        return HealthStatus.Unknown;
+      }
+    } catch (InvalidOperationException e) {
+      Console.WriteLine($"InvalidOperationException: {e.Message}");
+      return HealthStatus.Unknown;
+    }
 
     return HealthCheckHelper.ProcessQueryResults(service, healthCheck, definition.Conditions, duration, qrResult);
   }
@@ -184,9 +204,25 @@ public static class HealthCheckHelper {
     var duration = definition.Duration;
     var start = HealthCheckHelper.GetStartDate(service.Name, end, duration);
 
-    var qrResult = await lokiClient.QueryRangeAsync(
-      definition.Expression, start, end, direction: Direction.Forward, cancellationToken: token
-    );
+    ResponseEnvelope<QueryResults> qrResult;
+    try {
+      qrResult = await lokiClient.QueryRangeAsync(
+        definition.Expression, start, end, direction: Direction.Forward, cancellationToken: token
+      );
+    } catch (HttpRequestException e) {
+      Console.WriteLine($"HttpRequestException: {e.Message}");
+      return HealthStatus.Unknown;
+    } catch (TaskCanceledException e) {
+      if (token.IsCancellationRequested) {
+        throw;
+      } else {
+        Console.WriteLine("Loki query request timed out.");
+        return HealthStatus.Unknown;
+      }
+    } catch (InvalidOperationException e) {
+      Console.WriteLine($"InvalidOperationException: {e.Message}");
+      return HealthStatus.Unknown;
+    }
 
     return HealthCheckHelper.ProcessQueryResults(
       service,
@@ -265,6 +301,11 @@ public static class HealthCheckHelper {
 
       // Error with requestURI, log and return unknown status.
       Console.Error.WriteLine($"Invalid request URI: ${definition.Url}");
+      return HealthStatus.Unknown;
+    } catch (TaskCanceledException e) {
+
+      // Timeout/task cancelled, return unknown status.
+      Console.Error.WriteLine("Request timeout.");
       return HealthStatus.Unknown;
     } catch (UriFormatException e) {
 

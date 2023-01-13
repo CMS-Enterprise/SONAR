@@ -97,11 +97,11 @@ public class PrometheusClient : IPrometheusClient {
       if (response.Content.Headers.Contains("content-type")) {
         var responseBody =
           await response.Content.ReadFromJsonAsync<ResponseEnvelope<QueryResults>>(_serializerOptions, ct);
-        throw new Exception(
+        throw new InvalidOperationException(
           $"Prometheus returned non success status code ({response.StatusCode}) from query operation. Error Type: {responseBody?.ErrorType}, Detail: {responseBody?.Error}"
         );
       } else {
-        throw new Exception(
+        throw new InvalidOperationException(
           $"Prometheus returned non success status code ({response.StatusCode}) from query operation."
         );
       }

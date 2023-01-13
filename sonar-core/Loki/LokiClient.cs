@@ -71,11 +71,11 @@ public class LokiClient : ILokiClient {
       if (response.Content.Headers.Contains("content-type")) {
         var responseBody =
           await response.Content.ReadAsStringAsync(ct);
-        throw new Exception(
+        throw new InvalidOperationException(
           $"Loki returned non success status code ({response.StatusCode}) from query operation. Error Message: {responseBody}"
         );
       } else {
-        throw new Exception(
+        throw new InvalidOperationException(
           $"Loki returned non success status code ({response.StatusCode}) from query operation."
         );
       }
