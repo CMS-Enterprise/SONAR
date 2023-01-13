@@ -50,6 +50,7 @@ internal static class Program {
     var apiConfig = configuration.GetSection("ApiConfig").BindCtor<ApiConfiguration>();
     var promConfig = configuration.GetSection("Prometheus").BindCtor<PrometheusConfiguration>();
     var lokiConfig = configuration.GetSection("Loki").BindCtor<LokiConfiguration>();
+    var agentConfig = configuration.GetSection("AgentConfig").BindCtor<AgentConfiguration>();
 
     // Create cancellation source, token, new task
     var source = new CancellationTokenSource();
@@ -68,8 +69,8 @@ internal static class Program {
       // Configure service hierarchy
       Console.WriteLine("Configuring services....");
       await ConfigurationHelper.ConfigureServices(configuration, apiConfig, servicesHierarchy, token);
-      // Hard coded 10 second interval
-      var interval = TimeSpan.FromSeconds(10);
+      // Get interval from AgentConfiguration
+      var interval = TimeSpan.FromSeconds(agentConfig.AgentInterval);
       Console.WriteLine("Initializing SONAR Agent...");
       // Run task that calls Health Check function
       var task = Task.Run(async delegate {
