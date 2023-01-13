@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -44,6 +45,15 @@ internal class Program {
 
     Console.WriteLine("Test Metrics App Running (press Ctrl+C to stop)...");
 
+    var source = new CancellationTokenSource();
+
+    // Event handler for SIGINT
+    // Traps SIGINT to perform necessary cleanup
+    Console.CancelKeyPress += delegate {
+      Console.WriteLine("\nSIGINT received, begin cleanup...");
+      source.Cancel();
+    };
+
     while (true) {
       // Update example_saw_wave
       if (sawWaveMetric.Value < Program.MetricLimit) {
@@ -72,7 +82,7 @@ internal class Program {
       }
       count++;
 
-      await Task.Delay(Program.UpdateInterval);
+      await Task.Delay(Program.UpdateInterval, source.Token);
     }
   }
 }

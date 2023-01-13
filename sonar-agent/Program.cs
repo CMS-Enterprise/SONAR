@@ -41,9 +41,15 @@ internal static class Program {
     // API Configuration
     var builder = new ConfigurationBuilder()
       .SetBasePath(Directory.GetCurrentDirectory())
-      .AddJsonFile("appsettings.json", true, true)
-      .AddJsonFile(Path.Combine(opts.AppSettingLocation, "appsettings.json"), true, true)
-      .AddJsonFile(Path.Combine(opts.AppSettingLocation, $"appsettings.{Environment.GetEnvironmentVariable("ENVIRONMENT")}.json"), true, true)
+      .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+      .AddJsonFile(
+        Path.Combine(opts.AppSettingLocation, "appsettings.json" ),
+        optional: true,
+        reloadOnChange: true)
+      .AddJsonFile(
+        Path.Combine(opts.AppSettingLocation, $"appsettings.{Environment.GetEnvironmentVariable("ENVIRONMENT") ?? "Development"}.json"),
+        optional: true,
+        reloadOnChange: true)
       .AddEnvironmentVariables();
 
     IConfigurationRoot configuration = builder.Build();

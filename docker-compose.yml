@@ -74,7 +74,7 @@ services:
     environment:
       ENVIRONMENT: "DockerCompose"
     volumes:
-      - "./sonar-agent/service-config.json:/sonar/config/service-config.json:ro"
+      - "./sonar-agent/service-config.docker-compose.json:/sonar/config/service-config.json:ro"
     networks:
       - "shared"
 
