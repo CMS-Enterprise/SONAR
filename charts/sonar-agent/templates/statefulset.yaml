@@ -42,15 +42,17 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
-            - {{ printf "--appsetting-location ./%s" $.Values.apiConfig.appsettingLocation }}
+            - {{ printf "--appsetting-location ./setting" }}
             {{- range $config := .Values.configs }}
-            - {{ printf "./%s/%s.yaml" $.Values.apiConfig.serviceConfigLocation $config.key }}
+            - {{ printf "./service-config/%s.yaml" $config.key | quote }}
             {{- end }}
           volumeMounts:
             - name: appsettings-configmap
-              mountPath: {{ printf "/sonar/sonar-agent/%s" $.Values.apiConfig.appsettingLocation }}
+              mountPath: "/sonar/sonar-agent/setting"
+              readOnly: true
             - name: service-configmap
-              mountPath: {{ printf "/sonar/sonar-agent/%s" $.Values.apiConfig.serviceConfigLocation }}
+              mountPath: "/sonar/sonar-agent/service-config"
+              readOnly: true
           env:
             - name: API_KEY
               valueFrom:
