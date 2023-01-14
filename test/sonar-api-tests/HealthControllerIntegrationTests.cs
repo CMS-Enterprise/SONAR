@@ -93,7 +93,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
   public async Task RecordServiceHealth_MissingEnvironmentReturnsNotFound() {
     var missingEnvironmentName = Guid.NewGuid().ToString();
     var response = await
-      this.Fixture.Server.CreateRequest($"/api/v2/health/{missingEnvironmentName}/tenants/foo/services/bar")
+      this.CreateAdminRequest($"/api/v2/health/{missingEnvironmentName}/tenants/foo/services/bar")
         .AddHeader(name: "Accept", value: "application/json")
         .And(req => {
           req.Content = JsonContent.Create(new ServiceHealth(
@@ -143,8 +143,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
     var missingTenantName = Guid.NewGuid().ToString();
 
     var response = await
-      this.Fixture.Server
-        .CreateRequest($"/api/v2/health/{existingEnvironmentName}/tenants/{missingTenantName}/services/foo")
+      this.CreateAdminRequest($"/api/v2/health/{existingEnvironmentName}/tenants/{missingTenantName}/services/foo")
         .AddHeader(name: "Accept", value: "application/json")
         .And(req => {
           req.Content = JsonContent.Create(new ServiceHealth(
@@ -202,8 +201,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
     var missingServiceName = Guid.NewGuid().ToString();
     // Record health status
     var response = await
-      this.Fixture.Server
-        .CreateRequest(
+      this.CreateAdminRequest(
           $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{missingServiceName}")
         .And(req => {
           req.Content = JsonContent.Create(new ServiceHealth(
@@ -252,8 +250,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
 
     // Record health status
     var response = await
-      this.Fixture.Server
-        .CreateRequest(
+      this.CreateAdminRequest(
           $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{HealthControllerIntegrationTests.TestRootServiceName}")
         .And(req => {
           req.Content = JsonContent.Create(new ServiceHealth(
@@ -308,8 +305,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
 
     // Record health status
     var response = await
-      this.Fixture.Server
-        .CreateRequest(
+      this.CreateAdminRequest(
           $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{HealthControllerIntegrationTests.TestRootServiceName}")
         .And(req => {
           req.Content = JsonContent.Create(new ServiceHealth(
@@ -349,8 +345,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
 
     // Record health status
     var response = await
-      this.Fixture.Server
-        .CreateRequest(
+      this.CreateAdminRequest(
           $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{HealthControllerIntegrationTests.TestRootServiceName}")
         .And(req => {
           req.Content = JsonContent.Create(new ServiceHealth(
@@ -386,8 +381,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
 
     // Record health status
     var response = await
-      this.Fixture.Server
-        .CreateRequest(
+      this.CreateAdminRequest(
           $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{HealthControllerIntegrationTests.TestRootServiceName}")
         .And(req => {
           req.Content = JsonContent.Create(new ServiceHealth(
@@ -406,8 +400,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
 
     // Attempt to record out of sequence health status
     response = await
-      this.Fixture.Server
-        .CreateRequest(
+      this.CreateAdminRequest(
           $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{HealthControllerIntegrationTests.TestRootServiceName}")
         .And(req => {
           req.Content = JsonContent.Create(new ServiceHealth(
@@ -746,8 +739,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
 
     // Record health status
     var response = await
-      this.Fixture.Server
-        .CreateRequest(
+      this.CreateAdminRequest(
           $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{serviceName}")
         .And(req => {
           req.Content = JsonContent.Create(new ServiceHealth(

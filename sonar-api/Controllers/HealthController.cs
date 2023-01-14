@@ -86,7 +86,7 @@ public class HealthController : ControllerBase {
 
     //Validation
     await this._apiKeyDataHelper.ValidateTenantPermission(
-      Request.Headers["ApiKey"].Single(),
+      this.Request.Headers["ApiKey"].SingleOrDefault(),
       environment,
       tenant,
       "record a health status",
