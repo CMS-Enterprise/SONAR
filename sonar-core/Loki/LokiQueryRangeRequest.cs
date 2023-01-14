@@ -3,7 +3,7 @@ using Cms.BatCave.Sonar.Query;
 
 namespace Cms.BatCave.Sonar.Loki;
 
-public record LokiQueryRangeRequest (
+public record LokiQueryRangeRequest(
   String Query,
   Int32 Limit,
   DateTime Start,

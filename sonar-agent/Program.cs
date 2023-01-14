@@ -14,7 +14,7 @@ namespace Cms.BatCave.Sonar.Agent;
 internal static class Program {
   private static async Task Main(String[] args) {
     // Command Line Parsing
-    var test= await HandleCommandLine(args,
+    var test = await HandleCommandLine(args,
       async opts => await RunSettings(opts));
   }
 
@@ -42,8 +42,8 @@ internal static class Program {
     var builder = new ConfigurationBuilder()
       .SetBasePath(Directory.GetCurrentDirectory())
       .AddJsonFile("appsettings.json", true, true)
-      .AddJsonFile(Path.Combine(opts.AppSettingLocation, "appsettings.json" ), true, true)
-      .AddJsonFile(Path.Combine(opts.AppSettingLocation, $"appsettings.{Environment.GetEnvironmentVariable("ENVIRONMENT")}.json" ), true, true)
+      .AddJsonFile(Path.Combine(opts.AppSettingLocation, "appsettings.json"), true, true)
+      .AddJsonFile(Path.Combine(opts.AppSettingLocation, $"appsettings.{Environment.GetEnvironmentVariable("ENVIRONMENT")}.json"), true, true)
       .AddEnvironmentVariables();
 
     IConfigurationRoot configuration = builder.Build();

@@ -91,7 +91,7 @@ public class ArrayTupleConverterTest {
 
     // Act
     // Assert
-    Assert.Null(Record.Exception( ()=> JsonSerializer.Serialize(serializedString, _options)));
+    Assert.Null(Record.Exception(() => JsonSerializer.Serialize(serializedString, _options)));
   }
 
   // Serializes a valid Tuple containing String, Int32, and DateTime

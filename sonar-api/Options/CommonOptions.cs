@@ -1,5 +1,5 @@
-namespace Cms.BatCave.Sonar.Options; 
+namespace Cms.BatCave.Sonar.Options;
 
 public class CommonOptions {
-  
+
 }

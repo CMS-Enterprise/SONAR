@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
@@ -64,7 +64,7 @@ internal class Program {
           count = 0;
         }
 
-        if (numOfErrors == NumOfHealthStatus-1) {
+        if (numOfErrors == NumOfHealthStatus - 1) {
           numOfErrors = 0;
         } else {
           numOfErrors++;

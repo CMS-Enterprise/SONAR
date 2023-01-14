@@ -7,7 +7,7 @@ namespace Cms.BatCave.Sonar.Options;
 public class InitOptions : CommonOptions {
   public const String VerbName = "init";
 
-  [Option('f', "force" )]
+  [Option('f', "force")]
   public Boolean Force { get; }
 
   public InitOptions(Boolean force) {

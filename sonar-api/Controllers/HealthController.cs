@@ -518,7 +518,7 @@ public class HealthController : ControllerBase {
       await this._serviceDataHelper.FetchExistingService(environment, tenant, service, cancellationToken);
 
     var existingHealthChecks =
-      await this._serviceDataHelper.FetchExistingHealthChecks(new []{existingService.Id}, cancellationToken);
+      await this._serviceDataHelper.FetchExistingHealthChecks(new[] { existingService.Id }, cancellationToken);
 
     var existingHealthCheckDictionary =
       existingHealthChecks.ToImmutableDictionary(hc => hc.Name, StringComparer.OrdinalIgnoreCase);

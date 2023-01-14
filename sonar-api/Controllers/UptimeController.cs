@@ -106,7 +106,8 @@ public class UptimeController : ControllerBase {
     serviceChildLookup = serviceChildIdsLookup
       .Select(grp => new {
         parentId = grp.Key,
-        children = grp.Select(childId => services[childId]) })
+        children = grp.Select(childId => services[childId])
+      })
       .ToDictionary(val => val.parentId, val => val.children.ToList());
 
     // Create list of service names.
@@ -128,7 +129,7 @@ public class UptimeController : ControllerBase {
     );
 
     // Build and return Uptime Model.
-    var output =  BuildOutputTree(
+    var output = BuildOutputTree(
       existingService,
       serviceChildLookup,
       upTimeData,
@@ -184,7 +185,7 @@ public class UptimeController : ControllerBase {
       // If result set doesn't contain key: add to dictionary
       //  Else: Result set contains key, perform merge of values
       if (!unifiedData.ContainsKey(serviceName)) {
-        unifiedData.Add(serviceName, new Dictionary<HealthStatus, IEnumerable<(Decimal Timestamp, String Value)>>{{status, values}});
+        unifiedData.Add(serviceName, new Dictionary<HealthStatus, IEnumerable<(Decimal Timestamp, String Value)>> { { status, values } });
       } else {
         unifiedData[serviceName].Add(status, values);
       }

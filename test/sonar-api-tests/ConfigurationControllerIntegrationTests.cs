@@ -222,8 +222,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
     var existingEnvironmentName = Guid.NewGuid().ToString();
 
     // Create existing Environment
-    await this.Fixture.WithDependenciesAsync(async (provider, cancellationToken) =>
-    {
+    await this.Fixture.WithDependenciesAsync(async (provider, cancellationToken) => {
       var dbContext = provider.GetRequiredService<DataContext>();
       var environments = provider.GetRequiredService<DbSet<Data.Environment>>();
 

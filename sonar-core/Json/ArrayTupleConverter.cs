@@ -82,7 +82,7 @@ public class ArrayTupleConverter<TTuple> : JsonConverter<TTuple> where TTuple : 
     }
 
     // ReSharper disable once StaticMemberInGenericType
-    private static readonly MethodInfo[] CreateTupleMethods = new [] {
+    private static readonly MethodInfo[] CreateTupleMethods = new[] {
       new Func<Object, Tuple<Object>>(CreateTuple).Method.GetGenericMethodDefinition(),
       new Func<Object, Object, Tuple<Object, Object>>(CreateTuple).Method.GetGenericMethodDefinition(),
       new Func<Object, Object, Object, Tuple<Object, Object, Object>>(CreateTuple).Method.GetGenericMethodDefinition(),
@@ -93,7 +93,7 @@ public class ArrayTupleConverter<TTuple> : JsonConverter<TTuple> where TTuple : 
     };
 
     // ReSharper disable once StaticMemberInGenericType
-    private static readonly MethodInfo[] CreateValueTupleMethods = new [] {
+    private static readonly MethodInfo[] CreateValueTupleMethods = new[] {
       new Func<Object, ValueTuple<Object>>(CreateValueTuple).Method.GetGenericMethodDefinition(),
       new Func<Object, Object, ValueTuple<Object, Object>>(CreateValueTuple).Method.GetGenericMethodDefinition(),
       new Func<Object, Object, Object, ValueTuple<Object, Object, Object>>(CreateValueTuple).Method.GetGenericMethodDefinition(),

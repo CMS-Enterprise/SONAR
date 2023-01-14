@@ -324,23 +324,23 @@ public static class HealthCheckHelper {
       switch (condition.Type) {
         // Evaluate conditions based on http condition type.
         case HttpHealthCheckConditionType.HttpResponseTime: {
-          var responseCondition = (ResponseTimeCondition)condition;
-          if (duration > responseCondition.ResponseTime) {
-            Console.WriteLine("Request duration exceeded threshold.");
-            currCheck = responseCondition.Status;
-          }
+            var responseCondition = (ResponseTimeCondition)condition;
+            if (duration > responseCondition.ResponseTime) {
+              Console.WriteLine("Request duration exceeded threshold.");
+              currCheck = responseCondition.Status;
+            }
 
-          break;
-        }
+            break;
+          }
         case HttpHealthCheckConditionType.HttpStatusCode: {
-          var statusCondition = (StatusCodeCondition)condition;
-          if (statusCondition.StatusCodes.Contains(statusCode)) {
-            Console.WriteLine($"Request status code {statusCode} met condition.");
-            currCheck = statusCondition.Status;
-          }
+            var statusCondition = (StatusCodeCondition)condition;
+            if (statusCondition.StatusCodes.Contains(statusCode)) {
+              Console.WriteLine($"Request status code {statusCode} met condition.");
+              currCheck = statusCondition.Status;
+            }
 
-          break;
-        }
+            break;
+          }
       }
     }
 
