@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Configuration;
@@ -16,6 +17,7 @@ using Cms.BatCave.Sonar.Prometheus;
 using Cms.BatCave.Sonar.Query;
 using Cms.BatCave.Sonar.System;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Prometheus;
@@ -39,13 +41,15 @@ public class HealthController : ControllerBase {
   private readonly ServiceDataHelper _serviceDataHelper;
   private readonly Uri _prometheusUrl;
   private readonly ApiKeyDataHelper _apiKeyDataHelper;
+  private readonly String _sonarEnvironment;
 
   public HealthController(
     ServiceDataHelper serviceDataHelper,
     PrometheusRemoteWriteClient remoteWriteClient,
     IOptions<PrometheusConfiguration> prometheusConfig,
     ILogger<HealthController> logger,
-    ApiKeyDataHelper apiKeyDataHelper) {
+    ApiKeyDataHelper apiKeyDataHelper,
+    IOptions<SonarHealthCheckConfiguration> sonarHealthConfig) {
 
     this._serviceDataHelper = serviceDataHelper;
     this._remoteWriteClient = remoteWriteClient;
@@ -55,6 +59,8 @@ public class HealthController : ControllerBase {
         $"{prometheusConfig.Value.Protocol}://{prometheusConfig.Value.Host}:{prometheusConfig.Value.Port}"
       );
     this._apiKeyDataHelper = apiKeyDataHelper;
+    this._sonarEnvironment = sonarHealthConfig.Value.SonarEnvironment;
+
   }
 
   /// <summary>
@@ -143,6 +149,23 @@ public class HealthController : ControllerBase {
       problem.Type = ProblemTypes.InvalidData;
     }
     return this.StatusCode(problem.Status ?? (Int32)HttpStatusCode.InternalServerError, problem);
+  }
+
+  [HttpGet("{environment}/tenants/sonar", Name = "GetSonarHealth")]
+  public async Task<IActionResult> GetSonarHealth(
+    [FromRoute] String environment,
+    CancellationToken cancellationToken) {
+
+    // Check if environment provided matches value in config.
+    if (environment != this._sonarEnvironment) {
+      return this.NotFound(new ProblemDetails {
+        Title = "Sonar environment not found."
+      });
+    }
+    Console.WriteLine("hi");
+    return this.Ok(new {
+      Status = "Ok"
+    });
   }
 
   [HttpGet("{environment}/tenants/{tenant}", Name = "GetServiceHierarchyHealth")]
