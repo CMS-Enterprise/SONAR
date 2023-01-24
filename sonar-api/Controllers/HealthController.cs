@@ -215,6 +215,23 @@ public class HealthController : ControllerBase {
     );
   }
 
+  private async Task<ServiceHierarchyHealth> RunPrometheusSelfCheck() {
+    var httpClient = new HttpClient();
+    httpClient.BaseAddress = this._prometheusUrl;
+    var aggStatus = HealthStatus.Online;
+    var healthChecks =
+      new Dictionary<string, (DateTime Timestamp, HealthStatus Status)?>();
+    var readinessTest = HealthStatus.Online;
+    var queryTest = HealthStatus.Online;
+    try {
+      await httpClient.GetAsync("-/ready");
+    } catch (HttpRequestException e) {
+      Console.WriteLine("http request exception");
+    } catch (InvalidOperationException e) {
+      Console.WriteLine("invalid op exception");
+    }
+  }
+
   [HttpGet("{environment}/tenants/{tenant}", Name = "GetServiceHierarchyHealth")]
   [ProducesResponseType(typeof(ServiceHierarchyHealth[]), statusCode: 200)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
