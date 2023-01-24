@@ -16,11 +16,16 @@ using Cms.BatCave.Sonar.Models;
 using Cms.BatCave.Sonar.Prometheus;
 using Cms.BatCave.Sonar.Query;
 using Cms.BatCave.Sonar.System;
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Npgsql;
 using Prometheus;
+using Enum = System.Enum;
 using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
 
 namespace Cms.BatCave.Sonar.Controllers;
@@ -42,6 +47,8 @@ public class HealthController : ControllerBase {
   private readonly Uri _prometheusUrl;
   private readonly ApiKeyDataHelper _apiKeyDataHelper;
   private readonly String _sonarEnvironment;
+  private readonly DataContext _dbContext;
+  private readonly IOptions<DatabaseConfiguration> _dbConfig;
 
   public HealthController(
     ServiceDataHelper serviceDataHelper,
@@ -49,7 +56,9 @@ public class HealthController : ControllerBase {
     IOptions<PrometheusConfiguration> prometheusConfig,
     ILogger<HealthController> logger,
     ApiKeyDataHelper apiKeyDataHelper,
-    IOptions<SonarHealthCheckConfiguration> sonarHealthConfig) {
+    IOptions<SonarHealthCheckConfiguration> sonarHealthConfig,
+    DataContext dbContext,
+    IOptions<DatabaseConfiguration> dbConfig) {
 
     this._serviceDataHelper = serviceDataHelper;
     this._remoteWriteClient = remoteWriteClient;
@@ -60,6 +69,8 @@ public class HealthController : ControllerBase {
       );
     this._apiKeyDataHelper = apiKeyDataHelper;
     this._sonarEnvironment = sonarHealthConfig.Value.SonarEnvironment;
+    this._dbContext = dbContext;
+    this._dbConfig = dbConfig;
 
   }
 
@@ -152,20 +163,62 @@ public class HealthController : ControllerBase {
   }
 
   [HttpGet("{environment}/tenants/sonar", Name = "GetSonarHealth")]
+  [ProducesResponseType(typeof(ServiceHierarchyHealth[]), statusCode: 200)]
+  [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
+  [ProducesResponseType(500)]
   public async Task<IActionResult> GetSonarHealth(
     [FromRoute] String environment,
     CancellationToken cancellationToken) {
 
     // Check if environment provided matches value in config.
     if (environment != this._sonarEnvironment) {
-      return this.NotFound(new ProblemDetails {
-        Title = "Sonar environment not found."
+      return this.NotFound(new {
+        Message = "Sonar environment not found."
       });
     }
-    Console.WriteLine("hi");
-    return this.Ok(new {
-      Status = "Ok"
-    });
+
+    var postgresCheck = await RunPostgresHealthCheck();
+    var result = new List<ServiceHierarchyHealth>() { postgresCheck };
+    return this.Ok(result);
+  }
+
+  private async Task<ServiceHierarchyHealth> RunPostgresHealthCheck() {
+    var aggStatus = HealthStatus.Online;
+    var healthChecks =
+      new Dictionary<string, (DateTime Timestamp, HealthStatus Status)?>();
+    var connectionTestResult = HealthStatus.Online;
+    var sonarDbTestResult = HealthStatus.Online;
+
+    try {
+      await _dbContext.Database.OpenConnectionAsync();
+    } catch (InvalidOperationException e) {
+      // Db connection issue
+      connectionTestResult = HealthStatus.Offline;
+      sonarDbTestResult = HealthStatus.Unknown;
+    } catch (PostgresException e) {
+      // Sonar db issue
+      sonarDbTestResult = HealthStatus.Offline;
+    } catch (Exception e) {
+      // Unknown exception
+      // TODO: Log exception type?
+      connectionTestResult = HealthStatus.Unknown;
+      sonarDbTestResult = HealthStatus.Unknown;
+    }
+
+    healthChecks.Add("connection-test", (DateTime.UtcNow, connectionTestResult));
+    healthChecks.Add("sonar-database-test", (DateTime.UtcNow, sonarDbTestResult));
+
+    return new ServiceHierarchyHealth(
+      "postgresql",
+      "Postgresql",
+      "The Postgresql instance that the SONAR API uses to persist service health information.",
+      new Uri(
+        $"postgresql://{_dbConfig.Value.Username}@{_dbConfig.Value.Host}:{_dbConfig.Value.Port}/{_dbConfig.Value.Database}"),
+      DateTime.UtcNow,
+      aggStatus,
+      healthChecks.ToImmutableDictionary(),
+      null
+    );
   }
 
   [HttpGet("{environment}/tenants/{tenant}", Name = "GetServiceHierarchyHealth")]
