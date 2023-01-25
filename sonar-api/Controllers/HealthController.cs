@@ -174,7 +174,8 @@ public class HealthController : ControllerBase {
     }
 
     var postgresCheck = await RunPostgresHealthCheck();
-    var result = new List<ServiceHierarchyHealth>() { postgresCheck };
+    var prometheusCheck = await this.RunPrometheusSelfCheck();
+    var result = new List<ServiceHierarchyHealth>() { postgresCheck, prometheusCheck };
     return this.Ok(result);
   }
 
@@ -223,13 +224,36 @@ public class HealthController : ControllerBase {
       new Dictionary<string, (DateTime Timestamp, HealthStatus Status)?>();
     var readinessTest = HealthStatus.Online;
     var queryTest = HealthStatus.Online;
+
     try {
-      await httpClient.GetAsync("-/ready");
+      await httpClient.GetAsync(
+        "-/ready");
     } catch (HttpRequestException e) {
-      Console.WriteLine("http request exception");
-    } catch (InvalidOperationException e) {
-      Console.WriteLine("invalid op exception");
+      // Failed readiness probe
+      readinessTest = HealthStatus.Offline;
+      queryTest = HealthStatus.Unknown;
+    } catch (Exception e) {
+      // Unknown exception
+      readinessTest = HealthStatus.Unknown;
+      queryTest = HealthStatus.Unknown;
     }
+
+    healthChecks.Add("readiness-probe", (DateTime.UtcNow, readinessTest));
+    healthChecks.Add("test-query", (DateTime.UtcNow, queryTest));
+
+    // calculate aggStatus
+    aggStatus = new[] { readinessTest, queryTest }.Max();
+
+    return new ServiceHierarchyHealth(
+      "prometheus",
+      "Prometheus",
+      "The Prometheus instance that the SONAR API uses to persist service health information.",
+      this._prometheusUrl,
+      DateTime.UtcNow,
+      aggStatus,
+      healthChecks.ToImmutableDictionary(),
+      null
+    );
   }
 
   [HttpGet("{environment}/tenants/{tenant}", Name = "GetServiceHierarchyHealth")]
