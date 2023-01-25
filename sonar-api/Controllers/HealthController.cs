@@ -208,6 +208,9 @@ public class HealthController : ControllerBase {
     healthChecks.Add("connection-test", (DateTime.UtcNow, connectionTestResult));
     healthChecks.Add("sonar-database-test", (DateTime.UtcNow, sonarDbTestResult));
 
+    // calculate aggStatus
+    aggStatus = new[] { connectionTestResult, sonarDbTestResult }.Max();
+
     return new ServiceHierarchyHealth(
       "postgresql",
       "Postgresql",
