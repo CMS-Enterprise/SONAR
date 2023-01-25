@@ -4,7 +4,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Configuration;
@@ -16,11 +15,8 @@ using Cms.BatCave.Sonar.Models;
 using Cms.BatCave.Sonar.Prometheus;
 using Cms.BatCave.Sonar.Query;
 using Cms.BatCave.Sonar.System;
-using Google.Protobuf.WellKnownTypes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Npgsql;
@@ -165,7 +161,7 @@ public class HealthController : ControllerBase {
   [HttpGet("{environment}/tenants/sonar", Name = "GetSonarHealth")]
   [ProducesResponseType(typeof(ServiceHierarchyHealth[]), statusCode: 200)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
-  [ProducesResponseType(500)]
+  [ProducesResponseType(typeof(ProblemDetails), statusCode: 500)]
   public async Task<IActionResult> GetSonarHealth(
     [FromRoute] String environment,
     CancellationToken cancellationToken) {
@@ -185,7 +181,7 @@ public class HealthController : ControllerBase {
   private async Task<ServiceHierarchyHealth> RunPostgresHealthCheck() {
     var aggStatus = HealthStatus.Online;
     var healthChecks =
-      new Dictionary<string, (DateTime Timestamp, HealthStatus Status)?>();
+      new Dictionary<String, (DateTime Timestamp, HealthStatus Status)?>();
     var connectionTestResult = HealthStatus.Online;
     var sonarDbTestResult = HealthStatus.Online;
 
@@ -198,11 +194,6 @@ public class HealthController : ControllerBase {
     } catch (PostgresException e) {
       // Sonar db issue
       sonarDbTestResult = HealthStatus.Offline;
-    } catch (Exception e) {
-      // Unknown exception
-      // TODO: Log exception type?
-      connectionTestResult = HealthStatus.Unknown;
-      sonarDbTestResult = HealthStatus.Unknown;
     }
 
     healthChecks.Add("connection-test", (DateTime.UtcNow, connectionTestResult));
@@ -216,7 +207,7 @@ public class HealthController : ControllerBase {
       "Postgresql",
       "The Postgresql instance that the SONAR API uses to persist service health information.",
       new Uri(
-        $"postgresql://{_dbConfig.Value.Username}@{_dbConfig.Value.Host}:{_dbConfig.Value.Port}/{_dbConfig.Value.Database}"),
+        $"postgresql://{_dbConfig.Value.Username}@{_dbConfig.Value.Host}:{_dbConfig.Value.Port}"),
       DateTime.UtcNow,
       aggStatus,
       healthChecks.ToImmutableDictionary(),
