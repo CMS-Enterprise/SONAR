@@ -49,3 +49,10 @@ docker push sonar-registry:{PORT_NUMBER_FROM_STEP_2}/sonar-agent:testing
 ```shell
 helm install my-sonar-agent ./charts/sonar-agent -f ./charts/sonar-agent/examples/values.example-service-config.yaml --set image.repository=sonar-registry:{PORT_NUMBER_FROM_STEP_2}/sonar-agent --set image.tag=testing
 ```
+
+### Running k3d-deploy.sh
+To create k3d cluster of the sonar-agent with the name "sonar-test", from the root run
+```shell
+./charts/sonar-agent/k3d-deploy.sh sonar-test
+```
+ Use the -f, -r, and -u options to designate a service-config file, recreate the k3d cluster or upgrade the helm chart.
