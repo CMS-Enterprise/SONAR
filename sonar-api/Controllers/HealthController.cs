@@ -207,7 +207,7 @@ public class HealthController : ControllerBase {
       "Postgresql",
       "The Postgresql instance that the SONAR API uses to persist service health information.",
       new Uri(
-        $"postgresql://{_dbConfig.Value.Username}@{_dbConfig.Value.Host}:{_dbConfig.Value.Port}"),
+        $"postgresql://{_dbConfig.Value.Host}:{_dbConfig.Value.Port}/{this._dbConfig.Value.Database}"),
       DateTime.UtcNow,
       aggStatus,
       healthChecks.ToImmutableDictionary(),
