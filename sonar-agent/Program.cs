@@ -43,7 +43,7 @@ internal static class Program {
       .SetBasePath(Directory.GetCurrentDirectory())
       .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
       .AddJsonFile(
-        Path.Combine(opts.AppSettingLocation, "appsettings.json" ),
+        Path.Combine(opts.AppSettingLocation, "appsettings.json"),
         optional: true,
         reloadOnChange: true)
       .AddJsonFile(
