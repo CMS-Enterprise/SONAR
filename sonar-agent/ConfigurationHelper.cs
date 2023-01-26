@@ -66,7 +66,6 @@ public static class ConfigurationHelper {
           }
         }
 
-        Console.WriteLine("Service configuration is valid.");
         // Add valid config to list
         validConfigs.Add(serviceHierarchy);
       } catch (KeyNotFoundException) {
@@ -76,27 +75,6 @@ public static class ConfigurationHelper {
 
     // merge valid configs into single ServiceHierarchyConfiguration
     ServiceHierarchyConfiguration result = validConfigs.Aggregate(MergeConfigurations);
-    // Print merged services and root services to console
-    Console.WriteLine("Services:");
-    foreach (var service in result.Services) {
-      Console.WriteLine($"- Name: {service.Name}");
-      Console.WriteLine($"  DisplayName: {service.DisplayName}");
-      Console.WriteLine($"  Description: {service.Description}");
-      Console.WriteLine($"  Url: {service.Url}");
-      if ((service.Children != null) && (service.Children.Count > 0)) {
-        Console.WriteLine($"  Children:");
-        foreach (var child in service.Children) {
-          Console.WriteLine($"  - {child}");
-        }
-      } else {
-        Console.WriteLine($"  Children: {service.Children}");
-      }
-    }
-
-    Console.WriteLine("Root Services:");
-    foreach (var rootService in result.RootServices) {
-      Console.WriteLine($"- {rootService}");
-    }
 
     return result;
   }
@@ -114,7 +92,6 @@ public static class ConfigurationHelper {
         serviceResults = serviceResults.Add(currService);
       } else {
         // current service exists in previous list, replace with newer version
-        Console.WriteLine($"service {existingService.Name} already exists, replacing with newer version.");
         serviceResults = serviceResults.Select(x => {
           if (String.Equals(x.Name, currService.Name, StringComparison.OrdinalIgnoreCase)) {
             return currService;

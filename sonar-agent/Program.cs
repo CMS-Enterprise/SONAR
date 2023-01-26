@@ -1,17 +1,18 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
 using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Agent.Options;
+using Cms.BatCave.Sonar.Agent.Logger;
 using Cms.BatCave.Sonar.Configuration;
 using CommandLine;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace Cms.BatCave.Sonar.Agent;
 
-internal static class Program {
+internal class Program {
   private static async Task Main(String[] args) {
     // Command Line Parsing
     var test = await HandleCommandLine(args,
@@ -62,32 +63,41 @@ internal static class Program {
     var source = new CancellationTokenSource();
     CancellationToken token = source.Token;
 
+    // Configure logging
+    using ILoggerFactory loggerFactory = LoggerFactory.Create(loggingBuilder => {
+      loggingBuilder.AddConsole(options => options.FormatterName = nameof(CustomFormatter))
+        .AddConsoleFormatter<CustomFormatter, LoggingCustomOptions>(options => options.EnableColor = true);
+    });
+
+    var logger = loggerFactory.CreateLogger<Program>();
+
     // Event handler for SIGINT
     // Traps SIGINT to perform necessary cleanup
     Console.CancelKeyPress += delegate {
-      Console.WriteLine("\nSIGINT received, begin cleanup...");
+      logger.Log(LogLevel.Information, "\nSIGINT received, begin cleanup...");
       source.Cancel();
     };
 
     try {
       // Load and merge configs
-      var servicesHierarchy = await ConfigurationHelper.LoadAndValidateJsonServiceConfig(opts.ServiceConfigFiles.ToArray(), token);
+      var servicesHierarchy = await ConfigurationHelper.LoadAndValidateJsonServiceConfig(
+        opts.ServiceConfigFiles.ToArray(), token);
       // Configure service hierarchy
-      Console.WriteLine("Configuring services....");
+      logger.LogInformation("Configuring services....");
       await ConfigurationHelper.ConfigureServices(configuration, apiConfig, servicesHierarchy, token);
-      // Get interval from AgentConfiguration
-      var interval = TimeSpan.FromSeconds(agentConfig.AgentInterval);
-      Console.WriteLine("Initializing SONAR Agent...");
+      // Hard coded 10 second interval
+      var interval = TimeSpan.FromSeconds(10);
+      logger.LogInformation("Initializing SONAR Agent...");
       // Run task that calls Health Check function
       var task = Task.Run(async delegate {
-        await HealthCheckHelper.RunScheduledHealthCheck(interval, configuration, apiConfig, promConfig, lokiConfig, token);
+        await HealthCheckHelper.RunScheduledHealthCheck(
+          interval, configuration, apiConfig, promConfig, lokiConfig, loggerFactory, token);
       }, token);
       await task;
-    } catch (IndexOutOfRangeException) {
-      Console.Error.WriteLine("First command line argument must be service configuration file path.");
+    } catch (IndexOutOfRangeException ex) {
+      logger.LogError("First command line argument must be service configuration file path.", ex);
     } catch (OperationCanceledException e) {
-      Console.Error.WriteLine(e.Message);
-      Console.Error.WriteLine($"{nameof(OperationCanceledException)} thrown with message: {e.Message}");
+      logger.LogError($"{nameof(OperationCanceledException)} thrown with message: {e.Message}", e);
       // Additional cleanup goes here
     } finally {
       source.Dispose();
