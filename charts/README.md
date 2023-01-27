@@ -55,4 +55,10 @@ To create k3d cluster of the sonar-agent with the name "sonar-test", from the ro
 ```shell
 ./charts/sonar-agent/k3d-deploy.sh sonar-test
 ```
- Use the -f, -r, and -u options to designate a service-config file, recreate the k3d cluster or upgrade the helm chart.
+Manages the creation of a k3d cluster and installs or upgrades the sonar-agent helm chart
+```
+ ./k3d-deploy.sh -f service-config.json cluster-name
+ ./k3d-deploy.sh -r -f service-config.json cluster-name
+ ./k3d-deploy.sh -u -f service-config.json cluster-name
+
+```

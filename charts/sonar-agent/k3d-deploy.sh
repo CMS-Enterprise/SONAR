@@ -1,4 +1,4 @@
-#!/bin/bash
+#! /usr/bin/env bash
 
 ### Variables ###
 EXISTING_CLUSTERS=$(k3d cluster list --no-headers)
