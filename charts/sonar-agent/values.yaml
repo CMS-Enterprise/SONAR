@@ -1,7 +1,7 @@
 nameOverride: null
 
 image:
-  repository: artifactory.cloud.cms.gov/batcave-docker/ado-repositories/oit/sonar/sonar
+  repository: artifactory.cloud.cms.gov/batcave-docker/ado-repositories/oit/waynetech/sonar-agent
   pullPolicy: IfNotPresent
 
 networkPolicies:
@@ -29,18 +29,26 @@ resources: {}
 tolerations: []
 
 apiConfig:
-  environment: foo
-  tenant: baz
-  baseUrl: http://localhost:8081
+  # The combination of environment & tenant should be unique per instance of the sonar-agent
+  environment: example
+  tenant: example
+  baseUrl: http://sonar.sonar.svc.cluster.local:8081
   appsettingLocation: setting
   serviceConfigLocation: service-config
 
 prometheus:
-  name: prometheus
   host: localhost
+  # Optional. Defaults to http / 9090
+  protocol: null
+  port: null
 
 loki:
-  name: loki
   host: localhost
+  # Optional. Defaults to http / 3100
+  protocol: null
+  port: null
 
 apikey: test+api+key+do+not+use+in+production+xxxxx=
+
+# An array of service configurations that will be merged together in the order they are specified
+configs: []

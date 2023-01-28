@@ -11,9 +11,21 @@ data:
         "BaseUrl": {{ quote .Values.apiConfig.baseUrl }}
       },
       "Prometheus": {
+        {{ if .Values.prometheus.port }}
+        "Port": {{ quote .Values.prometheus.host }},
+        {{ end }}
+        {{ if .Values.prometheus.protocol }}
+        "Protocol": {{ quote .Values.prometheus.protocol }},
+        {{ end }}
         "Host": {{ quote .Values.prometheus.host }}
       },
       "Loki": {
+        {{ if .Values.loki.port }}
+        "Port": {{ quote .Values.loki.host }},
+        {{ end }}
+        {{ if .Values.loki.protocol }}
+        "Protocol": {{ quote .Values.loki.protocol }},
+        {{ end }}
         "Host": {{ quote .Values.loki.host }}
       }
     }
