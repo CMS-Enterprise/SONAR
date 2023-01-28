@@ -11,16 +11,23 @@ spec:
       {{- include "sonar-agent.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
+      {{- $combinedAnnotations := .Values.podAnnotations -}}
+      {{- if .Values.registryCredentials -}}
+      {{-   $combinedAnnotations = merge $combinedAnnotations (dict "container-registry-secret-version" (toJson .Values.registryCredentials | sha256sum)) }}
+      {{- end -}}
+      {{- with $combinedAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
         {{- include "sonar-agent.selectorLabels" . | nindent 8 }}
     spec:
-      {{- with .Values.imagePullSecrets }}
+      {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      {{- else if .Values.registryCredentials }}
+      imagePullSecrets:
+        - name: container-registry-credentials
       {{- end }}
       volumes:
         - name: appsettings-configmap

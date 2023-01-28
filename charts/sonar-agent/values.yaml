@@ -10,7 +10,12 @@ networkPolicies:
   additionalEgressRules: []
   additionalIngressRules: []
 
+# Use an existing secret for pulling images from the container registry
 imagePullSecrets: []
+
+# Create a secret from credential information (registry, email, username, password)
+# This can be a single object with these keys, or an array of such objects.
+registryCredentials: null
 
 podAnnotations: {}
 
