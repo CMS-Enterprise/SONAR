@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Configuration;
@@ -18,15 +19,25 @@ using Microsoft.Extensions.Logging;
 namespace Cms.BatCave.Sonar.Agent;
 
 public class HealthCheckHelper {
-  private static readonly Dictionary<String, IImmutableList<(Decimal Timestamp, String Value)>> _cache = new();
+  private static readonly Dictionary<(String serviceName, String healthCheck), IImmutableList<(Decimal Timestamp, String Value)>> Cache = new();
 
-  public static async Task RunScheduledHealthCheck(
+  private static readonly HttpHealthCheckCondition DefaultStatusCodeCondition = new StatusCodeCondition(
+    new UInt16[] { 200, 204 },
+    HealthStatus.Online
+  );
+
+  private readonly ILogger<HealthCheckHelper> _logger;
+
+  public HealthCheckHelper(ILogger<HealthCheckHelper> logger) {
+    this._logger = logger;
+  }
+
+  public async Task RunScheduledHealthCheck(
     TimeSpan interval,
     IConfigurationRoot configRoot,
     ApiConfiguration config,
     PrometheusConfiguration pConfig,
     LokiConfiguration lConfig,
-    ILoggerFactory loggerFactory,
     CancellationToken token) {
 
     // Configs
@@ -37,7 +48,6 @@ public class HealthCheckHelper {
     sonarHttpClient.Timeout = interval;
     var client = new SonarClient(configRoot, baseUrl: config.BaseUrl, sonarHttpClient);
     await client.ReadyAsync(token);
-    var i = 0;
 
     // Prometheus client
     using var promHttpClient = new HttpClient();
@@ -49,21 +59,16 @@ public class HealthCheckHelper {
     lokiHttpClient.Timeout = interval;
     lokiHttpClient.BaseAddress = new Uri($"{lConfig.Protocol}://{lConfig.Host}:{lConfig.Port}/");
     var lokiClient = new LokiClient(lokiHttpClient);
-    // HTTP Metric client
-    using var httpMetricClient = new HttpClient();
-    httpMetricClient.Timeout = interval;
-
-    var logger = loggerFactory.CreateLogger<HealthCheckHelper>();
 
     while (true) {
       if (token.IsCancellationRequested) {
-        logger.LogInformation("Scheduled health check canceled.");
+        this._logger.LogInformation("Scheduled health check canceled");
         throw new OperationCanceledException();
       }
 
       // Get service hierarchy for given env and tenant
       var tenantResult = await client.GetTenantAsync(config.Environment, config.Tenant, token);
-      logger.LogInformation($"Service Count: {tenantResult.Services.Count}");
+      this._logger.LogDebug("Service Count: {ServiceCount}", tenantResult.Services.Count);
       // Iterate over each service
       foreach (var service in tenantResult.Services) {
         // Initialize aggStatus to null
@@ -71,9 +76,18 @@ public class HealthCheckHelper {
         // Get service's health checks here
         var healthChecks = service.HealthChecks;
         var checkResults = new Dictionary<String, HealthStatus>();
-        // If no checks are returned, log error and continue
-        if (healthChecks == null) {
-          logger.LogError($"No Health Checks associated with service {service.Name}.");
+        // If no checks are returned, continue
+        if ((healthChecks == null) || (healthChecks.Count == 0)) {
+          if ((service.Children == null) || (service.Children.Count == 0)) {
+            // This service serves no purpose in configuration
+            this._logger.LogWarning(
+              "No Health Checks or child services associated with {ServiceName}",
+              service.Name
+            );
+          } else {
+            this._logger.LogDebug("No Health Checks associated with service {ServiceName}", service.Name);
+          }
+
           continue;
         }
 
@@ -83,32 +97,31 @@ public class HealthCheckHelper {
           switch (healthCheck.Type) {
             case HealthCheckType.PrometheusMetric:
               var definition = (PrometheusHealthCheckDefinition)healthCheck.Definition;
-              currCheck = await HealthCheckHelper.RunPrometheusHealthCheck(
+              currCheck = await this.RunPrometheusHealthCheck(
                 promClient,
                 service,
                 healthCheck,
                 definition,
-                logger,
                 token
               );
               break;
             case HealthCheckType.LokiMetric:
               var lokiDefinition = (LokiHealthCheckDefinition)healthCheck.Definition;
-              currCheck = await HealthCheckHelper.RunLokiHealthCheck(
+              currCheck = await this.RunLokiHealthCheck(
                 lokiClient,
                 service,
                 healthCheck,
                 lokiDefinition,
-                logger,
                 token
               );
               break;
             case HealthCheckType.HttpRequest:
               var httpDefinition = (HttpHealthCheckDefinition)healthCheck.Definition;
-              currCheck = await HealthCheckHelper.RunHttpHealthCheck(
-                httpMetricClient,
+              currCheck = await this.RunHttpHealthCheck(
+                service,
+                healthCheck,
                 httpDefinition,
-                logger,
+                timeout: interval,
                 token);
               break;
             default:
@@ -128,30 +141,27 @@ public class HealthCheckHelper {
 
         // Send result data here
         if (aggStatus != null) {
-          await HealthCheckHelper.SendHealthData(
+          await this.SendHealthData(
             env,
             tenant,
             service.Name,
             checkResults,
             client,
             aggStatus.Value,
-            logger,
             token
           );
         }
       }
 
       await Task.Delay(interval, token);
-      i++;
     }
   }
 
-  private static async Task<HealthStatus> RunPrometheusHealthCheck(
+  private async Task<HealthStatus> RunPrometheusHealthCheck(
     IPrometheusClient promClient,
     ServiceConfiguration service,
     HealthCheckModel healthCheck,
     PrometheusHealthCheckDefinition definition,
-    ILogger<HealthCheckHelper> logger,
     CancellationToken token) {
 
     // Get Prometheus samples
@@ -159,7 +169,7 @@ public class HealthCheckHelper {
 
     var end = DateTime.UtcNow;
     var duration = definition.Duration;
-    var start = HealthCheckHelper.GetStartDate(service.Name, end, duration);
+    var start = HealthCheckHelper.GetStartDate(service.Name, healthCheck.Name, end, duration);
 
     ResponseEnvelope<QueryResults> qrResult;
     try {
@@ -167,53 +177,40 @@ public class HealthCheckHelper {
         definition.Expression, start, end, TimeSpan.FromSeconds(1), null, token
       );
     } catch (HttpRequestException e) {
-      Console.WriteLine($"HttpRequestException: {e.Message}");
+      this._logger.LogError(
+        e,
+        "HTTP error querying Prometheus ({StatusCode}): {Message}",
+        e.StatusCode,
+        e.Message
+      );
       return HealthStatus.Unknown;
-    } catch (TaskCanceledException e) {
+    } catch (TaskCanceledException) {
       if (token.IsCancellationRequested) {
         throw;
       } else {
-        Console.WriteLine("Prometheus query request timed out.");
+        this._logger.LogError("Prometheus query request timed out");
         return HealthStatus.Unknown;
       }
     } catch (InvalidOperationException e) {
-      Console.WriteLine($"InvalidOperationException: {e.Message}");
+      this._logger.LogError(e, "Unexpected error querying Prometheus: {Message}", e.Message);
       return HealthStatus.Unknown;
     }
 
-    return HealthCheckHelper.ProcessQueryResults(
-      service, healthCheck, definition.Conditions, duration, qrResult, logger);
+    return this.ProcessQueryResults(
+      service, healthCheck, definition.Conditions, duration, qrResult);
   }
 
-  private static DateTime GetStartDate(
-    String key,
-    DateTime end,
-    TimeSpan duration) {
-
-    DateTime start;
-    // If no cached values, subtract duration from end date to get start date value.
-    //  Else, cached values exist, calculate start date from last cached value.
-    if (!HealthCheckHelper._cache.ContainsKey(key)) {
-      start = end.Subtract(duration);
-    } else {
-      start = DateTime.UnixEpoch.AddSeconds((Double)HealthCheckHelper._cache[key].Last().Timestamp);
-    }
-
-    return start;
-  }
-
-  private static async Task<HealthStatus> RunLokiHealthCheck(
+  private async Task<HealthStatus> RunLokiHealthCheck(
     ILokiClient lokiClient,
     ServiceConfiguration service,
     HealthCheckModel healthCheck,
     LokiHealthCheckDefinition definition,
-    ILogger<HealthCheckHelper> logger,
     CancellationToken token) {
 
     // Set start and end for date range, Get Prometheus samples
     var end = DateTime.UtcNow;
     var duration = definition.Duration;
-    var start = HealthCheckHelper.GetStartDate(service.Name, end, duration);
+    var start = HealthCheckHelper.GetStartDate(service.Name, healthCheck.Name, end, duration);
 
     ResponseEnvelope<QueryResults> qrResult;
     try {
@@ -221,58 +218,56 @@ public class HealthCheckHelper {
         definition.Expression, start, end, direction: Direction.Forward, cancellationToken: token
       );
     } catch (HttpRequestException e) {
-      Console.WriteLine($"HttpRequestException: {e.Message}");
+      this._logger.LogError(e, "HTTP error querying Loki: {Message}", e.Message);
       return HealthStatus.Unknown;
-    } catch (TaskCanceledException e) {
+    } catch (TaskCanceledException) {
       if (token.IsCancellationRequested) {
         throw;
       } else {
-        Console.WriteLine("Loki query request timed out.");
+        this._logger.LogError("Loki query request timed out");
         return HealthStatus.Unknown;
       }
     } catch (InvalidOperationException e) {
-      Console.WriteLine($"InvalidOperationException: {e.Message}");
+      this._logger.LogError(e, "Unexpected error querying Loki: {Message}", e.Message);
       return HealthStatus.Unknown;
     }
 
-    return HealthCheckHelper.ProcessQueryResults(
+    return this.ProcessQueryResults(
       service,
       healthCheck,
       definition.Conditions,
       definition.Duration,
-      qrResult,
-      logger
+      qrResult
     );
   }
 
-  private static HealthStatus ProcessQueryResults(
+  private HealthStatus ProcessQueryResults(
     ServiceConfiguration service,
     HealthCheckModel healthCheck,
     IImmutableList<MetricHealthCondition> conditions,
     TimeSpan duration,
-    ResponseEnvelope<QueryResults> qrResult,
-    ILogger<HealthCheckHelper> logger) {
+    ResponseEnvelope<QueryResults> qrResult) {
 
     // Error handling
     var currCheck = HealthStatus.Online;
     if (qrResult.Data == null) {
       // No data, bad request
-      logger.LogError($"Returned nothing for health check: {healthCheck.Name}");
+      this._logger.LogWarning("Returned nothing for health check: {HealthCheck}", healthCheck.Name);
       currCheck = HealthStatus.Unknown;
     } else if (qrResult.Data.Result.Count > 1) {
       // Bad config, multiple time series returned
-      logger.LogError(
-        $"Invalid configuration, multiple time series returned for health check: {healthCheck.Name}");
+      this._logger.LogWarning(
+        "Invalid configuration, multiple time series returned for health check: {HealthCheck}", healthCheck.Name);
       currCheck = HealthStatus.Unknown;
     } else if ((qrResult.Data.Result.Count == 0) ||
       (qrResult.Data.Result[0].Values == null) ||
       (qrResult.Data.Result[0].Values!.Count == 0)) {
       // No samples
-      logger.LogError($"Returned no samples for health check: {healthCheck.Name}");
+      this._logger.LogWarning("Returned no samples for health check: {HealthCheck}", healthCheck.Name);
       currCheck = HealthStatus.Unknown;
     } else {
       // Successfully obtained samples from PromQL, evaluate against all conditions for given check
-      var samples = HealthCheckHelper.ComputeCache(qrResult.Data.Result[0].Values!, service, duration.Seconds);
+      var samples = HealthCheckHelper.ComputeCache(qrResult.Data.Result[0].Values!, service.Name, healthCheck.Name, duration.Seconds);
 
       foreach (var condition in conditions) {
         // Determine which comparison to execute
@@ -290,97 +285,189 @@ public class HealthCheckHelper {
     return currCheck;
   }
 
-  private static async Task<HealthStatus> RunHttpHealthCheck(
-    HttpClient client,
+  private async Task<HealthStatus> RunHttpHealthCheck(
+    ServiceConfiguration service,
+    HealthCheckModel healthCheck,
     HttpHealthCheckDefinition definition,
-    ILogger<HealthCheckHelper> logger,
+    TimeSpan timeout,
     CancellationToken token) {
 
-    var currCheck = HealthStatus.Online;
-
-    // Initialize variables needed for Http request and request duration calculation.
-    TimeSpan duration;
-    HttpResponseMessage response;
-
     try {
-      // Send request to url specified in definition, calculate duration of request
-      DateTime now = DateTime.Now;
-      response = await client.GetAsync(definition.Url, token);
-      duration = DateTime.Now - now;
-    } catch (HttpRequestException e) {
+      using var handler = new HttpClientHandler {
+        AllowAutoRedirect = definition.FollowRedirects == true
+      };
+      using var client = new HttpClient();
+      client.Timeout = timeout;
 
-      // Request failed, set currCheck to offline and return.
-      return HealthStatus.Offline;
-    } catch (InvalidOperationException e) {
-
-      // Error with requestURI, log and return unknown status.
-      logger.LogError($"Invalid request URI: ${definition.Url}");
-      return HealthStatus.Unknown;
-    } catch (TaskCanceledException e) {
-
-      // Timeout/task cancelled, return unknown status.
-      Console.Error.WriteLine("Request timeout.");
-      return HealthStatus.Unknown;
-    } catch (UriFormatException e) {
-
-      // Invalid request URI format, log and return unknown status.
-      logger.LogError($"Invalid request URI format: {definition.Url}");
-      return HealthStatus.Unknown;
-    }
-
-    // Passed error handling, get status code from response.
-    var statusCode = (UInt16)response.StatusCode;
-
-    // Evaluate response based on conditions
-    //  If there is a ResponseTimeCondition, evaluate.
-    //  If there is a StatusCodeCondition, evaluate.
-    foreach (var condition in definition.Conditions) {
-      switch (condition.Type) {
-        // Evaluate conditions based on http condition type.
-        case HttpHealthCheckConditionType.HttpResponseTime: {
-          var responseCondition = (ResponseTimeCondition)condition;
-          if (duration > responseCondition.ResponseTime) {
-            logger.LogInformation("Request duration exceeded threshold.");
-            currCheck = responseCondition.Status;
-          }
-          break;
-        }
-        case HttpHealthCheckConditionType.HttpStatusCode: {
-          var statusCondition = (StatusCodeCondition)condition;
-          if (statusCondition.StatusCodes.Contains(statusCode)) {
-            logger.LogInformation($"Request status code {statusCode} met condition.");
-            currCheck = statusCondition.Status;
-          }
-          break;
+      if (definition.AuthorizationHeader != null) {
+        if (AuthenticationHeaderValue.TryParse(definition.AuthorizationHeader, out var auth)) {
+          client.DefaultRequestHeaders.Authorization = auth;
+        } else {
+          this._logger.LogWarning(
+            "Invalid AuthorizationHeader value for service {Service} health check {HealthCheck}",
+            service.Name,
+            healthCheck.Name
+          );
         }
       }
-    }
 
-    return currCheck;
+      // Start out offline
+      var currCheck = HealthStatus.Offline;
+
+      // Send request to url specified in definition, calculate duration of request
+      var now = DateTime.Now;
+      var response = await client.GetAsync(definition.Url, token);
+      var duration = DateTime.Now - now;
+
+      // Passed error handling, get status code from response.
+      var statusCode = (UInt16)response.StatusCode;
+
+      // Evaluate all status code conditions first
+      var statusCodeConditions =
+        definition.Conditions
+          .Where(c => c.Type == HttpHealthCheckConditionType.HttpStatusCode)
+          // If no HttpStatusCode conditions are specified, require the status code to be 200/204
+          .DefaultIfEmpty(HealthCheckHelper.DefaultStatusCodeCondition);
+      var conditionMet = false;
+      foreach (var condition in statusCodeConditions) {
+        var statusCondition = (StatusCodeCondition)condition;
+        if (statusCondition.StatusCodes.Contains(statusCode)) {
+          this._logger.LogDebug(
+            "Status code condition {StatusCode} => {ServiceHealth} met for service {Service} health check {HealthCheck}",
+            statusCode,
+            statusCondition.Status,
+            service.Name,
+            healthCheck.Name
+          );
+
+          currCheck = statusCondition.Status;
+          conditionMet = true;
+        }
+      }
+
+      // If no status code conditions are met, the status will be Offline.
+      if (!conditionMet) {
+        this._logger.LogDebug(
+          "No status code conditions matched {StatusCode} for service {Service} health check {HealthCheck}",
+          statusCode,
+          service.Name,
+          healthCheck.Name
+        );
+
+        return HealthStatus.Offline;
+      }
+
+      // Evaluate response time conditions. These conditions will only have an effect if the
+      // corresponding status is more sever than that based on status code.
+      var responseTimeConditions =
+        definition.Conditions.Where(c => c.Type == HttpHealthCheckConditionType.HttpResponseTime);
+      foreach (var condition in responseTimeConditions) {
+        var responseCondition = (ResponseTimeCondition)condition;
+        if ((duration > responseCondition.ResponseTime) && (responseCondition.Status > currCheck)) {
+          this._logger.LogDebug(
+            "Request duration exceeded threshold ({Threshold}) for service {Service} health check {HealthCheck}",
+            responseCondition.ResponseTime,
+            service.Name,
+            healthCheck.Name
+          );
+
+          currCheck = responseCondition.Status;
+        }
+      }
+
+      return currCheck;
+    } catch (HttpRequestException e) {
+      // Request failed, set currCheck to offline and return.
+      this._logger.LogDebug(
+        e,
+        "Request to {Url} failed for service {Service} health check {HealthCheck}: {Message}",
+        definition.Url,
+        service.Name,
+        healthCheck.Name,
+        e.Message
+      );
+
+      return HealthStatus.Offline;
+    } catch (Exception e) when (e is InvalidOperationException or UriFormatException) {
+      // Error with requestURI, this means the configuration is invalid, log and return unknown status.
+      this._logger.LogWarning(
+        "Invalid Health Check URL: {Url} for service {Service} health check {HealthCheck}",
+        definition.Url,
+        service.Name,
+        healthCheck.Name
+      );
+
+      return HealthStatus.Unknown;
+    } catch (OperationCanceledException) {
+      if (token.IsCancellationRequested) {
+        // Task cancelled, raise exception
+        throw;
+      } else {
+        // Http Timeout. Consider the service offline.
+        this._logger.LogDebug(
+          "Request to {Url} timed out for service {Service} health check {HealthCheck}",
+          definition.Url,
+          service.Name,
+          healthCheck.Name
+        );
+
+        return HealthStatus.Offline;
+      }
+    }
   }
 
-  private static async Task SendHealthData(
+  private async Task SendHealthData(
     String env, String tenant, String service,
     Dictionary<String, HealthStatus> results,
     SonarClient client,
     HealthStatus aggStatus,
-    ILogger<HealthCheckHelper> logger,
     CancellationToken token) {
 
     var ts = DateTime.UtcNow;
     var healthChecks = new ReadOnlyDictionary<String, HealthStatus>(results);
     var body = new ServiceHealth(ts, aggStatus, healthChecks);
 
-    logger.LogInformation(
-      $"Env: {env}, Tenant: {tenant}, Service: {service}, " +
-      $"Time: {body.Timestamp}, AggStatus: {body.AggregateStatus}");
+    this._logger.LogInformation(
+      "Env: {Environment}, Tenant: {Tenant}, Service: {Service}, Time: {Timestamp}, AggStatus: {AggregateStatus}",
+      env,
+      tenant,
+      service,
+      body.Timestamp,
+      body.AggregateStatus
+    );
 
-    body.HealthChecks.ToList().ForEach(x => Console.WriteLine($"{x.Key}: {x.Value}"));
     try {
       await client.RecordStatusAsync(env, tenant, service, body, token);
     } catch (ApiException e) {
-      logger.LogError($"HTTP Request Error, Code: {e.StatusCode}, Message: {e.Message}");
+      this._logger.LogError(
+        e,
+        "Failed to send status data to SONAR API, Code: {StatusCode}, Message: {Message}",
+        e.StatusCode,
+        e.Message
+      );
     }
+  }
+
+  private static DateTime GetStartDate(
+    String serviceName,
+    String healthCheck,
+    DateTime end,
+    TimeSpan duration) {
+
+    DateTime start;
+    // If no cached values, subtract duration from end date to get start date value.
+    //  Else, cached values exist, calculate start date from last cached value.
+    if (!HealthCheckHelper.Cache.TryGetValue((serviceName, healthCheck), out var cachedData) ||
+      (cachedData.Count == 0)) {
+      start = end.Subtract(duration);
+    } else {
+      start = DateTime.UnixEpoch.AddSeconds((Double)cachedData.Last().Timestamp);
+      if (start < end.Subtract(duration)) {
+        start = end.Subtract(duration);
+      }
+    }
+
+    return start;
   }
 
   private static Boolean EvaluateSamples(
@@ -423,16 +510,16 @@ public class HealthCheckHelper {
 
   private static IImmutableList<(Decimal Timestamp, String Value)> ComputeCache(
     IImmutableList<(Decimal Timestamp, String Value)> newResults,
-    ServiceConfiguration service,
+    String serviceName,
+    String healthCheck,
     Decimal duration) {
 
     // If cache does not contain key, insert entire response envelope into dictionary.
     //  Else, cache contains service, truncate and concat.
-    var key = service.Name;
-    if (!HealthCheckHelper._cache.ContainsKey(key)) {
-      HealthCheckHelper._cache.Add(service.Name, newResults);
+    var key = (serviceName, healthCheck);
+    if (!HealthCheckHelper.Cache.TryGetValue(key, out var cachedValues)) {
+      HealthCheckHelper.Cache.Add(key, newResults);
     } else {
-      var cachedValues = HealthCheckHelper._cache[key];
       var endValue = newResults.Last().Timestamp;
       var beginning = newResults.First().Timestamp;
 
@@ -444,9 +531,9 @@ public class HealthCheckHelper {
         .Concat(newResults)
         .ToImmutableList();
 
-      HealthCheckHelper._cache[key] = cachedValues;
+      HealthCheckHelper.Cache[key] = cachedValues;
     }
 
-    return HealthCheckHelper._cache[key];
+    return HealthCheckHelper.Cache[key];
   }
 }

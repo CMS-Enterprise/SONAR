@@ -64,9 +64,11 @@ internal class Program {
     CancellationToken token = source.Token;
 
     // Configure logging
-    using ILoggerFactory loggerFactory = LoggerFactory.Create(loggingBuilder => {
-      loggingBuilder.AddConsole(options => options.FormatterName = nameof(CustomFormatter))
-        .AddConsoleFormatter<CustomFormatter, LoggingCustomOptions>(options => options.EnableColor = true);
+    using var loggerFactory = LoggerFactory.Create(loggingBuilder => {
+      loggingBuilder
+        .AddConfiguration(configuration.GetSection("Logging"))
+        .AddConsole(options => options.FormatterName = nameof(CustomFormatter))
+        .AddConsoleFormatter<CustomFormatter, LoggingCustomOptions>();
     });
 
     var logger = loggerFactory.CreateLogger<Program>();
@@ -85,14 +87,15 @@ internal class Program {
       // Configure service hierarchy
       logger.LogInformation("Configuring services....");
       await ConfigurationHelper.ConfigureServices(configuration, apiConfig, servicesHierarchy, token);
-      // Hard coded 10 second interval
-      var interval = TimeSpan.FromSeconds(10);
+      var interval = TimeSpan.FromSeconds(agentConfig.AgentInterval);
       logger.LogInformation("Initializing SONAR Agent...");
+      var healthCheckHelper = new HealthCheckHelper(loggerFactory.CreateLogger<HealthCheckHelper>());
       // Run task that calls Health Check function
-      var task = Task.Run(async delegate {
-        await HealthCheckHelper.RunScheduledHealthCheck(
-          interval, configuration, apiConfig, promConfig, lokiConfig, loggerFactory, token);
-      }, token);
+      var task = Task.Run(
+        () => healthCheckHelper.RunScheduledHealthCheck(
+            interval, configuration, apiConfig, promConfig, lokiConfig, token),
+        token
+      );
       await task;
     } catch (IndexOutOfRangeException ex) {
       logger.LogError("First command line argument must be service configuration file path.", ex);
