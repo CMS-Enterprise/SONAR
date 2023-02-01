@@ -1,11 +1,13 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Agent.Options;
 using Cms.BatCave.Sonar.Agent.Logger;
 using Cms.BatCave.Sonar.Configuration;
+using Cms.BatCave.Sonar.Models;
 using CommandLine;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -72,9 +74,16 @@ internal class Program {
       source.Cancel();
     };
 
-    // Load and merge configs
-    var servicesHierarchy = await ConfigurationHelper.LoadAndValidateJsonServiceConfig(
-      opts.ServiceConfigFiles.ToArray(), source.Token);
+    ServiceHierarchyConfiguration servicesHierarchy;
+    try {
+      // Load and merge configs
+      servicesHierarchy = await ConfigurationHelper.LoadAndValidateJsonServiceConfig(
+        opts.ServiceConfigFiles.ToArray(), source.Token);
+    } catch (Exception ex) when (ex is InvalidOperationException or JsonException) {
+      logger.LogError(ex, "Invalid Service Configuration: {Message}", ex.Message);
+      return 1;
+    }
+
     // Configure service hierarchy
     logger.LogInformation("Configuring services....");
     await ConfigurationHelper.ConfigureServices(configuration, apiConfig, servicesHierarchy, source.Token);

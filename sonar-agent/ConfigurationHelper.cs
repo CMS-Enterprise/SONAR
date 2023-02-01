@@ -24,59 +24,66 @@ public static class ConfigurationHelper {
     String[] args,
     CancellationToken token) {
 
-    List<ServiceHierarchyConfiguration> validConfigs = new List<ServiceHierarchyConfiguration>();
+    var validConfigs = new List<ServiceHierarchyConfiguration>();
     foreach (var config in args) {
       await using var inputStream = new FileStream(config, FileMode.Open, FileAccess.Read);
-      using JsonDocument document = await JsonDocument.ParseAsync(inputStream, cancellationToken: token);
-      var configRoot = document.RootElement;
 
       try {
         var serviceHierarchy =
-          JsonSerializer.Deserialize<ServiceHierarchyConfiguration>(configRoot, ConfigSerializerOptions);
-        var listServiceConfig = serviceHierarchy.Services;
-        if (listServiceConfig == null) {
-          throw new OperationCanceledException("There is no configuration for services.");
+          await JsonSerializer.DeserializeAsync<ServiceHierarchyConfiguration>(
+            inputStream,
+            ConfigurationHelper.ConfigSerializerOptions,
+            token
+          );
+        if (serviceHierarchy == null) {
+          throw new InvalidOperationException(
+            $"The specified service configuration file ({config}) could not be deserialized."
+          );
         }
 
-        var listRootServices = serviceHierarchy.RootServices;
-        if (listRootServices == null) {
-          throw new OperationCanceledException("There is no configuration for root services.");
-        }
-
-        var servicesList = new List<String>();
-
+        var serviceNames = new HashSet<String>(StringComparer.OrdinalIgnoreCase);
+        // Ensure that each service in the list has a unique name
         // Check if a child service exists as a service
-        foreach (var service in listServiceConfig) {
-          servicesList.Add(service.Name);
+        foreach (var service in serviceHierarchy.Services) {
+          if (serviceNames.Contains(service.Name)) {
+            throw new InvalidOperationException(
+              $"The specified service configuration file ({config}) is not valid. The service name '{service.Name}' is used multiple times."
+            );
+          } else {
+            serviceNames.Add(service.Name);
+          }
 
           if (service.Children != null) {
             foreach (var child in service.Children) {
-              if (!servicesList.Contains(child)) {
-                throw new OperationCanceledException($"{child} does not exist as a service in the configuration file.");
+              // Don't use serviceNames here because we don't want the order in which services are
+              // declared to matter
+              if (!serviceHierarchy.Services.Any(svc => String.Equals(svc.Name, child, StringComparison.OrdinalIgnoreCase))) {
+                throw new InvalidOperationException(
+                  $"The specified service configuration file ({config}) is not valid. The child service '{child}' does not exist in the services array."
+                );
               }
             }
           }
         }
 
         // Check if root service exists as a service
-        foreach (var rootService in listRootServices) {
-          if (!servicesList.Contains(rootService)) {
-            throw new OperationCanceledException(
-              $"{rootService} does not exist as a service in the configuration file.");
+        foreach (var rootService in serviceHierarchy.RootServices) {
+          if (!serviceNames.Contains(rootService)) {
+            throw new InvalidOperationException(
+              $"The specified service configuration file ({config}) is not valid. The root service {rootService} does not exist in the services array."
+            );
           }
         }
 
         // Add valid config to list
         validConfigs.Add(serviceHierarchy);
       } catch (KeyNotFoundException) {
-        throw new OperationCanceledException("Service configuration is invalid.");
+        throw new InvalidOperationException("Service configuration is invalid.");
       }
     }
 
     // merge valid configs into single ServiceHierarchyConfiguration
-    ServiceHierarchyConfiguration result = validConfigs.Aggregate(MergeConfigurations);
-
-    return result;
+    return validConfigs.Aggregate(MergeConfigurations);
   }
 
   private static ServiceHierarchyConfiguration MergeConfigurations(
@@ -102,8 +109,11 @@ public static class ConfigurationHelper {
       }
     }
 
-    // Replace Root Services
-    return new ServiceHierarchyConfiguration(serviceResults, next.RootServices);
+    // Merge Root Services
+    return new ServiceHierarchyConfiguration(
+      serviceResults,
+      prev.RootServices.Concat(next.RootServices).ToImmutableHashSet()
+    );
   }
 
   public static async Task ConfigureServices(
