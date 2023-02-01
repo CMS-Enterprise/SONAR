@@ -16,7 +16,7 @@ public class HealthCheck {
   public Guid ServiceId { get; init; }
 
   [StringLength(100)] public String Name { get; init; }
-  public String Description { get; init; }
+  public String? Description { get; init; }
   public HealthCheckType Type { get; init; }
   public String Definition { get; init; }
 
@@ -24,7 +24,7 @@ public class HealthCheck {
     Guid id,
     Guid serviceId,
     String name,
-    String description,
+    String? description,
     HealthCheckType type,
     String definition) {
 

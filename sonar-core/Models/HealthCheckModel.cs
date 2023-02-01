@@ -12,7 +12,7 @@ public record HealthCheckModel(
   [Required]
   [RegularExpression("^[0-9a-zA-Z_-]+$")]
   String Name,
-  String Description,
+  String? Description,
   HealthCheckType Type,
   HealthCheckDefinition Definition
 );
