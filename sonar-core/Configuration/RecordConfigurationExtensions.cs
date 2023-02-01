@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -40,41 +41,48 @@ public static class RecordConfigurationExtensions {
   /// </remarks>
   /// <param name="configuration">The configuration to read values from.</param>
   /// <typeparam name="T">The type of object to initialize.</typeparam>
+  /// <exception cref="RecordBindingException">
+  ///   The configuration could not be converted to the specified type.
+  /// </exception>
   /// <returns>
   ///   An instance of the type <typeparamref name="T" /> that has been initialized using values from
   ///   the specified <paramref name="configuration" />.
   /// </returns>
   /// <exception cref="InvalidOperationException">
-  ///   The configuration could not be converted to the specified type.
+  ///   The specified type does not have any public constructors
   /// </exception>
   [return: NotNull]
   public static T BindCtor<T>(this IConfiguration configuration) {
     var constructors =
       typeof(T).GetConstructors().OrderByDescending(c => c.GetParameters().Length).ToList();
 
-    ConstructorInfo? match = null;
+    (ConstructorInfo ctor, Int32 paramCount)? match = null;
+    (ConstructorInfo ctor, List<ParameterInfo> missingParams, Double fractionMatch)? closestMatch = null;
     IImmutableDictionary<String, Object?>? parameters = null;
 
     // Find the best match constructor for the set of parameters available.
     foreach (var ctor in constructors) {
-      match = ctor;
+      var current = ctor;
+      var missingParameters = new List<ParameterInfo>();
+
       parameters = ImmutableDictionary<String, Object?>.Empty;
 
-      foreach (var param in ctor.GetParameters()) {
+      var ctorParameters = ctor.GetParameters();
+      foreach (var param in ctorParameters) {
         Debug.Assert(param.Name != null);
 
         if (param.ParameterType.IsClass &&
-          param.ParameterType != typeof(String) &&
-          param.ParameterType != typeof(Uri)) {
+          (param.ParameterType != typeof(String)) &&
+          (param.ParameterType != typeof(Uri))) {
 
           var subSection = configuration.GetSection(param.Name);
           if (subSection != null) {
             if (param.ParameterType.GetConstructors().Any(c => c.GetParameters().Length == 0)) {
               var paramValue = Activator.CreateInstance(param.ParameterType);
               if (paramValue == null) {
-                throw new InvalidOperationException(
-                  $"Unable to construct object of type {param.ParameterType.Name}"
-                );
+                current = null;
+                missingParameters.Add(param);
+                continue;
               }
 
               subSection.Bind(paramValue);
@@ -83,8 +91,8 @@ public static class RecordConfigurationExtensions {
               parameters = parameters.Add(param.Name, subSection.BindCtor<T>());
             }
           } else if (!param.HasDefaultValue && !param.IsOptional) {
-            match = null;
-            break;
+            current = null;
+            missingParameters.Add(param);
           }
         } else {
           var value = configuration[param.Name];
@@ -106,23 +114,41 @@ public static class RecordConfigurationExtensions {
               parameters = parameters.Add(param.Name, Convert.ChangeType(value, param.ParameterType));
             }
           } else if (!param.HasDefaultValue && !param.IsOptional) {
-            match = null;
-            break;
+            current = null;
+            missingParameters.Add(param);
           }
         }
+      }
+
+      var score = 1.0 - ((Double)missingParameters.Count / ctorParameters.Length);
+      if (current != null) {
+        if ((match == null) || (ctorParameters.Length > match.Value.paramCount)) {
+          match = (current, ctorParameters.Length);
+          closestMatch = null;
+        }
+      } else if ((closestMatch == null) || (score > closestMatch.Value.fractionMatch)) {
+        closestMatch = (ctor, missingParameters, score);
       }
     }
 
     if (match == null) {
-      throw new InvalidOperationException(
-        $"No matching constructor could be found for the configuration type {typeof(T).Name}"
-      );
+      if (closestMatch != null) {
+        throw new RecordBindingException(
+          typeof(T),
+          closestMatch.Value.ctor,
+          closestMatch.Value.missingParams
+        );
+      } else {
+        throw new InvalidOperationException(
+          $"The configuration type {typeof(T).Name} has no constructors."
+        );
+      }
     }
 
     Debug.Assert(parameters != null, "parameters != null");
 
-    var result = match.Invoke(
-      match.GetParameters().Select(p => {
+    var result = match.Value.ctor.Invoke(
+      match.Value.ctor.GetParameters().Select(p => {
         Debug.Assert(p.Name != null, "p.Name != null");
         return parameters!.GetValueOrDefault(p.Name, p.DefaultValue);
       }).ToArray()

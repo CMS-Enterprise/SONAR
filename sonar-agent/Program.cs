@@ -48,14 +48,6 @@ internal class Program {
       .AddEnvironmentVariables();
 
     IConfigurationRoot configuration = builder.Build();
-    var apiConfig = configuration.GetSection("ApiConfig").BindCtor<ApiConfiguration>();
-    var promConfig = configuration.GetSection("Prometheus").BindCtor<PrometheusConfiguration>();
-    var lokiConfig = configuration.GetSection("Loki").BindCtor<LokiConfiguration>();
-    var agentConfig = configuration.GetSection("AgentConfig").BindCtor<AgentConfiguration>();
-
-    // Create cancellation source, token, new task
-    var source = new CancellationTokenSource();
-    CancellationToken token = source.Token;
 
     // Configure logging
     using var loggerFactory = LoggerFactory.Create(loggingBuilder => {
@@ -66,6 +58,23 @@ internal class Program {
     });
 
     var logger = loggerFactory.CreateLogger<Program>();
+    ApiConfiguration apiConfig;
+    PrometheusConfiguration promConfig;
+    LokiConfiguration lokiConfig;
+    AgentConfiguration agentConfig;
+    try {
+      apiConfig = configuration.GetSection("ApiConfig").BindCtor<ApiConfiguration>();
+      promConfig = configuration.GetSection("Prometheus").BindCtor<PrometheusConfiguration>();
+      lokiConfig = configuration.GetSection("Loki").BindCtor<LokiConfiguration>();
+      agentConfig = configuration.GetSection("AgentConfig").BindCtor<AgentConfiguration>();
+    } catch (RecordBindingException ex) {
+      logger.LogError(ex, "Invalid sonar-agent configuration. {Detail}", ex.Message);
+      return 1;
+    }
+
+    // Create cancellation source, token, new task
+    using var source = new CancellationTokenSource();
+    CancellationToken token = source.Token;
 
     // Event handler for SIGINT
     // Traps SIGINT to perform necessary cleanup
