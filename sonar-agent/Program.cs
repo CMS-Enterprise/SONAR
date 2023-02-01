@@ -13,42 +13,34 @@ using Microsoft.Extensions.Logging;
 namespace Cms.BatCave.Sonar.Agent;
 
 internal class Program {
-  private static async Task Main(String[] args) {
+  private static Task Main(String[] args) {
     // Command Line Parsing
-    var test = await HandleCommandLine(args,
-      async opts => await RunSettings(opts));
-  }
-
-  private static Task<Int32> HandleCommandLine(
-    String[] args,
-    Func<InitSettings, Task<Int32>> runSettings) {
-
     var parser = new Parser(settings => {
-      // Assume that unknown arguments will be handled by the dotnet Command-line configuration provider
+      // Assume that unknown arguments will be handled by the dotnet Command-line configuration
+      // provider
       settings.IgnoreUnknownArguments = true;
       settings.HelpWriter = Console.Error;
     });
-    var parserResult =
-      parser.ParseArguments<InitSettings>(args);
+    var parserResult = parser.ParseArguments<SonarAgentOptions>(args);
     return parserResult
       .MapResult(
-        runSettings,
-        _ => Task.FromResult<Int32>(1)
+        Program.RunAgent,
+        notParsedFunc: _ => Task.FromResult(1)
       );
   }
 
-  private static async Task<Int32> RunSettings(InitSettings opts) {
+  private static async Task<Int32> RunAgent(SonarAgentOptions opts) {
 
     // API Configuration
     var builder = new ConfigurationBuilder()
       .SetBasePath(Directory.GetCurrentDirectory())
       .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
       .AddJsonFile(
-        Path.Combine(opts.AppSettingLocation, "appsettings.json"),
+        Path.Combine(opts.AppSettingsLocation, "appsettings.json"),
         optional: true,
         reloadOnChange: true)
       .AddJsonFile(
-        Path.Combine(opts.AppSettingLocation, $"appsettings.{Environment.GetEnvironmentVariable("ENVIRONMENT") ?? "Development"}.json"),
+        Path.Combine(opts.AppSettingsLocation, $"appsettings.{Environment.GetEnvironmentVariable("ENVIRONMENT") ?? "Development"}.json"),
         optional: true,
         reloadOnChange: true)
       .AddEnvironmentVariables();
@@ -80,31 +72,24 @@ internal class Program {
       source.Cancel();
     };
 
-    try {
-      // Load and merge configs
-      var servicesHierarchy = await ConfigurationHelper.LoadAndValidateJsonServiceConfig(
-        opts.ServiceConfigFiles.ToArray(), token);
-      // Configure service hierarchy
-      logger.LogInformation("Configuring services....");
-      await ConfigurationHelper.ConfigureServices(configuration, apiConfig, servicesHierarchy, token);
-      var interval = TimeSpan.FromSeconds(agentConfig.AgentInterval);
-      logger.LogInformation("Initializing SONAR Agent...");
-      var healthCheckHelper = new HealthCheckHelper(loggerFactory.CreateLogger<HealthCheckHelper>());
-      // Run task that calls Health Check function
-      var task = Task.Run(
-        () => healthCheckHelper.RunScheduledHealthCheck(
-            interval, configuration, apiConfig, promConfig, lokiConfig, token),
-        token
-      );
-      await task;
-    } catch (IndexOutOfRangeException ex) {
-      logger.LogError("First command line argument must be service configuration file path.", ex);
-    } catch (OperationCanceledException e) {
-      logger.LogError($"{nameof(OperationCanceledException)} thrown with message: {e.Message}", e);
-      // Additional cleanup goes here
-    } finally {
-      source.Dispose();
-    }
+    // Load and merge configs
+    var servicesHierarchy = await ConfigurationHelper.LoadAndValidateJsonServiceConfig(
+      opts.ServiceConfigFiles.ToArray(), source.Token);
+    // Configure service hierarchy
+    logger.LogInformation("Configuring services....");
+    await ConfigurationHelper.ConfigureServices(configuration, apiConfig, servicesHierarchy, source.Token);
+    var interval = TimeSpan.FromSeconds(agentConfig.AgentInterval);
+
+    logger.LogInformation("Initializing SONAR Agent...");
+    var healthCheckHelper = new HealthCheckHelper(loggerFactory.CreateLogger<HealthCheckHelper>());
+    // Run task that calls Health Check function
+    var task = Task.Run(
+      () => healthCheckHelper.RunScheduledHealthCheck(
+          interval, configuration, apiConfig, promConfig, lokiConfig, source.Token),
+      source.Token
+    );
+
+    await task;
 
     return 0;
   }
