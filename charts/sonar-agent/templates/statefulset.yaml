@@ -49,13 +49,14 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
-            - {{ printf "--appsetting-location ./setting" }}
+            - --appsettings-location
+            - ./settings
             {{- range $config := .Values.configs }}
             - {{ printf "./service-config/%s.yaml" $config.key | quote }}
             {{- end }}
           volumeMounts:
             - name: appsettings-configmap
-              mountPath: "/sonar/sonar-agent/setting"
+              mountPath: "/sonar/sonar-agent/settings"
               readOnly: true
             - name: service-configmap
               mountPath: "/sonar/sonar-agent/service-config"
