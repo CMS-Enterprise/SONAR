@@ -30,7 +30,7 @@ public class ArrayTupleConverterTest {
       42,
       _currentTime
     );
-    var expectedResults = "[\"Foo\",42,\"" + _currentTime.ToString("yyyy-MM-ddTHH:mm:ss.ffffffZ") + "\"]";
+    var expectedResults = "[\"Foo\",42,\"" + _currentTime.ToString("yyyy-MM-ddTHH:mm:ss.FFFFFFFZ") + "\"]";
 
     // Act
     var result = JsonSerializer.Serialize(testTuple, _options);
@@ -103,7 +103,7 @@ public class ArrayTupleConverterTest {
       42,
       _currentTime
     );
-    var inputString = "[\"Foo\",42,\"" + _currentTime.ToString("yyyy-MM-ddTHH:mm:ss.ffffffZ") + "\"]";
+    var inputString = "[\"Foo\",42,\"" + _currentTime.ToString("yyyy-MM-ddTHH:mm:ss.FFFFFFFZ") + "\"]";
 
     // Act
     var result = JsonSerializer.Deserialize<Tuple<String, Int32, DateTime>>(inputString, _options);
@@ -137,7 +137,7 @@ public class ArrayTupleConverterTest {
       999,
       _currentTime
     );
-    var inputString = "[\"\",999,\"" + _currentTime.ToString("yyyy-MM-ddTHH:mm:ss.ffffffZ") + "\"]";
+    var inputString = "[\"\",999,\"" + _currentTime.ToString("yyyy-MM-ddTHH:mm:ss.FFFFFFFZ") + "\"]";
 
     // Act
     var result = JsonSerializer.Deserialize<Tuple<String, Int32, DateTime>>(inputString, _options);
