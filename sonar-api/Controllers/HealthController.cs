@@ -98,7 +98,7 @@ public class HealthController : ControllerBase {
     [FromRoute] String service,
     [FromBody] ServiceHealth value,
     CancellationToken cancellationToken = default) {
-    this._logger.Log(LogLevel.Information, "Recording status...");
+
     //Validation
     await this._apiKeyDataHelper.ValidateTenantPermission(
       this.Request.Headers["ApiKey"].SingleOrDefault(),
@@ -108,8 +108,6 @@ public class HealthController : ControllerBase {
       cancellationToken);
     var canonicalHeathStatusDictionary = await ValidateHealthStatus(environment, tenant, service, value, cancellationToken);
 
-    // cache here
-    // TODO: If cache is not empty, fetch and use values.
     var writeData =
       new WriteRequest {
         Metadata = {
@@ -155,8 +153,6 @@ public class HealthController : ControllerBase {
     try {
       problem = await this._remoteWriteClient.RemoteWriteRequest(writeData, cancellationToken);
     } catch (Exception e) {
-
-      problem = new ProblemDetails();
       await this._cacheHelper.CreateUpdateCache(
         environment,
         tenant,
@@ -164,6 +160,7 @@ public class HealthController : ControllerBase {
         value,
         canonicalHeathStatusDictionary.ToImmutableDictionary(),
         cancellationToken);
+      problem = null;
     }
 
     if (problem == null) {
@@ -173,6 +170,7 @@ public class HealthController : ControllerBase {
     if (problem.Status == (Int32)HttpStatusCode.BadRequest) {
       problem.Type = ProblemTypes.InvalidData;
     }
+    
     return this.StatusCode(problem.Status ?? (Int32)HttpStatusCode.InternalServerError, problem);
   }
 

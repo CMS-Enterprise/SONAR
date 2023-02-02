@@ -40,7 +40,6 @@ public class CacheHelper {
     ImmutableDictionary<String, HealthStatus> healthChecks,
     CancellationToken cancellationToken) {
 
-    Console.WriteLine($"Fetching existing cache for {environment}/{tenant}/{service}");
     var existingCachedValues = await this._serviceHealthCacheTable
       .Where(e => (e.Environment == environment)
         && (e.Tenant == tenant)
@@ -73,7 +72,6 @@ public class CacheHelper {
           cancellationToken
         );
         serviceHealthCacheEntity = createdServiceCache.Entity;
-        Console.WriteLine($"Created new cache for {environment}/{tenant}/{service}");
 
         // create healthCheckCache using newly created serviceHealthCache
         await this._healthCheckCacheTable.AddAllAsync(
@@ -85,16 +83,13 @@ public class CacheHelper {
               hc.Value)),
           cancellationToken
         );
-
-        Console.WriteLine($"Created new health check cache for {environment}/{tenant}/{service}");
       } else {
         // cache for this service exists, update
-
         var id = existingCachedValues[0].ServiceHealthCache.Id;
+
         // remove outdated healthCheckCache entries
         List<HealthCheckCache> healthChecksToRemove = new List<HealthCheckCache>();
         healthChecksToRemove = existingCachedValues.Select(obj => obj.HealthCheckCache).ToList();
-        Console.WriteLine("Cache already exists... performing updates");
         this._healthCheckCacheTable.RemoveRange(healthChecksToRemove);
 
         // add new healthCheckCache entries
@@ -119,7 +114,6 @@ public class CacheHelper {
 
       await this._dbContext.SaveChangesAsync(cancellationToken);
       await tx.CommitAsync(cancellationToken);
-      Console.WriteLine("Data saved.");
     } catch (DbUpdateException dbException) {
       Console.WriteLine(dbException.Message);
     }
@@ -151,6 +145,4 @@ public class CacheHelper {
       x => x.HealthCheckCache.HealthCheck,
       x => x.HealthCheckCache.Status);
   }
-
-
 }
