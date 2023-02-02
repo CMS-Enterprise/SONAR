@@ -15,6 +15,11 @@ spec:
       {{- if .Values.registryCredentials -}}
       {{-   $combinedAnnotations = merge $combinedAnnotations (dict "container-registry-secret-version" (toJson .Values.registryCredentials | sha256sum)) }}
       {{- end -}}
+      {{- $apiSettings := dict "checksum/apiConfig" (toJson .Values.apiConfig | sha256sum) }}
+      {{- $_ := set $apiSettings "checksum/loki" (toJson .Values.loki | sha256sum) }}
+      {{- $_ := set $apiSettings "checksum/prometheus" (toJson .Values.prometheus | sha256sum) }}
+      {{- $_ := set $apiSettings "checksum/apiKey" (toJson .Values.apiKey | sha256sum) }}
+      {{- $combinedAnnotations = merge $combinedAnnotations $apiSettings }}
       {{- with $combinedAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}

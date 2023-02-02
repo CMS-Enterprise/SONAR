@@ -51,7 +51,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
-container registry crednetials
+container registry credentials
 */}}
 {{- define "containerRegistrySecret" }}
   {{- $credType := typeOf .Values.registryCredentials -}}
