@@ -78,6 +78,11 @@ public class DataContext : DbContext {
         entity.HasOne<Tenant>()
           .WithMany()
           .HasForeignKey(t => t.TenantId);
+      })
+      .Entity<HealthCheckCache>(entity => {
+        entity.HasOne<ServiceHealthCache>()
+          .WithMany()
+          .HasForeignKey(hcc => hcc.ServiceHealthId);
       });
   }
 }

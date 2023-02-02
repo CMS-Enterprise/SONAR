@@ -12,6 +12,7 @@ public class Dependencies {
     builder.Services.AddScoped<ServiceDataHelper>();
     builder.Services.AddScoped<TenantDataHelper>();
     builder.Services.AddScoped<ApiKeyDataHelper>();
+    builder.Services.AddScoped<CacheHelper>();
     // Register all Configuration Option Classes for dependency injection
     new ConfigurationDependencyRegistration(builder.Configuration).RegisterDependencies(builder.Services);
     // Register DataContext and DbSet<> dependencies

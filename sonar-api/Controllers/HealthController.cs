@@ -45,6 +45,7 @@ public class HealthController : ControllerBase {
   private readonly String _sonarEnvironment;
   private readonly DataContext _dbContext;
   private readonly IOptions<DatabaseConfiguration> _dbConfig;
+  private readonly CacheHelper _cacheHelper;
 
   public HealthController(
     ServiceDataHelper serviceDataHelper,
@@ -54,7 +55,8 @@ public class HealthController : ControllerBase {
     ApiKeyDataHelper apiKeyDataHelper,
     IOptions<SonarHealthCheckConfiguration> sonarHealthConfig,
     DataContext dbContext,
-    IOptions<DatabaseConfiguration> dbConfig) {
+    IOptions<DatabaseConfiguration> dbConfig,
+    CacheHelper cacheHelper) {
 
     this._serviceDataHelper = serviceDataHelper;
     this._remoteWriteClient = remoteWriteClient;
@@ -67,7 +69,7 @@ public class HealthController : ControllerBase {
     this._sonarEnvironment = sonarHealthConfig.Value.SonarEnvironment;
     this._dbContext = dbContext;
     this._dbConfig = dbConfig;
-
+    this._cacheHelper = cacheHelper;
   }
 
   /// <summary>
@@ -96,7 +98,7 @@ public class HealthController : ControllerBase {
     [FromRoute] String service,
     [FromBody] ServiceHealth value,
     CancellationToken cancellationToken = default) {
-
+    this._logger.Log(LogLevel.Information, "Recording status...");
     //Validation
     await this._apiKeyDataHelper.ValidateTenantPermission(
       this.Request.Headers["ApiKey"].SingleOrDefault(),
@@ -106,6 +108,8 @@ public class HealthController : ControllerBase {
       cancellationToken);
     var canonicalHeathStatusDictionary = await ValidateHealthStatus(environment, tenant, service, value, cancellationToken);
 
+    // cache here
+    // TODO: If cache is not empty, fetch and use values.
     var writeData =
       new WriteRequest {
         Metadata = {
@@ -147,7 +151,21 @@ public class HealthController : ControllerBase {
       )
     );
 
-    var problem = await this._remoteWriteClient.RemoteWriteRequest(writeData, cancellationToken);
+    ProblemDetails problem;
+    try {
+      problem = await this._remoteWriteClient.RemoteWriteRequest(writeData, cancellationToken);
+    } catch (Exception e) {
+
+      problem = new ProblemDetails();
+      await this._cacheHelper.CreateUpdateCache(
+        environment,
+        tenant,
+        service,
+        value,
+        canonicalHeathStatusDictionary.ToImmutableDictionary(),
+        cancellationToken);
+    }
+
     if (problem == null) {
       return this.NoContent();
     }
