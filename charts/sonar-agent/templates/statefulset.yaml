@@ -67,7 +67,7 @@ spec:
               mountPath: "/sonar/sonar-agent/service-config"
               readOnly: true
           env:
-            - name: API_KEY
+            - name: ApiKey
               valueFrom:
                 secretKeyRef:
                   name: sonar-agent-secrets
