@@ -115,7 +115,7 @@ public class CacheHelper {
       await this._dbContext.SaveChangesAsync(cancellationToken);
       await tx.CommitAsync(cancellationToken);
     } catch (DbUpdateException dbException) {
-      Console.WriteLine(dbException.Message);
+      throw new DbUpdateException(dbException.Message);
     }
   }
 

@@ -108,6 +108,24 @@ public class HealthController : ControllerBase {
       cancellationToken);
     var canonicalHeathStatusDictionary = await ValidateHealthStatus(environment, tenant, service, value, cancellationToken);
 
+    // cache data synchronously
+    try {
+      this._cacheHelper
+        .CreateUpdateCache(
+          environment,
+          tenant,
+          service,
+          value,
+          canonicalHeathStatusDictionary.ToImmutableDictionary(),
+          cancellationToken)
+        .RunSynchronously();
+    } catch (Exception e) {
+      this._logger.LogError(
+        message: $"Unexpected error occurred during caching process: {e.Message}"
+      );
+    }
+
+
     var writeData =
       new WriteRequest {
         Metadata = {
@@ -149,19 +167,7 @@ public class HealthController : ControllerBase {
       )
     );
 
-    ProblemDetails problem;
-    try {
-      problem = await this._remoteWriteClient.RemoteWriteRequest(writeData, cancellationToken);
-    } catch (Exception e) {
-      await this._cacheHelper.CreateUpdateCache(
-        environment,
-        tenant,
-        service,
-        value,
-        canonicalHeathStatusDictionary.ToImmutableDictionary(),
-        cancellationToken);
-      problem = null;
-    }
+    var problem = await this._remoteWriteClient.RemoteWriteRequest(writeData, cancellationToken);
 
     if (problem == null) {
       return this.NoContent();
@@ -170,7 +176,7 @@ public class HealthController : ControllerBase {
     if (problem.Status == (Int32)HttpStatusCode.BadRequest) {
       problem.Type = ProblemTypes.InvalidData;
     }
-    
+
     return this.StatusCode(problem.Status ?? (Int32)HttpStatusCode.InternalServerError, problem);
   }
 
