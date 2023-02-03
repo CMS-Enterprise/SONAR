@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.Security;
 using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Configuration;
@@ -294,9 +295,24 @@ public class HealthCheckHelper {
 
     try {
       using var handler = new HttpClientHandler {
-        AllowAutoRedirect = definition.FollowRedirects == true
+        AllowAutoRedirect = definition.FollowRedirects != false
       };
-      using var client = new HttpClient();
+
+      if (definition.SkipCertificateValidation == true) {
+        handler.ServerCertificateCustomValidationCallback = (_, _, _, errors) => {
+          if (errors != SslPolicyErrors.None) {
+            this._logger.LogDebug(
+              "Ignoring SSL Certificate Validation Errors ({CertificateErrors}) for Request {Url}",
+              String.Join(separator: ", ", Enum.GetValues<SslPolicyErrors>().Where(v => v != SslPolicyErrors.None &&  errors.HasFlag(v))),
+              definition.Url
+            );
+          }
+
+          return true;
+        };
+      }
+
+      using var client = new HttpClient(handler);
       client.Timeout = timeout;
 
       if (definition.AuthorizationHeader != null) {

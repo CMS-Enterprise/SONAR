@@ -6,4 +6,5 @@ public record HttpHealthCheckDefinition(
   Uri Url,
   HttpHealthCheckCondition[] Conditions,
   Boolean? FollowRedirects,
-  String? AuthorizationHeader) : HealthCheckDefinition();
+  String? AuthorizationHeader,
+  Boolean? SkipCertificateValidation) : HealthCheckDefinition();

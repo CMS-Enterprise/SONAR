@@ -100,7 +100,8 @@ public class HttpHealthCheckModelJsonConverterTest {
         TestUrl,
         conditions,
         TestFollowRedirects,
-        TestAuthHeader));
+        TestAuthHeader,
+        null));
 
     var serializedModel = JsonSerializer.Serialize(original, DefaultOptions);
 
