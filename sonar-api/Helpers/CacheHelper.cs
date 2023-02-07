@@ -5,14 +5,13 @@ using System.Data;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Cms.BatCave.Sonar.Controllers;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Extensions;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
-using Microsoft.EntityFrameworkCore.Query.Internal;
-using Environment = Cms.BatCave.Sonar.Data.Environment;
+using Microsoft.Extensions.Logging;
 using String = System.String;
 
 namespace Cms.BatCave.Sonar.Helpers;
@@ -21,15 +20,18 @@ public class CacheHelper {
   private readonly DataContext _dbContext;
   private readonly DbSet<ServiceHealthCache> _serviceHealthCacheTable;
   private readonly DbSet<HealthCheckCache> _healthCheckCacheTable;
+  private readonly ILogger<HealthController> _logger;
 
   public CacheHelper(
     DataContext dbContext,
     DbSet<ServiceHealthCache> serviceHealthCacheTable,
-    DbSet<HealthCheckCache> healthCheckCacheTable) {
+    DbSet<HealthCheckCache> healthCheckCacheTable,
+    ILogger<HealthController> logger) {
 
     this._dbContext = dbContext;
     this._serviceHealthCacheTable = serviceHealthCacheTable;
     this._healthCheckCacheTable = healthCheckCacheTable;
+    this._logger = logger;
   }
 
   public async Task CreateUpdateCache(
@@ -41,9 +43,9 @@ public class CacheHelper {
     CancellationToken cancellationToken) {
 
     var existingCachedValues = await this._serviceHealthCacheTable
-      .Where(e => (e.Environment == environment)
-        && (e.Tenant == tenant)
-        && (e.Service == service))
+      .Where(e => (e.Environment == environment) &&
+        (e.Tenant == tenant) &&
+        (e.Service == service))
       .LeftJoin(
         this._healthCheckCacheTable,
         leftKeySelector: sh => sh.Id,
@@ -115,34 +117,9 @@ public class CacheHelper {
       await this._dbContext.SaveChangesAsync(cancellationToken);
       await tx.CommitAsync(cancellationToken);
     } catch (DbUpdateException dbException) {
-      throw new DbUpdateException(dbException.Message);
+      this._logger.LogError(
+        message: $"Error occurred while updating cache: {dbException.Message}"
+      );
     }
-  }
-
-  public async Task<ImmutableDictionary<String, HealthStatus>?> FetchCache(
-    String environment,
-    String tenant,
-    String service,
-    CancellationToken cancellationToken) {
-
-    var existingCachedValues = await this._serviceHealthCacheTable
-      .Where(e => (e.Environment == environment)
-        && (e.Tenant == tenant)
-        && (e.Service == service))
-      .LeftJoin(
-        this._healthCheckCacheTable,
-        leftKeySelector: sh => sh.Id,
-        rightKeySelector: hc => hc.ServiceHealthId,
-        resultSelector: (serviceHealthCache, healthCheckCache) => new
-          { ServiceHealthCache = serviceHealthCache, HealthCheckCache = healthCheckCache })
-      .ToArrayAsync(cancellationToken);
-
-    if (existingCachedValues.Length == 0) {
-      return null;
-    }
-
-    return existingCachedValues.ToImmutableDictionary(
-      x => x.HealthCheckCache.HealthCheck,
-      x => x.HealthCheckCache.Status);
   }
 }

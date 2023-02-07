@@ -108,23 +108,23 @@ public class HealthController : ControllerBase {
       cancellationToken);
     var canonicalHeathStatusDictionary = await ValidateHealthStatus(environment, tenant, service, value, cancellationToken);
 
-    // cache data synchronously
-    try {
-      this._cacheHelper
-        .CreateUpdateCache(
-          environment,
-          tenant,
-          service,
-          value,
-          canonicalHeathStatusDictionary.ToImmutableDictionary(),
-          cancellationToken)
-        .RunSynchronously();
-    } catch (Exception e) {
-      this._logger.LogError(
-        message: $"Unexpected error occurred during caching process: {e.Message}"
-      );
+    // local function to handle exception handling for caching
+    async Task CachingTaskExceptionHandling() {
+      try {
+        await this._cacheHelper
+          .CreateUpdateCache(
+            environment,
+            tenant,
+            service,
+            value,
+            canonicalHeathStatusDictionary.ToImmutableDictionary(),
+            cancellationToken);
+      } catch (Exception e) {
+        this._logger.LogError(
+          message: $"Unexpected error occurred during caching process: {e.Message}"
+        );
+      }
     }
-
 
     var writeData =
       new WriteRequest {
@@ -167,7 +167,21 @@ public class HealthController : ControllerBase {
       )
     );
 
-    var problem = await this._remoteWriteClient.RemoteWriteRequest(writeData, cancellationToken);
+    // cache data in parallel with Prometheus request
+    var cachingTask = CachingTaskExceptionHandling();
+    var prometheusTask = this._remoteWriteClient.RemoteWriteRequest(writeData, cancellationToken);
+
+    try {
+      await Task.WhenAll(new [] { cachingTask, prometheusTask });
+    } catch (AggregateException e) {
+      foreach (var ie in e.InnerExceptions) {
+        this._logger.LogError(
+          message: $"Unexpected error: {ie.GetType()}: {ie.Message}"
+        );
+      }
+    }
+
+    ProblemDetails? problem = await prometheusTask;
 
     if (problem == null) {
       return this.NoContent();
