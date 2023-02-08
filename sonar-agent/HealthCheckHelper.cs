@@ -303,7 +303,7 @@ public class HealthCheckHelper {
           if (errors != SslPolicyErrors.None) {
             this._logger.LogDebug(
               "Ignoring SSL Certificate Validation Errors ({CertificateErrors}) for Request {Url}",
-              String.Join(separator: ", ", Enum.GetValues<SslPolicyErrors>().Where(v => v != SslPolicyErrors.None &&  errors.HasFlag(v))),
+              String.Join(separator: ", ", Enum.GetValues<SslPolicyErrors>().Where(v => v != SslPolicyErrors.None && errors.HasFlag(v))),
               definition.Url
             );
           }
