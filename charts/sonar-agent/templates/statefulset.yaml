@@ -11,15 +11,14 @@ spec:
       {{- include "sonar-agent.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- $combinedAnnotations := .Values.podAnnotations -}}
-      {{- if .Values.registryCredentials -}}
+      {{- $combinedAnnotations := .Values.podAnnotations | default (dict) }}
+      {{- if .Values.registryCredentials }}
       {{-   $combinedAnnotations = merge $combinedAnnotations (dict "container-registry-secret-version" (toJson .Values.registryCredentials | sha256sum)) }}
-      {{- end -}}
-      {{- $apiSettings := dict "checksum/apiConfig" (toJson .Values.apiConfig | sha256sum) }}
-      {{- $_ := set $apiSettings "checksum/loki" (toJson .Values.loki | sha256sum) }}
-      {{- $_ := set $apiSettings "checksum/prometheus" (toJson .Values.prometheus | sha256sum) }}
-      {{- $_ := set $apiSettings "checksum/apiKey" (toJson .Values.apiKey | sha256sum) }}
-      {{- $combinedAnnotations = merge $combinedAnnotations $apiSettings }}
+      {{- end }}
+      {{- $_ := set $combinedAnnotations "checksum/apiConfig" (toJson .Values.apiConfig | sha256sum) }}
+      {{- $_ = set $combinedAnnotations "checksum/loki" (toJson .Values.loki | sha256sum) }}
+      {{- $_ = set $combinedAnnotations "checksum/prometheus" (toJson .Values.prometheus | sha256sum) }}
+      {{- $_ = set $combinedAnnotations "checksum/serviceConfigs" (toJson .Values.configs | sha256sum) }}
       {{- with $combinedAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
@@ -45,9 +44,9 @@ spec:
             name: service-configmap-file
             # An array of keys from the ConfigMap to create as files
             items:
-              {{- range $config := .Values.configs }}
-              - key: {{ $config.key }}
-                path: {{ $config.key }}.yaml
+              {{- range $key, $_ := .Values.configs }}
+              - key: {{ $key }}
+                path: {{ $key }}.yaml
               {{- end }}
       containers:
         - name: {{ .Chart.Name }}
@@ -56,8 +55,19 @@ spec:
           args:
             - --appsettings-location
             - ./settings
-            {{- range $config := .Values.configs }}
-            - {{ printf "./service-config/%s.yaml" $config.key | quote }}
+            {{- with .Values.configs }}
+            {{-   $ordering := list }}
+            {{-   range $key, $value := . }}
+            {{-     $ordering = append $ordering (printf "%03d_%s" (get $value "order" | default 0 | int) $key) }}
+            {{-   end }}
+            {{-   $ordering = sortAlpha $ordering }}
+            {{-   $orderedKeys := list }}
+            {{-   range $key := $ordering }}
+            {{-     $orderedKeys = append $orderedKeys (splitn "_" 2 $key)._1 }}
+            {{-   end }}
+            {{-   range $configKey := $orderedKeys }}
+            - {{ printf "./service-config/%s.yaml" $configKey | quote }}
+            {{-   end }}
             {{- end }}
           volumeMounts:
             - name: appsettings-configmap
@@ -74,6 +84,10 @@ spec:
                   key: apiKey
             - name: ENVIRONMENT
               value: k8s
+            {{- if .Values.logLevel }}
+            - name: Logging__LogLevel__Default
+              value: {{ quote .Values.logLevel }}
+            {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.tolerations }}

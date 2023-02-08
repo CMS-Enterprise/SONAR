@@ -33,13 +33,16 @@ resources: {}
 
 tolerations: []
 
+# The default log level: Error, Warning, Information, Debug, or Trace
+logLevel: Information
+
 apiConfig:
   # The combination of environment & tenant should be unique per instance of the sonar-agent
   environment: example
   tenant: example
   baseUrl: http://sonar.sonar.svc.cluster.local:8081
-  appsettingLocation: setting
-  serviceConfigLocation: service-config
+  apiKey: test+api+key+do+not+use+in+production+xxxxx=
+  reportingInterval: 30
 
 prometheus:
   host: localhost
@@ -53,7 +56,5 @@ loki:
   protocol: null
   port: null
 
-apikey: test+api+key+do+not+use+in+production+xxxxx=
-
-# An array of service configurations that will be merged together in the order they are specified
-configs: []
+# A dictionary of service configurations that will be merged together in the order they are specified
+configs: {}

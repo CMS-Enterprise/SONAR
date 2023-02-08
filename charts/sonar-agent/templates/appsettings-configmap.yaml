@@ -28,4 +28,9 @@ data:
         {{ end }}
         "Host": {{ quote .Values.loki.host }}
       }
+      {{- if .Values.apiConfig.reportingInterval }},
+      "AgentConfig": {
+        "AgentInterval": {{ .Values.apiConfig.reportingInterval }}
+      }
+      {{- end }}
     }

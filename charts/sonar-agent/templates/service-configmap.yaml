@@ -3,6 +3,7 @@ kind: ConfigMap
 metadata:
   name: service-configmap-file
 data:
-  {{- range $obj := .Values.configs }}
-    {{ $obj.key }}: {{ $obj.config | toJson | quote | indent 4 | trim  }}
+  {{- range $key, $value := .Values.configs }}
+    {{ $key }}: |
+      {{ include "serviceConfig" $value | indent 6 | trim }}
   {{- end }}
