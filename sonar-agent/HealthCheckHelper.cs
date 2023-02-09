@@ -260,9 +260,19 @@ public class HealthCheckHelper {
       this._logger.LogWarning(
         "Invalid configuration, multiple time series returned for health check: {HealthCheck}", healthCheck.Name);
       currCheck = HealthStatus.Unknown;
-    } else if ((qrResult.Data.Result.Count == 0) ||
-      (qrResult.Data.Result[0].Values == null) ||
-      (qrResult.Data.Result[0].Values!.Count == 0)) {
+    } else if (qrResult.Data.Result.Count == 0) {
+      this._logger.LogWarning("Result Count 0");
+      // No samples
+      this._logger.LogWarning("Returned no samples for health check: {HealthCheck}", healthCheck.Name);
+      currCheck = HealthStatus.Unknown;
+
+    } else if (qrResult.Data.Result[0].Values == null) {
+      this._logger.LogWarning("First value null");
+      // No samples
+      this._logger.LogWarning("Returned no samples for health check: {HealthCheck}", healthCheck.Name);
+      currCheck = HealthStatus.Unknown;
+    } else if (qrResult.Data.Result[0].Values!.Count == 0) {
+      this._logger.LogWarning("Value counter 0");
       // No samples
       this._logger.LogWarning("Returned no samples for health check: {HealthCheck}", healthCheck.Name);
       currCheck = HealthStatus.Unknown;
@@ -273,7 +283,7 @@ public class HealthCheckHelper {
       foreach (var condition in conditions) {
         // Determine which comparison to execute
         // Evaluate all PromQL samples
-        var evaluation = HealthCheckHelper.EvaluateSamples(condition.HealthOperator, samples, condition.Threshold);
+        var evaluation = HealthCheckHelper.EvaluateSamples(condition.HealthOperator, qrResult.Data.Result[0].Values!, condition.Threshold);
         // If evaluation is true, set the current check to the condition's status
         // and output to Stdout
         if (evaluation) {
@@ -506,6 +516,7 @@ public class HealthCheckHelper {
         break;
       case HealthOperator.GreaterThan:
         comparison = greaterThan;
+        Console.WriteLine("Test greater than");
         break;
       case HealthOperator.GreaterThanOrEqual:
         comparison = greaterThanOrEqual;
@@ -520,8 +531,17 @@ public class HealthCheckHelper {
         throw new ArgumentException("Invalid comparison operator.");
     }
 
+    var myVar = (!values.Any(val => !comparison(Convert.ToDecimal(val.Value), threshold)));
+    var myVarValue = values.Select(v => v).ToList();
+    Console.WriteLine("Test value results are: {0}, threshold:{1}", myVar , threshold);
+    foreach (var i in myVarValue)
+    {
+      Console.WriteLine("Value {0}",i);
+    }
     // Iterate through list, if all meet condition, return true, else return false if ANY don't meet condition
     return !values.Any(val => !comparison(Convert.ToDecimal(val.Value), threshold));
+
+
   }
 
   private static IImmutableList<(Decimal Timestamp, String Value)> ComputeCache(
@@ -537,12 +557,12 @@ public class HealthCheckHelper {
       HealthCheckHelper.Cache.Add(key, newResults);
     } else {
       var endValue = newResults.Last().Timestamp;
-      var beginning = newResults.First().Timestamp;
+      var startValue = endValue - duration;
 
       // Skip old cached samples that came before the current time window
-      cachedValues.SkipWhile(val => val.Timestamp < (endValue - duration))
+      cachedValues.SkipWhile(val => val.Timestamp < startValue)
         // If there is overlapping data from the cache and the new results, drop the duplicate samples from the cache
-        .TakeWhile(d => d.Timestamp < beginning)
+        .TakeWhile(d => d.Timestamp < startValue)
         // Concatenate the cached data with the new results
         .Concat(newResults)
         .ToImmutableList();

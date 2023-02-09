@@ -32,7 +32,7 @@
           "name": "example-loki",
           "description": "Example Loki Metric",
           "definition": {
-            "duration": "0.00:00:02",
+            "duration": "0.00:00:30",
             "expression": "sum by (job) (count_over_time({job=\"Example.LokiLogMessage\", level=\"Error\"}[30s]))",
             "conditions": [
               {
