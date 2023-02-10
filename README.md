@@ -110,6 +110,16 @@ All components in SONAR are versioned together, following semantic versioning pr
 dotnet build /p:VersionSuffix=beta1
 ```
 
+### Creating a new Version Release
+
+To create a new release, without any uncommitted changes perform the following steps:
+
+1. Create a branch for the release (e.g. `git checkout -b release-0.0.2`)
+1. Run the `./script/version.sh` script with the appropriate argument for the type of release (i.e. `major`, `minor`, or `patch`)
+1. Push your branch and open a merge request
+
+Once the merge request has been merged you can create a tag with just the version number (e.g. `0.0.2`) in the GitLab UI and this will automatically run the build pipeline and produce version tagged container images.
+
 ### API Versioning
 
 Versioned API routes should always start with `/api/v{major-version-number}/...` so that in the event that we need to make a breaking change to an existing API, such as introducing a new required parameter or removing or renaming a previously returned property in a JSON body, we can introduce the new behavior at a new URL while preserving the existing behavior at the old endpoint.
