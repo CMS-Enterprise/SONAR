@@ -122,4 +122,64 @@ public class CacheHelper {
       );
     }
   }
+
+  public async Task<Dictionary<String, (DateTime Timestamp, HealthStatus Status)>> FetchServiceCache(
+    String environment,
+    String tenant,
+    CancellationToken cancellationToken) {
+
+    var existingServiceHealthCache =
+      await this._serviceHealthCacheTable
+        .Where(e => (e.Environment == environment)
+          && (e.Tenant == tenant))
+        .ToArrayAsync(cancellationToken);
+
+    // Convert results
+    var serviceStatuses =
+      new Dictionary<String, (DateTime Timestamp, HealthStatus Status)>();
+
+    foreach (var result in existingServiceHealthCache) {
+      serviceStatuses.Add(result.Service, (result.Timestamp, result.AggregateStatus));
+    }
+
+    return serviceStatuses;
+  }
+
+  public async Task<Dictionary<(String Service, String HealthCheck), (DateTime Timestamp, HealthStatus Status)>> FetchHealthCheckCache(
+    String environment,
+    String tenant,
+    CancellationToken cancellationToken) {
+
+    var existingCachedValues = await this._serviceHealthCacheTable
+      .Where(e => (e.Environment == environment) &&
+        (e.Tenant == tenant))
+        .LeftJoin(
+        this._healthCheckCacheTable,
+        leftKeySelector: sh => sh.Id,
+        rightKeySelector: hc => hc.ServiceHealthId,
+        resultSelector: (serviceHealthCache, healthCheckCache) => new
+          { ServiceHealthCache = serviceHealthCache, HealthCheckCache = healthCheckCache })
+      .ToArrayAsync(cancellationToken);
+
+    var groupedResults = existingCachedValues.GroupBy(
+      p => new
+        { Id = p.ServiceHealthCache.Id, Service = p.ServiceHealthCache.Service, Timestamp = p.ServiceHealthCache.Timestamp },
+      checks => checks.HealthCheckCache,
+      (key, g) => new
+        { ServiceId = key.Id, Service = key.Service, Timestamp = key.Timestamp, Checks = g.ToList() });
+
+    // Convert results
+    var healthCheckStatuses =
+      new Dictionary<(String Service, String HealthCheck), (DateTime Timestamp, HealthStatus Status)>();
+
+    foreach (var service in groupedResults) {
+      foreach (var healthCheck in service.Checks) {
+        healthCheckStatuses.Add(
+          (service.Service, healthCheck.HealthCheck),
+          (service.Timestamp, healthCheck.Status));
+      }
+    }
+
+    return healthCheckStatuses;
+  }
 }

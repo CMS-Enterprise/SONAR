@@ -372,42 +372,50 @@ public class HealthController : ControllerBase {
     String environment,
     String tenant,
     CancellationToken cancellationToken) {
-    var serviceStatuses = await this.GetLatestValuePrometheusQuery(
-      prometheusClient,
-      $"{HealthController.ServiceHealthAggregateMetricName}{{environment=\"{environment}\", tenant=\"{tenant}\"}}",
-      processResult: results => {
-        // StateSet metrics are split into separate metric per-state
-        // This code groups all the metrics for a given service and then determines which state is currently set.
-        var metricByService =
-          results.Result
-            .Where(metric => metric.Values != null)
-            .Select(metric => (metric.Labels, metric.Values!.OrderByDescending(v => v.Timestamp).FirstOrDefault()))
-            .ToLookup(
-              keySelector: metric =>
-                metric.Labels.TryGetValue(MetricLabelKeys.Service, out var serviceName) ? serviceName : null,
-              StringComparer.OrdinalIgnoreCase
-            );
+    Dictionary<String, (DateTime Timestamp, HealthStatus Status)> serviceStatuses;
+    try {
+      serviceStatuses = await this.GetLatestValuePrometheusQuery(
+        prometheusClient,
+        $"{HealthController.ServiceHealthAggregateMetricName}{{environment=\"{environment}\", tenant=\"{tenant}\"}}",
+        processResult: results => {
+          // StateSet metrics are split into separate metric per-state
+          // This code groups all the metrics for a given service and then determines which state is currently set.
+          var metricByService =
+            results.Result
+              .Where(metric => metric.Values != null)
+              .Select(metric => (metric.Labels, metric.Values!.OrderByDescending(v => v.Timestamp).FirstOrDefault()))
+              .ToLookup(
+                keySelector: metric =>
+                  metric.Labels.TryGetValue(MetricLabelKeys.Service, out var serviceName) ? serviceName : null,
+                StringComparer.OrdinalIgnoreCase
+              );
 
-        var healthMapping =
-          new Dictionary<String, (DateTime Timestamp, HealthStatus Status)>(StringComparer.OrdinalIgnoreCase);
-        foreach (var group in metricByService) {
-          if (group.Key == null) {
-            // This group contains metrics that are missing the service name label. These should not exist.
-            continue;
+          var healthMapping =
+            new Dictionary<String, (DateTime Timestamp, HealthStatus Status)>(StringComparer.OrdinalIgnoreCase);
+          foreach (var group in metricByService) {
+            if (group.Key == null) {
+              // This group contains metrics that are missing the service name label. These should not exist.
+              continue;
+            }
+
+            var healthStatus =
+              HealthController.GetEffectiveHealthStatus(HealthController.ServiceHealthAggregateMetricName, group);
+
+            if (healthStatus.HasValue) {
+              healthMapping[group.Key] = healthStatus.Value;
+            }
           }
 
-          var healthStatus =
-            HealthController.GetEffectiveHealthStatus(HealthController.ServiceHealthAggregateMetricName, group);
-
-          if (healthStatus.HasValue) {
-            healthMapping[group.Key] = healthStatus.Value;
-          }
-        }
-
-        return healthMapping;
-      },
-      cancellationToken
-    );
+          return healthMapping;
+        },
+        cancellationToken
+      );
+    } catch (Exception e) {
+      this._logger.LogError(
+        message: $"Error querying Prometheus: {e.Message}. Using cached values."
+      );
+      serviceStatuses = await this._cacheHelper.FetchServiceCache(environment, tenant, cancellationToken);
+    }
 
     return serviceStatuses;
   }
@@ -425,45 +433,54 @@ public class HealthController : ControllerBase {
       String environment,
       String tenant,
       CancellationToken cancellationToken) {
-    var healthCheckStatus =
-      await this.GetLatestValuePrometheusQuery(
-        prometheusClient,
-        $"{HealthController.ServiceHealthCheckMetricName}{{environment=\"{environment}\", tenant=\"{tenant}\"}}",
-        processResult: results => {
-          // StateSet metrics are split into separate metric per-state
-          // This code groups all the metrics for a given state.
-          var metricByHealthCheck =
-            results.Result
-              .Where(metric => metric.Values != null)
-              .Select(metric => (metric.Labels, metric.Values!.OrderByDescending(v => v.Timestamp).FirstOrDefault()))
-              .ToLookup(
-                keySelector: metric => HealthController.GetHealthCheckKey(metric.Labels),
-                TupleComparer.From(StringComparer.OrdinalIgnoreCase, StringComparer.OrdinalIgnoreCase)
+    Dictionary<(String Service, String HealthCheck), (DateTime Timestamp, HealthStatus Status)> healthCheckStatus;
+    try {
+      healthCheckStatus =
+        await this.GetLatestValuePrometheusQuery(
+          prometheusClient,
+          $"{HealthController.ServiceHealthCheckMetricName}{{environment=\"{environment}\", tenant=\"{tenant}\"}}",
+          processResult: results => {
+            // StateSet metrics are split into separate metric per-state
+            // This code groups all the metrics for a given state.
+            var metricByHealthCheck =
+              results.Result
+                .Where(metric => metric.Values != null)
+                .Select(metric => (metric.Labels, metric.Values!.OrderByDescending(v => v.Timestamp).FirstOrDefault()))
+                .ToLookup(
+                  keySelector: metric => HealthController.GetHealthCheckKey(metric.Labels),
+                  TupleComparer.From(StringComparer.OrdinalIgnoreCase, StringComparer.OrdinalIgnoreCase)
+                );
+
+            var healthMapping =
+              new Dictionary<(String Service, String HealthCheck), (DateTime Timestamp, HealthStatus Status)>(
+                TupleComparer.From<String, String>(StringComparer.OrdinalIgnoreCase, StringComparer.OrdinalIgnoreCase)
               );
+            foreach (var group in metricByHealthCheck) {
+              if ((group.Key.Item1 == null) || (group.Key.Item2 == null)) {
+                // This group contains metrics that are missing either the service name label or the
+                // metric name label. These should not exist.
+                continue;
+              }
 
-          var healthMapping =
-            new Dictionary<(String Service, String HealthCheck), (DateTime Timestamp, HealthStatus Status)>(
-              TupleComparer.From<String, String>(StringComparer.OrdinalIgnoreCase, StringComparer.OrdinalIgnoreCase)
-            );
-          foreach (var group in metricByHealthCheck) {
-            if ((group.Key.Item1 == null) || (group.Key.Item2 == null)) {
-              // This group contains metrics that are missing either the service name label or the
-              // metric name label. These should not exist.
-              continue;
+              var healthStatus =
+                HealthController.GetEffectiveHealthStatus(HealthController.ServiceHealthCheckMetricName, group);
+
+              if (healthStatus.HasValue) {
+                healthMapping[(group.Key.Item1, group.Key.Item2)] = healthStatus.Value;
+              }
             }
 
-            var healthStatus =
-              HealthController.GetEffectiveHealthStatus(HealthController.ServiceHealthCheckMetricName, group);
-
-            if (healthStatus.HasValue) {
-              healthMapping[(group.Key.Item1, group.Key.Item2)] = healthStatus.Value;
-            }
-          }
-
-          return healthMapping;
-        },
-        cancellationToken
+            return healthMapping;
+          },
+          cancellationToken
+        );
+    } catch (Exception e) {
+      this._logger.LogError(
+        message: $"Error querying Prometheus: {e.Message}. Using cached values."
       );
+      healthCheckStatus = await this._cacheHelper.FetchHealthCheckCache(environment, tenant, cancellationToken);
+    }
+
 
     return healthCheckStatus;
   }
