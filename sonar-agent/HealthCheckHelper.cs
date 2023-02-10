@@ -260,19 +260,9 @@ public class HealthCheckHelper {
       this._logger.LogWarning(
         "Invalid configuration, multiple time series returned for health check: {HealthCheck}", healthCheck.Name);
       currCheck = HealthStatus.Unknown;
-    } else if (qrResult.Data.Result.Count == 0) {
-      this._logger.LogWarning("Result Count 0");
-      // No samples
-      this._logger.LogWarning("Returned no samples for health check: {HealthCheck}", healthCheck.Name);
-      currCheck = HealthStatus.Unknown;
-
-    } else if (qrResult.Data.Result[0].Values == null) {
-      this._logger.LogWarning("First value null");
-      // No samples
-      this._logger.LogWarning("Returned no samples for health check: {HealthCheck}", healthCheck.Name);
-      currCheck = HealthStatus.Unknown;
-    } else if (qrResult.Data.Result[0].Values!.Count == 0) {
-      this._logger.LogWarning("Value counter 0");
+    } else if ((qrResult.Data.Result.Count == 0) ||
+      (qrResult.Data.Result[0].Values == null) ||
+      (qrResult.Data.Result[0].Values!.Count == 0)) {
       // No samples
       this._logger.LogWarning("Returned no samples for health check: {HealthCheck}", healthCheck.Name);
       currCheck = HealthStatus.Unknown;
@@ -547,17 +537,17 @@ public class HealthCheckHelper {
       HealthCheckHelper.Cache.Add(key, newResults);
     } else {
       var endValue = newResults.Last().Timestamp;
-      var startValue = endValue - duration;
+      var beginning = newResults.First().Timestamp;
 
       // Skip old cached samples that came before the current time window
-      cachedValues.SkipWhile(val => val.Timestamp < startValue)
+      var updatedCache = cachedValues.SkipWhile(val => val.Timestamp < (endValue - duration))
         // If there is overlapping data from the cache and the new results, drop the duplicate samples from the cache
-        .TakeWhile(d => d.Timestamp < startValue)
+        .TakeWhile(d => d.Timestamp < beginning)
         // Concatenate the cached data with the new results
         .Concat(newResults)
         .ToImmutableList();
 
-      HealthCheckHelper.Cache[key] = cachedValues;
+      HealthCheckHelper.Cache[key] = updatedCache;
     }
 
     return HealthCheckHelper.Cache[key];
