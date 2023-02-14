@@ -50,8 +50,10 @@ public class CacheHelper {
         this._healthCheckCacheTable,
         leftKeySelector: sh => sh.Id,
         rightKeySelector: hc => hc.ServiceHealthId,
-        resultSelector: (serviceHealthCache, healthCheckCache) => new
-          { ServiceHealthCache = serviceHealthCache, HealthCheckCache = healthCheckCache })
+        resultSelector: (serviceHealthCache, healthCheckCache) => new {
+          ServiceHealthCache = serviceHealthCache,
+          HealthCheckCache = healthCheckCache
+        })
       .ToArrayAsync(cancellationToken);
 
     // initialize db transaction
@@ -157,16 +159,16 @@ public class CacheHelper {
         this._healthCheckCacheTable,
         leftKeySelector: sh => sh.Id,
         rightKeySelector: hc => hc.ServiceHealthId,
-        resultSelector: (serviceHealthCache, healthCheckCache) => new
-          { ServiceHealthCache = serviceHealthCache, HealthCheckCache = healthCheckCache })
+        resultSelector: (serviceHealthCache, healthCheckCache) => new {
+          ServiceHealthCache = serviceHealthCache,
+          HealthCheckCache = healthCheckCache
+        })
       .ToArrayAsync(cancellationToken);
 
     var groupedResults = existingCachedValues.GroupBy(
-      p => new
-        { Id = p.ServiceHealthCache.Id, Service = p.ServiceHealthCache.Service, Timestamp = p.ServiceHealthCache.Timestamp },
+      p => new { Id = p.ServiceHealthCache.Id, Service = p.ServiceHealthCache.Service, Timestamp = p.ServiceHealthCache.Timestamp },
       checks => checks.HealthCheckCache,
-      (key, g) => new
-        { ServiceId = key.Id, Service = key.Service, Timestamp = key.Timestamp, Checks = g.ToList() });
+      (key, g) => new { ServiceId = key.Id, Service = key.Service, Timestamp = key.Timestamp, Checks = g.ToList() });
 
     // Convert results
     var healthCheckStatuses =

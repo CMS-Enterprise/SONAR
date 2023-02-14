@@ -172,7 +172,7 @@ public class HealthController : ControllerBase {
     var prometheusTask = this._remoteWriteClient.RemoteWriteRequest(writeData, cancellationToken);
 
     try {
-      await Task.WhenAll(new [] { cachingTask, prometheusTask });
+      await Task.WhenAll(new[] { cachingTask, prometheusTask });
     } catch (AggregateException e) {
       foreach (var ie in e.InnerExceptions) {
         this._logger.LogError(
