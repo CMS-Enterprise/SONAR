@@ -1,3 +1,12 @@
+## 0.0.3
+
+### sonar-agent: eliminated redundancy in naming for properties on MetricHealthCondition
+
+* [view commit 5267bf9](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/5267bf9a24567ecfcdf9f0f8520ca29c1d4fab6c)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Tue, 14 Feb 2023 18:09:03 -1000
+
+
 ## 0.0.2
 
 ### address PR comments
