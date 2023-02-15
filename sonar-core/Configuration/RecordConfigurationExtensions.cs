@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Cms.BatCave.Sonar.Configuration;
@@ -27,7 +28,10 @@ public static class RecordConfigurationExtensions {
     this IServiceCollection services,
     IConfiguration configuration) where TOptions : class {
 
-    services.AddSingleton<IOptions<TOptions>>(new RecordOptionsManager<TOptions>(configuration));
+    services.AddSingleton<IOptions<TOptions>>(provider =>
+      new RecordOptionsManager<TOptions>(
+        configuration,
+        provider.GetRequiredService<ILogger<RecordOptionsManager<TOptions>>>()));
   }
 
   /// <summary>
