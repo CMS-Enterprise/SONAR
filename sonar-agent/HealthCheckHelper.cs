@@ -273,11 +273,11 @@ public class HealthCheckHelper {
       foreach (var condition in conditions) {
         // Determine which comparison to execute
         // Evaluate all PromQL samples
-        var evaluation = HealthCheckHelper.EvaluateSamples(condition.HealthOperator, samples, condition.Threshold);
+        var evaluation = HealthCheckHelper.EvaluateSamples(condition.Operator, samples, condition.Threshold);
         // If evaluation is true, set the current check to the condition's status
         // and output to Stdout
         if (evaluation) {
-          currCheck = condition.HealthStatus;
+          currCheck = condition.Status;
           break;
         }
       }

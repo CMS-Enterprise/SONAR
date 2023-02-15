@@ -44,9 +44,9 @@ public class HealthCheckModelJsonConverterTest {
           expression = TestPrometheusHealthCheckExpression,
           conditions = new[] {
             new {
-              healthOperator = TestPrometheusHealthCheckOperator.ToString(),
+              @operator = TestPrometheusHealthCheckOperator.ToString(),
               threshold = TestPrometheusHealthCheckThreshold,
-              healthStatus = TestPrometheusHealthCheckStatus.ToString()
+              status = TestPrometheusHealthCheckStatus.ToString()
             }
           }
         }
@@ -66,9 +66,9 @@ public class HealthCheckModelJsonConverterTest {
     Assert.Equal(TestPrometheusHealthCheckDuration, definition.Duration);
     Assert.Equal(TestPrometheusHealthCheckExpression, definition.Expression);
     var condition = Assert.Single(definition.Conditions);
-    Assert.Equal(TestPrometheusHealthCheckOperator, condition.HealthOperator);
+    Assert.Equal(TestPrometheusHealthCheckOperator, condition.Operator);
     Assert.Equal(TestPrometheusHealthCheckThreshold, condition.Threshold);
-    Assert.Equal(TestPrometheusHealthCheckStatus, condition.HealthStatus);
+    Assert.Equal(TestPrometheusHealthCheckStatus, condition.Status);
   }
 
   [Fact]
@@ -106,9 +106,9 @@ public class HealthCheckModelJsonConverterTest {
     Assert.Equal(originalDefinition.Duration, deserializedDefinition.Duration);
     Assert.Equal(originalDefinition.Expression, deserializedDefinition.Expression);
     var condition = Assert.Single(deserializedDefinition.Conditions);
-    Assert.Equal(originalDefinition.Conditions[0].HealthOperator, condition.HealthOperator);
+    Assert.Equal(originalDefinition.Conditions[0].Operator, condition.Operator);
     Assert.Equal(originalDefinition.Conditions[0].Threshold, condition.Threshold);
-    Assert.Equal(originalDefinition.Conditions[0].HealthStatus, condition.HealthStatus);
+    Assert.Equal(originalDefinition.Conditions[0].Status, condition.Status);
   }
 
   [Fact]
@@ -124,9 +124,9 @@ public class HealthCheckModelJsonConverterTest {
             expression = TestPrometheusHealthCheckExpression,
             conditions = new[] {
               new {
-                healthOperator = TestPrometheusHealthCheckOperator.ToString(),
+                @operator = TestPrometheusHealthCheckOperator.ToString(),
                 threshold = TestPrometheusHealthCheckThreshold,
-                healthStatus = TestPrometheusHealthCheckStatus.ToString()
+                status = TestPrometheusHealthCheckStatus.ToString()
               }
             }
           }
@@ -151,9 +151,9 @@ public class HealthCheckModelJsonConverterTest {
             expression = TestPrometheusHealthCheckExpression,
             conditions = new[] {
               new {
-                healthOperator = TestPrometheusHealthCheckOperator.ToString(),
+                @operator = TestPrometheusHealthCheckOperator.ToString(),
                 threshold = TestPrometheusHealthCheckThreshold,
-                healthStatus = TestPrometheusHealthCheckStatus.ToString()
+                status = TestPrometheusHealthCheckStatus.ToString()
               }
             }
           }
@@ -178,9 +178,9 @@ public class HealthCheckModelJsonConverterTest {
             expression = TestPrometheusHealthCheckExpression,
             conditions = new[] {
               new {
-                healthOperator = TestPrometheusHealthCheckOperator.ToString(),
+                @operator = TestPrometheusHealthCheckOperator.ToString(),
                 threshold = TestPrometheusHealthCheckThreshold,
-                healthStatus = TestPrometheusHealthCheckStatus.ToString()
+                status = TestPrometheusHealthCheckStatus.ToString()
               }
             }
           }
@@ -205,9 +205,9 @@ public class HealthCheckModelJsonConverterTest {
             expression = TestPrometheusHealthCheckExpression,
             conditions = new[] {
               new {
-                healthOperator = TestPrometheusHealthCheckOperator.ToString(),
+                @operator = TestPrometheusHealthCheckOperator.ToString(),
                 threshold = TestPrometheusHealthCheckThreshold,
-                healthStatus = TestPrometheusHealthCheckStatus.ToString()
+                status = TestPrometheusHealthCheckStatus.ToString()
               }
             }
           }
@@ -249,9 +249,9 @@ public class HealthCheckModelJsonConverterTest {
             // Missing expression
             conditions = new[] {
               new {
-                healthOperator = TestPrometheusHealthCheckOperator.ToString(),
+                @operator = TestPrometheusHealthCheckOperator.ToString(),
                 threshold = TestPrometheusHealthCheckThreshold,
-                healthStatus = TestPrometheusHealthCheckStatus.ToString()
+                status = TestPrometheusHealthCheckStatus.ToString()
               }
             }
           }

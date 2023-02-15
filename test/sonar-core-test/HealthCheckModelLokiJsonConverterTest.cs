@@ -49,9 +49,9 @@ public class HealthCheckModelLokiJsonConverterTest {
           duration = TestLokiDuration,
           conditions = new[] {
             new {
-              healthOperator = TestLokiHealthCheckOperator.ToString(),
+              @operator = TestLokiHealthCheckOperator.ToString(),
               threshold = TestLokiHealthCheckThreshold,
-              healthStatus = TestLokiHealthCheckStatus.ToString()
+              status = TestLokiHealthCheckStatus.ToString()
             }
           }
         }
@@ -71,9 +71,9 @@ public class HealthCheckModelLokiJsonConverterTest {
     Assert.Equal(TestLokiHealthCheckExpression, definition.Expression);
     Assert.Equal(TestLokiDuration, definition.Duration);
     var condition = Assert.Single(definition.Conditions);
-    Assert.Equal(TestLokiHealthCheckOperator, condition.HealthOperator);
+    Assert.Equal(TestLokiHealthCheckOperator, condition.Operator);
     Assert.Equal(TestLokiHealthCheckThreshold, condition.Threshold);
-    Assert.Equal(TestLokiHealthCheckStatus, condition.HealthStatus);
+    Assert.Equal(TestLokiHealthCheckStatus, condition.Status);
   }
 
   [Fact]
@@ -111,9 +111,9 @@ public class HealthCheckModelLokiJsonConverterTest {
     Assert.Equal(originalDefinition.Expression, deserializedDefinition.Expression);
     Assert.Equal(originalDefinition.Duration, deserializedDefinition.Duration);
     var condition = Assert.Single(deserializedDefinition.Conditions);
-    Assert.Equal(originalDefinition.Conditions[0].HealthOperator, condition.HealthOperator);
+    Assert.Equal(originalDefinition.Conditions[0].Operator, condition.Operator);
     Assert.Equal(originalDefinition.Conditions[0].Threshold, condition.Threshold);
-    Assert.Equal(originalDefinition.Conditions[0].HealthStatus, condition.HealthStatus);
+    Assert.Equal(originalDefinition.Conditions[0].Status, condition.Status);
   }
 
   [Fact]
@@ -129,9 +129,9 @@ public class HealthCheckModelLokiJsonConverterTest {
             time = TestHealthCheckTime.ToString("yyyy-MM-ddTHH:mm:ss.ffffffZ"),
             conditions = new[] {
               new {
-                healthOperator = TestLokiHealthCheckOperator.ToString(),
+                @operator = TestLokiHealthCheckOperator.ToString(),
                 threshold = TestLokiHealthCheckThreshold,
-                healthStatus = TestLokiHealthCheckStatus.ToString()
+                status = TestLokiHealthCheckStatus.ToString()
               }
             }
           }
@@ -156,9 +156,9 @@ public class HealthCheckModelLokiJsonConverterTest {
             time = TestHealthCheckTime.ToString("yyyy-MM-ddTHH:mm:ss.ffffffZ"),
             conditions = new[] {
               new {
-                healthOperator = TestLokiHealthCheckOperator.ToString(),
+                @operator = TestLokiHealthCheckOperator.ToString(),
                 threshold = TestLokiHealthCheckThreshold,
-                healthStatus = TestLokiHealthCheckStatus.ToString()
+                status = TestLokiHealthCheckStatus.ToString()
               }
             }
           }
@@ -183,9 +183,9 @@ public class HealthCheckModelLokiJsonConverterTest {
             time = TestHealthCheckTime.ToString("yyyy-MM-ddTHH:mm:ss.ffffffZ"),
             conditions = new[] {
               new {
-                healthOperator = TestLokiHealthCheckOperator.ToString(),
+                @operator = TestLokiHealthCheckOperator.ToString(),
                 threshold = TestLokiHealthCheckThreshold,
-                healthStatus = TestLokiHealthCheckStatus.ToString()
+                status = TestLokiHealthCheckStatus.ToString()
               }
             }
           }
@@ -210,9 +210,9 @@ public class HealthCheckModelLokiJsonConverterTest {
             time = TestHealthCheckTime.ToString("yyyy-MM-ddTHH:mm:ss.ffffffZ"),
             conditions = new[] {
               new {
-                healthOperator = TestLokiHealthCheckOperator.ToString(),
+                @operator = TestLokiHealthCheckOperator.ToString(),
                 threshold = TestLokiHealthCheckThreshold,
-                healthStatus = TestLokiHealthCheckStatus.ToString()
+                status = TestLokiHealthCheckStatus.ToString()
               }
             }
           }
@@ -254,9 +254,9 @@ public class HealthCheckModelLokiJsonConverterTest {
             // Missing expression
             conditions = new[] {
               new {
-                healthOperator = TestLokiHealthCheckOperator.ToString(),
+                @operator = TestLokiHealthCheckOperator.ToString(),
                 threshold = TestLokiHealthCheckThreshold,
-                healthStatus = TestLokiHealthCheckStatus.ToString()
+                status = TestLokiHealthCheckStatus.ToString()
               }
             }
           }

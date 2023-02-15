@@ -15,14 +15,14 @@
             "expression": "example_saw_wave",
             "conditions": [
               {
-                "healthOperator": "GreaterThan",
+                "operator": "GreaterThan",
                 "threshold": 60,
-                "healthStatus": "Offline"
+                "status": "Offline"
               },
               {
-                "healthOperator": "GreaterThan",
+                "operator": "GreaterThan",
                 "threshold": 20,
-                "healthStatus": "Degraded"
+                "status": "Degraded"
               }
             ]
           },
@@ -36,19 +36,19 @@
             "expression": "sum by (job) (count_over_time({job=\"Example.LokiLogMessage\", level=\"Error\"}[30s]))",
             "conditions": [
               {
-                "healthOperator": "GreaterThan",
+                "operator": "GreaterThan",
                 "threshold": 4,
-                "healthStatus": "Offline"
+                "status": "Offline"
               },
               {
-                "healthOperator": "GreaterThan",
+                "operator": "GreaterThan",
                 "threshold": 3,
-                "healthStatus": "Degraded"
+                "status": "Degraded"
               },
               {
-                "healthOperator": "GreaterThan",
+                "operator": "GreaterThan",
                 "threshold": 2,
-                "healthStatus": "AtRisk"
+                "status": "AtRisk"
               }
             ]
           },

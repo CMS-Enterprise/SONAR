@@ -4,6 +4,6 @@ using Cms.BatCave.Sonar.Enumeration;
 namespace Cms.BatCave.Sonar.Models;
 
 public record MetricHealthCondition(
-  HealthOperator HealthOperator,
+  HealthOperator Operator,
   Decimal Threshold,
-  HealthStatus HealthStatus);
+  HealthStatus Status);

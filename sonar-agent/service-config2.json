@@ -15,14 +15,14 @@
             "expression": "example_saw_wave",
             "conditions": [
               {
-                "healthOperator": "GreaterThan",
+                "operator": "GreaterThan",
                 "threshold": 60,
-                "healthStatus": "Offline"
+                "status": "Offline"
               },
               {
-                "healthOperator": "GreaterThan",
+                "operator": "GreaterThan",
                 "threshold": 20,
-                "healthStatus": "Degraded"
+                "status": "Degraded"
               }
             ]
           },
