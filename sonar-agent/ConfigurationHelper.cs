@@ -14,7 +14,13 @@ using Microsoft.Extensions.Configuration;
 
 namespace Cms.BatCave.Sonar.Agent;
 
-public static class ConfigurationHelper {
+public class ConfigurationHelper {
+  private readonly RecordOptionsManager<ApiConfiguration> _apiConfig;
+
+  public ConfigurationHelper(RecordOptionsManager<ApiConfiguration> apiConfig) {
+    this._apiConfig = apiConfig;
+  }
+
   private static readonly JsonSerializerOptions ConfigSerializerOptions = new JsonSerializerOptions {
     PropertyNameCaseInsensitive = true,
     Converters = { new JsonStringEnumConverter() }
@@ -116,24 +122,25 @@ public static class ConfigurationHelper {
     );
   }
 
-  public static async Task ConfigureServices(
+  public async Task ConfigureServices(
     IConfigurationRoot configRoot,
-    ApiConfiguration apiConfig,
     ServiceHierarchyConfiguration servicesHierarchy,
     CancellationToken token) {
 
     // SONAR client
     using var http = new HttpClient();
-    var client = new SonarClient(configRoot, apiConfig.BaseUrl, http);
+    var client = new SonarClient(configRoot, this._apiConfig.Value.BaseUrl, http);
     await client.ReadyAsync(token);
 
     try {
       // Set up service configuration for specified environment and tenant
-      await client.CreateTenantAsync(apiConfig.Environment, apiConfig.Tenant, servicesHierarchy, token);
+      await client.CreateTenantAsync(
+        this._apiConfig.Value.Environment, this._apiConfig.Value.Tenant, servicesHierarchy, token);
     } catch (ApiException requestException) {
       if (requestException.StatusCode == 409) {
         // Update service configuration for existing environment and tenant
-        await client.UpdateTenantAsync(apiConfig.Environment, apiConfig.Tenant, servicesHierarchy, token);
+        await client.UpdateTenantAsync(
+          this._apiConfig.Value.Environment, this._apiConfig.Value.Tenant, servicesHierarchy, token);
       }
     }
   }

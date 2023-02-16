@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Agent.Options;
@@ -58,15 +60,34 @@ internal class Program {
     });
 
     var logger = loggerFactory.CreateLogger<Program>();
-    ApiConfiguration apiConfig;
-    PrometheusConfiguration promConfig;
-    LokiConfiguration lokiConfig;
-    AgentConfiguration agentConfig;
+
+    // Create watcher for each configuration file
+    var relativePathRegex = new Regex(@"^\./");
+    var watchers = new List<IDisposable>();
+    foreach (var provider in configuration.Providers) {
+      if (provider is FileConfigurationProvider fileProvider) {
+        logger.LogInformation("WATCHING {ConfigFileName}",
+          fileProvider.Source.FileProvider.GetFileInfo(fileProvider.Source.Path).PhysicalPath);
+        var configFileName = relativePathRegex.Replace(fileProvider.Source.Path, replacement: "");
+        watchers.Add(
+          new ConfigurationWatcher(provider).CreateConfigWatcher(Directory.GetCurrentDirectory(), configFileName));
+      }
+    }
+
+    var dependencies = new Dependencies();
+    RecordOptionsManager<ApiConfiguration> apiConfig;
+    RecordOptionsManager<PrometheusConfiguration> promConfig;
+    RecordOptionsManager<LokiConfiguration> lokiConfig;
+    RecordOptionsManager<AgentConfiguration> agentConfig;
     try {
-      apiConfig = configuration.GetSection("ApiConfig").BindCtor<ApiConfiguration>();
-      promConfig = configuration.GetSection("Prometheus").BindCtor<PrometheusConfiguration>();
-      lokiConfig = configuration.GetSection("Loki").BindCtor<LokiConfiguration>();
-      agentConfig = configuration.GetSection("AgentConfig").BindCtor<AgentConfiguration>();
+      apiConfig = dependencies.CreateRecordOptions<ApiConfiguration>(
+        configuration, "ApiConfig", loggerFactory);
+      promConfig = dependencies.CreateRecordOptions<PrometheusConfiguration>(
+        configuration, "Prometheus", loggerFactory);
+      lokiConfig = dependencies.CreateRecordOptions<LokiConfiguration>(
+        configuration, "Loki", loggerFactory);
+      agentConfig = dependencies.CreateRecordOptions<AgentConfiguration>(
+        configuration, "AgentConfig", loggerFactory);
     } catch (RecordBindingException ex) {
       logger.LogError(ex, "Invalid sonar-agent configuration. {Detail}", ex.Message);
       return 1;
@@ -95,19 +116,23 @@ internal class Program {
 
     // Configure service hierarchy
     logger.LogInformation("Configuring services....");
-    await ConfigurationHelper.ConfigureServices(configuration, apiConfig, servicesHierarchy, source.Token);
-    var interval = TimeSpan.FromSeconds(agentConfig.AgentInterval);
+    var configurationHelper = new ConfigurationHelper(apiConfig);
+    await configurationHelper.ConfigureServices(configuration, servicesHierarchy, source.Token);
 
     logger.LogInformation("Initializing SONAR Agent...");
-    var healthCheckHelper = new HealthCheckHelper(loggerFactory.CreateLogger<HealthCheckHelper>());
+    var healthCheckHelper = new HealthCheckHelper(
+      loggerFactory.CreateLogger<HealthCheckHelper>(), apiConfig, promConfig, lokiConfig, agentConfig);
     // Run task that calls Health Check function
     var task = Task.Run(
-      () => healthCheckHelper.RunScheduledHealthCheck(
-          interval, configuration, apiConfig, promConfig, lokiConfig, source.Token),
+      () => healthCheckHelper.RunScheduledHealthCheck(configuration, source.Token),
       source.Token
     );
 
     await task;
+
+    foreach (var watcher in watchers) {
+      watcher.Dispose();
+    }
 
     return 0;
   }

@@ -28,47 +28,63 @@ public class HealthCheckHelper {
   );
 
   private readonly ILogger<HealthCheckHelper> _logger;
+  private readonly RecordOptionsManager<ApiConfiguration> _apiConfig;
+  private readonly RecordOptionsManager<PrometheusConfiguration> _promConfig;
+  private readonly RecordOptionsManager<LokiConfiguration> _lokiConfig;
+  private readonly RecordOptionsManager<AgentConfiguration> _agentConfig;
 
-  public HealthCheckHelper(ILogger<HealthCheckHelper> logger) {
+  public HealthCheckHelper(
+    ILogger<HealthCheckHelper> logger,
+    RecordOptionsManager<ApiConfiguration> apiConfig,
+    RecordOptionsManager<PrometheusConfiguration> promConfig,
+    RecordOptionsManager<LokiConfiguration> lokiConfig,
+    RecordOptionsManager<AgentConfiguration> agentConfig) {
     this._logger = logger;
+    this._apiConfig = apiConfig;
+    this._promConfig = promConfig;
+    this._lokiConfig = lokiConfig;
+    this._agentConfig = agentConfig;
   }
 
   public async Task RunScheduledHealthCheck(
-    TimeSpan interval,
     IConfigurationRoot configRoot,
-    ApiConfiguration config,
-    PrometheusConfiguration pConfig,
-    LokiConfiguration lConfig,
     CancellationToken token) {
 
-    // Configs
-    var env = config.Environment;
-    var tenant = config.Tenant;
+    var interval = TimeSpan.FromSeconds(this._agentConfig.Value.AgentInterval);
+
+    // TODO: Enable automatic update of SONAR, Prometheus, and Loki client settings upon configuration file change(s)
     // SONAR client
     using var sonarHttpClient = new HttpClient();
     sonarHttpClient.Timeout = interval;
-    var client = new SonarClient(configRoot, baseUrl: config.BaseUrl, sonarHttpClient);
+    var client = new SonarClient(configRoot, baseUrl: this._apiConfig.Value.BaseUrl, sonarHttpClient);
     await client.ReadyAsync(token);
 
     // Prometheus client
     using var promHttpClient = new HttpClient();
     promHttpClient.Timeout = interval;
-    promHttpClient.BaseAddress = new Uri($"{pConfig.Protocol}://{pConfig.Host}:{pConfig.Port}/");
+    promHttpClient.BaseAddress = new Uri(
+      $"{this._promConfig.Value.Protocol}://{this._promConfig.Value.Host}:{this._promConfig.Value.Port}/");
     var promClient = new PrometheusClient(promHttpClient);
     // Loki Client
     using var lokiHttpClient = new HttpClient();
     lokiHttpClient.Timeout = interval;
-    lokiHttpClient.BaseAddress = new Uri($"{lConfig.Protocol}://{lConfig.Host}:{lConfig.Port}/");
+    lokiHttpClient.BaseAddress = new Uri(
+      $"{this._lokiConfig.Value.Protocol}://{this._lokiConfig.Value.Host}:{this._lokiConfig.Value.Port}/");
     var lokiClient = new LokiClient(lokiHttpClient);
 
     while (true) {
+      // Configs
+      var env = this._apiConfig.Value.Environment;
+      var tenant = this._apiConfig.Value.Tenant;
+
       if (token.IsCancellationRequested) {
         this._logger.LogInformation("Scheduled health check canceled");
         throw new OperationCanceledException();
       }
 
       // Get service hierarchy for given env and tenant
-      var tenantResult = await client.GetTenantAsync(config.Environment, config.Tenant, token);
+      var tenantResult = await client.GetTenantAsync(
+        this._apiConfig.Value.Environment, this._apiConfig.Value.Tenant, token);
       this._logger.LogDebug("Service Count: {ServiceCount}", tenantResult.Services.Count);
       // Iterate over each service
       foreach (var service in tenantResult.Services) {
