@@ -38,38 +38,40 @@ public class HealthController : ControllerBase {
   private static readonly TimeSpan MaximumServiceHealthAge = TimeSpan.FromHours(1);
 
   private readonly PrometheusRemoteWriteClient _remoteWriteClient;
+  private readonly IPrometheusClient _prometheusClient;
   private readonly ILogger<HealthController> _logger;
   private readonly ServiceDataHelper _serviceDataHelper;
-  private readonly Uri _prometheusUrl;
   private readonly ApiKeyDataHelper _apiKeyDataHelper;
   private readonly String _sonarEnvironment;
   private readonly DataContext _dbContext;
   private readonly IOptions<DatabaseConfiguration> _dbConfig;
+  private readonly Uri _prometheusUrl;
   private readonly CacheHelper _cacheHelper;
 
   public HealthController(
-    ServiceDataHelper serviceDataHelper,
-    PrometheusRemoteWriteClient remoteWriteClient,
-    IOptions<PrometheusConfiguration> prometheusConfig,
-    ILogger<HealthController> logger,
-    ApiKeyDataHelper apiKeyDataHelper,
-    IOptions<SonarHealthCheckConfiguration> sonarHealthConfig,
     DataContext dbContext,
+    ServiceDataHelper serviceDataHelper,
+    ApiKeyDataHelper apiKeyDataHelper,
+    CacheHelper cacheHelper,
+    PrometheusRemoteWriteClient remoteWriteClient,
+    IPrometheusClient prometheusClient,
+    IOptions<SonarHealthCheckConfiguration> sonarHealthConfig,
     IOptions<DatabaseConfiguration> dbConfig,
-    CacheHelper cacheHelper) {
+    IOptions<PrometheusConfiguration> prometheusConfig,
+    ILogger<HealthController> logger) {
 
-    this._serviceDataHelper = serviceDataHelper;
-    this._remoteWriteClient = remoteWriteClient;
-    this._logger = logger;
-    this._prometheusUrl =
-      new Uri(
-        $"{prometheusConfig.Value.Protocol}://{prometheusConfig.Value.Host}:{prometheusConfig.Value.Port}"
-      );
-    this._apiKeyDataHelper = apiKeyDataHelper;
-    this._sonarEnvironment = sonarHealthConfig.Value.SonarEnvironment;
     this._dbContext = dbContext;
-    this._dbConfig = dbConfig;
+    this._serviceDataHelper = serviceDataHelper;
+    this._apiKeyDataHelper = apiKeyDataHelper;
     this._cacheHelper = cacheHelper;
+    this._remoteWriteClient = remoteWriteClient;
+    this._prometheusClient = prometheusClient;
+    this._sonarEnvironment = sonarHealthConfig.Value.SonarEnvironment;
+    this._dbConfig = dbConfig;
+    this._prometheusUrl = new Uri(
+      $"{prometheusConfig.Value.Protocol}://{prometheusConfig.Value.Host}:{prometheusConfig.Value.Port}/"
+    );
+    this._logger = logger;
   }
 
   /// <summary>
@@ -106,7 +108,8 @@ public class HealthController : ControllerBase {
       tenant,
       "record a health status",
       cancellationToken);
-    var canonicalHeathStatusDictionary = await ValidateHealthStatus(environment, tenant, service, value, cancellationToken);
+    var canonicalHeathStatusDictionary =
+      await ValidateHealthStatus(environment, tenant, service, value, cancellationToken);
 
     // local function to handle exception handling for caching
     async Task CachingTaskExceptionHandling() {
@@ -304,26 +307,23 @@ public class HealthController : ControllerBase {
     var (_, _, services) =
       await this._serviceDataHelper.FetchExistingConfiguration(environment, tenant, cancellationToken);
 
-    var (httpClient, prometheusClient) = HealthController.GetPrometheusClient(this._prometheusUrl);
-    using (httpClient) {
-      var serviceStatuses = await this.GetServiceStatuses(
-        prometheusClient, environment, tenant, cancellationToken
-      );
-      var healthCheckStatus = await this.GetHealthCheckStatus(
-        prometheusClient, environment, tenant, cancellationToken
-      );
+    var serviceStatuses = await this.GetServiceStatuses(
+      environment, tenant, cancellationToken
+    );
+    var healthCheckStatus = await this.GetHealthCheckStatus(
+      environment, tenant, cancellationToken
+    );
 
-      var serviceChildIdsLookup = await this._serviceDataHelper.GetServiceChildIdsLookup(services, cancellationToken);
-      var healthChecksByService = await this.GetHealthChecksByService(services, cancellationToken);
+    var serviceChildIdsLookup = await this._serviceDataHelper.GetServiceChildIdsLookup(services, cancellationToken);
+    var healthChecksByService = await this.GetHealthChecksByService(services, cancellationToken);
 
-      return this.Ok(
-        services.Values.Where(svc => svc.IsRootService)
-          .Select(svc => HealthController.ToServiceHealth(
-            svc, services, serviceStatuses, serviceChildIdsLookup, healthChecksByService, healthCheckStatus)
-          )
-          .ToArray()
-      );
-    }
+    return this.Ok(
+      services.Values.Where(svc => svc.IsRootService)
+        .Select(svc => HealthController.ToServiceHealth(
+          svc, services, serviceStatuses, serviceChildIdsLookup, healthChecksByService, healthCheckStatus)
+        )
+        .ToArray()
+    );
   }
 
   [HttpGet("{environment}/tenants/{tenant}/services/{*servicePath}", Name = "GetSpecificServiceHierarchyHealth")]
@@ -342,40 +342,31 @@ public class HealthController : ControllerBase {
 
     // Validate specified service
     Service? existingService =
-      await this._serviceDataHelper.GetSpecificService(environment, tenant, servicePath, serviceChildIdsLookup, cancellationToken);
+      await this._serviceDataHelper.GetSpecificService(environment, tenant, servicePath, serviceChildIdsLookup,
+        cancellationToken);
 
-    var (httpClient, prometheusClient) = HealthController.GetPrometheusClient(this._prometheusUrl);
-    using (httpClient) {
-      var serviceStatuses = await this.GetServiceStatuses(
-        prometheusClient, environment, tenant, cancellationToken
-      );
-      var healthCheckStatus = await this.GetHealthCheckStatus(
-        prometheusClient, environment, tenant, cancellationToken
-      );
-      var healthChecksByService = await this.GetHealthChecksByService(services, cancellationToken);
+    var serviceStatuses = await this.GetServiceStatuses(
+      environment, tenant, cancellationToken
+    );
+    var healthCheckStatus = await this.GetHealthCheckStatus(
+      environment, tenant, cancellationToken
+    );
+    var healthChecksByService = await this.GetHealthChecksByService(services, cancellationToken);
 
-      return this.Ok(HealthController.ToServiceHealth(
-        services.Values.Single(svc => svc.Id == existingService.Id),
-        services, serviceStatuses, serviceChildIdsLookup, healthChecksByService, healthCheckStatus)
-      );
-    }
-  }
-
-  private static (HttpClient, IPrometheusClient) GetPrometheusClient(Uri prometheusUrl) {
-    var httpClient = new HttpClient();
-    httpClient.BaseAddress = prometheusUrl;
-    return (httpClient, new PrometheusClient(httpClient));
+    return this.Ok(HealthController.ToServiceHealth(
+      services.Values.Single(svc => svc.Id == existingService.Id),
+      services, serviceStatuses, serviceChildIdsLookup, healthChecksByService, healthCheckStatus)
+    );
   }
 
   private async Task<Dictionary<String, (DateTime Timestamp, HealthStatus Status)>> GetServiceStatuses(
-    IPrometheusClient prometheusClient,
     String environment,
     String tenant,
     CancellationToken cancellationToken) {
     Dictionary<String, (DateTime Timestamp, HealthStatus Status)> serviceStatuses;
     try {
       serviceStatuses = await this.GetLatestValuePrometheusQuery(
-        prometheusClient,
+        this._prometheusClient,
         $"{HealthController.ServiceHealthAggregateMetricName}{{environment=\"{environment}\", tenant=\"{tenant}\"}}",
         processResult: results => {
           // StateSet metrics are split into separate metric per-state
@@ -429,7 +420,6 @@ public class HealthController : ControllerBase {
 
   private async Task<Dictionary<(String Service, String HealthCheck), (DateTime Timestamp, HealthStatus Status)>>
     GetHealthCheckStatus(
-      IPrometheusClient prometheusClient,
       String environment,
       String tenant,
       CancellationToken cancellationToken) {
@@ -437,7 +427,7 @@ public class HealthController : ControllerBase {
     try {
       healthCheckStatus =
         await this.GetLatestValuePrometheusQuery(
-          prometheusClient,
+          this._prometheusClient,
           $"{HealthController.ServiceHealthCheckMetricName}{{environment=\"{environment}\", tenant=\"{tenant}\"}}",
           processResult: results => {
             // StateSet metrics are split into separate metric per-state
@@ -519,7 +509,7 @@ public class HealthController : ControllerBase {
 
     var children =
       serviceChildIdsLookup[service.Id].Select(sid => ToServiceHealth(
-          services[sid], services, serviceStatuses, serviceChildIdsLookup, healthChecksByService, healthCheckStatus
+            services[sid], services, serviceStatuses, serviceChildIdsLookup, healthChecksByService, healthCheckStatus
           )
         )
         .ToImmutableHashSet();
@@ -674,7 +664,8 @@ public class HealthController : ControllerBase {
     });
   }
 
-  private async Task<IDictionary<String, HealthStatus>> ValidateHealthStatus(String environment, String tenant, String service, ServiceHealth value,
+  private async Task<IDictionary<String, HealthStatus>> ValidateHealthStatus(
+    String environment, String tenant, String service, ServiceHealth value,
     CancellationToken cancellationToken) {
 
     // Ensure the specified service exists

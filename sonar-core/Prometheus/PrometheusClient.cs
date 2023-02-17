@@ -19,21 +19,15 @@ public class PrometheusClient : IPrometheusClient {
   private const String QueryRangeUrlPath = "/query_range";
   private const String FormUrlEncodedMediaType = "application/x-www-form-urlencoded";
 
-  private readonly HttpClient _client;
-  private readonly JsonSerializerOptions _serializerOptions;
+  private readonly Func<HttpClient> _clientFactory;
 
-  private static readonly JsonSerializerOptions DefaultSerializerOptions = new() {
+  private static readonly JsonSerializerOptions SerializerOptions = new() {
     Converters = { new JsonStringEnumConverter(), new ArrayTupleConverterFactory() },
     PropertyNameCaseInsensitive = true
   };
 
-  public PrometheusClient(HttpClient client, JsonSerializerOptions serializerOptions) {
-    this._client = client;
-    this._serializerOptions = serializerOptions;
-  }
-
-  public PrometheusClient(HttpClient client) : this(client, PrometheusClient.DefaultSerializerOptions) {
-
+  public PrometheusClient(Func<HttpClient> clientFactory) {
+    this._clientFactory = clientFactory;
   }
 
   public async Task<ResponseEnvelope<QueryResults>> QueryAsync(
@@ -51,12 +45,13 @@ public class PrometheusClient : IPrometheusClient {
       parameters.Add(key: "timeout", PrometheusClient.ToPrometheusDuration(timeout.Value));
     }
 
-    var response = await this._client.GetAsync(
+    using var client = this._clientFactory();
+    using var response = await client.GetAsync(
       $"{PrometheusClient.BaseUrlPath}{PrometheusClient.QueryUrlPath}?{parameters}",
       cancellationToken
     );
 
-    return await this.HandleQueryResponse(response, cancellationToken);
+    return await PrometheusClient.HandleQueryResponse(response, cancellationToken);
   }
 
   public async Task<ResponseEnvelope<QueryResults>> QueryPostAsync(
@@ -71,7 +66,8 @@ public class PrometheusClient : IPrometheusClient {
       content.Add(key: "timeout", PrometheusClient.ToPrometheusDuration(request.Timeout.Value));
     }
 
-    var response = await this._client.PostAsync(
+    using var client = this._clientFactory();
+    using var response = await client.PostAsync(
       $"{PrometheusClient.BaseUrlPath}{PrometheusClient.QueryUrlPath}",
       new StringContent(
         content.ToString(),
@@ -80,23 +76,31 @@ public class PrometheusClient : IPrometheusClient {
       cancellationToken
     );
 
-    return await this.HandleQueryResponse(response, cancellationToken);
+    return await PrometheusClient.HandleQueryResponse(response, cancellationToken);
   }
 
-  private async Task<ResponseEnvelope<QueryResults>> HandleQueryResponse(
+  private static async Task<ResponseEnvelope<QueryResults>> HandleQueryResponse(
     HttpResponseMessage response, CancellationToken ct) {
     // if (successful response)
     //   Deserialize ResponseEnvelope<QueryResults>
     if (response.IsSuccessStatusCode) {
       var responseBody =
-        await response.Content.ReadFromJsonAsync<ResponseEnvelope<QueryResults>>(_serializerOptions, ct);
+        await response.Content.ReadFromJsonAsync<ResponseEnvelope<QueryResults>>(
+          PrometheusClient.SerializerOptions,
+          ct
+        );
+
       return responseBody ?? throw new InvalidOperationException("Prometheus API returned null response to query.");
     } else {
       // Non success error code? throw exception
       //   if there is a body w/ ErrorType/Error, include that in the exception message (TODO: special exception type?)
       if (response.Content.Headers.Contains("content-type")) {
         var responseBody =
-          await response.Content.ReadFromJsonAsync<ResponseEnvelope<QueryResults>>(_serializerOptions, ct);
+          await response.Content.ReadFromJsonAsync<ResponseEnvelope<QueryResults>>(
+            PrometheusClient.SerializerOptions,
+            ct
+          );
+
         throw new InvalidOperationException(
           $"Prometheus returned non success status code ({response.StatusCode}) from query operation. Error Type: {responseBody?.ErrorType}, Detail: {responseBody?.Error}"
         );
@@ -127,12 +131,13 @@ public class PrometheusClient : IPrometheusClient {
       parameters.Add(key: "timeout", PrometheusClient.ToPrometheusDuration(timeout.Value));
     }
 
-    var response = await this._client.GetAsync(
+    using var client = this._clientFactory();
+    using var response = await client.GetAsync(
       $"{PrometheusClient.BaseUrlPath}{PrometheusClient.QueryRangeUrlPath}?{parameters}",
       cancellationToken
     );
 
-    return await this.HandleQueryResponse(response, cancellationToken);
+    return await PrometheusClient.HandleQueryResponse(response, cancellationToken);
   }
 
   public async Task<ResponseEnvelope<QueryResults>> QueryRangePostAsync(
@@ -150,7 +155,8 @@ public class PrometheusClient : IPrometheusClient {
       content.Add(key: "timeout", PrometheusClient.ToPrometheusDuration(request.Timeout.Value));
     }
 
-    var response = await this._client.PostAsync(
+    using var client = this._clientFactory();
+    using var response = await client.PostAsync(
       $"{PrometheusClient.BaseUrlPath}{PrometheusClient.QueryRangeUrlPath}",
       new StringContent(
         content.ToString(),
@@ -159,7 +165,7 @@ public class PrometheusClient : IPrometheusClient {
       cancellationToken
     );
 
-    return await this.HandleQueryResponse(response, cancellationToken);
+    return await PrometheusClient.HandleQueryResponse(response, cancellationToken);
   }
 
   /// <summary>

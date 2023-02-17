@@ -18,21 +18,15 @@ public class LokiClient : ILokiClient {
   private const String QueryUrlPath = "/query";
   private const String QueryRangeUrlPath = "/query_range";
 
-  private readonly HttpClient _client;
-  private readonly JsonSerializerOptions _serializerOptions;
+  private readonly Func<HttpClient> _clientFactory;
 
-  private static readonly JsonSerializerOptions DefaultSerializerOptions = new() {
+  private static readonly JsonSerializerOptions SerializerOptions = new() {
     Converters = { new JsonStringEnumConverter(), new ArrayTupleConverterFactory() },
     PropertyNameCaseInsensitive = true
   };
 
-  public LokiClient(HttpClient client, JsonSerializerOptions serializerOptions) {
-    this._client = client;
-    this._serializerOptions = serializerOptions;
-  }
-
-  public LokiClient(HttpClient client) : this(client, LokiClient.DefaultSerializerOptions) {
-
+  public LokiClient(Func<HttpClient> clientFactory) {
+    this._clientFactory = clientFactory;
   }
 
   public async Task<ResponseEnvelope<QueryResults>> QueryAsync(
@@ -49,21 +43,26 @@ public class LokiClient : ILokiClient {
       { "direction", direction }
     };
 
-    var response = await this._client.GetAsync(
+    using var client = this._clientFactory();
+    using var response = await client.GetAsync(
       $"{LokiClient.BaseUrlPath}{LokiClient.QueryUrlPath}?{parameters}",
       cancellationToken
     );
 
-    return await this.HandleQueryResponse(response, cancellationToken);
+    return await LokiClient.HandleQueryResponse(response, cancellationToken);
   }
 
-  private async Task<ResponseEnvelope<QueryResults>> HandleQueryResponse(
+  private static async Task<ResponseEnvelope<QueryResults>> HandleQueryResponse(
     HttpResponseMessage response, CancellationToken ct) {
     // if (successful response)
     //   Deserialize ResponseEnvelope<QueryResults>
     if (response.IsSuccessStatusCode) {
       var responseBody =
-        await response.Content.ReadFromJsonAsync<ResponseEnvelope<QueryResults>>(_serializerOptions, ct);
+        await response.Content.ReadFromJsonAsync<ResponseEnvelope<QueryResults>>(
+          LokiClient.SerializerOptions,
+          ct
+        );
+
       return responseBody ?? throw new InvalidOperationException("Loki API returned null response to query.");
     } else {
       // Non success error code? throw exception
@@ -109,11 +108,12 @@ public class LokiClient : ILokiClient {
       parameters.Add("direction", direction.Value.ToString().ToLowerInvariant());
     }
 
-    var response = await this._client.GetAsync(
+    using var client = this._clientFactory();
+    using var response = await client.GetAsync(
       $"{LokiClient.BaseUrlPath}{LokiClient.QueryRangeUrlPath}?{parameters}",
       cancellationToken
     );
 
-    return await this.HandleQueryResponse(response, cancellationToken);
+    return await LokiClient.HandleQueryResponse(response, cancellationToken);
   }
 }

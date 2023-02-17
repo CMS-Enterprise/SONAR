@@ -5,8 +5,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Cms.BatCave.Sonar.Agent;
 
-public class Dependencies {
-  public RecordOptionsManager<TOptions> CreateRecordOptions<TOptions>(
+public static class Dependencies {
+  public static RecordOptionsManager<TOptions> CreateRecordOptions<TOptions>(
     IConfigurationRoot configRoot,
     String configSection,
     ILoggerFactory loggerFactory) where TOptions : class {

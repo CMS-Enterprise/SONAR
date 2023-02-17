@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Cms.BatCave.Sonar.Agent.Configuration;
 using Cms.BatCave.Sonar.Agent.Options;
 using Cms.BatCave.Sonar.Agent.Logger;
 using Cms.BatCave.Sonar.Configuration;
@@ -74,19 +75,18 @@ internal class Program {
       }
     }
 
-    var dependencies = new Dependencies();
     RecordOptionsManager<ApiConfiguration> apiConfig;
     RecordOptionsManager<PrometheusConfiguration> promConfig;
     RecordOptionsManager<LokiConfiguration> lokiConfig;
     RecordOptionsManager<AgentConfiguration> agentConfig;
     try {
-      apiConfig = dependencies.CreateRecordOptions<ApiConfiguration>(
+      apiConfig = Dependencies.CreateRecordOptions<ApiConfiguration>(
         configuration, "ApiConfig", loggerFactory);
-      promConfig = dependencies.CreateRecordOptions<PrometheusConfiguration>(
+      promConfig = Dependencies.CreateRecordOptions<PrometheusConfiguration>(
         configuration, "Prometheus", loggerFactory);
-      lokiConfig = dependencies.CreateRecordOptions<LokiConfiguration>(
+      lokiConfig = Dependencies.CreateRecordOptions<LokiConfiguration>(
         configuration, "Loki", loggerFactory);
-      agentConfig = dependencies.CreateRecordOptions<AgentConfiguration>(
+      agentConfig = Dependencies.CreateRecordOptions<AgentConfiguration>(
         configuration, "AgentConfig", loggerFactory);
     } catch (RecordBindingException ex) {
       logger.LogError(ex, "Invalid sonar-agent configuration. {Detail}", ex.Message);
@@ -127,7 +127,7 @@ internal class Program {
     logger.LogInformation("Initializing SONAR Agent...");
 
     var healthCheckHelper = new HealthCheckHelper(
-      loggerFactory.CreateLogger<HealthCheckHelper>(), apiConfig, promConfig, lokiConfig, agentConfig);
+      loggerFactory, apiConfig, promConfig, lokiConfig, agentConfig);
     var tasks = new List<Task>();
 
     // Run task that calls Health Check function

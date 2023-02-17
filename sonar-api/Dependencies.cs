@@ -1,14 +1,27 @@
+using System;
+using System.Net.Http;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Helpers;
+using Cms.BatCave.Sonar.Prometheus;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Cms.BatCave.Sonar;
 
 public class Dependencies {
   public virtual void RegisterDependencies(WebApplicationBuilder builder) {
     builder.Services.AddScoped<PrometheusRemoteWriteClient>();
+    builder.Services.AddScoped<IPrometheusClient>(provider => {
+      var config = provider.GetRequiredService<IOptions<PrometheusConfiguration>>();
+      return new PrometheusClient(() => {
+        var httpClient = new HttpClient();
+        httpClient.BaseAddress =
+          new Uri($"{config.Value.Protocol}://{config.Value.Host}:{config.Value.Port}/");
+        return httpClient;
+      });
+    });
     builder.Services.AddScoped<ServiceDataHelper>();
     builder.Services.AddScoped<EnvironmentDataHelper>();
     builder.Services.AddScoped<TenantDataHelper>();

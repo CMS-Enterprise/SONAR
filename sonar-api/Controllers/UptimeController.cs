@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Globalization;
 using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Configuration;
@@ -24,16 +22,14 @@ namespace Cms.BatCave.Sonar.Controllers;
 public class UptimeController : ControllerBase {
 
   private readonly ServiceDataHelper _serviceDataHelper;
-  private readonly Uri _prometheusUrl;
+  private readonly IPrometheusClient _prometheusClient;
 
   public UptimeController(
     ServiceDataHelper serviceDataHelper,
+    IPrometheusClient prometheusClient,
     IOptions<PrometheusConfiguration> prometheusConfig) {
     this._serviceDataHelper = serviceDataHelper;
-    this._prometheusUrl =
-      new Uri(
-        $"{prometheusConfig.Value.Protocol}://{prometheusConfig.Value.Host}:{prometheusConfig.Value.Port}"
-      );
+    this._prometheusClient = prometheusClient;
   }
 
   [HttpGet("{environment}/tenants/{tenant}/services/{*servicePath}", Name = "GetTotalUptime")]
@@ -149,15 +145,11 @@ public class UptimeController : ControllerBase {
     CancellationToken cancellationToken) {
 
     // Prometheus Query setup.
-    using var httpClient = new HttpClient();
-    httpClient.BaseAddress = this._prometheusUrl;
-    var promClient = new PrometheusClient(httpClient);
-
     var step = TimeSpan.FromSeconds(15);
 
     // Get Prometheus metrics based on multiple labels.
     var query = CreateMultiLabelQuery(serviceNames, environment, tenant);
-    var response = await promClient.QueryRangeAsync(
+    var response = await this._prometheusClient.QueryRangeAsync(
       query,
       startVal,
       endVal,
