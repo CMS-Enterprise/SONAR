@@ -113,7 +113,7 @@ public class HealthCheckHelper {
 
           switch (healthCheck.Type) {
             case HealthCheckType.PrometheusMetric:
-              var definition = (PrometheusHealthCheckDefinition)healthCheck.Definition;
+              var definition = (MetricHealthCheckDefinition)healthCheck.Definition;
               currCheck = await this.RunPrometheusHealthCheck(
                 promClient,
                 service,
@@ -123,7 +123,7 @@ public class HealthCheckHelper {
               );
               break;
             case HealthCheckType.LokiMetric:
-              var lokiDefinition = (LokiHealthCheckDefinition)healthCheck.Definition;
+              var lokiDefinition = (MetricHealthCheckDefinition)healthCheck.Definition;
               currCheck = await this.RunLokiHealthCheck(
                 lokiClient,
                 service,
@@ -178,7 +178,7 @@ public class HealthCheckHelper {
     IPrometheusClient promClient,
     ServiceConfiguration service,
     HealthCheckModel healthCheck,
-    PrometheusHealthCheckDefinition definition,
+    MetricHealthCheckDefinition definition,
     CancellationToken token) {
 
     // Get Prometheus samples
@@ -221,7 +221,7 @@ public class HealthCheckHelper {
     ILokiClient lokiClient,
     ServiceConfiguration service,
     HealthCheckModel healthCheck,
-    LokiHealthCheckDefinition definition,
+    MetricHealthCheckDefinition definition,
     CancellationToken token) {
 
     // Set start and end for date range, Get Prometheus samples

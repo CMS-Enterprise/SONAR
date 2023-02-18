@@ -62,7 +62,7 @@ public class HealthCheckModelJsonConverterTest {
     Assert.Equal(TestHealthCheckName, result.Name);
     Assert.Equal(TestHealthCheckDescription, result.Description);
     Assert.Equal(HealthCheckType.PrometheusMetric, result.Type);
-    var definition = Assert.IsType<PrometheusHealthCheckDefinition>(result.Definition);
+    var definition = Assert.IsType<MetricHealthCheckDefinition>(result.Definition);
     Assert.Equal(TestPrometheusHealthCheckDuration, definition.Duration);
     Assert.Equal(TestPrometheusHealthCheckExpression, definition.Expression);
     var condition = Assert.Single(definition.Conditions);
@@ -73,12 +73,12 @@ public class HealthCheckModelJsonConverterTest {
 
   [Fact]
   public void SerializeRoundTrip_PrometheusHealthCheck_Success() {
-    PrometheusHealthCheckDefinition originalDefinition;
+    MetricHealthCheckDefinition originalDefinition;
     var original = new HealthCheckModel(
       TestHealthCheckName,
       TestHealthCheckDescription,
       HealthCheckType.PrometheusMetric,
-      originalDefinition = new PrometheusHealthCheckDefinition(
+      originalDefinition = new MetricHealthCheckDefinition(
         TestPrometheusHealthCheckDuration,
         TestPrometheusHealthCheckExpression,
         ImmutableList.Create(
@@ -102,7 +102,7 @@ public class HealthCheckModelJsonConverterTest {
     Assert.Equal(original.Name, deserializedModel.Name);
     Assert.Equal(original.Description, deserializedModel.Description);
     Assert.Equal(original.Type, deserializedModel.Type);
-    var deserializedDefinition = Assert.IsType<PrometheusHealthCheckDefinition>(deserializedModel.Definition);
+    var deserializedDefinition = Assert.IsType<MetricHealthCheckDefinition>(deserializedModel.Definition);
     Assert.Equal(originalDefinition.Duration, deserializedDefinition.Duration);
     Assert.Equal(originalDefinition.Expression, deserializedDefinition.Expression);
     var condition = Assert.Single(deserializedDefinition.Conditions);

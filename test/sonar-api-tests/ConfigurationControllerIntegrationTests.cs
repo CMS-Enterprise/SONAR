@@ -45,7 +45,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       ConfigurationControllerIntegrationTests.TestHealthCheckName,
       Description: "Health Check Description",
       HealthCheckType.PrometheusMetric,
-      new PrometheusHealthCheckDefinition(
+      new MetricHealthCheckDefinition(
         TimeSpan.FromMinutes(1),
         Expression: "test_metric",
         ImmutableList.Create(

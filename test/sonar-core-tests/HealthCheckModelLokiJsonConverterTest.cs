@@ -67,7 +67,7 @@ public class HealthCheckModelLokiJsonConverterTest {
     Assert.Equal(TestHealthCheckName, result.Name);
     Assert.Equal(TestHealthCheckDescription, result.Description);
     Assert.Equal(HealthCheckType.LokiMetric, result.Type);
-    var definition = Assert.IsType<LokiHealthCheckDefinition>(result.Definition);
+    var definition = Assert.IsType<MetricHealthCheckDefinition>(result.Definition);
     Assert.Equal(TestLokiHealthCheckExpression, definition.Expression);
     Assert.Equal(TestLokiDuration, definition.Duration);
     var condition = Assert.Single(definition.Conditions);
@@ -78,12 +78,12 @@ public class HealthCheckModelLokiJsonConverterTest {
 
   [Fact]
   public void SerializeRoundTrip_LokiHealthCheck_Success() {
-    LokiHealthCheckDefinition originalDefinition;
+    MetricHealthCheckDefinition originalDefinition;
     var original = new HealthCheckModel(
       TestHealthCheckName,
       TestHealthCheckDescription,
       HealthCheckType.LokiMetric,
-      originalDefinition = new LokiHealthCheckDefinition(
+      originalDefinition = new MetricHealthCheckDefinition(
         TestLokiDuration,
         TestLokiHealthCheckExpression,
         ImmutableList.Create(
@@ -107,7 +107,7 @@ public class HealthCheckModelLokiJsonConverterTest {
     Assert.Equal(original.Name, deserializedModel.Name);
     Assert.Equal(original.Description, deserializedModel.Description);
     Assert.Equal(original.Type, deserializedModel.Type);
-    var deserializedDefinition = Assert.IsType<LokiHealthCheckDefinition>(deserializedModel.Definition);
+    var deserializedDefinition = Assert.IsType<MetricHealthCheckDefinition>(deserializedModel.Definition);
     Assert.Equal(originalDefinition.Expression, deserializedDefinition.Expression);
     Assert.Equal(originalDefinition.Duration, deserializedDefinition.Duration);
     var condition = Assert.Single(deserializedDefinition.Conditions);
