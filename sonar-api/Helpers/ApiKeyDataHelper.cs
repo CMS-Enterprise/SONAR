@@ -7,6 +7,7 @@ using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Environment = Cms.BatCave.Sonar.Data.Environment;
 
 namespace Cms.BatCave.Sonar.Helpers;
 
@@ -14,18 +15,21 @@ public class ApiKeyDataHelper {
   private readonly IConfiguration _configuration;
   private readonly TenantDataHelper _tenantDataHelper;
   private readonly DbSet<ApiKey> _apiKeysTable;
+  private readonly DbSet<Environment> _environmentsTable;
 
   public ApiKeyDataHelper(
     IConfiguration configuration,
     TenantDataHelper tenantDataHelper,
-    DbSet<ApiKey> apiKeysTable) {
+    DbSet<ApiKey> apiKeysTable,
+    DbSet<Environment> environmentsTable) {
 
     this._configuration = configuration;
     this._tenantDataHelper = tenantDataHelper;
     this._apiKeysTable = apiKeysTable;
+    this._environmentsTable = environmentsTable;
   }
 
-  public async Task ValidateAdminPermission(
+  public async Task<Boolean> ValidateAdminPermission(
     String? headerApiKey,
     String adminActivity,
     CancellationToken cancellationToken) {
@@ -41,8 +45,28 @@ public class ApiKeyDataHelper {
     }
 
     if (existingApiKey.Type != ApiKeyType.Admin) {
-      throw new ForbiddenException($"The authentication credential provided is not authorized to {adminActivity}.");
+      return false;
     }
+    return true;
+  }
+
+  public async Task<Boolean> ValidateEnvPermission(
+    String headerApiKey,
+    String environmentName,
+    CancellationToken cancellationToken) {
+
+    // Check if API key is associated with the specified Environment
+    var existingApiKey = await this.TryMatchApiKeyAsync(headerApiKey, cancellationToken);
+
+    Environment? specifiedEnv =
+      await this._environmentsTable
+        .Where(e => e.Name == environmentName)
+        .SingleOrDefaultAsync(cancellationToken);
+
+    if ((specifiedEnv == null) || (existingApiKey.EnvironmentId != specifiedEnv.Id)) {
+      return false;
+    }
+    return true;
   }
 
   public async Task ValidateTenantPermission(
@@ -86,6 +110,7 @@ public class ApiKeyDataHelper {
       return new ApiKey(
         defaultApiKey,
         ApiKeyType.Admin,
+        environmentId: null,
         tenantId: null
       );
     } else {

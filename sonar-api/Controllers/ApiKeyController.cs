@@ -11,7 +11,6 @@ using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Environment = Cms.BatCave.Sonar.Data.Environment;
 using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
 
 namespace Cms.BatCave.Sonar.Controllers;
@@ -21,17 +20,20 @@ namespace Cms.BatCave.Sonar.Controllers;
 public class ApiKeyController : ControllerBase {
   private readonly DataContext _dbContext;
   private readonly DbSet<ApiKey> _apiKeysTable;
+  private readonly EnvironmentDataHelper _envDataHelper;
   private readonly TenantDataHelper _tenantDataHelper;
   private readonly ApiKeyDataHelper _apiKeyDataHelper;
 
   public ApiKeyController(
     DataContext dbContext,
     DbSet<ApiKey> apiKeysTable,
+    EnvironmentDataHelper envDataHelper,
     TenantDataHelper tenantDataHelper,
     ApiKeyDataHelper apiKeyDataHelper) {
 
     this._dbContext = dbContext;
     this._apiKeysTable = apiKeysTable;
+    this._envDataHelper = envDataHelper;
     this._tenantDataHelper = tenantDataHelper;
     this._apiKeyDataHelper = apiKeyDataHelper;
   }
@@ -74,33 +76,31 @@ public class ApiKeyController : ControllerBase {
     CancellationToken cancellationToken = default) {
 
     ActionResult response;
+    var adminActivity = "create an API key";
 
     // Validate
-    await this._apiKeyDataHelper.ValidateAdminPermission(
-      Request.Headers["ApiKey"].SingleOrDefault(),
-      "create an API key",
-      cancellationToken);
-
-    // Check if both environment and tenant are detailed
-    if ((apiKeyDetails.Environment == null) && (apiKeyDetails.Tenant != null)) {
-      throw new BadRequestException(
-        message: "Tenant is in configuration, but Environment is missing.",
-        ProblemTypes.InvalidConfiguration
-      );
-    } else if ((apiKeyDetails.Environment != null) && (apiKeyDetails.Tenant == null)) {
-      throw new BadRequestException(
-        message: "Environment is in configuration, but Tenant is missing.",
-        ProblemTypes.InvalidConfiguration
-      );
+    Boolean isAdmin = await this._apiKeyDataHelper.ValidateAdminPermission(
+      Request.Headers["ApiKey"].SingleOrDefault(), adminActivity, cancellationToken);
+    if (!isAdmin) {
+      throw new ForbiddenException(
+        $"The authentication credential provided is not authorized to {adminActivity}.");
     }
+
+    ApiKeyController.ValidateEnvAndTenant(apiKeyDetails.Environment, apiKeyDetails.Tenant);
 
     await using var tx =
       await this._dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
 
     try {
-      // Obtain Tenant ID if tenant is in configuration
+      Guid? environmentId = null;
       Guid? tenantId = null;
-      if (apiKeyDetails.Tenant != null) {
+
+      if (apiKeyDetails.Tenant == null) {
+        var env = await this._envDataHelper.FetchExistingEnvAsync(
+          apiKeyDetails.Environment,
+          cancellationToken);
+        environmentId = env.Id;
+      } else {
         var tenant = await this._tenantDataHelper.FetchExistingTenantAsync(
           apiKeyDetails.Environment!,
           apiKeyDetails.Tenant,
@@ -110,7 +110,7 @@ public class ApiKeyController : ControllerBase {
 
       // Record new API key
       var createdApiKey = await this._apiKeysTable.AddAsync(
-        new ApiKey(GenerateApiKeyValue(), apiKeyDetails.ApiKeyType, tenantId),
+        new ApiKey(GenerateApiKeyValue(), apiKeyDetails.ApiKeyType, environmentId, tenantId),
         cancellationToken
       );
       await this._dbContext.SaveChangesAsync(cancellationToken);
@@ -144,12 +144,16 @@ public class ApiKeyController : ControllerBase {
     CancellationToken cancellationToken = default) {
 
     ActionResult response;
+    var adminActivity = "update an API key";
 
     // Validate
-    await this._apiKeyDataHelper.ValidateAdminPermission(
-      Request.Headers["ApiKey"].SingleOrDefault(),
-      "update an API key",
-      cancellationToken);
+    Boolean isAdmin = await this._apiKeyDataHelper.ValidateAdminPermission(
+      Request.Headers["ApiKey"].SingleOrDefault(), adminActivity, cancellationToken);
+    if (!isAdmin) {
+      throw new ForbiddenException(
+        $"The authentication credential provided is not authorized to {adminActivity}.");
+    }
+
     ApiKeyController.ValidateApiKeyConfig(apiKeyConfig);
 
     await using var tx =
@@ -169,7 +173,6 @@ public class ApiKeyController : ControllerBase {
         existingApiKey.Type = apiKeyConfig.ApiKeyType;
       }
 
-      // Check tenant
       if (apiKeyConfig.Tenant != null) {
         var tenant = await this._tenantDataHelper.FetchExistingTenantAsync(
           apiKeyConfig.Environment!,
@@ -177,7 +180,18 @@ public class ApiKeyController : ControllerBase {
           cancellationToken);
 
         if (existingApiKey.TenantId != tenant.Id) {
+          // API key is now associated with a different tenant
           existingApiKey.TenantId = tenant.Id;
+        }
+      } else {
+        var env = await this._envDataHelper.FetchExistingEnvAsync(
+          apiKeyConfig.Environment,
+          cancellationToken);
+
+        if (existingApiKey.EnvironmentId != env.Id) {
+          // API key is now associated with specified environment instead of tenant
+          existingApiKey.EnvironmentId = env.Id;
+          existingApiKey.TenantId = null;
         }
       }
 
@@ -214,11 +228,16 @@ public class ApiKeyController : ControllerBase {
     [FromBody] ApiKeyConfiguration apiKeyConfig,
     CancellationToken cancellationToken = default) {
 
+    var adminActivity = "delete an API key";
+
     // Validate
-    await this._apiKeyDataHelper.ValidateAdminPermission(
-      Request.Headers["ApiKey"].SingleOrDefault(),
-      "delete an API key",
-      cancellationToken);
+    Boolean isAdmin = await this._apiKeyDataHelper.ValidateAdminPermission(
+      Request.Headers["ApiKey"].SingleOrDefault(), adminActivity, cancellationToken);
+    if (!isAdmin) {
+      throw new ForbiddenException(
+        $"The authentication credential provided is not authorized to {adminActivity}.");
+    }
+
     ApiKeyController.ValidateApiKeyConfig(apiKeyConfig);
 
     await using var tx =
@@ -243,8 +262,8 @@ public class ApiKeyController : ControllerBase {
         );
       }
 
-      // Check tenant
       if (apiKeyConfig.Tenant != null) {
+        // Check tenant
         var tenant = await this._tenantDataHelper.FetchExistingTenantAsync(
           apiKeyConfig.Environment!,
           apiKeyConfig.Tenant,
@@ -253,6 +272,18 @@ public class ApiKeyController : ControllerBase {
         if (existingApiKey.TenantId != tenant.Id) {
           throw new BadRequestException(
             message: "Provided API key tenant does not match.",
+            ProblemTypes.InvalidConfiguration
+          );
+        }
+      } else {
+        // Check environment
+        var env = await this._envDataHelper.FetchExistingEnvAsync(
+          apiKeyConfig.Environment,
+          cancellationToken);
+
+        if (existingApiKey.EnvironmentId != env.Id) {
+          throw new BadRequestException(
+            message: "Provided API key environment does not match.",
             ProblemTypes.InvalidConfiguration
           );
         }
@@ -292,17 +323,23 @@ public class ApiKeyController : ControllerBase {
       );
     }
 
-    // Check if both environment and tenant are configured
-    if ((apiKeyConfig.Environment == null) && (apiKeyConfig.Tenant != null)) {
-      throw new BadRequestException(
-        message: "Tenant is in configuration, but Environment is missing.",
-        ProblemTypes.InvalidConfiguration
-      );
-    } else if ((apiKeyConfig.Environment != null) && (apiKeyConfig.Tenant == null)) {
-      throw new BadRequestException(
-        message: "Environment is in configuration, but Tenant is missing.",
-        ProblemTypes.InvalidConfiguration
-      );
+    ApiKeyController.ValidateEnvAndTenant(apiKeyConfig.Environment, apiKeyConfig.Tenant);
+  }
+
+  private static void ValidateEnvAndTenant(String? environment, String? tenant) {
+    // Check if environment and tenant are detailed
+    if (environment == null) {
+      if (tenant != null) {
+        throw new BadRequestException(
+          message: "Tenant is in configuration, but associated Environment is missing.",
+          ProblemTypes.InvalidConfiguration
+        );
+      } else {
+        throw new BadRequestException(
+          message: "Environment is missing.",
+          ProblemTypes.InvalidConfiguration
+        );
+      }
     }
   }
 }

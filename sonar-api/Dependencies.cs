@@ -10,6 +10,7 @@ public class Dependencies {
   public virtual void RegisterDependencies(WebApplicationBuilder builder) {
     builder.Services.AddScoped<PrometheusRemoteWriteClient>();
     builder.Services.AddScoped<ServiceDataHelper>();
+    builder.Services.AddScoped<EnvironmentDataHelper>();
     builder.Services.AddScoped<TenantDataHelper>();
     builder.Services.AddScoped<ApiKeyDataHelper>();
     builder.Services.AddScoped<CacheHelper>();

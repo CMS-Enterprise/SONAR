@@ -110,12 +110,19 @@ public class ConfigurationController : ControllerBase {
     CancellationToken cancellationToken = default) {
 
     ActionResult response;
+    String headerApiKey = Request.Headers["ApiKey"].SingleOrDefault();
+    var activity = "create a new tenant configuration";
 
     // Validation
-    await this._apiKeyDataHelper.ValidateAdminPermission(
-      Request.Headers["ApiKey"].SingleOrDefault(),
-      "create a new tenant configuration",
-      cancellationToken);
+    Boolean isAdmin = await this._apiKeyDataHelper.ValidateAdminPermission(
+      headerApiKey, activity, cancellationToken);
+    Boolean envMatches = await this._apiKeyDataHelper.ValidateEnvPermission(
+      headerApiKey, environment, cancellationToken);
+
+    if (!isAdmin && !envMatches) {
+      throw new ForbiddenException($"The authentication credential provided is not authorized to {activity}.");
+    }
+
     ConfigurationController.ValidateServiceHierarchy(hierarchy);
 
     await using var tx =
@@ -139,17 +146,21 @@ public class ConfigurationController : ControllerBase {
         });
       }
 
-      // If the environment does not exist, create it
       Environment environmentEntity;
       if (result == null) {
-        var createdEnvironment = await this._environmentsTable.AddAsync(
-          new Environment(
-            Guid.Empty,
-            environment),
-          cancellationToken
-        );
+        if (isAdmin) {
+          // If the environment does not exist, create it
+          var createdEnvironment = await this._environmentsTable.AddAsync(
+            new Environment(
+              Guid.Empty,
+              environment),
+            cancellationToken
+          );
 
-        environmentEntity = createdEnvironment.Entity;
+          environmentEntity = createdEnvironment.Entity;
+        } else {
+          throw new ForbiddenException($"The authentication credential provided is not authorized to {activity}.");
+        }
       } else {
         environmentEntity = result.Environment;
       }

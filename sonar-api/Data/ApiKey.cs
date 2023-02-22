@@ -13,21 +13,25 @@ public class ApiKey {
   [StringLength(44)] // Base64 encoded String for 32 bytes
   public String Key { get; init; }
   public ApiKeyType Type { get; set; }
+  public Guid? EnvironmentId { get; set; }
   public Guid? TenantId { get; set; }
 
   public ApiKey(
     String key,
     ApiKeyType type,
+    Guid? environmentId,
     Guid? tenantId) {
 
     this.Key = key;
     this.Type = type;
+    this.EnvironmentId = environmentId;
     this.TenantId = tenantId;
   }
 
   public static ApiKey New(
     String key,
     ApiKeyType type,
+    Guid? environmentId,
     Guid? tenantId) =>
-    new ApiKey(key, type, tenantId);
+    new ApiKey(key, type, environmentId, tenantId);
 }
