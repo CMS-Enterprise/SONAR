@@ -1,0 +1,105 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ado-1-sonar-config
+  namespace: ado-namespace-1
+  labels:
+    sonar-config: "true"
+    sonar-config/order: "1"
+data:
+  service-config.json: |
+    {
+      "services": [
+        {
+          "name": "test-metric-app",
+          "displayName": "Test Application",
+          "description": "A test application that generates arbitrary metrics for testing purpose",
+          "url": "http://localhost:2020/metrics",
+          "children": null,
+          "healthChecks": [
+            {
+              "name": "example",
+              "description": "Degraded and Offline periodically based on an example metric.",
+              "definition": {
+                "duration": "0.00:00:20",
+                "expression": "example_saw_wave",
+                "conditions": [
+                  {
+                    "healthOperator": "GreaterThan",
+                    "threshold": 60,
+                    "healthStatus": "Offline"
+                  },
+                  {
+                    "healthOperator": "GreaterThan",
+                    "threshold": 20,
+                    "healthStatus": "Degraded"
+                  }
+                ]
+              },
+              "type": "prometheusMetric"
+            },
+            {
+              "name": "example-loki",
+              "description": "Example Loki Metric",
+              "definition": {
+                "duration": "0.00:00:10",
+                "expression": "sum by (job) (count_over_time({job=\"Example.LokiLogMessage\", level=\"Error\"}[30s]))",
+                "conditions": [
+                  {
+                    "healthOperator": "GreaterThan",
+                    "threshold": 4,
+                    "healthStatus": "Offline"
+                  },
+                  {
+                    "healthOperator": "GreaterThan",
+                    "threshold": 3,
+                    "healthStatus": "Degraded"
+                  },
+                  {
+                    "healthOperator": "GreaterThan",
+                    "threshold": 2,
+                    "healthStatus": "AtRisk"
+                  }
+                ]
+              },
+              "type": "lokiMetric"
+            }
+          ]
+        },
+        {
+          "name": "http-metric-test-app",
+          "displayName": "Test Application for HTTP Health Check",
+          "description": "A test application that has one endpoint to simulate different HTTP status codes.",
+          "url": "http://localhost:8082/api/ready",
+          "children": null,
+          "healthChecks": [
+            {
+              "name": "exampleHttpTest",
+              "description": "Check to see if request contains failed status code and/or request duration greater than specified threshold.",
+              "definition": {
+                "url": "http://localhost:8082/api/ready",
+                "followRedirects": true,
+                "authorizationHeader": "test-header",
+                "conditions": [
+                  {
+                    "status": "Online",
+                    "statusCodes": [ 200 ],
+                    "type": "HttpStatusCode"
+                  },
+                  {
+                    "status": "Degraded",
+                    "responseTime": "00:00:02",
+                    "type": "HttpResponseTime"
+                  }
+                ]
+              },
+              "type": "httpRequest"
+            }
+          ]
+        }
+      ],
+      "rootServices": [
+        "test-metric-app",
+        "http-metric-test-app"
+      ]
+    }

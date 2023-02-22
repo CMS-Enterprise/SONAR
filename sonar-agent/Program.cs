@@ -104,13 +104,16 @@ internal class Program {
       source.Cancel();
     };
 
-    ServiceHierarchyConfiguration servicesHierarchy;
+    Dictionary<String, ServiceHierarchyConfiguration> servicesHierarchy;
     try {
       // Load and merge configs
       servicesHierarchy = await ConfigurationHelper.LoadAndValidateJsonServiceConfig(
-        opts.ServiceConfigFiles.ToArray(), source.Token);
+        opts, agentConfig.Value, source.Token);
     } catch (Exception ex) when (ex is InvalidOperationException or JsonException) {
       logger.LogError(ex, "Invalid Service Configuration: {Message}", ex.Message);
+      return 1;
+    } catch (ArgumentException ex) {
+      logger.LogError(ex, "No configuration option specified.");
       return 1;
     }
 

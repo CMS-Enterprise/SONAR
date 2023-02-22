@@ -53,6 +53,7 @@ public class HealthCheckHelper {
     var interval = TimeSpan.FromSeconds(this._agentConfig.Value.AgentInterval);
 
     // TODO: Enable automatic update of SONAR, Prometheus, and Loki client settings upon configuration file change(s)
+
     // SONAR client
     using var sonarHttpClient = new HttpClient();
     sonarHttpClient.Timeout = interval;
@@ -75,7 +76,7 @@ public class HealthCheckHelper {
     while (true) {
       // Configs
       var env = this._apiConfig.Value.Environment;
-      var tenant = this._apiConfig.Value.Tenant;
+      var tenant = this._agentConfig.Value.DefaultTenant;
 
       if (token.IsCancellationRequested) {
         this._logger.LogInformation("Scheduled health check canceled");
@@ -83,8 +84,7 @@ public class HealthCheckHelper {
       }
 
       // Get service hierarchy for given env and tenant
-      var tenantResult = await client.GetTenantAsync(
-        this._apiConfig.Value.Environment, this._apiConfig.Value.Tenant, token);
+      var tenantResult = await client.GetTenantAsync(env, tenant, token);
       this._logger.LogDebug("Service Count: {ServiceCount}", tenantResult.Services.Count);
       // Iterate over each service
       foreach (var service in tenantResult.Services) {

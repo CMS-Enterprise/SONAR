@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: List
+items:
+  - apiVersion: v1
+    kind: Namespace
+    metadata:
+      name: ado-namespace-1
+      labels:
+        sonar-monitoring: "enabled"
+        sonar-monitoring/tenant: "baz"
+  - apiVersion: v1
+    kind: Namespace
+    metadata:
+      name: bar
+      labels:
+        sonar-monitoring: "enabled"
+  - apiVersion: v1
+    kind: Namespace
+    metadata:
+      name: invalid-namespace-test
+      labels:
+        test-label: "test"
+

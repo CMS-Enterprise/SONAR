@@ -12,16 +12,24 @@ Since the SONAR API exposes OpenApi documentation metadata, it is possible to au
 dotnet msbuild -target:NSwag
 ```
 
-## Run SONAR Agent
+## Run SONAR Agent with local configuration
 
 Prequisites: database and SONAR API must be up.
 
 To run the SONAR Agent, add the configuration file path as the first command line argument.
 Example:
 ```
-dotnet run service-config.json
+dotnet run -- -f service-config.json
 ```
 To run the SONAR Agent with layered configuration (multiple config files), follow the example below:
 ```
-dotnet run service-config.json service-config2.json service-config3.json
+dotnet run -- -f service-config.json service-config2.json service-config3.json
 ```
+## Run SONAR Agent with k8s configuration loading
+
+To run the SONAR Agent with the configuration loaded from k8s, follow the steps below:
+1. Have the k3d instance up and running.
+2. cd to the /samples directory
+3. Run ```kubectl apply -f namespace-samples.yaml```
+4. Run ```kubectl apply -f ado-1-manifest.yaml``` & ```kubectl apply -f ado-2-manifest.yaml```
+5. Run ```dotnet run --kubernetes-configuration```
