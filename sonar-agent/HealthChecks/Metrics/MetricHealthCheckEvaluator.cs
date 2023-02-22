@@ -9,6 +9,10 @@ using Microsoft.Extensions.Logging;
 
 namespace Cms.BatCave.Sonar.Agent.HealthChecks.Metrics;
 
+/// <summary>
+///   An implementation of <see cref="IHealthCheckEvaluator{MetricHealthCheckDefinition}" /> for any
+///   implementation of <see cref="IMetricQueryRunner" />.
+/// </summary>
 public class MetricHealthCheckEvaluator : IHealthCheckEvaluator<MetricHealthCheckDefinition> {
 
   private readonly IMetricQueryRunner _queryRunner;
@@ -45,6 +49,20 @@ public class MetricHealthCheckEvaluator : IHealthCheckEvaluator<MetricHealthChec
       this.ProcessMetricSamples(name, definition.Conditions, qrResult);
   }
 
+  /// <summary>
+  ///   Given a list of timestamp/value pairs (<paramref name="samples" />), evaluates a set of
+  ///   <paramref name="conditions" /> against each sample to determine the resulting
+  ///   <see cref="HealthStatus" />.
+  /// </summary>
+  /// <param name="name">
+  ///   The name of the health check being evaluated. Used only for logging.
+  /// </param>
+  /// <param name="conditions">
+  ///   The list of conditions being evaluated for the health check.
+  /// </param>
+  /// <param name="samples">
+  ///   The time series the conditions are being evaluated against.
+  /// </param>
   private HealthStatus ProcessMetricSamples(
     String name,
     IImmutableList<MetricHealthCondition> conditions,

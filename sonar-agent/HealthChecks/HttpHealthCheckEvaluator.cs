@@ -13,6 +13,9 @@ using Microsoft.Extensions.Options;
 
 namespace Cms.BatCave.Sonar.Agent.HealthChecks;
 
+/// <summary>
+/// A <see cref="IHealthCheckEvaluator{TDefinition}" /> implementation for HTTP based health checks.
+/// </summary>
 public class HttpHealthCheckEvaluator : IHealthCheckEvaluator<HttpHealthCheckDefinition> {
   private static readonly HttpHealthCheckCondition DefaultStatusCodeCondition = new StatusCodeCondition(
     new UInt16[] { 200, 204 },

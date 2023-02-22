@@ -10,6 +10,29 @@ using Cms.BatCave.Sonar.Models;
 
 namespace Cms.BatCave.Sonar.Agent.HealthChecks;
 
+/// <summary>
+///   A Queue based processor for health check evaluation.
+/// </summary>
+/// <remarks>
+///   <para>
+///     The purpose of this class is to decouple the evaluation of individual health checks from the
+///     periodic scheduling and reporting of service health. This class partitions health checks of a
+///     particular type by tenant and processes them parallel, round robin fashion, ensuring that no
+///     one tenant starves others for health check evaluation.
+///   </para>
+///   <para>
+///     Note: the current round robin implementation still has some potential for short lived
+///     starvation. If one tenant has a backlog of work while no other tenants do then that tenant will
+///     max out the allowable parallelism and if at that point work is queued for another tenant it
+///     will have to wait until the other active work is completed. It would be possible to improve on
+///     the current implementation by implementing a preemption mechanism that terminates and re-queues
+///     a tenants running health checks, beyond a single health check, when another tenant schedules
+///     new work.
+///   </para>
+/// </remarks>
+/// <typeparam name="TDefinition">
+///   The type of health check definition handled by this processor.
+/// </typeparam>
 public sealed class HealthCheckQueueProcessor<TDefinition> : IDisposable
   where TDefinition : HealthCheckDefinition {
 
@@ -67,6 +90,11 @@ public sealed class HealthCheckQueueProcessor<TDefinition> : IDisposable
     // The Tasks in _runningHealthChecks dispose themselves upon completion
   }
 
+  /// <summary>
+  ///   Starts a background task that process pending health checks asynchronously. The
+  ///   <see cref="Task" /> returned by this method will not complete until cancellation is requested via
+  ///   the provided <see cref="CancellationToken" />.
+  /// </summary>
   public async Task Run(CancellationToken cancellationToken) {
     var roundRobinOffset = 0;
 
@@ -109,6 +137,13 @@ public sealed class HealthCheckQueueProcessor<TDefinition> : IDisposable
     }
   }
 
+  /// <summary>
+  ///   Queues a health check for evaluation.
+  /// </summary>
+  /// <returns>
+  ///   An awaitable <see cref="Task{HealthStatus}" /> that will provide the result of the result of
+  ///   the health check once it is evaluated.
+  /// </returns>
   public Task<HealthStatus> QueueHealthCheck(
     String tenant,
     String healthCheckName,
@@ -133,6 +168,9 @@ public sealed class HealthCheckQueueProcessor<TDefinition> : IDisposable
     return future.Task;
   }
 
+  /// <summary>
+  ///   Removes and cancels all queued health checks for the specified tenant.
+  /// </summary>
   public void RemoveTenant(String tenant) {
     if (this._healthCheckQueues.TryRemove(tenant, out var queue)) {
       while (queue.TryDequeue(out var entry)) {
@@ -142,6 +180,12 @@ public sealed class HealthCheckQueueProcessor<TDefinition> : IDisposable
       }
     }
   }
+
+  /// <summary>
+  ///   Calls the <see cref="IHealthCheckEvaluator{TDefinition}" />'s
+  ///   <see cref="IHealthCheckEvaluator{TDefinition}.EvaluateHealthCheckAsync" /> method and uses the
+  ///   returned value to complete the <see cref="Task{HealthStatus}" /> for the health check.
+  /// </summary>
   private async Task RunHealthCheckAsync(
     Guid taskId,
     TaskCompletionSource<HealthStatus> future,
