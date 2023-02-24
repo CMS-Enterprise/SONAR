@@ -2,10 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
-    <RootNamespace>Cms.BatCave.Sonar.SonarCoreTest</RootNamespace>
+    <RootNamespace>Cms.BatCave.Sonar.Tests</RootNamespace>
     <ImplicitUsings>false</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <AssemblyName>sonar-core-tests</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

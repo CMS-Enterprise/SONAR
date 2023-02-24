@@ -12,7 +12,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{0C0933F5-D
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sonar-api-tests", "test\sonar-api-tests\sonar-api-tests.csproj", "{5A1689BC-AA72-4AC6-8329-0C955D03BFAD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sonar-core-test", "test\sonar-core-test\sonar-core-test.csproj", "{778FA005-9CB9-4E6C-864C-FBFAFBFA8EB0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "sonar-core-tests", "test\sonar-core-tests\sonar-core-tests.csproj", "{778FA005-9CB9-4E6C-864C-FBFAFBFA8EB0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "http-metric-test-app", "test\http-metric-test-app\http-metric-test-app.csproj", "{44E25CC7-A83B-44B7-8B19-CBA5FDC9D02D}"
 EndProject

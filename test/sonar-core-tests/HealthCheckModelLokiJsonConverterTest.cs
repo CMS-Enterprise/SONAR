@@ -7,7 +7,7 @@ using Cms.BatCave.Sonar.Loki;
 using Cms.BatCave.Sonar.Models;
 using Xunit;
 
-namespace Cms.BatCave.Sonar.SonarCoreTest;
+namespace Cms.BatCave.Sonar.Tests;
 
 public class HealthCheckModelLokiJsonConverterTest {
   private static readonly JsonSerializerOptions DefaultOptions = new() {

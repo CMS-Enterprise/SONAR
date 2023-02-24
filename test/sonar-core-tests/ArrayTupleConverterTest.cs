@@ -1,13 +1,10 @@
+using System;
+using System.Text.Json;
+using Cms.BatCave.Sonar.Json;
 using Xunit;
 using Xunit.Abstractions;
 
-using System;
-using System.Collections.Generic;
-using System.Text.Json;
-using Cms.BatCave.Sonar.Json;
-
-
-namespace Cms.BatCave.Sonar.SonarCoreTest;
+namespace Cms.BatCave.Sonar.Tests;
 
 public class ArrayTupleConverterTest {
   private readonly ITestOutputHelper _output;
@@ -28,13 +25,13 @@ public class ArrayTupleConverterTest {
     var testTuple = new Tuple<String, Int32, DateTime>(
       "Foo",
       42,
-      _currentTime
+      this._currentTime
     );
-    var expectedResults = "[\"Foo\",42,\"" + _currentTime.ToString("yyyy-MM-ddTHH:mm:ss.FFFFFFFZ") + "\"]";
+    var expectedResults = "[\"Foo\",42,\"" + this._currentTime.ToString("yyyy-MM-ddTHH:mm:ss.FFFFFFFZ") + "\"]";
 
     // Act
-    var result = JsonSerializer.Serialize(testTuple, _options);
-    _output.WriteLine("Serialized Result: " + result);
+    var result = JsonSerializer.Serialize(testTuple, this._options);
+    this._output.WriteLine("Serialized Result: " + result);
 
     // Assert
     Assert.Equal(expectedResults, result);
@@ -56,7 +53,7 @@ public class ArrayTupleConverterTest {
 
     // Act
     // Assert
-    Assert.Null(Record.Exception(() => JsonSerializer.Serialize(sevenParamTuple, _options)));
+    Assert.Null(Record.Exception(() => JsonSerializer.Serialize(sevenParamTuple, this._options)));
   }
 
   // Serialize Tuple containing 8 parameters
@@ -76,7 +73,7 @@ public class ArrayTupleConverterTest {
 
     // Act
     // Assert
-    Assert.Throws<ArgumentException>(() => JsonSerializer.Serialize(eightParamTuple, _options));
+    Assert.Throws<ArgumentException>(() => JsonSerializer.Serialize(eightParamTuple, this._options));
   }
 
   // Serialize Tuple containing nulls or empty
@@ -87,11 +84,11 @@ public class ArrayTupleConverterTest {
   [InlineData("", 118)]
   public void SerializeNullValues(String str, Int32 value) {
     // Arrange
-    var serializedString = new Tuple<String, Int32, DateTime>(str, value, _currentTime);
+    var serializedString = new Tuple<String, Int32, DateTime>(str, value, this._currentTime);
 
     // Act
     // Assert
-    Assert.Null(Record.Exception(() => JsonSerializer.Serialize(serializedString, _options)));
+    Assert.Null(Record.Exception(() => JsonSerializer.Serialize(serializedString, this._options)));
   }
 
   // Serializes a valid Tuple containing String, Int32, and DateTime
@@ -101,13 +98,13 @@ public class ArrayTupleConverterTest {
     var expectedResults = new Tuple<String, Int32, DateTime>(
       "Foo",
       42,
-      _currentTime
+      this._currentTime
     );
-    var inputString = "[\"Foo\",42,\"" + _currentTime.ToString("yyyy-MM-ddTHH:mm:ss.FFFFFFFZ") + "\"]";
+    var inputString = "[\"Foo\",42,\"" + this._currentTime.ToString("yyyy-MM-ddTHH:mm:ss.FFFFFFFZ") + "\"]";
 
     // Act
-    var result = JsonSerializer.Deserialize<Tuple<String, Int32, DateTime>>(inputString, _options);
-    _output.WriteLine("Deserialized Result: " + result);
+    var result = JsonSerializer.Deserialize<Tuple<String, Int32, DateTime>>(inputString, this._options);
+    this._output.WriteLine("Deserialized Result: " + result);
 
     // Assert
     Assert.Equal(expectedResults, result);
@@ -123,9 +120,9 @@ public class ArrayTupleConverterTest {
     // Act
     // Assert
     Assert.Null(Record.Exception(() =>
-      JsonSerializer.Deserialize<Tuple<String, String, String, String, String, String, String>>(sevenValues, _options)));
+      JsonSerializer.Deserialize<Tuple<String, String, String, String, String, String, String>>(sevenValues, this._options)));
     Assert.Throws<JsonException>(() =>
-      JsonSerializer.Deserialize<Tuple<String, String, String, String, String, String, String>>(eightValues, _options));
+      JsonSerializer.Deserialize<Tuple<String, String, String, String, String, String, String>>(eightValues, this._options));
   }
 
   // Deserialize Tuple containing empty string
@@ -135,13 +132,13 @@ public class ArrayTupleConverterTest {
     var expectedResults = new Tuple<String, Int32, DateTime>(
       "",
       999,
-      _currentTime
+      this._currentTime
     );
-    var inputString = "[\"\",999,\"" + _currentTime.ToString("yyyy-MM-ddTHH:mm:ss.FFFFFFFZ") + "\"]";
+    var inputString = "[\"\",999,\"" + this._currentTime.ToString("yyyy-MM-ddTHH:mm:ss.FFFFFFFZ") + "\"]";
 
     // Act
-    var result = JsonSerializer.Deserialize<Tuple<String, Int32, DateTime>>(inputString, _options);
-    _output.WriteLine("Deserialized Result: " + result);
+    var result = JsonSerializer.Deserialize<Tuple<String, Int32, DateTime>>(inputString, this._options);
+    this._output.WriteLine("Deserialized Result: " + result);
 
     // Assert
     Assert.Equal(expectedResults, result);
