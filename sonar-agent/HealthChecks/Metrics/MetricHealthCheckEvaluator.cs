@@ -97,36 +97,15 @@ public class MetricHealthCheckEvaluator : IHealthCheckEvaluator<MetricHealthChec
     Decimal threshold) {
 
     // delegate functions for comparison
-    Func<Decimal, Decimal, Boolean> equalTo = (x, y) => x == y;
-    Func<Decimal, Decimal, Boolean> notEqual = (x, y) => x != y;
-    Func<Decimal, Decimal, Boolean> greaterThan = (x, y) => x > y;
-    Func<Decimal, Decimal, Boolean> greaterThanOrEqual = (x, y) => x >= y;
-    Func<Decimal, Decimal, Boolean> lessThan = (x, y) => x < y;
-    Func<Decimal, Decimal, Boolean> lessThanOrEqual = (x, y) => x <= y;
-
-    Func<Decimal, Decimal, Boolean> comparison;
-    switch (op) {
-      case HealthOperator.Equal:
-        comparison = equalTo;
-        break;
-      case HealthOperator.NotEqual:
-        comparison = notEqual;
-        break;
-      case HealthOperator.GreaterThan:
-        comparison = greaterThan;
-        break;
-      case HealthOperator.GreaterThanOrEqual:
-        comparison = greaterThanOrEqual;
-        break;
-      case HealthOperator.LessThan:
-        comparison = lessThan;
-        break;
-      case HealthOperator.LessThanOrEqual:
-        comparison = lessThanOrEqual;
-        break;
-      default:
-        throw new ArgumentException("Invalid comparison operator.");
-    }
+    Func<Decimal, Decimal, Boolean> comparison = op switch {
+      HealthOperator.Equal => (x, y) => x == y,
+      HealthOperator.NotEqual => (x, y) => x != y,
+      HealthOperator.GreaterThan => (x, y) => x > y,
+      HealthOperator.GreaterThanOrEqual => (x, y) => x >= y,
+      HealthOperator.LessThan => (x, y) => x < y,
+      HealthOperator.LessThanOrEqual => (x, y) => x <= y,
+      _ => throw new ArgumentException("Invalid comparison operator.")
+    };
 
     // Iterate through list, if all meet condition, return true, else return false if ANY don't meet condition
     return !values.Any(val => !comparison(val.Value, threshold));
