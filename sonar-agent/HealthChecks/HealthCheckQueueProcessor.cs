@@ -7,6 +7,7 @@ using Cms.BatCave.Sonar.Agent.Configuration;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Models;
+using Microsoft.Extensions.Logging;
 
 namespace Cms.BatCave.Sonar.Agent.HealthChecks;
 
@@ -38,6 +39,7 @@ public sealed class HealthCheckQueueProcessor<TDefinition> : IDisposable
 
   private readonly SemaphoreSlim _concurrencyLimit;
   private readonly INotifyOptionsChanged<HealthCheckQueueProcessorConfiguration> _configuration;
+  private readonly ILogger<HealthCheckQueueProcessor<TDefinition>> _logger;
   private readonly EventHandler<EventArgs> _configurationChangeHandler;
 
   private readonly IHealthCheckEvaluator<TDefinition> _healthCheckEvaluator;
@@ -58,9 +60,11 @@ public sealed class HealthCheckQueueProcessor<TDefinition> : IDisposable
 
   public HealthCheckQueueProcessor(
     IHealthCheckEvaluator<TDefinition> healthCheckEvaluator,
-    INotifyOptionsChanged<HealthCheckQueueProcessorConfiguration> configuration) {
+    INotifyOptionsChanged<HealthCheckQueueProcessorConfiguration> configuration,
+    ILogger<HealthCheckQueueProcessor<TDefinition>> logger) {
     this._healthCheckEvaluator = healthCheckEvaluator;
     this._configuration = configuration;
+    this._logger = logger;
 
     var concurrencyLimitValue = configuration.Value.MaximumConcurrency;
     this._concurrencyLimit = new SemaphoreSlim(concurrencyLimitValue);
@@ -101,9 +105,17 @@ public sealed class HealthCheckQueueProcessor<TDefinition> : IDisposable
     while (!cancellationToken.IsCancellationRequested) {
       // Wait for there to be a concurrency slots available
       await this._concurrencyLimit.WaitAsync(cancellationToken);
+      this._logger.LogTrace(
+        "[{ThreadId}] Concurrency capacity available...",
+        Environment.CurrentManagedThreadId
+      );
 
       // Wait for there to be some work available
       await this._pendingChecks.WaitAsync(cancellationToken);
+      this._logger.LogTrace(
+        "[{ThreadId}] Additional work available...",
+        Environment.CurrentManagedThreadId
+      );
 
       var success = false;
 
@@ -114,8 +126,20 @@ public sealed class HealthCheckQueueProcessor<TDefinition> : IDisposable
         // This round robin strategy assumes relatively stable order for ConcurrentDictionary keys,
         // but tenants shouldn't been added and removed very frequently
         var tenant = tenants[(roundRobinOffset + i) % tenants.Count];
+        this._logger.LogTrace(
+          "[{ThreadId}] Checking tenant \"{Tenant}\" for pending work...",
+          Environment.CurrentManagedThreadId,
+          tenant
+        );
         if (this._healthCheckQueues.TryGetValue(tenant, out var queue) && queue.TryDequeue(out var check)) {
           var taskId = Guid.NewGuid();
+          this._logger.LogTrace(
+            "[{ThreadId}] Starting health check \"{HealthCheck}\" ({TaskId}) tenant \"{Tenant}\"",
+            Environment.CurrentManagedThreadId,
+            check.Name,
+            taskId,
+            tenant
+          );
           this._runningHealthChecks.TryAdd(
             taskId,
             this.RunHealthCheckAsync(taskId, check.Future, check.Name, check.Definition, cancellationToken)
@@ -127,6 +151,7 @@ public sealed class HealthCheckQueueProcessor<TDefinition> : IDisposable
       }
 
       if (!success) {
+        this._logger.LogTrace("No additional work found, a tenant must have been removed");
         // We didn't find the pending health check! That can only mean it was removed from the queue
         // due to tenant removal, which in turn mean there has been one extra call to _pendingChecks.Wait
         this._pendingChecks.Release();
@@ -194,15 +219,32 @@ public sealed class HealthCheckQueueProcessor<TDefinition> : IDisposable
     CancellationToken cancellationToken) {
 
     try {
-      future.SetResult(
-        await this._healthCheckEvaluator.EvaluateHealthCheckAsync(
-          healthCheckName,
-          healthCheckDefinition,
-          cancellationToken
-        )
+      this._logger.LogDebug(
+        "[{ThreadId}] Evaluating Health Check Evaluation (HealthCheck: {HealthCheck}, TaskId: {TaskId})",
+        Environment.CurrentManagedThreadId,
+        healthCheckName,
+        taskId
       );
+      var result = await this._healthCheckEvaluator.EvaluateHealthCheckAsync(
+        healthCheckName,
+        healthCheckDefinition,
+        cancellationToken
+      );
+      this._logger.LogDebug(
+        "[{ThreadId}] Health Check Complete (HealthCheck: {HealthCheck}, Status: {Status}, TaskId: {TaskId})",
+        Environment.CurrentManagedThreadId,
+        healthCheckName,
+        result,
+        taskId
+      );
+      future.SetResult(result);
     } catch (OperationCanceledException) {
       future.SetCanceled(cancellationToken);
+      this._logger.LogDebug(
+        "Health Check Canceled (HealthCheck: {HealthCheck}, TaskId: {TaskId}",
+        healthCheckName,
+        taskId
+      );
     } catch (Exception ex) {
       // This is a background task, notify the thread that is awaiting the future.
       future.SetException(ex);

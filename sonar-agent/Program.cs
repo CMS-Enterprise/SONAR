@@ -79,6 +79,7 @@ internal class Program {
     RecordOptionsManager<PrometheusConfiguration> promConfig;
     RecordOptionsManager<LokiConfiguration> lokiConfig;
     RecordOptionsManager<AgentConfiguration> agentConfig;
+    RecordOptionsManager<HealthCheckQueueProcessorConfiguration> httpHealthCheckConfiguration;
     try {
       apiConfig = Dependencies.CreateRecordOptions<ApiConfiguration>(
         configuration, "ApiConfig", loggerFactory);
@@ -88,6 +89,8 @@ internal class Program {
         configuration, "Loki", loggerFactory);
       agentConfig = Dependencies.CreateRecordOptions<AgentConfiguration>(
         configuration, "AgentConfig", loggerFactory);
+      httpHealthCheckConfiguration = Dependencies.CreateRecordOptions<HealthCheckQueueProcessorConfiguration>(
+        configuration, "HttpHealthChecks", loggerFactory);
     } catch (RecordBindingException ex) {
       logger.LogError(ex, "Invalid sonar-agent configuration. {Detail}", ex.Message);
       return 1;
@@ -95,13 +98,13 @@ internal class Program {
 
     // Create cancellation source, token, new task
     using var source = new CancellationTokenSource();
-    CancellationToken token = source.Token;
+    var token = source.Token;
 
     // Event handler for SIGINT
     // Traps SIGINT to perform necessary cleanup
     Console.CancelKeyPress += delegate {
       logger.Log(LogLevel.Information, "\nSIGINT received, begin cleanup...");
-      source.Cancel();
+      source?.Cancel();
     };
 
     var configurationHelper = new ConfigurationHelper(apiConfig,
@@ -110,7 +113,7 @@ internal class Program {
     try {
       // Load and merge configs
       servicesHierarchy = await configurationHelper.LoadAndValidateJsonServiceConfig(
-        opts, agentConfig.Value, source.Token);
+        opts, agentConfig.Value, token);
     } catch (Exception ex) when (ex is InvalidOperationException or JsonException) {
       logger.LogError(ex, "Invalid Service Configuration: {Message}", ex.Message);
       return 1;
@@ -121,20 +124,19 @@ internal class Program {
 
     // Configure service hierarchy
     logger.LogInformation("Configuring services....");
-
-    await configurationHelper.ConfigureServices(configuration, servicesHierarchy, source.Token);
+    await configurationHelper.ConfigureServices(configuration, servicesHierarchy, token);
 
     logger.LogInformation("Initializing SONAR Agent...");
 
     var healthCheckHelper = new HealthCheckHelper(
-      loggerFactory, apiConfig, promConfig, lokiConfig, agentConfig);
+      loggerFactory, apiConfig, promConfig, lokiConfig, agentConfig, httpHealthCheckConfiguration);
     var tasks = new List<Task>();
 
     // Run task that calls Health Check function
     foreach (var kvp in servicesHierarchy) {
       tasks.Add(Task.Run(
-        () => healthCheckHelper.RunScheduledHealthCheck(configuration, kvp.Key, source.Token),
-        source.Token
+        () => healthCheckHelper.RunScheduledHealthCheck(configuration, kvp.Key, token),
+        token
       ));
     }
 

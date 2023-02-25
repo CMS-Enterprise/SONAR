@@ -26,19 +26,22 @@ public class HealthCheckHelper {
   private readonly IOptions<PrometheusConfiguration> _promConfig;
   private readonly IOptions<LokiConfiguration> _lokiConfig;
   private readonly INotifyOptionsChanged<AgentConfiguration> _agentConfig;
+  private readonly INotifyOptionsChanged<HealthCheckQueueProcessorConfiguration> _httpHealthCheckConfiguration;
 
   public HealthCheckHelper(
     ILoggerFactory loggerFactory,
     IOptions<ApiConfiguration> apiConfig,
     IOptions<PrometheusConfiguration> promConfig,
     IOptions<LokiConfiguration> lokiConfig,
-    INotifyOptionsChanged<AgentConfiguration> agentConfig) {
+    INotifyOptionsChanged<AgentConfiguration> agentConfig,
+    INotifyOptionsChanged<HealthCheckQueueProcessorConfiguration> httpHealthCheckConfiguration) {
     this._loggerFactory = loggerFactory;
     this._logger = loggerFactory.CreateLogger<HealthCheckHelper>();
     this._apiConfig = apiConfig;
     this._promConfig = promConfig;
     this._lokiConfig = lokiConfig;
     this._agentConfig = agentConfig;
+    this._httpHealthCheckConfiguration = httpHealthCheckConfiguration;
   }
 
   public async Task RunScheduledHealthCheck(
@@ -80,7 +83,8 @@ public class HealthCheckHelper {
       new HttpHealthCheckEvaluator(
         this._agentConfig,
         this._loggerFactory.CreateLogger<HttpHealthCheckEvaluator>()),
-      this._agentConfig
+      this._httpHealthCheckConfiguration,
+      this._loggerFactory.CreateLogger<HealthCheckQueueProcessor<HttpHealthCheckDefinition>>()
     );
 
     using var prometheusHealthCheckQueue = new HealthCheckQueueProcessor<MetricHealthCheckDefinition>(
@@ -91,7 +95,8 @@ public class HealthCheckHelper {
             this._loggerFactory.CreateLogger<PrometheusMetricQueryRunner>())),
         this._loggerFactory.CreateLogger<MetricHealthCheckEvaluator>()
       ),
-      this._agentConfig
+      this._agentConfig,
+      this._loggerFactory.CreateLogger<HealthCheckQueueProcessor<MetricHealthCheckDefinition>>()
     );
 
     using var lokiHealthCheckQueue = new HealthCheckQueueProcessor<MetricHealthCheckDefinition>(
@@ -102,7 +107,8 @@ public class HealthCheckHelper {
             this._loggerFactory.CreateLogger<LokiMetricQueryRunner>())),
         this._loggerFactory.CreateLogger<MetricHealthCheckEvaluator>()
       ),
-      this._agentConfig
+      this._agentConfig,
+      this._loggerFactory.CreateLogger<HealthCheckQueueProcessor<MetricHealthCheckDefinition>>()
     );
 
     using var httpQueueProcessor = httpHealthCheckQueue.Run(token);
