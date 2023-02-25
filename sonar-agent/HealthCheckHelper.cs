@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net.Http;
@@ -14,7 +13,6 @@ using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Loki;
 using Cms.BatCave.Sonar.Models;
 using Cms.BatCave.Sonar.Prometheus;
-using Cms.BatCave.Sonar.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -22,15 +20,6 @@ using Microsoft.Extensions.Options;
 namespace Cms.BatCave.Sonar.Agent;
 
 public class HealthCheckHelper {
-  private static readonly
-    Dictionary<(String serviceName, String healthCheck), IImmutableList<(Decimal Timestamp, String Value)>>
-    Cache = new();
-
-  private static readonly HttpHealthCheckCondition DefaultStatusCodeCondition = new StatusCodeCondition(
-    new UInt16[] { 200, 204 },
-    HealthStatus.Online
-  );
-
   private readonly ILoggerFactory _loggerFactory;
   private readonly ILogger<HealthCheckHelper> _logger;
   private readonly IOptions<ApiConfiguration> _apiConfig;
@@ -130,7 +119,7 @@ public class HealthCheckHelper {
       var tenantResult = await client.GetTenantAsync(env, tenant, token);
       this._logger.LogDebug("Service Count: {ServiceCount}", tenantResult.Services.Count);
 
-      var pendingHealthChecks = new List<(String Service, String HealthCheck, Future<HealthStatus> Status)>();
+      var pendingHealthChecks = new List<(String Service, String HealthCheck, Task<HealthStatus> Status)>();
       // Iterate over each service
       foreach (var service in tenantResult.Services) {
         // Get service's health checks here
@@ -151,7 +140,7 @@ public class HealthCheckHelper {
         }
 
         foreach (var healthCheck in healthChecks) {
-          Future<HealthStatus> futureStatus;
+          Task<HealthStatus> futureStatus;
           switch (healthCheck.Type) {
             case HealthCheckType.PrometheusMetric:
               futureStatus = prometheusHealthCheckQueue.QueueHealthCheck(

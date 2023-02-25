@@ -7,7 +7,6 @@ using Cms.BatCave.Sonar.Agent.Configuration;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Models;
-using Cms.BatCave.Sonar.Threading.Tasks;
 
 namespace Cms.BatCave.Sonar.Agent.HealthChecks;
 
@@ -25,7 +24,7 @@ public sealed class HealthCheckQueueProcessor<TDefinition> : IDisposable
   /// </summary>
   private readonly
     ConcurrentDictionary<String,
-      ConcurrentQueue<(Future<HealthStatus>.Provider Future, String Name, TDefinition Definition)>>
+      ConcurrentQueue<(TaskCompletionSource<HealthStatus> Future, String Name, TDefinition Definition)>>
     _healthCheckQueues =
       new(StringComparer.OrdinalIgnoreCase);
 
@@ -110,28 +109,28 @@ public sealed class HealthCheckQueueProcessor<TDefinition> : IDisposable
     }
   }
 
-  public Future<HealthStatus> QueueHealthCheck(
+  public Task<HealthStatus> QueueHealthCheck(
     String tenant,
     String healthCheckName,
     TDefinition healthCheckDefinition) {
 
-    var (future, provider) = Future<HealthStatus>.Create();
+    var future = new TaskCompletionSource<HealthStatus>();
     this._healthCheckQueues.AddOrUpdate(
       tenant,
       addValueFactory: (_) => {
-        var queue = new ConcurrentQueue<(Future<HealthStatus>.Provider, String, TDefinition)>();
-        queue.Enqueue((provider, healthCheckName, healthCheckDefinition));
+        var queue = new ConcurrentQueue<(TaskCompletionSource<HealthStatus>, String, TDefinition)>();
+        queue.Enqueue((future, healthCheckName, healthCheckDefinition));
         return queue;
       },
       updateValueFactory: (_, queue) => {
-        queue.Enqueue((provider, healthCheckName, healthCheckDefinition));
+        queue.Enqueue((future, healthCheckName, healthCheckDefinition));
         return queue;
       }
     );
 
     this._pendingChecks.Release();
 
-    return future;
+    return future.Task;
   }
 
   public void RemoveTenant(String tenant) {
@@ -139,19 +138,19 @@ public sealed class HealthCheckQueueProcessor<TDefinition> : IDisposable
       while (queue.TryDequeue(out var entry)) {
         // Decrement the pending checks counter
         this._pendingChecks.Wait();
-        entry.Future.Cancel();
+        entry.Future.SetCanceled();
       }
     }
   }
   private async Task RunHealthCheckAsync(
     Guid taskId,
-    Future<HealthStatus>.Provider future,
+    TaskCompletionSource<HealthStatus> future,
     String healthCheckName,
     TDefinition healthCheckDefinition,
     CancellationToken cancellationToken) {
 
     try {
-      future.Provide(
+      future.SetResult(
         await this._healthCheckEvaluator.EvaluateHealthCheckAsync(
           healthCheckName,
           healthCheckDefinition,
@@ -159,10 +158,10 @@ public sealed class HealthCheckQueueProcessor<TDefinition> : IDisposable
         )
       );
     } catch (OperationCanceledException) {
-      future.Cancel();
+      future.SetCanceled(cancellationToken);
     } catch (Exception ex) {
       // This is a background task, notify the thread that is awaiting the future.
-      future.Fail(ex);
+      future.SetException(ex);
     } finally {
       // Whether the check succeeds or fails, free up the concurrency slot
       this._concurrencyLimit.Release();
