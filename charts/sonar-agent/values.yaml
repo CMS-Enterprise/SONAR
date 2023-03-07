@@ -5,7 +5,7 @@ image:
   pullPolicy: IfNotPresent
 
 networkPolicies:
-  enabled: true
+  enabled: false
   defaultAllowWithinCluster: true
   additionalEgressRules: []
   additionalIngressRules: []

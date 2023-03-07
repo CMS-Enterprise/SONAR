@@ -33,6 +33,9 @@ spec:
       imagePullSecrets:
         - name: container-registry-credentials
       {{- end }}
+      {{- if .Values.serviceAccountName }}
+      serviceAccountName: {{ .Values.serviceAccountName }}
+      {{- end }}
       volumes:
         - name: appsettings-configmap
           configMap:
@@ -53,9 +56,11 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
+            - --kubernetes-configuration
             - --appsettings-location
             - ./settings
             {{- with .Values.configs }}
+            - -f
             {{-   $ordering := list }}
             {{-   range $key, $value := . }}
             {{-     $ordering = append $ordering (printf "%03d_%s" (get $value "order" | default 0 | int) $key) }}
@@ -88,6 +93,10 @@ spec:
             - name: Logging__LogLevel__Default
               value: {{ quote .Values.logLevel }}
             {{- end }}
+            {{- if .Values.serviceAccountName }}
+            - name: AgentConfig__InClusterConfig
+              value: true
+            {{ - end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.tolerations }}

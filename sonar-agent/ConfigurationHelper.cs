@@ -14,15 +14,19 @@ using Cms.BatCave.Sonar.Models;
 using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using String = System.String;
 
 namespace Cms.BatCave.Sonar.Agent;
 
 public class ConfigurationHelper {
   private readonly RecordOptionsManager<ApiConfiguration> _apiConfig;
+  private readonly ILogger<ConfigurationHelper> _logger;
 
-  public ConfigurationHelper(RecordOptionsManager<ApiConfiguration> apiConfig) {
+  public ConfigurationHelper(RecordOptionsManager<ApiConfiguration> apiConfig,
+    ILogger<ConfigurationHelper> logger) {
     this._apiConfig = apiConfig;
+    this._logger = logger;
   }
 
   private static readonly JsonSerializerOptions ConfigSerializerOptions = new JsonSerializerOptions {
@@ -30,7 +34,7 @@ public class ConfigurationHelper {
     Converters = { new JsonStringEnumConverter() }
   };
 
-  public static async Task<Dictionary<String, ServiceHierarchyConfiguration>> LoadAndValidateJsonServiceConfig(
+  public async Task<Dictionary<String, ServiceHierarchyConfiguration>> LoadAndValidateJsonServiceConfig(
     SonarAgentOptions opts,
     AgentConfiguration agentConfig,
     CancellationToken token) {
@@ -40,7 +44,7 @@ public class ConfigurationHelper {
 
     if (opts.KubernetesConfigurationOption) {
       // load configs from kubernetes api
-      resultSet = LoadKubernetesConfiguration();
+      resultSet = this.LoadKubernetesConfiguration(agentConfig.InClusterConfig);
     }
 
     if (opts.ServiceConfigFiles.Any()){
@@ -58,13 +62,13 @@ public class ConfigurationHelper {
     return resultSet;
   }
 
-  private static Dictionary<String, ServiceHierarchyConfiguration> LoadKubernetesConfiguration() {
+  private Dictionary<String, ServiceHierarchyConfiguration> LoadKubernetesConfiguration(Boolean inClusterConfig) {
 
     var services = new List<ServiceHierarchyConfiguration>();
     Dictionary<String,ServiceHierarchyConfiguration> result =
       new Dictionary<String, ServiceHierarchyConfiguration>();
 
-    var tenantConfigDictionary = ConfigurationHelper.FetchKubeConfiguration();
+    var tenantConfigDictionary = this.FetchKubeConfiguration(inClusterConfig);
     foreach (var kvp in tenantConfigDictionary) {
       foreach (var config in kvp.Value) {
         try {
@@ -249,19 +253,25 @@ public class ConfigurationHelper {
 
   }
 
-  public static Dictionary<String, List<(Int16 order, String data)>> FetchKubeConfiguration() {
+  public Dictionary<String, List<(Int16 order, String data)>> FetchKubeConfiguration(Boolean inClusterConfig) {
 
-    var config = KubernetesClientConfiguration.BuildDefaultConfig();
-    // uncomment for in-cluster configuration
-    // var config = KubernetesClientConfiguration.InClusterConfig();
+    var config = inClusterConfig ? KubernetesClientConfiguration.InClusterConfig() :
+      KubernetesClientConfiguration.BuildDefaultConfig();
     IKubernetes client = new Kubernetes(config);
+
     Dictionary<String, List<(Int16 order, String data)>> results =
       new Dictionary<String, List<(Int16 order, String data)>>();
     var unsortedConfigs =
       new List<(Int16 order, String data)>();
 
+    this._logger.LogDebug("Host: {Host}, Namespace: {Namespace}, BaseUri: {BaseUri}", config.Host, config.Namespace, client.BaseUri);
     // get list of namespaces
     var list = client.CoreV1.ListNamespace(labelSelector: "sonar-monitoring=enabled");
+
+    this._logger.LogDebug("Found Namespaces: {Namespaces}", String.Join(
+      ",",
+      list.Items.Select(i => i.Metadata.Name)));
+
     foreach (var item in list.Items) {
 
       // if namespace is null, skip
@@ -283,6 +293,10 @@ public class ConfigurationHelper {
 
         // get labels for current configMap
         var labels = map.Metadata.EnsureLabels();
+        this._logger.LogDebug("Found ConfigMap: {ConfigMap}, Labels: {Labels}",
+          map.Metadata.Name,
+          String.Join(",", labels.Select(l => l.Key)));
+
         if (labels == null) {
           Console.WriteLine("skipping...");
           continue;

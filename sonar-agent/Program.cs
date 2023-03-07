@@ -104,10 +104,12 @@ internal class Program {
       source.Cancel();
     };
 
+    var configurationHelper = new ConfigurationHelper(apiConfig,
+      loggerFactory.CreateLogger<ConfigurationHelper>());
     Dictionary<String, ServiceHierarchyConfiguration> servicesHierarchy;
     try {
       // Load and merge configs
-      servicesHierarchy = await ConfigurationHelper.LoadAndValidateJsonServiceConfig(
+      servicesHierarchy = await configurationHelper.LoadAndValidateJsonServiceConfig(
         opts, agentConfig.Value, source.Token);
     } catch (Exception ex) when (ex is InvalidOperationException or JsonException) {
       logger.LogError(ex, "Invalid Service Configuration: {Message}", ex.Message);
@@ -119,7 +121,7 @@ internal class Program {
 
     // Configure service hierarchy
     logger.LogInformation("Configuring services....");
-    var configurationHelper = new ConfigurationHelper(apiConfig);
+
     await configurationHelper.ConfigureServices(configuration, servicesHierarchy, source.Token);
 
     logger.LogInformation("Initializing SONAR Agent...");

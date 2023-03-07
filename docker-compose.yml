@@ -69,7 +69,7 @@ services:
       dockerfile: Dockerfile.agent
     depends_on:
       - "sonar-api"
-    command: "/sonar/config/service-config.json"
+    command: ["-f", "/sonar/config/service-config.json"]
     restart: unless-stopped
     environment:
       ENVIRONMENT: "DockerCompose"
