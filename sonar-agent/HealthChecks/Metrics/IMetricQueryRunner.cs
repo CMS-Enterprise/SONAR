@@ -6,6 +6,12 @@ using TimeSeriesValue = System.Tuple<System.DateTime, System.Decimal>;
 
 namespace Cms.BatCave.Sonar.Agent.HealthChecks.Metrics;
 
+/// <summary>
+///   An interface for implementing a querying of a time series database.
+/// </summary>
+/// <remarks>
+///   The implementations of all methods on this interface should be thread safe.
+/// </remarks>
 public interface IMetricQueryRunner {
   /// <summary>
   ///   Executes a query expression in a metric data source and returns the resulting single metric

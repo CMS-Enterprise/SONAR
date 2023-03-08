@@ -6,6 +6,15 @@ using Cms.BatCave.Sonar.Models;
 
 namespace Cms.BatCave.Sonar.Agent.HealthChecks;
 
+/// <summary>
+///   An interface for implementing asynchronous health checks evaluator.
+/// </summary>
+/// <remarks>
+///   The implementations of all methods on this interface should be thread safe.
+/// </remarks>
+/// <typeparam name="TDefinition">
+///   The type of <see cref="HealthCheckDefinition" /> supported by the evaluator.
+/// </typeparam>
 public interface IHealthCheckEvaluator<in TDefinition> where TDefinition : HealthCheckDefinition {
   /// <summary>
   ///   Evaluates the specified health check definition to determine the <see cref="HealthStatus" /> of

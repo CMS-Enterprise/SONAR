@@ -78,7 +78,7 @@ public class MetricHealthCheckEvaluator : IHealthCheckEvaluator<MetricHealthChec
       foreach (var condition in conditions) {
         // Determine which comparison to execute
         // Evaluate all PromQL samples
-        var evaluation = MetricHealthCheckEvaluator.EvaluateSamples(samples, condition.Operator, condition.Threshold);
+        var evaluation = EvaluateSamples(samples, condition.Operator, condition.Threshold);
         // If evaluation is true, set the current check to the condition's status
         // and output to Stdout
         if (evaluation) {
@@ -91,6 +91,18 @@ public class MetricHealthCheckEvaluator : IHealthCheckEvaluator<MetricHealthChec
     return currCheck;
   }
 
+  /// <summary>
+  ///   Applies a condition to all of the samples in a time series.
+  /// </summary>
+  /// <remarks>
+  ///   If the expression <c>time_series_value operator threshold</c> is <c>true</c> for all values in
+  ///   the time series than this function returns true. For example, if the operator were
+  ///   <see cref="HealthOperator.GreaterThan" />, the threshold was <c>5</c>, and the values were
+  ///   <c>[7, 13, 11]</c> then the result would be <c>true</c>. However, if the values were
+  ///   <c>[7, 3, 11]</c> the result would be <c>false</c> because <c>3</c> is not greater than the
+  ///   threshold value.
+  /// </remarks>
+  /// <exception cref="ArgumentException">The specified <see cref="HealthOperator" /> value is not valid.</exception>
   private static Boolean EvaluateSamples(
     IImmutableList<(DateTime Timestamp, Decimal Value)> values,
     HealthOperator op,
@@ -108,6 +120,6 @@ public class MetricHealthCheckEvaluator : IHealthCheckEvaluator<MetricHealthChec
     };
 
     // Iterate through list, if all meet condition, return true, else return false if ANY don't meet condition
-    return !values.Any(val => !comparison(val.Value, threshold));
+    return values.All(val => comparison(val.Value, threshold));
   }
 }
