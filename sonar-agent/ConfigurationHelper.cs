@@ -47,7 +47,7 @@ public class ConfigurationHelper {
       resultSet = this.LoadKubernetesConfiguration(agentConfig.InClusterConfig);
     }
 
-    if (opts.ServiceConfigFiles.Any()){
+    if (opts.ServiceConfigFiles.Any()) {
       // load configs locally
       var args = opts.ServiceConfigFiles.ToArray();
       resultSet.Add(agentConfig.DefaultTenant, await LoadLocalConfiguration(args, token));
@@ -65,7 +65,7 @@ public class ConfigurationHelper {
   private Dictionary<String, ServiceHierarchyConfiguration> LoadKubernetesConfiguration(Boolean inClusterConfig) {
 
     var services = new List<ServiceHierarchyConfiguration>();
-    Dictionary<String,ServiceHierarchyConfiguration> result =
+    Dictionary<String, ServiceHierarchyConfiguration> result =
       new Dictionary<String, ServiceHierarchyConfiguration>();
 
     var tenantConfigDictionary = this.FetchKubeConfiguration(inClusterConfig);

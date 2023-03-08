@@ -125,7 +125,7 @@ internal class Program {
     await configurationHelper.ConfigureServices(configuration, servicesHierarchy, source.Token);
 
     logger.LogInformation("Initializing SONAR Agent...");
-    
+
     var healthCheckHelper = new HealthCheckHelper(
       loggerFactory.CreateLogger<HealthCheckHelper>(), apiConfig, promConfig, lokiConfig, agentConfig);
     var tasks = new List<Task>();

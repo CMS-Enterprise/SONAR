@@ -96,7 +96,7 @@ spec:
             {{- if .Values.serviceAccountName }}
             - name: AgentConfig__InClusterConfig
               value: true
-            {{ - end }}
+            {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.tolerations }}
