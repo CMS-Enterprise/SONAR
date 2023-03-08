@@ -125,15 +125,21 @@ internal class Program {
     await configurationHelper.ConfigureServices(configuration, servicesHierarchy, source.Token);
 
     logger.LogInformation("Initializing SONAR Agent...");
+    
     var healthCheckHelper = new HealthCheckHelper(
       loggerFactory.CreateLogger<HealthCheckHelper>(), apiConfig, promConfig, lokiConfig, agentConfig);
-    // Run task that calls Health Check function
-    var task = Task.Run(
-      () => healthCheckHelper.RunScheduledHealthCheck(configuration, source.Token),
-      source.Token
-    );
+    var tasks = new List<Task>();
 
-    await task;
+    // Run task that calls Health Check function
+    foreach (var kvp in servicesHierarchy) {
+      tasks.Add(Task.Run(
+        () => healthCheckHelper.RunScheduledHealthCheck(configuration, kvp.Key, source.Token),
+        source.Token
+      ));
+    }
+
+    // Await all tasks
+    await Task.WhenAll(tasks);
 
     foreach (var watcher in watchers) {
       watcher.Dispose();

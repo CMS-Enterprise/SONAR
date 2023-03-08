@@ -48,6 +48,7 @@ public class HealthCheckHelper {
 
   public async Task RunScheduledHealthCheck(
     IConfigurationRoot configRoot,
+    String tenant,
     CancellationToken token) {
 
     var interval = TimeSpan.FromSeconds(this._agentConfig.Value.AgentInterval);
@@ -76,7 +77,6 @@ public class HealthCheckHelper {
     while (true) {
       // Configs
       var env = this._apiConfig.Value.Environment;
-      var tenant = this._agentConfig.Value.DefaultTenant;
 
       if (token.IsCancellationRequested) {
         this._logger.LogInformation("Scheduled health check canceled");
