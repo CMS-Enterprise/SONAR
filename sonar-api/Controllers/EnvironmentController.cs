@@ -2,12 +2,10 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Helpers;
-using Cms.BatCave.Sonar.Models;
 using Microsoft.AspNetCore.Mvc;
-
+using Environment = Cms.BatCave.Sonar.Data.Environment;
 using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
 
 namespace Cms.BatCave.Sonar.Controllers;
@@ -26,7 +24,7 @@ public class EnvironmentController : ControllerBase{
   }
 
   [HttpGet]
-  [ProducesResponseType(typeof(ServiceHierarchyConfiguration), statusCode: 200)]
+  [ProducesResponseType(typeof(Environment), statusCode: 200)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
   public async Task<ActionResult> GetTenant(
     CancellationToken cancellationToken = default) {
