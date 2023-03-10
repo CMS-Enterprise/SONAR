@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -13,6 +14,12 @@ using Microsoft.Extensions.Options;
 namespace Cms.BatCave.Sonar.Configuration;
 
 public static class RecordConfigurationExtensions {
+  private static readonly MethodInfo BindCtorMethod =
+    new Func<IConfiguration, Object>(BindCtor<Object>).Method.GetGenericMethodDefinition();
+
+  private static readonly MethodInfo ToArrayMethod =
+    new Func<List<Object>, Object[]>(ToArray).Method.GetGenericMethodDefinition();
+
   /// <summary>
   ///   Performs the necessary dependency injection for initializing the specified type from
   ///   configuration.
@@ -77,7 +84,9 @@ public static class RecordConfigurationExtensions {
 
         if (param.ParameterType.IsClass &&
           (param.ParameterType != typeof(String)) &&
-          (param.ParameterType != typeof(Uri))) {
+          (param.ParameterType != typeof(Uri)) &&
+          !param.ParameterType.IsArray &&
+          !typeof(IEnumerable).IsAssignableFrom(param.ParameterType)) {
 
           var subSection = configuration.GetSection(param.Name);
           if (subSection != null) {
@@ -92,34 +101,65 @@ public static class RecordConfigurationExtensions {
               subSection.Bind(paramValue);
               parameters = parameters.Add(param.Name, paramValue);
             } else {
-              parameters = parameters.Add(param.Name, subSection.BindCtor<T>());
+
+              parameters = parameters.Add(param.Name, subSection.BindCtor(param.ParameterType));
             }
           } else if (!param.HasDefaultValue && !param.IsOptional) {
             current = null;
             missingParameters.Add(param);
           }
         } else {
-          var value = configuration[param.Name];
-          if (value != null) {
-            if (param.ParameterType == typeof(String)) {
-              parameters = parameters.Add(param.Name, value);
-            } else if (param.ParameterType == typeof(Uri)) {
-              parameters = parameters.Add(param.Name, new Uri(value));
-            } else if (param.ParameterType == typeof(Guid)) {
-              parameters = parameters.Add(param.Name, Guid.Parse(value));
-            } else if (param.ParameterType.IsEnum) {
-              parameters = parameters.Add(param.Name, Enum.Parse(param.ParameterType, value));
-            } else if (
-              typeof(Nullable<>).IsAssignableFrom(param.ParameterType) &&
-              param.ParameterType.GetGenericArguments()[0].IsEnum) {
-
-              parameters = parameters.Add(param.Name, Enum.Parse(param.ParameterType.GetGenericArguments()[0], value));
+          var enumerableInterface = param.ParameterType.GetInterfaces()
+            .SingleOrDefault(i => i.IsGenericType && (i.GetGenericTypeDefinition() == typeof(IEnumerable<>)));
+          if ((param.ParameterType != typeof(String)) && (enumerableInterface != null)) {
+            var itemType = enumerableInterface.GetGenericArguments()[0];
+            // We're binding to a generic collection type;
+            if (param.ParameterType.IsArray) {
+              var list = Activator.CreateInstance(typeof(List<>).MakeGenericType(itemType));
+              configuration.GetSection(param.Name).Bind(list);
+              parameters = parameters.Add(
+                param.Name,
+                ToArrayMethod.MakeGenericMethod(itemType).Invoke(obj: null, new[] { list })
+              );
+            } else if (!param.ParameterType.IsAbstract && !param.ParameterType.IsInterface) {
+              var colCtor = GetCollectionConstructor(param.ParameterType, itemType);
+              if (colCtor == null) {
+                throw new NotSupportedException(
+                  $"The specified ParameterType is an generic collection type without a constructor that takes IEnumerable<>: {param.ParameterType.Name}"
+                );
+              }
+              // The parameter type is a concrete, non-array collection like List<Object>
+              var list = Activator.CreateInstance(typeof(List<>).MakeGenericType(itemType));
+              configuration.GetSection(param.Name).Bind(list);
+              parameters = parameters.Add(param.Name, colCtor.Invoke(new[] { list }));
             } else {
-              parameters = parameters.Add(param.Name, Convert.ChangeType(value, param.ParameterType));
+              throw new NotSupportedException(
+                $"The specified parameter type is not supported: {param.ParameterType.Name}"
+              );
             }
-          } else if (!param.HasDefaultValue && !param.IsOptional) {
-            current = null;
-            missingParameters.Add(param);
+          } else {
+            var value = configuration[param.Name];
+            if (value != null) {
+              if (param.ParameterType == typeof(String)) {
+                parameters = parameters.Add(param.Name, value);
+              } else if (param.ParameterType == typeof(Uri)) {
+                parameters = parameters.Add(param.Name, new Uri(value));
+              } else if (param.ParameterType == typeof(Guid)) {
+                parameters = parameters.Add(param.Name, Guid.Parse(value));
+              } else if (param.ParameterType.IsEnum) {
+                parameters = parameters.Add(param.Name, Enum.Parse(param.ParameterType, value));
+              } else if (
+                typeof(Nullable<>).IsAssignableFrom(param.ParameterType) &&
+                param.ParameterType.GetGenericArguments()[0].IsEnum) {
+
+                parameters = parameters.Add(param.Name, Enum.Parse(param.ParameterType.GetGenericArguments()[0], value));
+              } else {
+                parameters = parameters.Add(param.Name, Convert.ChangeType(value, param.ParameterType));
+              }
+            } else if (!param.HasDefaultValue && !param.IsOptional) {
+              current = null;
+              missingParameters.Add(param);
+            }
           }
         }
       }
@@ -161,5 +201,21 @@ public static class RecordConfigurationExtensions {
     Debug.Assert(result != null, "result != null");
 
     return (T)result;
+  }
+
+  public static Object BindCtor(this IConfiguration configuration, Type objectType) {
+    return BindCtorMethod.MakeGenericMethod(objectType).Invoke(obj: null, new Object[] { configuration })!;
+  }
+
+  private static T[] ToArray<T>(List<T> list) {
+    return list.ToArray();
+  }
+
+  private static ConstructorInfo? GetCollectionConstructor(Type collectionType, Type itemType) {
+    return collectionType.GetConstructors().SingleOrDefault(ctor => {
+        var args = ctor.GetParameters();
+        return (args.Length == 1) && (args[0].ParameterType == typeof(IEnumerable<>).MakeGenericType(itemType));
+      }
+    );
   }
 }
