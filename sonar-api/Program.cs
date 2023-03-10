@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Json;
 using Cms.BatCave.Sonar.Middlewares;
@@ -95,6 +96,15 @@ public class Program {
     mvcBuilder.AddApplicationPart(typeof(Program).Assembly);
 
     var app = builder.Build();
+
+    // Get CORS configuration
+    var webHostConfig =
+      app.Configuration.GetSection("WebHost").BindCtor<WebHostConfiguration>();
+    app.UseCors(policyBuilder => {
+      policyBuilder.WithOrigins(webHostConfig.AllowedOrigins)
+        .AllowAnyHeader()
+        .AllowAnyMethod();
+    });
 
     app.UseMiddleware<ProblemDetailExceptionMiddleware>();
     app.UseMiddleware<ApiKeyMiddleware>();

@@ -20,7 +20,7 @@ import {
   ServiceHierarchyHealth,
   UptimeModel,
 } from "./data-contracts";
-import { ContentType, HttpClient, RequestParams } from "./http-client";
+import {ContentType, HttpClient, RequestParams} from "./http-client";
 
 export class SonarApi<SecurityDataType = unknown> extends HttpClient<SecurityDataType> {
   /**
