@@ -39,11 +39,10 @@ public class EnvironmentDataHelper {
     // Check if the environment exists
     var result =
       await this._environmentsTable
-
         .ToListAsync(cancellationToken);
 
     if (result == null) {
-      throw new Exception( "Error");
+      throw new ResourceNotFoundException(nameof(Environment));
     }
 
     return result;

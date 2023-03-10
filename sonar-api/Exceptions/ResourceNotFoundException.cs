@@ -11,9 +11,16 @@ public class ResourceNotFoundException : ProblemDetailException {
 
   private const String IdTypeKey = "IdType";
   public String TypeName { get; }
-  public Object ResourceId { get; }
+  public Object? ResourceId { get; }
 
   public override String ProblemType => ResourceNotFoundException.ProblemTypeName;
+
+  public ResourceNotFoundException(String typeName) :
+    base(HttpStatusCode.NotFound, $"{typeName} Not Found") {
+
+    this.TypeName = typeName;
+    this.ResourceId = null;
+  }
 
   public ResourceNotFoundException(String typeName, Object resourceId) :
     base(HttpStatusCode.NotFound, $"{typeName} Not Found") {
