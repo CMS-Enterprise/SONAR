@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,6 +28,22 @@ public class EnvironmentDataHelper {
 
     if (result == null) {
       throw new ResourceNotFoundException(nameof(Environment), environmentName);
+    }
+
+    return result;
+  }
+
+  public async Task<IList<Environment>> FetchAllExistingEnvAsync(
+    CancellationToken cancellationToken) {
+
+    // Check if the environment exists
+    var result =
+      await this._environmentsTable
+
+        .ToListAsync(cancellationToken);
+
+    if (result == null) {
+      throw new Exception( "Error");
     }
 
     return result;
