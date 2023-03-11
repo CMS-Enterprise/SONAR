@@ -111,9 +111,9 @@ public class HealthCheckHelper {
       this._loggerFactory.CreateLogger<HealthCheckQueueProcessor<MetricHealthCheckDefinition>>()
     );
 
-    using var httpQueueProcessor = httpHealthCheckQueue.Run(token);
-    using var prometheusQueueProcessor = prometheusHealthCheckQueue.Run(token);
-    using var lokQueueProcessor = lokiHealthCheckQueue.Run(token);
+    var httpQueueProcessor = httpHealthCheckQueue.Run(token);
+    var prometheusQueueProcessor = prometheusHealthCheckQueue.Run(token);
+    var lokiQueueProcessor = lokiHealthCheckQueue.Run(token);
 
     while (!token.IsCancellationRequested) {
       // Configs
@@ -229,6 +229,8 @@ public class HealthCheckHelper {
         await Task.Delay(interval.Subtract(elapsed), token);
       }
     }
+
+    await Task.WhenAll(httpQueueProcessor, prometheusQueueProcessor, lokiQueueProcessor);
   }
 
   private async Task SendHealthData(

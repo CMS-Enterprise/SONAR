@@ -251,9 +251,7 @@ public sealed class HealthCheckQueueProcessor<TDefinition> : IDisposable
     } finally {
       // Whether the check succeeds or fails, free up the concurrency slot
       this._concurrencyLimit.Release();
-      if (this._runningHealthChecks.TryRemove(taskId, out var task)) {
-        task.Dispose();
-      }
+      this._runningHealthChecks.TryRemove(taskId, out _);
     }
   }
 }
