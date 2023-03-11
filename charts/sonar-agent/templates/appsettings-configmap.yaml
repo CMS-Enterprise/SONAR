@@ -7,29 +7,32 @@ data:
     {
       "ApiConfig": {
         "Environment": {{ quote .Values.apiConfig.environment }},
-        "Tenant": {{ quote .Values.apiConfig.tenant }},
         "BaseUrl": {{ quote .Values.apiConfig.baseUrl }}
       },
       "Prometheus": {
-        {{ if .Values.prometheus.port }}
+        {{- if .Values.prometheus.port }}
         "Port": {{ quote .Values.prometheus.host }},
-        {{ end }}
-        {{ if .Values.prometheus.protocol }}
+        {{- end }}
+        {{- if .Values.prometheus.protocol }}
         "Protocol": {{ quote .Values.prometheus.protocol }},
-        {{ end }}
+        {{- end }}
         "Host": {{ quote .Values.prometheus.host }}
       },
       "Loki": {
-        {{ if .Values.loki.port }}
+        {{- if .Values.loki.port }}
         "Port": {{ quote .Values.loki.host }},
-        {{ end }}
-        {{ if .Values.loki.protocol }}
+        {{- end }}
+        {{- if .Values.loki.protocol }}
         "Protocol": {{ quote .Values.loki.protocol }},
-        {{ end }}
+        {{- end }}
         "Host": {{ quote .Values.loki.host }}
       }
       {{- if .Values.apiConfig.reportingInterval }},
       "AgentConfig": {
+        {{- if .Values.serviceAccountName }}
+        "InClusterConfig": true,
+        {{- end }}
+        "DefaultTenant": {{ quote .Values.apiConfig.tenant }},
         "AgentInterval": {{ .Values.apiConfig.reportingInterval }}
       }
       {{- end }}

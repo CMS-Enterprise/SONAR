@@ -72,15 +72,15 @@ For more information on configuring and running the API see [the sonar-api READM
 From the `sonar-agent` folder:
 
 ```
-dotnet run ./service-config.json
+dotnet run -- -f ./service-config.json
 ```
 
 ## Dependencies & Docker Compose
 
-The SONAR API and Agent have two critical dependencies: PostgreSQL and Prometheus. Both of these can be run via Docker Compose using the `docker-compose.yml` file in the root of the repo:
+The SONAR API and Agent have two critical dependencies (PostgreSQL and Prometheus) and one optional dependency (Loki). All of these can be run via Docker Compose using the `docker-compose.yml` file in the root of the repo:
 
 ```
-docker-compose up -d prometheus postgresql loki grafana
+docker-compose up -d prometheus postgresql loki
 ```
 
 There is also an example application that generates Prometheus metrics that can be used when testing SONAR health checks. To run this application in in Docker as well run:
@@ -95,11 +95,16 @@ To build Docker images via Docker Compose, run the following command:
 docker-compose build
 ```
 
-To selectively run services via Docker Compose, run the following command:
+To selectively run SONAR services via Docker Compose, run the following command:
 
 ```
-docker-compose up sonar-api sonar-agent test-metric-app
+docker-compose up sonar-api sonar-agent
 ```
+
+## Running in Kubernetes
+
+In production environments the SONAR agent is installed via it's Helm chart by batcave-landing-zone, and the SONAR API is deployed via ArgoCD based on the [manifests repo](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/manifests/). However, it is possible to test SONAR locally in a k3d or other small Kubernetes cluster. For detailed instructions see the [helm chart developer readme](./charts/README.md).
+
 ## Versioning
 
 ### Assembly & Package Versioning

@@ -45,16 +45,24 @@ apiConfig:
   reportingInterval: 30
 
 prometheus:
-  host: localhost
+  host: prometheus
   # Optional. Defaults to http / 9090
   protocol: null
   port: null
 
 loki:
-  host: localhost
+  host: loki
   # Optional. Defaults to http / 3100
   protocol: null
   port: null
+
+# To enable sonar-argent to load configuration from your Kubernetes cluster set the
+# kubernetesServiceConfig.enabled flag to true and specify a ServiceAccount name.
+kubernetesServiceConfig:
+  enabled: false
+# This service account will be automatically created and granted permission to read Namespaces and
+# ConfigMaps in all Namespaces.
+serviceAccountName: null
 
 # A dictionary of service configurations that will be merged together in the order they are specified
 configs: {}

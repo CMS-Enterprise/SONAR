@@ -2,16 +2,48 @@
 
 This folder contains helm charts for deploying SONAR components. Currently, our only Helm deployed component is the SONAR agent.
 
+This file contains *internal developer* documentation. For documentation of the normal usage and configuration of the sonar-agent Helm chart see [this readme](./sonar-agent/README.md).
+
 ## Local Testing
 
 To test the SONAR agent in kubernetes locally you can deploy it to a local K3D cluster by following these steps:
 
-### 0. Prerequisites
+### Prerequisites
 
 1. Docker
 2. [kubectl](https://kubernetes.io/docs/tasks/tools/)
 3. [helm](https://helm.sh/docs/intro/install/)
 4. [k3d](https://k3d.io/)
+
+### Running k3d-deploy.sh
+
+To create k3d cluster of the sonar-agent with the name "sonar-test" and install the sonar agent helm chart, run the following from the root of the repository:
+
+```shell
+./scripts/k3d-deploy.sh sonar-test
+```
+
+You can subsequently re-run this command with the `-r` flag to delete and recreate the cluster, or with the `-u` flag to upgrade the previously installed helm chart.
+
+```
+Usage: k3d-deply.sh [options] <cluster_name> [helm_args...]
+Creates or recreates a K3D cluster and installs or upgrades the sonar-agent helm
+chart in that cluster.
+
+Cluster name is required. Any additional arguments will be passed to Helm.
+
+Options:
+  -f <file>    Designate a single helm values file. If you want to specify
+               multiple files you can pass --values as a helm argument.
+  -t <tag>     The tag to apply to the docker image.
+  -r           Recreate cluster if exists. Cannot be combined with (-u).
+  -u           Upgrade the helm chart. Cannot be combined with (-r).
+  -a           Install sonar API, dependencies, and test apps as well.
+```
+
+#### Installing SONAR API, dependencies, and test apps
+
+When run with the `-a` flag, this script use the kustomization and kubernetes resources defined in the [k8s](../k8s) folder to install the SONAR API and the test-metric and http-metric-test apps to enable end-to-end testing.
 
 ### 1. Create K3D Cluster
 
@@ -50,15 +82,3 @@ docker push sonar-registry:{PORT_NUMBER_FROM_STEP_2}/sonar-agent:testing
 helm install my-sonar-agent ./charts/sonar-agent -f ./charts/sonar-agent/examples/values.example-service-config.yaml --set image.repository=sonar-registry:{PORT_NUMBER_FROM_STEP_2}/sonar-agent --set image.tag=testing
 ```
 
-### Running k3d-deploy.sh
-To create k3d cluster of the sonar-agent with the name "sonar-test", from the root run
-```shell
-./charts/sonar-agent/k3d-deploy.sh sonar-test
-```
-Manages the creation of a k3d cluster and installs or upgrades the sonar-agent helm chart
-```
- ./k3d-deploy.sh -f service-config.json cluster-name
- ./k3d-deploy.sh -r -f service-config.json cluster-name
- ./k3d-deploy.sh -u -f service-config.json cluster-name
-
-```

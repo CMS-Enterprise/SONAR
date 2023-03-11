@@ -18,6 +18,8 @@ This Helm Chart deploys a single instance of the `sonar-agent` microservice as a
 |podAnnotations|object|A object containing an arbitrary set of key/string pairs to apply to the created pods as annotations.|
 |resources|object|A [ResourceRequirements](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#resources) specification to be applied to the created pods.|
 |tolerations|list|A list of [Toleration](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#scheduling) specifications to be applied to the created pods.|
+|kubernetesServiceConfig.enabled|boolean|When set to true, sonar agent will attempt to load tenant service configuration from Kubernetes ConfigMaps via the kubernetes API|
+|serviceAccountName|string|When specified, creates a service account for the sonar-agent pod, and binds it to a cluster role with permission to read Namespaces and ConfigMaps. This is required for the sonar-agent to automatically load configuration from Kubernetes ConfigMaps. (default: null)|
 
 ### Application Configuration
 

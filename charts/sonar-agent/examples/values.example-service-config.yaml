@@ -111,7 +111,8 @@ configs:
                   "status": "Degraded"
                 }
               ]
-            }
+            },
+            "type": "prometheusMetric"
           }
         }
       }

@@ -1,0 +1,4 @@
+kubernetesServiceConfig:
+  enabled: true
+  
+serviceAccountName: sonar-agent-sa
