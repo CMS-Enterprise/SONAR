@@ -1,3 +1,7 @@
+export const MainContentContainer = {
+  margin: 10
+};
+
 export const RootServiceContainer = {
   margin: 10,
   borderStyle: "solid",

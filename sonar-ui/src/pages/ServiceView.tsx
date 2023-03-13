@@ -3,7 +3,7 @@ import { SonarApi } from "api/SonarApi";
 import { ServiceHierarchyHealth } from "../api/data-contracts";
 import RootService from "../components/ServiceListView/RootService";
 
-function ServiceView() {
+const ServiceView = () => {
   const [services, setServices] = useState<ServiceHierarchyHealth[] | null>(null);
   // create sonar client
   const sonarClient = new SonarApi({
