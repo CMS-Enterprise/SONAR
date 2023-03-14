@@ -11,3 +11,23 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
   monospace;
 }
+
+.unknown {
+  --accordion__background-color: purple;
+  --accordion__background-color--hover: grey;
+}
+
+.online {
+  background-color: #66FF00;
+  --accordion__background-color--hover: grey;
+}
+
+.degraded {
+  background-color: orange;
+  --accordion__background-color--hover: grey;
+}
+
+.offline {
+  background-color: red;
+  --accordion__background-color--hover: grey;
+}

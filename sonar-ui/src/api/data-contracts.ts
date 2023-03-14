@@ -62,6 +62,17 @@ export interface Environment {
   name?: string | null;
 }
 
+export interface Environment {
+  /** @format uuid */
+  id?: string;
+  /**
+   * @minLength 0
+   * @maxLength 100
+   */
+  name?: string | null;
+  status?: HealthStatus | null;
+}
+
 export type HealthCheckDefinition = object;
 
 export interface HealthCheckModel {

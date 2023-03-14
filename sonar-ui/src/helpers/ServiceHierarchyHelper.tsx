@@ -24,3 +24,21 @@ export function getHealthStatusIndicator(status: HealthStatus | undefined) {
   }
   return result;
 }
+
+export function getHealthStatusClass(status: HealthStatus | null | undefined) {
+  let result;
+  switch (status) {
+    case HealthStatus.Unknown:
+      result = "unknown"
+      break;
+    case HealthStatus.Online:
+      result = "online";
+      break;
+    case HealthStatus.Degraded:
+      result = "degraded";
+      break;
+    default:
+      result = "offline";
+  }
+  return result;
+}

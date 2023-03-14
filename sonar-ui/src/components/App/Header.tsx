@@ -11,6 +11,9 @@ const Header = () => {
         <li>
           <Link to="/service-view">Service View</Link>
         </li>
+        <li>
+          <Link to="/environment-view">Environment View</Link>
+        </li>
       </ul>
     </nav>
   )

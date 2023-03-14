@@ -3,15 +3,14 @@ import React, { useEffect, useState } from 'react';
 import { Api as SonarApi } from 'api/sonar-api.generated';
 import { ServiceHierarchyHealth } from 'api/data-contracts';
 import RootService from 'components/ServiceListView/RootService';
+import { createSonarClient } from 'helpers/ApiHelper';
 
 const ServiceView = () => {
   const [services, setServices] = useState<ServiceHierarchyHealth[] | null>(null);
 
   useEffect(() => {
     // create sonar client
-    const sonarClient = new SonarApi({
-      baseUrl: 'http://localhost:8081'
-    });
+    const sonarClient = createSonarClient();
 
     sonarClient.getServiceHierarchyHealth('foo', 'baz')
       .then((res) => {

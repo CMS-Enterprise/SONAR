@@ -4,6 +4,7 @@ import {
 } from 'react-router-dom';
 
 import Header from './components/App/Header';
+import EnvironmentView from './pages/EnvironmentView';
 import Home from './pages/Home';
 import ServiceView from './pages/ServiceView';
 
@@ -18,6 +19,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/service-view" element={<ServiceView />} />
+            <Route path="/environment-view" element={<EnvironmentView />} />
           </Routes>
         </div>
       </Router>

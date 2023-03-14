@@ -137,11 +137,11 @@ export class Api<SecurityDataType = unknown> extends HttpClient<SecurityDataType
    * No description
    *
    * @tags Environment
-   * @name V2EnvironmentsList
+   * @name GetEnvironments
    * @request GET:/api/v2/environments
    */
-  v2EnvironmentsList = (params: RequestParams = {}) =>
-    this.request<Environment, ProblemDetails>({
+  getEnvironments = (params: RequestParams = {}) =>
+    this.request<Environment[], ProblemDetails>({
       path: `/api/v2/environments`,
       method: "GET",
       format: "json",
