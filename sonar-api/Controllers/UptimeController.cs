@@ -167,7 +167,7 @@ public class UptimeController : ControllerBase {
     foreach (var result in response.Data.Result) {
 
       var serviceName = result.Labels["service"];
-      var status = Enum.Parse<HealthStatus>(result.Labels[HealthController.ServiceHealthAggregateMetricName]);
+      var status = Enum.Parse<HealthStatus>(result.Labels[HealthDataHelper.ServiceHealthAggregateMetricName]);
       var values = result.Values;
 
       if (values == null) {
