@@ -40,6 +40,7 @@ const EnvironmentItem: React.FC<{
       onChange={handleToggle}
       buttonClassName={getHealthStatusClass(environment.status)}
     >
+      {/*TODO: Add tenant-status listing here*/}
       {loading ? (<Spinner />) : environment.name}
     </AccordionItem>
   );

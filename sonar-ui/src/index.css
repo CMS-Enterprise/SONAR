@@ -13,7 +13,7 @@ code {
 }
 
 .unknown {
-  --accordion__background-color: purple;
+  --accordion__background-color: yellow;
   --accordion__background-color--hover: grey;
 }
 

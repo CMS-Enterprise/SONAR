@@ -10,7 +10,8 @@ import { getHealthStatusIndicator } from "../helpers/ServiceHierarchyHelper";
 const initialEnvs: Environment[] = [
   {id: "test1", name: "testEnv1", status: HealthStatus.Online},
   {id: "test2", name: "testEnv2", status: HealthStatus.Degraded},
-  {id: "test3", name: "testEnv3", status: HealthStatus.Offline}
+  {id: "test3", name: "testEnv3", status: HealthStatus.Offline},
+  {id: "test4", name: "testEnv4", status: HealthStatus.Unknown}
 ];
 
 const EnvironmentView = () => {

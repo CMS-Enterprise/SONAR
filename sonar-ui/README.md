@@ -1,5 +1,10 @@
 # SONAR UI
 
+## Run locally with sonar-api
+
+Have sonar-api running locally on `localhost:8081`.
+**Ensure that there is recent test data in your local Prometheus instance.**
+
 ## Available Scripts
 
 In the project directory, you can run:
@@ -36,6 +41,10 @@ See the section about [deployment](https://facebook.github.io/create-react-app/d
 
 Regenerates the SONAR API client using [swagger-typescript-api](https://github.com/acacode/swagger-typescript-api). The
 generated sources can be found in the [`src/api`](./src/api) folder.
+
+## Regenerate `node_modules` and `package-lock.json`
+
+Delete the `node_modules` directory and the `package-lock.json` file, then run `npm i` to regenerate both.
 
 ## About Create React App
 
