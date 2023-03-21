@@ -90,7 +90,9 @@ public static class RecordConfigurationExtensions {
 
           var subSection = configuration.GetSection(param.Name);
           if (subSection != null) {
-            if (param.ParameterType.GetConstructors().Any(c => c.GetParameters().Length == 0)) {
+            if (subSection.Value == String.Empty) {
+              parameters = parameters.Add(param.Name, null);
+            } else if (param.ParameterType.GetConstructors().Any(c => c.GetParameters().Length == 0)) {
               var paramValue = Activator.CreateInstance(param.ParameterType);
               if (paramValue == null) {
                 current = null;
@@ -101,7 +103,6 @@ public static class RecordConfigurationExtensions {
               subSection.Bind(paramValue);
               parameters = parameters.Add(param.Name, paramValue);
             } else {
-
               parameters = parameters.Add(param.Name, subSection.BindCtor(param.ParameterType));
             }
           } else if (!param.HasDefaultValue && !param.IsOptional) {
@@ -112,49 +113,64 @@ public static class RecordConfigurationExtensions {
           var enumerableInterface = param.ParameterType.GetInterfaces()
             .SingleOrDefault(i => i.IsGenericType && (i.GetGenericTypeDefinition() == typeof(IEnumerable<>)));
           if ((param.ParameterType != typeof(String)) && (enumerableInterface != null)) {
-            var itemType = enumerableInterface.GetGenericArguments()[0];
-            // We're binding to a generic collection type;
-            if (param.ParameterType.IsArray) {
-              var list = Activator.CreateInstance(typeof(List<>).MakeGenericType(itemType));
-              configuration.GetSection(param.Name).Bind(list);
-              parameters = parameters.Add(
-                param.Name,
-                ToArrayMethod.MakeGenericMethod(itemType).Invoke(obj: null, new[] { list })
-              );
-            } else if (!param.ParameterType.IsAbstract && !param.ParameterType.IsInterface) {
-              var colCtor = GetCollectionConstructor(param.ParameterType, itemType);
-              if (colCtor == null) {
+            if (configuration.GetSection(param.Name).Value == String.Empty) {
+              parameters = parameters.Add(param.Name, null);
+            } else {
+              var itemType = enumerableInterface.GetGenericArguments()[0];
+              // We're binding to a generic collection type;
+              if (param.ParameterType.IsArray) {
+                var list = Activator.CreateInstance(typeof(List<>).MakeGenericType(itemType));
+                configuration.GetSection(param.Name).Bind(list);
+                parameters = parameters.Add(
+                  param.Name,
+                  ToArrayMethod.MakeGenericMethod(itemType).Invoke(obj: null, new[] { list })
+                );
+              } else if (!param.ParameterType.IsAbstract && !param.ParameterType.IsInterface) {
+                var colCtor = GetCollectionConstructor(param.ParameterType, itemType);
+                if (colCtor == null) {
+                  throw new NotSupportedException(
+                    $"The specified ParameterType is an generic collection type without a constructor that takes IEnumerable<>: {param.ParameterType.Name}"
+                  );
+                }
+
+                // The parameter type is a concrete, non-array collection like List<Object>
+                var list = Activator.CreateInstance(typeof(List<>).MakeGenericType(itemType));
+                configuration.GetSection(param.Name).Bind(list);
+                parameters = parameters.Add(param.Name, colCtor.Invoke(new[] { list }));
+              } else {
                 throw new NotSupportedException(
-                  $"The specified ParameterType is an generic collection type without a constructor that takes IEnumerable<>: {param.ParameterType.Name}"
+                  $"The specified parameter type is not supported: {param.ParameterType.Name}"
                 );
               }
-              // The parameter type is a concrete, non-array collection like List<Object>
-              var list = Activator.CreateInstance(typeof(List<>).MakeGenericType(itemType));
-              configuration.GetSection(param.Name).Bind(list);
-              parameters = parameters.Add(param.Name, colCtor.Invoke(new[] { list }));
-            } else {
-              throw new NotSupportedException(
-                $"The specified parameter type is not supported: {param.ParameterType.Name}"
-              );
             }
           } else {
             var value = configuration[param.Name];
-            if (value != null) {
-              if (param.ParameterType == typeof(String)) {
-                parameters = parameters.Add(param.Name, value);
-              } else if (param.ParameterType == typeof(Uri)) {
-                parameters = parameters.Add(param.Name, new Uri(value));
-              } else if (param.ParameterType == typeof(Guid)) {
-                parameters = parameters.Add(param.Name, Guid.Parse(value));
-              } else if (param.ParameterType.IsEnum) {
-                parameters = parameters.Add(param.Name, Enum.Parse(param.ParameterType, value));
-              } else if (
-                typeof(Nullable<>).IsAssignableFrom(param.ParameterType) &&
-                param.ParameterType.GetGenericArguments()[0].IsEnum) {
+            var underlyingType = Nullable.GetUnderlyingType(param.ParameterType) ?? param.ParameterType;
+            var isNullable =
+              (underlyingType != param.ParameterType) ||
+              (param.ParameterType.IsClass && (param.ParameterType != typeof(String)));
 
-                parameters = parameters.Add(param.Name, Enum.Parse(param.ParameterType.GetGenericArguments()[0], value));
+            if (isNullable && (value == String.Empty)) {
+              // Note: it seems to be impossible to differentiate between the empty string and null
+              // in the case of String type parameters
+              parameters = parameters.Add(param.Name, null);
+            } else if (value != null) {
+              if (underlyingType == typeof(String)) {
+                parameters = parameters.Add(param.Name, value);
+              } else if (underlyingType == typeof(Uri)) {
+                parameters = parameters.Add(param.Name, new Uri(value));
+              } else if (underlyingType == typeof(Guid)) {
+                parameters = parameters.Add(param.Name, Guid.Parse(value));
+              } else if (underlyingType.IsEnum) {
+                parameters = parameters.Add(param.Name, Enum.Parse(underlyingType, value));
+              } else if (underlyingType == typeof(TimeSpan)) {
+                parameters = parameters.Add(param.Name, TimeSpan.Parse(value));
+              } else if (underlyingType == typeof(DateTime)) {
+                // Note: DateTime.Parse transforms what it parses into Local time which can be a
+                // lossy conversion
+                parameters = parameters.Add(param.Name, DateTimeOffset.Parse(value).UtcDateTime);
               } else {
-                parameters = parameters.Add(param.Name, Convert.ChangeType(value, param.ParameterType));
+                parameters = parameters.Add(param.Name, Convert.ChangeType(value, underlyingType));
               }
             } else if (!param.HasDefaultValue && !param.IsOptional) {
               current = null;
