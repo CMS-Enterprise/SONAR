@@ -46,35 +46,73 @@ public class ConfigurationHelper {
     Converters = { new JsonStringEnumConverter() }
   };
 
+  /// <summary>
+  ///   Load Service Configuration from both local files and the Kubernetes API according to command line
+  ///   options.
+  /// </summary>
+  /// <param name="opts">SONAR Agent command line options</param>
+  /// <param name="agentConfig">SONAR Agent configuration</param>
+  /// <param name="token">Cancellation token</param>
+  /// <returns>
+  ///   A dictionary of tenant names to <see cref="ServiceHierarchyConfiguration" /> for that tenant.
+  /// </returns>
+  /// <exception cref="ArgumentException">
+  ///   Thrown when no tenant configuration is found.
+  /// </exception>
   public async Task<Dictionary<String, ServiceHierarchyConfiguration>> LoadAndValidateJsonServiceConfig(
     SonarAgentOptions opts,
     AgentConfiguration agentConfig,
     CancellationToken token) {
 
-    Dictionary<String, ServiceHierarchyConfiguration> resultSet =
+    Dictionary<String, ServiceHierarchyConfiguration> configurationByTenant =
       new Dictionary<String, ServiceHierarchyConfiguration>();
 
     if (opts.KubernetesConfigurationOption) {
       // load configs from kubernetes api
-      resultSet = this.LoadKubernetesConfiguration(agentConfig.InClusterConfig);
+      configurationByTenant = this.LoadKubernetesConfiguration(agentConfig.InClusterConfig);
     }
 
     if (opts.ServiceConfigFiles.Any()) {
       // load configs locally
-      var args = opts.ServiceConfigFiles.ToArray();
-      resultSet.Add(agentConfig.DefaultTenant, await LoadLocalConfiguration(args, token));
+      configurationByTenant.Add(
+        agentConfig.DefaultTenant,
+        await LoadLocalConfiguration(opts.ServiceConfigFiles.ToArray(), token)
+      );
     }
 
     // if configuration set is empty, throw exception
-    if (resultSet.Count == 0) {
-      throw new ArgumentException();
+    if (configurationByTenant.Count == 0) {
+      throw new ArgumentException(
+        "There are no tenants configured, either in local configuration files or in Kubernetes namespaces."
+      );
     }
 
     // merge dictionaries in resultSet
-    return resultSet;
+    return configurationByTenant;
   }
 
+  /// <summary>
+  ///   Load service configuration from Kubernetes.
+  /// </summary>
+  /// <remarks>
+  ///   Any Kubernetes Namespace having a label "sonar-monitoring" with the value "enabled" will be
+  ///   scanned for ConfigMaps with the label "sonar-config" having the value "true". These ConfigMaps
+  ///   are expected to have a single data key "service-config.json" which will be deserialized as
+  ///   <see cref="ServiceHierarchyConfiguration" />. When there are multiple such ConfigMaps they will
+  ///   be merged in the order specified in the "sonar-config/order" label.
+  /// </remarks>
+  /// <param name="inClusterConfig"></param>
+  /// <returns>
+  ///   A dictionary mapping the name of each Tenant with configuration in Kubernetes to it's
+  ///   <see cref="ServiceHierarchyConfiguration" />.
+  /// </returns>
+  /// <exception cref="InvalidOperationException">
+  ///   One of the service configurations found in Kubernetes was not valid.
+  /// </exception>
   private Dictionary<String, ServiceHierarchyConfiguration> LoadKubernetesConfiguration(Boolean inClusterConfig) {
+    // TODO(BATAPI-207): currently if an tenant has invalid configuration that prevents configuration being
+    // loaded from all tenants. An error in one tenant's configuration should not adversely affect
+    // other tenants.
 
     Dictionary<String, ServiceHierarchyConfiguration> result =
       new Dictionary<String, ServiceHierarchyConfiguration>();
@@ -88,14 +126,18 @@ public class ConfigurationHelper {
     return result;
   }
 
+  /// <summary>
+  ///   Loads <see cref="ServiceHierarchyConfiguration" /> from a list of local json files by
+  ///   deserializing and merging the files together in the order they are specified.
+  /// </summary>
   private static async Task<ServiceHierarchyConfiguration> LoadLocalConfiguration(
-    String[] args,
+    String[] filePaths,
     CancellationToken token
     ) {
 
     var services = new List<ServiceHierarchyConfiguration>();
 
-    foreach (var config in args) {
+    foreach (var config in filePaths) {
       await using var inputStream = new FileStream(config, FileMode.Open, FileAccess.Read);
       try {
         var serviceHierarchy =
@@ -184,11 +226,16 @@ public class ConfigurationHelper {
     );
   }
 
+  /// <summary>
+  ///   Save the specified service configuration to the SONAR API. This configuration may be for a new or
+  ///   existing tenant.
+  /// </summary>
   public async Task ConfigureServices(
     Dictionary<String, ServiceHierarchyConfiguration> tenantServiceDictionary,
     CancellationToken token) {
 
     // SONAR client
+    // TODO(BATAPI-208): make this a dependency injected via the ConfigurationHelper constructor
     using var http = new HttpClient();
     var client = new SonarClient(this._configRoot, this._apiConfig.Value.BaseUrl, http);
     await client.ReadyAsync(token);
@@ -231,7 +278,17 @@ public class ConfigurationHelper {
     }
   }
 
-  public Dictionary<String, List<(Int16 order, String data)>> FetchKubeConfiguration(Boolean inClusterConfig) {
+  /// <summary>
+  ///   Fetch configuration from the Kubernetes API.
+  /// </summary>
+  /// <remarks>
+  ///   Any Kubernetes Namespace having a label "sonar-monitoring" with the value "enabled" will be
+  ///   scanned for ConfigMaps with the label "sonar-config" having the value "true". These ConfigMaps
+  ///   are expected to have a single data key "service-config.json". When there are multiple such
+  ///   ConfigMaps they will be returned in the order specified in the "sonar-config/order" label (from
+  ///   least to greatest).
+  /// </remarks>
+  private Dictionary<String, List<(Int16 order, String data)>> FetchKubeConfiguration(Boolean inClusterConfig) {
 
     var config = inClusterConfig ? KubernetesClientConfiguration.InClusterConfig() :
       KubernetesClientConfiguration.BuildDefaultConfig();
