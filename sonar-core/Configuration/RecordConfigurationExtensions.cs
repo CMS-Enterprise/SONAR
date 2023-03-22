@@ -229,9 +229,9 @@ public static class RecordConfigurationExtensions {
 
   private static ConstructorInfo? GetCollectionConstructor(Type collectionType, Type itemType) {
     return collectionType.GetConstructors().SingleOrDefault(ctor => {
-        var args = ctor.GetParameters();
-        return (args.Length == 1) && (args[0].ParameterType == typeof(IEnumerable<>).MakeGenericType(itemType));
-      }
+      var args = ctor.GetParameters();
+      return (args.Length == 1) && (args[0].ParameterType == typeof(IEnumerable<>).MakeGenericType(itemType));
+    }
     );
   }
 }
