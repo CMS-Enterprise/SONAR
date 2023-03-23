@@ -70,3 +70,25 @@ git submodule update --init
 # Run the code generation msbuild task:
 dotnet msbuild -target:generate_prometheus_types
 ```
+
+## Authentication
+
+All API endpoints that create, modify, or delete resources require authentication.
+
+### API Key Authentication
+
+Authentication can be performed using an API Key which is specified via the `ApiKey` HTTP Header. SONAR API can be configured to use a default Admin API key, either using the `ApiKey` environment variable, or the `"ApiKey"` entry in an `appsettings` file. Additional API keys can also be created via the [ApiController](./Controllers/ApiKeyController.cs).
+
+Api Keys can be scoped to a particular Environment or a particular Tenant, which limits what operations they can perform.
+
+## Testing with Postman
+
+There is a [Postman](https://www.postman.com/) collection included in this repository, [`/docs/sonar.postman_collection.json`](../docs/sonar.postman_collection.json), which can be used to test the SONAR API. The requests in this collection are parameterized with `{{VARIABLE}}` templates which are populated based on values specified in your Postman Environment. A [sample environment](../docs/sonar-localhost.postman_environment.json) for testing on localhost has also been included. This collection also has authentication settings so that you can globally configure the API Key to use for testing, and all the requests that require authentication will inherit this setting.
+
+![Screenshot of Postman's Authentication Settings for the Collection](../docs/postman-collection-auth-settings.png)
+
+![Screenshot of the sample localhost Environment for Postman](../docs/postman-environment.png)
+
+When you are executing a request it is important to have to correct environment selected:
+
+![Screenshot of the Postman environment selection dropdown](../docs/postman-select-environment.png)
