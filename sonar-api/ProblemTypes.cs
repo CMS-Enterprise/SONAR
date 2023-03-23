@@ -30,4 +30,9 @@ public static class ProblemTypes {
   ///   not exist.
   /// </remarks>
   public const String InvalidConfiguration = "sonar:InvalidConfiguration";
+
+  /// <summary>
+  ///   A request to drop and recreate the database did not include a valid confirmation code.
+  /// </summary>
+  public const String MissingOrIncorrectConfirmationCode = "sonar:MissingOrIncorrectConfirmationCode";
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
@@ -76,11 +77,15 @@ public class ApiKeyController : ControllerBase {
     CancellationToken cancellationToken = default) {
 
     ActionResult response;
-    var adminActivity = "create an API key";
+    const String adminActivity = "create an API key";
 
     // Validate
-    Boolean isAdmin = await this._apiKeyDataHelper.ValidateAdminPermission(
-      Request.Headers["ApiKey"].SingleOrDefault(), adminActivity, cancellationToken);
+    var isAdmin = await this._apiKeyDataHelper.ValidateAdminPermission(
+      this.Request.Headers["ApiKey"].SingleOrDefault(),
+      global: true,
+      adminActivity,
+      cancellationToken
+    );
     if (!isAdmin) {
       throw new ForbiddenException(
         $"The authentication credential provided is not authorized to {adminActivity}.");
@@ -144,11 +149,15 @@ public class ApiKeyController : ControllerBase {
     CancellationToken cancellationToken = default) {
 
     ActionResult response;
-    var adminActivity = "update an API key";
+    const String adminActivity = "update an API key";
 
     // Validate
-    Boolean isAdmin = await this._apiKeyDataHelper.ValidateAdminPermission(
-      Request.Headers["ApiKey"].SingleOrDefault(), adminActivity, cancellationToken);
+    var isAdmin = await this._apiKeyDataHelper.ValidateAdminPermission(
+      this.Request.Headers["ApiKey"].SingleOrDefault(),
+      global: true,
+      adminActivity,
+      cancellationToken
+    );
     if (!isAdmin) {
       throw new ForbiddenException(
         $"The authentication credential provided is not authorized to {adminActivity}.");
@@ -228,11 +237,15 @@ public class ApiKeyController : ControllerBase {
     [FromBody] ApiKeyConfiguration apiKeyConfig,
     CancellationToken cancellationToken = default) {
 
-    var adminActivity = "delete an API key";
+    const String adminActivity = "delete an API key";
 
     // Validate
-    Boolean isAdmin = await this._apiKeyDataHelper.ValidateAdminPermission(
-      Request.Headers["ApiKey"].SingleOrDefault(), adminActivity, cancellationToken);
+    var isAdmin = await this._apiKeyDataHelper.ValidateAdminPermission(
+      this.Request.Headers["ApiKey"].SingleOrDefault(),
+      global: true,
+      adminActivity,
+      cancellationToken
+    );
     if (!isAdmin) {
       throw new ForbiddenException(
         $"The authentication credential provided is not authorized to {adminActivity}.");
@@ -326,7 +339,10 @@ public class ApiKeyController : ControllerBase {
     ApiKeyController.ValidateEnvAndTenant(apiKeyConfig.Environment, apiKeyConfig.Tenant);
   }
 
-  private static void ValidateEnvAndTenant(String? environment, String? tenant) {
+  private static void ValidateEnvAndTenant(
+    [NotNull]
+    String? environment,
+    String? tenant) {
     // Check if environment and tenant are detailed
     if (environment == null) {
       if (tenant != null) {

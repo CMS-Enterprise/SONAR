@@ -110,13 +110,13 @@ public class ConfigurationController : ControllerBase {
     CancellationToken cancellationToken = default) {
 
     ActionResult response;
-    String headerApiKey = Request.Headers["ApiKey"].SingleOrDefault();
-    var activity = "create a new tenant configuration";
+    var headerApiKey = this.Request.Headers["ApiKey"].SingleOrDefault();
+    const String activity = "create a new tenant configuration";
 
     // Validation
-    Boolean isAdmin = await this._apiKeyDataHelper.ValidateAdminPermission(
-      headerApiKey, activity, cancellationToken);
-    Boolean envMatches = await this._apiKeyDataHelper.ValidateEnvPermission(
+    var isAdmin = await this._apiKeyDataHelper.ValidateAdminPermission(
+      headerApiKey, global: false, activity, cancellationToken);
+    var envMatches = await this._apiKeyDataHelper.ValidateEnvPermission(
       headerApiKey, environment, cancellationToken);
 
     if (!isAdmin && !envMatches) {

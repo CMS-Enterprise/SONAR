@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,7 +31,9 @@ public class ApiKeyDataHelper {
   }
 
   public async Task<Boolean> ValidateAdminPermission(
+    [NotNull]
     String? headerApiKey,
+    Boolean global,
     String adminActivity,
     CancellationToken cancellationToken) {
 
@@ -44,10 +47,7 @@ public class ApiKeyDataHelper {
       throw new UnauthorizedException($"Invalid authentication credential provided attempting to {adminActivity}.");
     }
 
-    if (existingApiKey.Type != ApiKeyType.Admin) {
-      return false;
-    }
-    return true;
+    return (existingApiKey.Type == ApiKeyType.Admin) && (!global || !existingApiKey.EnvironmentId.HasValue);
   }
 
   public async Task<Boolean> ValidateEnvPermission(
