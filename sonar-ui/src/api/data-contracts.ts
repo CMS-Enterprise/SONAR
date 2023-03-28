@@ -1,6 +1,5 @@
 /* eslint-disable */
 /* tslint:disable */
-
 /*
  * ---------------------------------------------------------------
  * ## THIS FILE WAS GENERATED VIA SWAGGER-TYPESCRIPT-API        ##
@@ -41,9 +40,27 @@ export enum ApiKeyType {
   Standard = "Standard",
 }
 
-export type DateTimeDoubleValueTuple = object;
+/**
+ * @maxItems 2
+ * @minItems 2
+ */
+export type DateTimeDoubleValueTuple = (string | number)[];
 
-export type DateTimeHealthStatusValueTuple = object;
+/**
+ * @maxItems 2
+ * @minItems 2
+ */
+export type DateTimeHealthStatusValueTuple = (string | HealthStatus)[];
+
+export interface Environment {
+  /** @format uuid */
+  id?: string;
+  /**
+   * @minLength 0
+   * @maxLength 100
+   */
+  name?: string | null;
+}
 
 export type HealthCheckDefinition = object;
 
@@ -94,7 +111,6 @@ export interface ProblemDetails {
   status?: number | null;
   detail?: string | null;
   instance?: string | null;
-
   [key: string]: any;
 }
 

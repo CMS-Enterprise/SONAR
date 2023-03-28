@@ -115,8 +115,8 @@ export class HttpClient<SecurityDataType = unknown> {
           property instanceof Blob
             ? property
             : typeof property === "object" && property !== null
-              ? JSON.stringify(property)
-              : `${property}`,
+            ? JSON.stringify(property)
+            : `${property}`,
         );
         return formData;
       }, new FormData()),
@@ -160,16 +160,16 @@ export class HttpClient<SecurityDataType = unknown> {
   };
 
   public request = async <T = any, E = any>({
-                                              body,
-                                              secure,
-                                              path,
-                                              type,
-                                              query,
-                                              format,
-                                              baseUrl,
-                                              cancelToken,
-                                              ...params
-                                            }: FullRequestParams): Promise<HttpResponse<T, E>> => {
+    body,
+    secure,
+    path,
+    type,
+    query,
+    format,
+    baseUrl,
+    cancelToken,
+    ...params
+  }: FullRequestParams): Promise<HttpResponse<T, E>> => {
     const secureParams =
       ((typeof secure === "boolean" ? secure : this.baseApiParams.secure) &&
         this.securityWorker &&
@@ -184,7 +184,7 @@ export class HttpClient<SecurityDataType = unknown> {
       ...requestParams,
       headers: {
         ...(requestParams.headers || {}),
-        ...(type && type !== ContentType.FormData ? {"Content-Type": type} : {}),
+        ...(type && type !== ContentType.FormData ? { "Content-Type": type } : {}),
       },
       signal: cancelToken ? this.createAbortSignal(cancelToken) : requestParams.signal,
       body: typeof body === "undefined" || body === null ? null : payloadFormatter(body),
@@ -196,18 +196,18 @@ export class HttpClient<SecurityDataType = unknown> {
       const data = !responseFormat
         ? r
         : await response[responseFormat]()
-          .then((data) => {
-            if (r.ok) {
-              r.data = data;
-            } else {
-              r.error = data;
-            }
-            return r;
-          })
-          .catch((e) => {
-            r.error = e;
-            return r;
-          });
+            .then((data) => {
+              if (r.ok) {
+                r.data = data;
+              } else {
+                r.error = data;
+              }
+              return r;
+            })
+            .catch((e) => {
+              r.error = e;
+              return r;
+            });
 
       if (cancelToken) {
         this.abortControllers.delete(cancelToken);

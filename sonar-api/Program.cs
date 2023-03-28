@@ -47,6 +47,7 @@ public class Program {
           ));
 
           options.OperationFilter<DefaultContentTypeOperationFilter>();
+          options.SchemaFilter<TupleSchemaFilter>();
         });
 
         builder.WebHost.UseUrls("http://0.0.0.0:8081");
@@ -100,11 +101,13 @@ public class Program {
     // Get CORS configuration
     var webHostConfig =
       app.Configuration.GetSection("WebHost").BindCtor<WebHostConfiguration>();
-    app.UseCors(policyBuilder => {
-      policyBuilder.WithOrigins(webHostConfig.AllowedOrigins)
-        .AllowAnyHeader()
-        .AllowAnyMethod();
-    });
+    if (webHostConfig.AllowedOrigins != null) {
+      app.UseCors(policyBuilder => {
+        policyBuilder.WithOrigins(webHostConfig.AllowedOrigins)
+          .AllowAnyHeader()
+          .AllowAnyMethod();
+      });
+    }
 
     app.UseMiddleware<ProblemDetailExceptionMiddleware>();
     app.UseMiddleware<ApiKeyMiddleware>();

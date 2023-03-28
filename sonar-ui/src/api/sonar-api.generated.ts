@@ -13,6 +13,7 @@ import {
   ApiKey,
   ApiKeyConfiguration,
   ApiKeyDetails,
+  Environment,
   MetricData,
   ProblemDetails,
   ServiceHealth,
@@ -20,9 +21,9 @@ import {
   ServiceHierarchyHealth,
   UptimeModel,
 } from "./data-contracts";
-import {ContentType, HttpClient, RequestParams} from "./http-client";
+import { ContentType, HttpClient, RequestParams } from "./http-client";
 
-export class SonarApi<SecurityDataType = unknown> extends HttpClient<SecurityDataType> {
+export class Api<SecurityDataType = unknown> extends HttpClient<SecurityDataType> {
   /**
    * No description
    *
@@ -129,6 +130,20 @@ export class SonarApi<SecurityDataType = unknown> extends HttpClient<SecurityDat
       method: "PUT",
       body: data,
       type: ContentType.Json,
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags Environment
+   * @name V2EnvironmentsList
+   * @request GET:/api/v2/environments
+   */
+  v2EnvironmentsList = (params: RequestParams = {}) =>
+    this.request<Environment, ProblemDetails>({
+      path: `/api/v2/environments`,
+      method: "GET",
       format: "json",
       ...params,
     });

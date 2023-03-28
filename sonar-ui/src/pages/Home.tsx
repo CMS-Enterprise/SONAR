@@ -1,10 +1,11 @@
 import React from 'react';
-import { MainContentContainer } from "../styles";
+
+import { MainContentContainer } from 'styles';
 
 const Home = () => {
   return (
     <div style={MainContentContainer}>
-      <b>Sonar</b>
+      <b data-testid="home-title">Sonar</b>
     </div>
   )
 }

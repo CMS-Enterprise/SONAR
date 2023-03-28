@@ -1,7 +1,8 @@
 import React from 'react';
-import { ServiceHierarchyHealth } from "../../api/data-contracts";
-import HealthCheckList from "./HealthCheckList";
-import { ChildServiceContainer, HeadingContainer } from "../../styles";
+
+import { ServiceHierarchyHealth } from 'api/data-contracts';
+import { ChildServiceContainer, HeadingContainer } from 'styles';
+import HealthCheckList from './HealthCheckList';
 
 const ChildService: React.FC<{
   childService: ServiceHierarchyHealth,
