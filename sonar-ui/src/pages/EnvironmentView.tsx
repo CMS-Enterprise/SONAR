@@ -1,10 +1,11 @@
 import * as React from 'react';
-// import { createSonarClient } from '../helpers/ApiHelper';
-import { Environment, HealthStatus } from '../api/data-contracts';
-import { Accordion } from '@cmsgov/design-system';
 import { useEffect, useState } from 'react';
-import EnvironmentItem from '../components/Environment/EnvironmentItem';
-import { getHealthStatusIndicator } from '../helpers/ServiceHierarchyHelper';
+import { Accordion } from '@cmsgov/design-system';
+
+import { Environment, HealthStatus } from 'api/data-contracts';
+import EnvironmentItem from 'components/Environment/EnvironmentItem';
+// import { createSonarClient } from 'helpers/ApiHelper';
+import { getHealthStatusIndicator } from 'helpers/ServiceHierarchyHelper';
 
 const initialEnvs: Environment[] = [
   { id: 'test1', name: 'testEnv1', status: HealthStatus.Online },
@@ -33,8 +34,11 @@ const EnvironmentView = () => {
         {environments.map(e => (
           <div className="ds-l-sm-col--6 ds-l-md-col--4" key={e.id} style={{ marginTop: 10, marginBottom: 10 }}>
             <Accordion bordered>
-              <EnvironmentItem environment={e} open={open} selected={e.id === open} setOpen={setOpen}
-                               statusColor={getHealthStatusIndicator(e.status ? e.status : undefined)}/>
+              <EnvironmentItem environment={e}
+                               open={open}
+                               selected={e.id === open}
+                               setOpen={setOpen}
+                               statusColor={getHealthStatusIndicator(e.status ? e.status : undefined)} />
             </Accordion>
           </div>
         ))}

@@ -29,16 +29,16 @@ export function getHealthStatusClass(status: HealthStatus | null | undefined) {
   let result;
   switch (status) {
     case HealthStatus.Unknown:
-      result = "unknown"
+      result = 'unknown'
       break;
     case HealthStatus.Online:
-      result = "online";
+      result = 'online';
       break;
     case HealthStatus.Degraded:
-      result = "degraded";
+      result = 'degraded';
       break;
     default:
-      result = "offline";
+      result = 'offline';
   }
   return result;
 }
