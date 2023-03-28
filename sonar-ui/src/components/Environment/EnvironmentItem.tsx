@@ -27,7 +27,7 @@ const EnvironmentItem: React.FC<{
   }, [selected]);
 
   const handleToggle = () => {
-    let expanded =
+    const expanded =
       open === environment.id || environment.id === undefined ?
           null : environment.id;
     setOpen(expanded);
