@@ -13,17 +13,39 @@ import {
   ApiKey,
   ApiKeyConfiguration,
   ApiKeyDetails,
-  Environment,
+  EnvironmentHealth,
   MetricData,
   ProblemDetails,
   ServiceHealth,
   ServiceHierarchyConfiguration,
   ServiceHierarchyHealth,
+  TenantHealth,
   UptimeModel,
 } from "./data-contracts";
 import { ContentType, HttpClient, RequestParams } from "./http-client";
 
 export class Api<SecurityDataType = unknown> extends HttpClient<SecurityDataType> {
+  /**
+   * No description
+   *
+   * @tags Admin
+   * @name V2AdminInitializeCreate
+   * @request POST:/api/v2/admin/initialize
+   */
+  v2AdminInitializeCreate = (
+    query?: {
+      confirmation?: string;
+      /** @default false */
+      force?: boolean;
+    },
+    params: RequestParams = {},
+  ) =>
+    this.request<void, any>({
+      path: `/api/v2/admin/initialize`,
+      method: "POST",
+      query: query,
+      ...params,
+    });
   /**
    * No description
    *
@@ -141,7 +163,7 @@ export class Api<SecurityDataType = unknown> extends HttpClient<SecurityDataType
    * @request GET:/api/v2/environments
    */
   getEnvironments = (params: RequestParams = {}) =>
-    this.request<Environment[], ProblemDetails>({
+    this.request<EnvironmentHealth[], ProblemDetails>({
       path: `/api/v2/environments`,
       method: "GET",
       format: "json",
@@ -227,6 +249,20 @@ export class Api<SecurityDataType = unknown> extends HttpClient<SecurityDataType
     this.request<void, any>({
       path: `/api/ready`,
       method: "GET",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags Tenant
+   * @name GetTenants
+   * @request GET:/api/v2/tenants
+   */
+  getTenants = (params: RequestParams = {}) =>
+    this.request<TenantHealth[], ProblemDetails>({
+      path: `/api/v2/tenants`,
+      method: "GET",
+      format: "json",
       ...params,
     });
   /**

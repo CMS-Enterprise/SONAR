@@ -52,25 +52,11 @@ export type DateTimeDoubleValueTuple = (string | number)[];
  */
 export type DateTimeHealthStatusValueTuple = (string | HealthStatus)[];
 
-export interface Environment {
-  /** @format uuid */
-  id?: string;
-  /**
-   * @minLength 0
-   * @maxLength 100
-   */
-  name?: string | null;
-}
-
-export interface Environment {
-  /** @format uuid */
-  id?: string;
-  /**
-   * @minLength 0
-   * @maxLength 100
-   */
-  name?: string | null;
-  status?: HealthStatus | null;
+export interface EnvironmentHealth {
+  environmentName?: string | null;
+  /** @format date-time */
+  timestamp?: string | null;
+  aggregateStatus?: HealthStatus;
 }
 
 export type HealthCheckDefinition = object;
@@ -158,6 +144,14 @@ export interface ServiceHierarchyHealth {
   aggregateStatus?: HealthStatus;
   healthChecks?: Record<string, DateTimeHealthStatusValueTuple>;
   children?: ServiceHierarchyHealth[] | null;
+}
+
+export interface TenantHealth {
+  environmentName?: string | null;
+  tenantName?: string | null;
+  /** @format date-time */
+  timestamp?: string | null;
+  aggregateStatus?: HealthStatus;
 }
 
 export interface TimeSpan {
