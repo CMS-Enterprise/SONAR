@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -56,26 +55,12 @@ public class TenantDataHelper {
     return result.Tenant;
   }
 
-  public async Task<IList<Tenant>> FetchAllExistingTenantsAsync(
-    CancellationToken cancellationToken) {
-
-    var results =
-      await this._environmentsTable
-        .Join(
-          this._tenantsTable,
-           outerKeySelector: e => e.Id,
-           innerKeySelector: t => t.EnvironmentId,
-          resultSelector: (env, t) => new { Environment = env, Tenants = t })
-        .ToListAsync(cancellationToken);
-
-    return results.Select(row => row.Tenants).ToImmutableList();
-  }
-
   public async Task<IList<TenantHealth>> GetTenantsHealth(
     Environment environment,
     CancellationToken cancellationToken) {
-    IList<TenantHealth> tenantList = new List<TenantHealth>();
-    var tenants = await this.FetchAllExistingTenantsAsync(cancellationToken);
+    var tenantList = new List<TenantHealth>();
+    var res = await this._tenantsTable.ToListAsync(cancellationToken);
+    var tenants = res.Where(t => t.EnvironmentId == environment.Id);
 
     foreach (var tenant in tenants) {
       var (_, _, services) =
@@ -105,8 +90,7 @@ public class TenantDataHelper {
   private TenantHealth ToTenantHealth(
     Tenant tenant,
     Environment environment,
-    ServiceHierarchyHealth?[] rootServiceHealth,
-    Dictionary<String, (DateTime Timestamp, HealthStatus Status)> serviceStatuses
+    ServiceHierarchyHealth?[] rootServiceHealth
   ) {
     HealthStatus? aggregateStatus = HealthStatus.Unknown;
     DateTime? statusTimestamp = null;
@@ -135,6 +119,6 @@ public class TenantDataHelper {
       }
     }
 
-    return new TenantHealth(environment.Name, tenant.Id, tenant.Name, statusTimestamp, aggregateStatus);
+    return new TenantHealth(environment.Name, tenant.Name, statusTimestamp, aggregateStatus);
   }
 }

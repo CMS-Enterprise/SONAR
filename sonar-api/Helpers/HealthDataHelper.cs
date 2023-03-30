@@ -40,10 +40,10 @@ public class HealthDataHelper {
     this._logger = logger;
   }
 
-    public async Task<Dictionary<String, (DateTime Timestamp, HealthStatus Status)>> GetServiceStatuses(
-    String environment,
-    String tenant,
-    CancellationToken cancellationToken) {
+  public async Task<Dictionary<String, (DateTime Timestamp, HealthStatus Status)>> GetServiceStatuses(
+  String environment,
+  String tenant,
+  CancellationToken cancellationToken) {
     Dictionary<String, (DateTime Timestamp, HealthStatus Status)> serviceStatuses;
     try {
       serviceStatuses = await this.GetLatestValuePrometheusQuery(
@@ -92,12 +92,12 @@ public class HealthDataHelper {
     return serviceStatuses;
   }
 
-    private (String? Service, String? HealthCheck) GetHealthCheckKey(IImmutableDictionary<String, String> labels) {
-      labels.TryGetValue(MetricLabelKeys.Service, out var serviceName);
-      labels.TryGetValue(MetricLabelKeys.HealthCheck, out var checkName);
+  private (String? Service, String? HealthCheck) GetHealthCheckKey(IImmutableDictionary<String, String> labels) {
+    labels.TryGetValue(MetricLabelKeys.Service, out var serviceName);
+    labels.TryGetValue(MetricLabelKeys.HealthCheck, out var checkName);
 
-      return (serviceName, checkName);
-    }
+    return (serviceName, checkName);
+  }
 
   public async Task<Dictionary<(String Service, String HealthCheck), (DateTime Timestamp, HealthStatus Status)>>
     GetHealthCheckStatus(

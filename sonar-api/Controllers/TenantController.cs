@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -22,21 +21,19 @@ public class TenantController : ControllerBase {
     this._environmentDataHelper = environmentDataHelper;
   }
 
-  [HttpGet]
-  [ProducesResponseType(typeof(Tenant), statusCode: 200)]
+  [HttpGet(Name = "GetTenants")]
+  [ProducesResponseType(typeof(TenantHealth[]), statusCode: 200)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
   public async Task<ActionResult> GetTenants(
     CancellationToken cancellationToken = default) {
-    IList<TenantHealth> tenantList = new List<TenantHealth>();
+    var tenantList = new List<TenantHealth>();
     var environments = await this._environmentDataHelper.FetchAllExistingEnvAsync(cancellationToken);
 
     foreach (var e in environments) {
-      tenantList = await this._tenantDataHelper.GetTenantsHealth(e, cancellationToken);
+      var res = await this._tenantDataHelper.GetTenantsHealth(e, cancellationToken);
+      tenantList.AddRange(res);
     }
 
     return this.Ok(tenantList);
   }
 }
-
-
-

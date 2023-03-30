@@ -24,12 +24,12 @@ public class EnvironmentController : ControllerBase{
     this._tenantDataHelper = tenantDataHelper;
   }
 
-  [HttpGet]
-  [ProducesResponseType(typeof(Environment), statusCode: 200)]
+  [HttpGet(Name = "GetEnvironments")]
+  [ProducesResponseType(typeof(EnvironmentHealth[]), statusCode: 200)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
   public async Task<ActionResult> GetEnvironments(
     CancellationToken cancellationToken = default) {
-    IList<EnvironmentHealth> environmentList = new List<EnvironmentHealth>();
+    var environmentList = new List<EnvironmentHealth>();
     var environments = await this._environmentDataHelper.FetchAllExistingEnvAsync(cancellationToken);
 
     foreach (var environment in environments) {
@@ -71,6 +71,6 @@ public class EnvironmentController : ControllerBase{
       }
     }
 
-    return new EnvironmentHealth(environment.Id, environment.Name, statusTimestamp, aggregateStatus);
+    return new EnvironmentHealth(environment.Name, statusTimestamp, aggregateStatus);
   }
 }
