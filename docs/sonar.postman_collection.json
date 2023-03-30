@@ -1,9 +1,8 @@
 {
 	"info": {
-		"_postman_id": "8bd68217-de29-4e8e-9e02-0c4b88027884",
+		"_postman_id": "9ba107c9-53ae-4a9e-b894-baafeb86c82b",
 		"name": "SONAR",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "20614257"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
@@ -553,6 +552,44 @@
 						"api",
 						"v2",
 						"keys"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Aggregate Health - Tenants",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{SONAR_BASE_URL}}/api/v2/tenants",
+					"host": [
+						"{{SONAR_BASE_URL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"tenants"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Aggregate Health - Environments",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{SONAR_BASE_URL}}/api/v2/environments",
+					"host": [
+						"{{SONAR_BASE_URL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"environments"
 					]
 				}
 			},

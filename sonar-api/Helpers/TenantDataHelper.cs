@@ -81,7 +81,7 @@ public class TenantDataHelper {
           svc, services, serviceStatuses, serviceChildIdsLookup, healthChecksByService, healthCheckStatus)
         ).ToArray();
 
-      tenantList.Add(this.ToTenantHealth(tenant, environment, rootServiceHealth, serviceStatuses ));
+      tenantList.Add(this.ToTenantHealth(tenant, environment, rootServiceHealth));
     }
 
     return tenantList;
