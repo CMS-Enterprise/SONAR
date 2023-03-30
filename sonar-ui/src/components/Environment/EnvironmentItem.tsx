@@ -1,7 +1,6 @@
 import React from 'react';
 import { useEffect, useState } from 'react';
 import { AccordionItem, Spinner } from '@cmsgov/design-system';
-
 import { EnvironmentHealth, TenantHealth } from 'api/data-contracts';
 import { getHealthStatusClass } from 'helpers/ServiceHierarchyHelper';
 import { createSonarClient } from 'helpers/ApiHelper';

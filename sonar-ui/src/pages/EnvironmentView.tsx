@@ -1,7 +1,6 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
 import { Accordion } from '@cmsgov/design-system';
-
 import { EnvironmentHealth } from 'api/data-contracts';
 import EnvironmentItem from 'components/Environment/EnvironmentItem';
 import { getHealthStatusIndicator } from 'helpers/ServiceHierarchyHelper';
