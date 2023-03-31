@@ -13,7 +13,7 @@ namespace Cms.BatCave.Sonar.Controllers;
 
 [ApiController]
 [Route("api/v2/environments")]
-public class EnvironmentController : ControllerBase{
+public class EnvironmentController : ControllerBase {
   private readonly EnvironmentDataHelper _environmentDataHelper;
   private readonly TenantDataHelper _tenantDataHelper;
 
