@@ -14,7 +14,7 @@ SONAR is an API endpoint and dashboard UI for monitoring the health of both BatC
 
 ### dotnet SDK
 
-Install the [dotnet SDK 6.x](https://dotnet.microsoft.com/en-us/download) (note: in some cases just the dotnet CLI will suffice, but for development it is usually preferable to have the SDK installed).
+Install the [dotnet SDK 7.x](https://dotnet.microsoft.com/en-us/download) (note: in some cases just the dotnet CLI will suffice, but for development it is usually preferable to have the SDK installed).
 
 On MacOS you can also install the .Net SDK via Homebrew:
 
@@ -26,10 +26,34 @@ brew install dotnet-sdk
 
 The snappy compression library is a prerequisite for the SONAR API (use for Prometheus integration). To install this library on MacOS:
 
+#### MacOS Installation
+
 ```
 brew install snappy
 ```
 
+If using Homebrew on Apple Silicon, you will need to set the `DYLD_FALLBACK_LIBRARY_PATH` environment variable to `/opt/homebrew/lib`. Where you set this depends on where you want the variable to be available.
+
+For shells, it's fine to export it from .bashrc or .zshrc:
+
+```shell
+export DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib
+```
+
+For GUI applications, the situation is more complicated. Some options are:
+- Set up a custom Launch Agent for use with launchd/launchctl.
+- Modify the application's Info.plist to include the variable.
+- Use a feature built-in to the application for setting environment variables in the proper context (such as application/unit test launch profile in your IDE).
+
+High-level explanation: On non-Apple silicon Macs, Homebrew's default installation prefix is `/usr/local/` which is in the system-default search path for binaries and libraries. However On Apple silicon Macs, Homebrew's default installation prefix is `/opt/homebrew/` and Homebrew modifies your PATH to include `/opt/homebrew/bin` but doesn't update the system library search path; this means dylibs installed by Homebrew won't automatically be available to non-Homebrew installed binaries, so we have to wire up the library search path manually.
+
+Deeper explanation: Finding the *right* solution to this issue leads to quite the rabbit trail regarding MacOS Homebrew behavior, system-default search paths, and the proper way to set environment variables. Start with the the following if you really want to read more:
+- https://github.com/Homebrew/brew/issues/13481.
+- `man dyld`
+- https://superuser.com/a/541068
+- https://apple.stackexchange.com/questions/454430/set-environment-variable-for-the-whole-gui-session-aka-without-using-zshenv
+
+#### Linux Installation
 On linux distros installation steps may vary, but something like:
 
 ```

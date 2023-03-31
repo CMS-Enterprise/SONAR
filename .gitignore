@@ -5,6 +5,7 @@ obj/
 # user settings
 *.suo
 *.user
+.idea
 
 # node modules
 node_modules

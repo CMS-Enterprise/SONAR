@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using Cms.BatCave.Sonar.Configuration;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Json;
@@ -25,7 +26,7 @@ public class RecordConfigurationExtensionsTest {
     Assert.Equal(2701, result.NullableIntegerType);
     Assert.Equal(3.14m, result.DecimalType);
     Assert.Equal(Guid.Parse("f0d9c508-7d5e-49c2-8d8b-1e66ca8ef707"), result.GuidType);
-    Assert.Equal(DateTime.Parse("2023-03-20T12:34:56Z"), result.DateTimeType);
+    Assert.Equal(DateTime.Parse("2023-03-20T12:34:56Z").ToUniversalTime(), result.DateTimeType.ToUniversalTime());
     Assert.Equal(TimeSpan.Parse("3.11:16:32.458"), result.TimeSpanType);
     Assert.Equal(new Uri("http://localhost:1234/"), result.UriType);
     Assert.Equal(new[] { "Foo", "Bar", "Baz" }, result.ArrayOfStringType);

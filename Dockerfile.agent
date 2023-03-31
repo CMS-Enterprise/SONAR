@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:6.0-alpine3.17 AS build
+FROM mcr.microsoft.com/dotnet/sdk:7.0-alpine3.17 AS build
 WORKDIR /sonar/sonar-agent
 COPY sonar-agent/sonar-agent.csproj .
 RUN mkdir /sonar/sonar-core
@@ -9,8 +9,8 @@ COPY sonar-agent .
 COPY sonar-core /sonar/sonar-core
 RUN dotnet build -c Release
 
-FROM mcr.microsoft.com/dotnet/runtime:6.0-alpine3.17
+FROM mcr.microsoft.com/dotnet/runtime:7.0-alpine3.17
 
 WORKDIR /sonar/sonar-agent
-COPY --from=build /sonar/sonar-agent/bin/Release/net6.0/* .
+COPY --from=build /sonar/sonar-agent/bin/Release/net7.0/* .
 ENTRYPOINT ["/sonar/sonar-agent/sonar-agent.exe"]

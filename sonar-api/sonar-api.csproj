@@ -3,7 +3,7 @@
   <Import Project="../shared.props" />
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <Nullable>enable</Nullable>
     <RootNamespace>Cms.BatCave.Sonar</RootNamespace>
     <AssemblyName>cms.batcave.sonar.api</AssemblyName>
@@ -21,9 +21,9 @@
 
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
-    <PackageReference Include="EFCore.NamingConventions" Version="6.0.0" />
+    <PackageReference Include="EFCore.NamingConventions" Version="7.0.2" />
     <PackageReference Include="Google.Protobuf" Version="3.21.9" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="6.0.7" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.3" />
     <PackageReference Include="Snappy.Standard" Version="0.2.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
   </ItemGroup>
