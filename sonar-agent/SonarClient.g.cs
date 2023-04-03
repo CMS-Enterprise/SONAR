@@ -84,6 +84,26 @@ namespace Cms.BatCave.Sonar.Agent
         System.Threading.Tasks.Task<ServiceHierarchyConfiguration> UpdateTenantAsync(string environment, string tenant, ServiceHierarchyConfiguration body, System.Threading.CancellationToken cancellationToken);
 
         /// <summary>
+        /// Deletes the configuration for the specified environment and tenant.
+        /// </summary>
+        /// <param name="environment">The name of the environment.</param>
+        /// <param name="tenant">The name of the tenant.</param>
+        /// <returns>The tenant configuration was successfully deleted.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task DeleteTenantAsync(string environment, string tenant);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Deletes the configuration for the specified environment and tenant.
+        /// </summary>
+        /// <param name="environment">The name of the environment.</param>
+        /// <param name="tenant">The name of the tenant.</param>
+        /// <returns>The tenant configuration was successfully deleted.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task DeleteTenantAsync(string environment, string tenant, System.Threading.CancellationToken cancellationToken);
+
+
+        /// <summary>
         /// Records a single health status for the specified service.
         /// </summary>
         /// <remarks>
@@ -481,6 +501,102 @@ namespace Cms.BatCave.Sonar.Agent
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             throw new ApiException<ProblemDetails>("The specified service hierarchy configuration is not valid.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 404)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("The specified environment or tenant was not found.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Deletes the configuration for the specified environment and tenant.
+        /// </summary>
+        /// <param name="environment">The name of the environment.</param>
+        /// <param name="tenant">The name of the tenant.</param>
+        /// <returns>Success</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task DeleteTenantAsync(string environment, string tenant)
+        {
+            return DeleteTenantAsync(environment, tenant, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Deletes the configuration for the specified environment and tenant.
+        /// </summary>
+        /// <param name="environment">The name of the environment.</param>
+        /// <param name="tenant">The name of the tenant.</param>
+        /// <returns>Success</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task DeleteTenantAsync(string environment, string tenant, System.Threading.CancellationToken cancellationToken)
+        {
+            if (environment == null)
+                throw new System.ArgumentNullException("environment");
+
+            if (tenant == null)
+                throw new System.ArgumentNullException("tenant");
+
+            var urlBuilder_ = new System.Text.StringBuilder();
+            urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/api/v2/config/{environment}/tenants/{tenant}");
+            urlBuilder_.Replace("{environment}", System.Uri.EscapeDataString(ConvertToString(environment, System.Globalization.CultureInfo.InvariantCulture)));
+            urlBuilder_.Replace("{tenant}", System.Uri.EscapeDataString(ConvertToString(tenant, System.Globalization.CultureInfo.InvariantCulture)));
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("DELETE");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            return;
                         }
                         else
                         if (status_ == 404)
@@ -951,7 +1067,7 @@ namespace Cms.BatCave.Sonar.Agent
                     var field = System.Reflection.IntrospectionExtensions.GetTypeInfo(value.GetType()).GetDeclaredField(name);
                     if (field != null)
                     {
-                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field, typeof(System.Runtime.Serialization.EnumMemberAttribute)) 
+                        var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute(field, typeof(System.Runtime.Serialization.EnumMemberAttribute))
                             as System.Runtime.Serialization.EnumMemberAttribute;
                         if (attribute != null)
                         {
@@ -963,7 +1079,7 @@ namespace Cms.BatCave.Sonar.Agent
                     return converted == null ? string.Empty : converted;
                 }
             }
-            else if (value is bool) 
+            else if (value is bool)
             {
                 return System.Convert.ToString((bool)value, cultureInfo).ToLowerInvariant();
             }
@@ -982,7 +1098,7 @@ namespace Cms.BatCave.Sonar.Agent
         }
     }
 
-    
+
 
 
 

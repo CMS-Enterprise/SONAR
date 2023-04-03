@@ -122,7 +122,16 @@ public class HealthCheckHelper {
       var startTime = DateTime.UtcNow;
 
       // Get service hierarchy for given env and tenant
-      var tenantResult = await client.GetTenantAsync(env, tenant, token);
+      ServiceHierarchyConfiguration? tenantResult = null;
+      try {
+        tenantResult = await client.GetTenantAsync(env, tenant, token);
+      } catch (ApiException e) {
+        if (tenantResult == null) {
+          Console.WriteLine($"Tenant {tenant} does not exist. Health check run is exiting.");
+          break;
+        }
+      }
+
       this._logger.LogDebug("Service Count: {ServiceCount}", tenantResult.Services.Count);
 
       var pendingHealthChecks = new List<(String Service, String HealthCheck, Task<HealthStatus> Status)>();

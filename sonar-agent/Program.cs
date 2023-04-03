@@ -107,8 +107,10 @@ internal class Program {
       source?.Cancel();
     };
 
-    var configurationHelper = new ConfigurationHelper(apiConfig,
-      loggerFactory.CreateLogger<ConfigurationHelper>());
+    var configurationHelper = new ConfigurationHelper(
+      apiConfig,
+      loggerFactory.CreateLogger<ConfigurationHelper>(),
+      configuration);
     Dictionary<String, ServiceHierarchyConfiguration> servicesHierarchy;
     try {
       // Load and merge configs
@@ -124,7 +126,7 @@ internal class Program {
 
     // Configure service hierarchy
     logger.LogInformation("Configuring services....");
-    await configurationHelper.ConfigureServices(configuration, servicesHierarchy, token);
+    await configurationHelper.ConfigureServices(servicesHierarchy, token);
 
     logger.LogInformation("Initializing SONAR Agent...");
 
@@ -132,15 +134,28 @@ internal class Program {
       loggerFactory, apiConfig, promConfig, lokiConfig, agentConfig, httpHealthCheckConfiguration);
     var tasks = new List<Task>();
 
-    // Run task that calls Health Check function
-    foreach (var kvp in servicesHierarchy) {
-      tasks.Add(Task.Run(
-        () => healthCheckHelper.RunScheduledHealthCheck(configuration, kvp.Key, token),
-        token
-      ));
+    // Run task that calls Health Check function for every tenant
+    if (opts.KubernetesConfigurationOption) {
+      var k8sWatcher = new KubernetesConfigurationMonitor(
+        loggerFactory.CreateLogger<KubernetesConfigurationMonitor>(),
+        configurationHelper);
+
+      k8sWatcher.TenantCreated += (sender, args) => {
+        tasks.Add(healthCheckHelper.RunScheduledHealthCheck(configuration, args.Tenant, token));
+      };
+    } else {
+      foreach (var kvp in servicesHierarchy.ToList()) {
+        tasks.Add(healthCheckHelper.RunScheduledHealthCheck(configuration, kvp.Key, token));
+      }
     }
 
-    // Await all tasks
+    // Wait until user requests cancellation
+    try {
+      await Task.Delay(Timeout.Infinite, token);
+    } catch (OperationCanceledException) {
+      // User request cancellation
+    }
+
     await Task.WhenAll(tasks);
 
     foreach (var watcher in watchers) {

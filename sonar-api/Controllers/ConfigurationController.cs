@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using System.Data;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Data;
@@ -31,6 +32,7 @@ public class ConfigurationController : ControllerBase {
   private readonly DbSet<HealthCheck> _healthsTable;
   private readonly ServiceDataHelper _serviceDataHelper;
   private readonly ApiKeyDataHelper _apiKeyDataHelper;
+  private readonly TenantDataHelper _tenantDataHelper;
 
   public ConfigurationController(
     DataContext dbContext,
@@ -40,7 +42,8 @@ public class ConfigurationController : ControllerBase {
     DbSet<ServiceRelationship> relationshipsTable,
     DbSet<HealthCheck> healthsTable,
     ServiceDataHelper serviceDataHelper,
-    ApiKeyDataHelper apiKeyDataHelper) {
+    ApiKeyDataHelper apiKeyDataHelper,
+    TenantDataHelper tenantDataHelper) {
 
     this._dbContext = dbContext;
     this._environmentsTable = environmentsTable;
@@ -50,6 +53,7 @@ public class ConfigurationController : ControllerBase {
     this._healthsTable = healthsTable;
     this._serviceDataHelper = serviceDataHelper;
     this._apiKeyDataHelper = apiKeyDataHelper;
+    this._tenantDataHelper = tenantDataHelper;
   }
 
   /// <summary>
@@ -553,6 +557,40 @@ public class ConfigurationController : ControllerBase {
     }
 
     return response;
+  }
+
+  [HttpDelete("{environment}/tenants/{tenant}", Name = "DeleteTenant")]
+  [ProducesResponseType(typeof(ServiceHierarchyConfiguration), statusCode: 200)]
+  public async Task<ActionResult> DeleteConfiguration(
+    [FromRoute] String environment,
+    [FromRoute] String tenant,
+    CancellationToken cancellationToken = default) {
+
+    // Validate
+    await this._apiKeyDataHelper.ValidateTenantPermission(
+      Request.Headers["ApiKey"].SingleOrDefault(),
+      environment,
+      tenant,
+      "delete configuration",
+      cancellationToken);
+
+    await using var tx =
+      await this._dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
+
+    try {
+      // remove tenant
+      var tenantEntity = await this._tenantDataHelper.FetchExistingTenantAsync(environment, tenant, cancellationToken);
+      this._tenantsTable.Remove(tenantEntity);
+
+      // save
+      await this._dbContext.SaveChangesAsync(cancellationToken);
+      await tx.CommitAsync(cancellationToken);
+    } catch {
+      await tx.RollbackAsync(cancellationToken);
+      throw;
+    }
+
+    return this.StatusCode((Int32)HttpStatusCode.OK);
   }
 
   private static void ValidateServiceHierarchy(ServiceHierarchyConfiguration hierarchy) {
