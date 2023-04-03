@@ -17,7 +17,9 @@ const EnvironmentItem: React.FC<{
     const [tenants, setTenants] = useState<TenantHealth[] | null>(null);
     const [loading, setLoading] = useState(true);
 
+
     useEffect(() => {
+
       if (selected) {
         const sonarClient = createSonarClient();
         sonarClient.getTenants()
