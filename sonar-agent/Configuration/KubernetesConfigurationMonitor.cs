@@ -148,7 +148,7 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
       // update existing Tenant service configuration
       await this._configHelper.ConfigureServices(servicesHierarchy, token);
 
-    }  else if (eventType == WatchEventType.Deleted) {
+    } else if (eventType == WatchEventType.Deleted) {
 
       // if associated namespace was NOT deleted
       if (this._knownNamespaceTenants.ContainsKey(configMapNamespace)) {
