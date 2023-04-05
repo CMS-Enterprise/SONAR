@@ -12,24 +12,32 @@ code {
   monospace;
 }
 
+:root {
+  --sonar-grey: #808080;
+  --sonar-green: #12890E;
+  --sonar-gold: #f8C41F;
+  --sonar-orange: #F89D0B;
+  --sonar-red: #E31C3D;
+}
+
 .unknown {
-  --accordion__background-color: #6C6A6D;
-  --accordion__background-color--hover: grey;
+  --accordion__background-color: var(--sonar-grey);
+  --accordion__background-color--hover: var(--sonar-grey);;
 }
 
 .online {
-  --accordion__background-color: #2FBF02;
-  --accordion__background-color--hover: grey;
+  --accordion__background-color: var(--sonar-green);
+  --accordion__background-color--hover: var(--sonar-grey);;
 }
 
 .degraded {
-  --accordion__background-color: #F89D0B;
-  --accordion__background-color--hover: grey;
+  --accordion__background-color: var(--sonar-orange);
+  --accordion__background-color--hover: var(--sonar-grey);
 }
 
 .offline {
-  --accordion__background-color: #D92F0B;
-  --accordion__background-color--hover: grey;
+  --accordion__background-color: var(--sonar-red);
+  --accordion__background-color--hover: var(--sonar-grey);
 }
 
 .tenantItem {
@@ -41,21 +49,21 @@ code {
 }
 
 .unknown-icon {
-  color: #6C6A6D;
+  color: var(--sonar-grey);
 }
 
 .online-icon {
-  color: #2FBF02;
+  color: var(--sonar-green);
 }
 
 .atRisk-icon {
-  color: #F3DB0F;
+  color: var(--sonar-gold);
 }
 
 .degraded-icon {
-  color: #F89D0B;
+  color: var(--sonar-orange);
 }
 
 .offline-icon {
-  color: #D92F0B;
+  color: var(--sonar-red);
 }

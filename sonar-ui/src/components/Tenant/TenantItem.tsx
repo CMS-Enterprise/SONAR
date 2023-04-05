@@ -1,19 +1,11 @@
 import React from 'react';
-import { useEffect, useState } from 'react';
-import { AccordionItem, Spinner, SvgIcon, AlertCircleIcon, InfoCircleIcon, WarningIcon, CheckCircleIcon} from '@cmsgov/design-system';
+import { AlertCircleIcon, WarningIcon, CheckCircleIcon} from '@cmsgov/design-system';
 import { TenantHealth, HealthStatus } from 'api/data-contracts';
-import { getHealthStatusClass } from 'helpers/ServiceHierarchyHelper';
 
 const TenantItem: React.FC<{
   tenant: TenantHealth,
-  open: string | null,
-  selected: boolean,
-  setOpen: (value: string | null) => void,
-  statusColor: string
 }> =
-  ({ tenant, open, selected, setOpen, statusColor }) => {
-    const [loading, setLoading] = useState(true);
-
+  ({tenant}) => {
     const renderIconSelection = (aggregateStatus: HealthStatus | undefined) => {
       switch (aggregateStatus) {
         case HealthStatus.Online:
@@ -38,9 +30,11 @@ const TenantItem: React.FC<{
     return (
       <div>
         {tenant.rootServices?.map(rs =>
-          <div className='tenantItem'>
+          <div className='tenantItem' key={rs.name}>
             <span>{renderIconSelection(rs.aggregateStatus)}</span>
-            <span style={{ verticalAlign:'middle', paddingLeft:'2px' }}>{tenant.tenantName}: {rs.displayName}</span>
+            <span style={{ verticalAlign:'middle', paddingLeft:'2px' }}>
+              {tenant.tenantName}: {rs.displayName}
+            </span>
           </div>
         )}
       </div>
