@@ -18,6 +18,7 @@ namespace Cms.BatCave.Sonar.Helpers;
 public class HealthDataHelper {
   public const String ServiceHealthAggregateMetricName = "sonar_service_status";
   public const String ServiceHealthCheckMetricName = "sonar_service_health_check_status";
+  public const String ServiceHealthCheckDataMetricName = "sonar_healthcheck_data";
 
   // When querying for the services current health, the maximum age of data
   // points from Prometheus to consider. If there are no data points newer than
