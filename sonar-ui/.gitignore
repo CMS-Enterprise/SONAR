@@ -11,6 +11,9 @@
 # production
 /build
 
+# autogenrated code
+src/api/*
+
 # misc
 .DS_Store
 .env.local
