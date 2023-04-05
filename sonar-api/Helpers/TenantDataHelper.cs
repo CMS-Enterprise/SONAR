@@ -119,6 +119,6 @@ public class TenantDataHelper {
       }
     }
 
-    return new TenantHealth(environment.Name, tenant.Name, statusTimestamp, aggregateStatus);
+    return new TenantHealth(environment.Name, tenant.Name, statusTimestamp, aggregateStatus, rootServiceHealth);
   }
 }

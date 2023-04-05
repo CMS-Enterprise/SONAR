@@ -152,6 +152,7 @@ export interface TenantHealth {
   /** @format date-time */
   timestamp?: string | null;
   aggregateStatus?: HealthStatus;
+  rootServices?: ServiceHierarchyHealth[] | null;
 }
 
 export interface TimeSpan {
@@ -164,6 +165,10 @@ export interface TimeSpan {
   /** @format int32 */
   milliseconds?: number;
   /** @format int32 */
+  microseconds?: number;
+  /** @format int32 */
+  nanoseconds?: number;
+  /** @format int32 */
   minutes?: number;
   /** @format int32 */
   seconds?: number;
@@ -173,6 +178,10 @@ export interface TimeSpan {
   totalHours?: number;
   /** @format double */
   totalMilliseconds?: number;
+  /** @format double */
+  totalMicroseconds?: number;
+  /** @format double */
+  totalNanoseconds?: number;
   /** @format double */
   totalMinutes?: number;
   /** @format double */

@@ -1,8 +1,7 @@
 import React from 'react';
 import { useEffect, useState } from 'react';
-import { AccordionItem, Spinner } from '@cmsgov/design-system';
-
-import { TenantHealth } from 'api/data-contracts';
+import { AccordionItem, Spinner, SvgIcon, AlertCircleIcon, InfoCircleIcon, WarningIcon, CheckCircleIcon} from '@cmsgov/design-system';
+import { TenantHealth, HealthStatus } from 'api/data-contracts';
 import { getHealthStatusClass } from 'helpers/ServiceHierarchyHelper';
 
 const TenantItem: React.FC<{
@@ -15,21 +14,37 @@ const TenantItem: React.FC<{
   ({ tenant, open, selected, setOpen, statusColor }) => {
     const [loading, setLoading] = useState(true);
 
+    const renderIconSelection = (aggregateStatus: HealthStatus | undefined) => {
+      switch (aggregateStatus) {
+        case HealthStatus.Online:
+          return <CheckCircleIcon className="online-icon"/>;
+          break;
+        case HealthStatus.AtRisk:
+          return <AlertCircleIcon className="atRisk-icon"/> ;
+          break;
+        case HealthStatus.Degraded:
+          return <AlertCircleIcon className="degraded-icon"/> ;
+          break;
+        case HealthStatus.Offline:
+          return <WarningIcon className='offline-icon'/> ;
+          break;
+        case HealthStatus.Unknown:
+        default:
+          return <WarningIcon className="unknown-icon"/> ;
+          break;
+      }
+    }
 
-    return tenant? (
+    return (
       <div>
-        <div>
-          {
-
-            <div>
-              <div> Tenant Name: {tenant.tenantName},
-                HealthStatus: {tenant.aggregateStatus?tenant.aggregateStatus:"Unknown"}</div>
-            </div>
-
-          }
-        </div>
+        {tenant.rootServices?.map(rs =>
+          <div className='tenantItem'>
+            <span>{renderIconSelection(rs.aggregateStatus)}</span>
+            <span style={{ verticalAlign:'middle', paddingLeft:'2px' }}>{tenant.tenantName}: {rs.displayName}</span>
+          </div>
+        )}
       </div>
-    ): null
+    )
   };
 
 export default TenantItem;

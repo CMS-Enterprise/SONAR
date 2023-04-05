@@ -9,5 +9,6 @@ public record TenantHealth(
   String EnvironmentName,
   String TenantName,
   DateTime? Timestamp,
-  HealthStatus? AggregateStatus);
+  HealthStatus? AggregateStatus,
+  ServiceHierarchyHealth?[] RootServices);
 

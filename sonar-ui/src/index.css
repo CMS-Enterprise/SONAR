@@ -13,21 +13,49 @@ code {
 }
 
 .unknown {
-  --accordion__background-color: yellow;
+  --accordion__background-color: #6C6A6D;
   --accordion__background-color--hover: grey;
 }
 
 .online {
-  background-color: #66FF00;
+  --accordion__background-color: #2FBF02;
   --accordion__background-color--hover: grey;
 }
 
 .degraded {
-  background-color: orange;
+  --accordion__background-color: #F89D0B;
   --accordion__background-color--hover: grey;
 }
 
 .offline {
-  background-color: red;
+  --accordion__background-color: #D92F0B;
   --accordion__background-color--hover: grey;
+}
+
+.tenantItem {
+  display: inline-block;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.unknown-icon {
+  color: #6C6A6D;
+}
+
+.online-icon {
+  color: #2FBF02;
+}
+
+.atRisk-icon {
+  color: #F3DB0F;
+}
+
+.degraded-icon {
+  color: #F89D0B;
+}
+
+.offline-icon {
+  color: #D92F0B;
 }

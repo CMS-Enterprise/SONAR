@@ -20,10 +20,7 @@ const EnvironmentItem: React.FC<{
 
 
     useEffect(() => {
-
       if (selected) {
-        // Timeout to mock fetching tenant data.
-        // TODO: add api call to tenant endpoint once finished.
         const sonarClient = createSonarClient();
         sonarClient.getTenants()
           .then((res) => {
@@ -52,7 +49,6 @@ const EnvironmentItem: React.FC<{
                      isControlledOpen={selected}
                      onChange={handleToggle}
                      buttonClassName={getHealthStatusClass(environment.aggregateStatus)}>
-        {/*TODO: Add tenant-status listing here*/}
         {
           loading ? (<Spinner />) :
           tenants?.filter(t=> t.environmentName === environment.environmentName)
@@ -62,7 +58,6 @@ const EnvironmentItem: React.FC<{
                         selected={t.environmentName === open}
                         setOpen={setOpen}
                         statusColor={getHealthStatusIndicator(t.aggregateStatus ? t.aggregateStatus : undefined)} />
-
           )
         }
       </AccordionItem>

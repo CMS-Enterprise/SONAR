@@ -158,6 +158,20 @@ export class Api<SecurityDataType = unknown> extends HttpClient<SecurityDataType
   /**
    * No description
    *
+   * @tags Configuration
+   * @name DeleteTenant
+   * @request DELETE:/api/v2/config/{environment}/tenants/{tenant}
+   */
+  deleteTenant = (environment: string, tenant: string, params: RequestParams = {}) =>
+    this.request<ServiceHierarchyConfiguration, any>({
+      path: `/api/v2/config/${environment}/tenants/${tenant}`,
+      method: "DELETE",
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
    * @tags Environment
    * @name GetEnvironments
    * @request GET:/api/v2/environments
