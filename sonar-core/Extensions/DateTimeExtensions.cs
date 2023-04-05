@@ -10,4 +10,8 @@ public static class DateTimeExtensions {
   public static DateTime TruncateNanoseconds(this DateTime value) {
     return new DateTime((value.Ticks / TimeSpan.TicksPerMillisecond) * TimeSpan.TicksPerMillisecond, value.Kind);
   }
+
+  public static Int64 MillisSinceUnixEpoch(this DateTime value) {
+    return (Int64)value.ToUniversalTime().Subtract(DateTime.UnixEpoch).TotalMilliseconds;
+  }
 }
