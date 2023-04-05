@@ -41,7 +41,7 @@ See the section about [deployment](https://facebook.github.io/create-react-app/d
 ### `npm run generate-api-client`
 
 Regenerates the SONAR API client using [swagger-typescript-api](https://github.com/acacode/swagger-typescript-api). The
-generated sources can be found in the [`src/api`](./src/api) folder.
+generated sources can be found in the [`src/api`](./src/api) folder. Will require the sonar-api to be built.
 
 ## Regenerate `node_modules` and `package-lock.json`
 
