@@ -51,6 +51,8 @@ spec:
           volumeMounts:
             - mountPath: "/var/lib/postgresql/data"
               name: postgres-data
+          securityContext:
+            allowPrivilegeEscalation: false
       volumes:
         - name: postgres-data
           persistentVolumeClaim:

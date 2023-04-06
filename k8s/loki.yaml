@@ -94,6 +94,8 @@ spec:
               name: loki-data
             - mountPath: "/etc/loki"
               name: loki-config
+          securityContext:
+            allowPrivilegeEscalation: false
       volumes:
         - name: loki-data
           persistentVolumeClaim:

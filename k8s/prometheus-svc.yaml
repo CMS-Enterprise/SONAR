@@ -72,6 +72,8 @@ spec:
               name: prometheus-data
             - mountPath: "/etc/prometheus/config"
               name: prometheus-config
+          securityContext:
+            allowPrivilegeEscalation: false
       volumes:
         - name: prometheus-data
           persistentVolumeClaim:

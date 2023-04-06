@@ -33,3 +33,5 @@ spec:
           env:
             - name: "Logging__Loki__Http__Address"
               value: "http://loki.sonar.svc.cluster.local:3100"
+          securityContext:
+            allowPrivilegeEscalation: false

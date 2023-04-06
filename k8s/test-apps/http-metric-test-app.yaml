@@ -30,3 +30,5 @@ spec:
       containers:
         - image: http-metric-test-app
           name: http-metric-test-app
+          securityContext:
+            allowPrivilegeEscalation: false
