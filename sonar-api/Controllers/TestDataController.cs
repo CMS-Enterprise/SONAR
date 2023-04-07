@@ -9,8 +9,10 @@ using Prometheus;
 
 namespace Cms.BatCave.Sonar.Controllers;
 
+#if DEBUG
+
 [ApiController]
-[Route("api/v2/test")]
+[Route("api/test")]
 public class TestDataController : ControllerBase {
   private readonly PrometheusRemoteWriteClient _remoteWriteClient;
 
@@ -59,3 +61,5 @@ public class TestDataController : ControllerBase {
     return ts;
   }
 }
+
+#endif

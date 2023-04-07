@@ -6,6 +6,7 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
+using Asp.Versioning;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Helpers;
@@ -17,7 +18,8 @@ using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
 namespace Cms.BatCave.Sonar.Controllers;
 
 [ApiController]
-[Route("api/v2/keys")]
+[ApiVersion(2)]
+[Route("api/v{version:apiVersion}/keys")]
 public class ApiKeyController : ControllerBase {
   private readonly DataContext _dbContext;
   private readonly DbSet<ApiKey> _apiKeysTable;

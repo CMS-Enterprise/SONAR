@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Asp.Versioning;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Helpers;
@@ -10,7 +11,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace Cms.BatCave.Sonar.Controllers;
 
 [ApiController]
-[Route("api/v2/admin")]
+[ApiVersion(2)]
+[Route("api/v{version:apiVersion}/admin")]
 public class AdminController : ControllerBase {
   private readonly DataContext _dataContext;
   private readonly ApiKeyDataHelper _apiKeyDataHelper;

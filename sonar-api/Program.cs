@@ -4,6 +4,8 @@ using System.Linq;
 using System.Reflection;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Asp.Versioning;
+using Asp.Versioning.Routing;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Json;
@@ -13,6 +15,7 @@ using Cms.BatCave.Sonar.Options;
 using CommandLine;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -95,6 +98,15 @@ public class Program {
     });
 
     mvcBuilder.AddApplicationPart(typeof(Program).Assembly);
+
+    mvcBuilder.Services
+      .AddApiVersioning(options => {
+        options.RouteConstraintName = "apiVersion";
+        options.UnsupportedApiVersionStatusCode = 404;
+        options.DefaultApiVersion = new ApiVersion(2);
+        options.AssumeDefaultVersionWhenUnspecified = true;
+      })
+      .AddMvc();
 
     var app = builder.Build();
 

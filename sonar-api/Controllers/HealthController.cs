@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Asp.Versioning;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Enumeration;
@@ -24,7 +25,8 @@ using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
 namespace Cms.BatCave.Sonar.Controllers;
 
 [ApiController]
-[Route("api/v2/health")]
+[ApiVersion(2)]
+[Route("api/v{version:apiVersion}/health")]
 public class HealthController : ControllerBase {
   private readonly PrometheusRemoteWriteClient _remoteWriteClient;
   private readonly ILogger<HealthController> _logger;

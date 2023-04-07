@@ -1,8 +1,9 @@
 {
 	"info": {
-		"_postman_id": "bed6924c-669c-4d8d-b226-c7a7897e7934",
+		"_postman_id": "5f43dc80-00a4-497a-9865-5849edc0fd0a",
 		"name": "SONAR",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "20614257"
 	},
 	"item": [
 		{
@@ -217,13 +218,12 @@
 					}
 				},
 				"url": {
-					"raw": "{{SONAR_BASE_URL}}/api/v2/test/data",
+					"raw": "{{SONAR_BASE_URL}}/api/test/data",
 					"host": [
 						"{{SONAR_BASE_URL}}"
 					],
 					"path": [
 						"api",
-						"v2",
 						"test",
 						"data"
 					]
@@ -249,13 +249,12 @@
 					}
 				},
 				"url": {
-					"raw": "{{SONAR_BASE_URL}}/api/v2/test/data",
+					"raw": "{{SONAR_BASE_URL}}/api/test/data",
 					"host": [
 						"{{SONAR_BASE_URL}}"
 					],
 					"path": [
 						"api",
-						"v2",
 						"test",
 						"data"
 					]

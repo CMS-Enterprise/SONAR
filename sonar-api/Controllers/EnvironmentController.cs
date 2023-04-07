@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Asp.Versioning;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
@@ -12,7 +13,8 @@ using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
 namespace Cms.BatCave.Sonar.Controllers;
 
 [ApiController]
-[Route("api/v2/environments")]
+[ApiVersion(2)]
+[Route("api/v{version:apiVersion}/environments")]
 public class EnvironmentController : ControllerBase {
   private readonly EnvironmentDataHelper _environmentDataHelper;
   private readonly TenantDataHelper _tenantDataHelper;

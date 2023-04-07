@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Asp.Versioning;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Extensions;
@@ -22,7 +23,8 @@ using HealthCheck = Cms.BatCave.Sonar.Data.HealthCheck;
 namespace Cms.BatCave.Sonar.Controllers;
 
 [ApiController]
-[Route("api/v2/config")]
+[ApiVersion(2)]
+[Route("api/v{version:apiVersion}/config")]
 public class ConfigurationController : ControllerBase {
   private readonly DataContext _dbContext;
   private readonly DbSet<Environment> _environmentsTable;

@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Asp.Versioning;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Enumeration;
@@ -18,7 +19,8 @@ using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
 namespace Cms.BatCave.Sonar.Controllers;
 
 [ApiController]
-[Route("api/v2/uptime")]
+[ApiVersion(2)]
+[Route("api/v{version:apiVersion}/uptime")]
 public class UptimeController : ControllerBase {
 
   private readonly ServiceDataHelper _serviceDataHelper;

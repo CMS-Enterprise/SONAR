@@ -3,6 +3,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Asp.Versioning;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
@@ -17,7 +18,8 @@ namespace Cms.BatCave.Sonar.Controllers;
 /// API endpoints for dealing with granular health check time series data.
 /// </summary>
 [ApiController]
-[Route("api/v2/health-check-data")]
+[ApiVersion(2)]
+[Route("api/v{version:apiVersion}/health-check-data")]
 public class HealthCheckDataController : ControllerBase {
 
   private readonly ILogger<HealthCheckDataController> _logger;
