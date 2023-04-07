@@ -20,13 +20,13 @@ public class CacheHelper {
   private readonly DataContext _dbContext;
   private readonly DbSet<ServiceHealthCache> _serviceHealthCacheTable;
   private readonly DbSet<HealthCheckCache> _healthCheckCacheTable;
-  private readonly ILogger<HealthController> _logger;
+  private readonly ILogger<CacheHelper> _logger;
 
   public CacheHelper(
     DataContext dbContext,
     DbSet<ServiceHealthCache> serviceHealthCacheTable,
     DbSet<HealthCheckCache> healthCheckCacheTable,
-    ILogger<HealthController> logger) {
+    ILogger<CacheHelper> logger) {
 
     this._dbContext = dbContext;
     this._serviceHealthCacheTable = serviceHealthCacheTable;
@@ -63,8 +63,6 @@ public class CacheHelper {
     try {
       // cache for this service doesn't exist, create
       if (existingCachedValues.Length == 0) {
-        ServiceHealthCache serviceHealthCacheEntity;
-
         var createdServiceCache = await this._serviceHealthCacheTable.AddAsync(
           new ServiceHealthCache(
             Guid.Empty,
@@ -75,14 +73,13 @@ public class CacheHelper {
             value.AggregateStatus),
           cancellationToken
         );
-        serviceHealthCacheEntity = createdServiceCache.Entity;
 
         // create healthCheckCache using newly created serviceHealthCache
         await this._healthCheckCacheTable.AddAllAsync(
           healthChecks.Select(
             hc => new HealthCheckCache(
               Guid.Empty,
-              serviceHealthCacheEntity.Id,
+              createdServiceCache.Entity.Id,
               hc.Key,
               hc.Value)),
           cancellationToken
@@ -92,17 +89,22 @@ public class CacheHelper {
         var id = existingCachedValues[0].ServiceHealthCache.Id;
 
         // remove outdated healthCheckCache entries
-        List<HealthCheckCache> healthChecksToRemove = new List<HealthCheckCache>();
-        healthChecksToRemove = existingCachedValues.Select(obj => obj.HealthCheckCache).ToList();
+        var healthChecksToRemove =
+          existingCachedValues.Select(obj => obj.HealthCheckCache)
+            .Where(hcc => hcc != null)
+            .Cast<HealthCheckCache>()
+            .ToList();
         this._healthCheckCacheTable.RemoveRange(healthChecksToRemove);
 
         // add new healthCheckCache entries
-        await this._healthCheckCacheTable.AddAllAsync(healthChecks.Select(
-          hc => new HealthCheckCache(
-            Guid.Empty,
-            id,
-            hc.Key,
-            hc.Value))
+        await this._healthCheckCacheTable.AddAllAsync(
+          healthChecks.Select(
+            hc => new HealthCheckCache(
+              Guid.Empty,
+              id,
+              hc.Key,
+              hc.Value)),
+          cancellationToken: cancellationToken
         );
 
         // update serviceHealthCache entry
@@ -120,7 +122,8 @@ public class CacheHelper {
       await tx.CommitAsync(cancellationToken);
     } catch (DbUpdateException dbException) {
       this._logger.LogError(
-        message: $"Error occurred while updating cache: {dbException.Message}"
+        message: "Error occurred while updating cache: {Message}",
+        dbException.Message
       );
     }
   }
@@ -147,15 +150,16 @@ public class CacheHelper {
     return serviceStatuses;
   }
 
-  public async Task<Dictionary<(String Service, String HealthCheck), (DateTime Timestamp, HealthStatus Status)>> FetchHealthCheckCache(
-    String environment,
-    String tenant,
-    CancellationToken cancellationToken) {
+  public async Task<Dictionary<(String Service, String HealthCheck), (DateTime Timestamp, HealthStatus Status)>>
+    FetchHealthCheckCache(
+      String environment,
+      String tenant,
+      CancellationToken cancellationToken) {
 
     var existingCachedValues = await this._serviceHealthCacheTable
       .Where(e => (e.Environment == environment) &&
         (e.Tenant == tenant))
-        .LeftJoin(
+      .LeftJoin(
         this._healthCheckCacheTable,
         leftKeySelector: sh => sh.Id,
         rightKeySelector: hc => hc.ServiceHealthId,
@@ -166,7 +170,9 @@ public class CacheHelper {
       .ToArrayAsync(cancellationToken);
 
     var groupedResults = existingCachedValues.GroupBy(
-      p => new { Id = p.ServiceHealthCache.Id, Service = p.ServiceHealthCache.Service, Timestamp = p.ServiceHealthCache.Timestamp },
+      p => new {
+        Id = p.ServiceHealthCache.Id, Service = p.ServiceHealthCache.Service, Timestamp = p.ServiceHealthCache.Timestamp
+      },
       checks => checks.HealthCheckCache,
       (key, g) => new { ServiceId = key.Id, Service = key.Service, Timestamp = key.Timestamp, Checks = g.ToList() });
 
@@ -176,9 +182,11 @@ public class CacheHelper {
 
     foreach (var service in groupedResults) {
       foreach (var healthCheck in service.Checks) {
-        healthCheckStatuses.Add(
-          (service.Service, healthCheck.HealthCheck),
-          (service.Timestamp, healthCheck.Status));
+        if (healthCheck != null) {
+          healthCheckStatuses.Add(
+            (service.Service, healthCheck.HealthCheck),
+            (service.Timestamp, healthCheck.Status));
+        }
       }
     }
 

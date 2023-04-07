@@ -35,6 +35,7 @@ public class HealthDataHelper {
     ServiceDataHelper serviceDataHelper,
     IPrometheusClient prometheusClient,
     ILogger<HealthDataHelper> logger) {
+
     this._cacheHelper = cacheHelper;
     this._serviceDataHelper = serviceDataHelper;
     this._prometheusClient = prometheusClient;
@@ -42,9 +43,10 @@ public class HealthDataHelper {
   }
 
   public async Task<Dictionary<String, (DateTime Timestamp, HealthStatus Status)>> GetServiceStatuses(
-  String environment,
-  String tenant,
-  CancellationToken cancellationToken) {
+    String environment,
+    String tenant,
+    CancellationToken cancellationToken) {
+
     Dictionary<String, (DateTime Timestamp, HealthStatus Status)> serviceStatuses;
     try {
       serviceStatuses = await this.GetLatestValuePrometheusQuery(
@@ -85,7 +87,8 @@ public class HealthDataHelper {
       );
     } catch (Exception e) {
       this._logger.LogError(
-        message: $"Error querying Prometheus: {e.Message}. Using cached values."
+        message: "Error querying Prometheus: {Message}. Using cached values",
+        e.Message
       );
       serviceStatuses = await this._cacheHelper.FetchServiceCache(environment, tenant, cancellationToken);
     }
@@ -148,8 +151,10 @@ public class HealthDataHelper {
         );
     } catch (Exception e) {
       this._logger.LogError(
-        message: $"Error querying Prometheus: {e.Message}. Using cached values."
+        message: "Error querying Prometheus: {Message}. Using cached values",
+        e.Message
       );
+
       healthCheckStatus = await this._cacheHelper.FetchHealthCheckCache(environment, tenant, cancellationToken);
     }
 

@@ -119,11 +119,11 @@ public static class RecordConfigurationExtensions {
               var itemType = enumerableInterface.GetGenericArguments()[0];
               // We're binding to a generic collection type;
               if (param.ParameterType.IsArray) {
-                var list = Activator.CreateInstance(typeof(List<>).MakeGenericType(itemType));
-                configuration.GetSection(param.Name).Bind(list);
+                var list = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(itemType))!;
+                configuration.GetSection(param.Name).BindToList(list, itemType);
                 parameters = parameters.Add(
                   param.Name,
-                  ToArrayMethod.MakeGenericMethod(itemType).Invoke(obj: null, new[] { list })
+                  ToArrayMethod.MakeGenericMethod(itemType).Invoke(obj: null, new[] { (Object)list })
                 );
               } else if (!param.ParameterType.IsAbstract && !param.ParameterType.IsInterface) {
                 var colCtor = GetCollectionConstructor(param.ParameterType, itemType);
@@ -134,9 +134,9 @@ public static class RecordConfigurationExtensions {
                 }
 
                 // The parameter type is a concrete, non-array collection like List<Object>
-                var list = Activator.CreateInstance(typeof(List<>).MakeGenericType(itemType));
-                configuration.GetSection(param.Name).Bind(list);
-                parameters = parameters.Add(param.Name, colCtor.Invoke(new[] { list }));
+                var list = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(itemType))!;
+                configuration.GetSection(param.Name).BindToList(list, itemType);
+                parameters = parameters.Add(param.Name, colCtor.Invoke(new[] { (Object)list }));
               } else {
                 throw new NotSupportedException(
                   $"The specified parameter type is not supported: {param.ParameterType.Name}"
@@ -221,6 +221,28 @@ public static class RecordConfigurationExtensions {
 
   public static Object BindCtor(this IConfiguration configuration, Type objectType) {
     return BindCtorMethod.MakeGenericMethod(objectType).Invoke(obj: null, new Object[] { configuration })!;
+  }
+
+  private static void BindToList(
+    this IConfiguration configuration,
+    IList list,
+    Type itemType) {
+
+    if (IsStandardType(itemType) ||
+      itemType.GetConstructors().Any(c => (c.GetParameters().Length == 0) && c.IsPublic)) {
+
+      configuration.Bind(list);
+    } else {
+      // The items in the collection are also immutable
+      foreach (var child in configuration.GetChildren()) {
+        var item = child.BindCtor(itemType);
+        list.Add(item);
+      }
+    }
+  }
+
+  private static Boolean IsStandardType(Type t) {
+    return t.IsValueType || (t == typeof(String)) || (t == typeof(Uri));
   }
 
   private static T[] ToArray<T>(List<T> list) {

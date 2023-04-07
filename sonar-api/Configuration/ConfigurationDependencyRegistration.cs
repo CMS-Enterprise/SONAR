@@ -15,5 +15,6 @@ public class ConfigurationDependencyRegistration {
     services.ConfigureRecord<PrometheusConfiguration>(this._configuration.GetSection("Prometheus"));
     services.ConfigureRecord<SonarHealthCheckConfiguration>(this._configuration.GetSection("SonarHealthCheck"));
     services.ConfigureRecord<WebHostConfiguration>(this._configuration.GetSection("WebHost"));
+    services.ConfigureRecord<LegacyEndpointConfiguration>(this._configuration.GetSection("LegacyEndpoint"));
   }
 }

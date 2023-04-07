@@ -115,7 +115,8 @@ public class HealthController : ControllerBase {
             cancellationToken);
       } catch (Exception e) {
         this._logger.LogError(
-          message: $"Unexpected error occurred during caching process: {e.Message}"
+          message: "Unexpected error occurred during caching process: {Message}",
+          e.Message
         );
       }
     }
@@ -170,7 +171,9 @@ public class HealthController : ControllerBase {
     } catch (AggregateException e) {
       foreach (var ie in e.InnerExceptions) {
         this._logger.LogError(
-          message: $"Unexpected error: {ie.GetType()}: {ie.Message}"
+          message: "Unexpected error ({ExceptionType}): {Message}",
+          ie.GetType() ,
+          ie.Message
         );
       }
     }
@@ -203,13 +206,13 @@ public class HealthController : ControllerBase {
       });
     }
 
-    var postgresCheck = await RunPostgresHealthCheck();
-    var prometheusCheck = await this.RunPrometheusSelfCheck();
+    var postgresCheck = await this.RunPostgresHealthCheck(cancellationToken);
+    var prometheusCheck = await this.RunPrometheusSelfCheck(cancellationToken);
     var result = new List<ServiceHierarchyHealth>() { postgresCheck, prometheusCheck };
     return this.Ok(result);
   }
 
-  private async Task<ServiceHierarchyHealth> RunPostgresHealthCheck() {
+  private async Task<ServiceHierarchyHealth> RunPostgresHealthCheck(CancellationToken cancellationToken) {
     var aggStatus = HealthStatus.Online;
     var healthChecks =
       new Dictionary<String, (DateTime Timestamp, HealthStatus Status)?>();
@@ -217,7 +220,7 @@ public class HealthController : ControllerBase {
     var sonarDbTestResult = HealthStatus.Online;
 
     try {
-      await _dbContext.Database.OpenConnectionAsync();
+      await _dbContext.Database.OpenConnectionAsync(cancellationToken: cancellationToken);
     } catch (InvalidOperationException e) {
       // Db connection issue
       connectionTestResult = HealthStatus.Offline;
@@ -246,18 +249,18 @@ public class HealthController : ControllerBase {
     );
   }
 
-  private async Task<ServiceHierarchyHealth> RunPrometheusSelfCheck() {
+  private async Task<ServiceHierarchyHealth> RunPrometheusSelfCheck(CancellationToken cancellationToken) {
     var httpClient = new HttpClient();
     httpClient.BaseAddress = this._prometheusUrl;
-    var aggStatus = HealthStatus.Online;
     var healthChecks =
-      new Dictionary<string, (DateTime Timestamp, HealthStatus Status)?>();
+      new Dictionary<String, (DateTime Timestamp, HealthStatus Status)?>();
     var readinessTest = HealthStatus.Online;
     var queryTest = HealthStatus.Online;
 
     try {
       await httpClient.GetAsync(
-        "-/ready");
+        "-/ready",
+        cancellationToken);
     } catch (HttpRequestException e) {
       // Failed readiness probe
       readinessTest = HealthStatus.Offline;
@@ -272,7 +275,7 @@ public class HealthController : ControllerBase {
     healthChecks.Add("test-query", (DateTime.UtcNow, queryTest));
 
     // calculate aggStatus
-    aggStatus = new[] { readinessTest, queryTest }.Max();
+    var aggStatus = new[] { readinessTest, queryTest }.Max();
 
     return new ServiceHierarchyHealth(
       "prometheus",
@@ -282,7 +285,7 @@ public class HealthController : ControllerBase {
       DateTime.UtcNow,
       aggStatus,
       healthChecks.ToImmutableDictionary(),
-      null
+      Children: null
     );
   }
 
