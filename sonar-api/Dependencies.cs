@@ -28,6 +28,10 @@ public class Dependencies {
     builder.Services.AddScoped<ApiKeyDataHelper>();
     builder.Services.AddScoped<HealthDataHelper>();
     builder.Services.AddScoped<CacheHelper>();
+    builder.Services.AddHttpClient<IPrometheusRemoteProtocolClient, PrometheusRemoteProtocolClient>((provider, client) => {
+      var config = provider.GetRequiredService<IOptions<PrometheusConfiguration>>().Value;
+      client.BaseAddress = new Uri($"{config.Protocol}://{config.Host}:{config.Port}");
+    });
     builder.Services.AddScoped<IPrometheusService, PrometheusService>();
     // Register all Configuration Option Classes for dependency injection
     new ConfigurationDependencyRegistration(builder.Configuration).RegisterDependencies(builder.Services);

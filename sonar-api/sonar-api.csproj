@@ -26,6 +26,7 @@
     <!-- Snappy depends on NETStandard 1.6 which has vulnerabilities, this forces an upgrade.
          Note: 2.x is largely backward comaptible. -->
     <PackageReference Include="NETStandard.Library" Version="2.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.3" />
     <PackageReference Include="Snappy.Standard" Version="0.2.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />

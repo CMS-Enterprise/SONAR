@@ -11,7 +11,7 @@ public static class DateTimeExtensions {
     return new DateTime((value.Ticks / TimeSpan.TicksPerMillisecond) * TimeSpan.TicksPerMillisecond, value.Kind);
   }
 
-  public static Int64 MillisSinceUnixEpoch(this DateTime value) {
-    return (Int64)value.ToUniversalTime().Subtract(DateTime.UnixEpoch).TotalMilliseconds;
+  public static Double MillisSinceUnixEpoch(this DateTime value) {
+    return value.ToUniversalTime().Subtract(DateTime.UnixEpoch).TotalMilliseconds;
   }
 }

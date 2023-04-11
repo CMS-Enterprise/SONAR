@@ -5,9 +5,9 @@ using Cms.BatCave.Sonar.Extensions;
 
 namespace Cms.BatCave.Sonar.Models;
 
-public record ServiceHealthMetrics(
-  // This is a mapping from Health check name to a list of health check metric time series samples.
-  IImmutableDictionary<String, IImmutableList<(DateTime Timestamp, Double Value)>?> HealthCheckSamples
+public record ServiceHealthData(
+  // This is a mapping from health check name to a list of health check metric time series samples.
+  IImmutableDictionary<String, IImmutableList<(DateTime Timestamp, Double Value)>> HealthCheckSamples
 ) {
   public override String ToString() {
     StringBuilder sb = new();

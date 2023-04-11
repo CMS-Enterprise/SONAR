@@ -13,17 +13,17 @@ using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
 namespace Cms.BatCave.Sonar.Controllers;
 
 /// <summary>
-/// API endpoints for dealing with granular health check metric time series data.
+/// API endpoints for dealing with granular health check time series data.
 /// </summary>
 [ApiController]
-[Route("api/v2/health-metrics")]
-public class HealthMetricsController : ControllerBase {
+[Route("api/v2/health-check-data")]
+public class HealthCheckDataController : ControllerBase {
 
-  private readonly ILogger<HealthMetricsController> _logger;
+  private readonly ILogger<HealthCheckDataController> _logger;
   private readonly IPrometheusService _prometheusService;
 
-  public HealthMetricsController(
-    ILogger<HealthMetricsController> logger,
+  public HealthCheckDataController(
+    ILogger<HealthCheckDataController> logger,
     IPrometheusService prometheusService) {
     this._logger = logger;
     this._prometheusService = prometheusService;
@@ -38,32 +38,32 @@ public class HealthMetricsController : ControllerBase {
     [FromRoute] String environment,
     [FromRoute] String tenant,
     [FromRoute] String service,
-    [FromBody] ServiceHealthMetrics metrics,
+    [FromBody] ServiceHealthData data,
     CancellationToken cancellationToken = default) {
 
-    if (metrics.HealthCheckSamples.Count == 0) {
-      throw new BadRequestException($"No metrics provided.");
+    if (data.HealthCheckSamples.Count == 0) {
+      throw new BadRequestException($"No data provided.");
     }
 
-    foreach (var (healthCheck, samples) in metrics.HealthCheckSamples) {
+    foreach (var (healthCheck, samples) in data.HealthCheckSamples) {
       if ((samples == null) || (samples.Count == 0)) {
         throw new BadRequestException($"No samples provided for {healthCheck}.");
       }
     }
 
-    this._logger.LogInformation(
+    this._logger.LogDebug(
       message: "Received service health metrics for " +
         "environment = \"{environment}\", tenant = \"{tenant}\", service = \"{service}\": {metrics}",
       environment,
       tenant,
       service,
-      metrics);
+      data);
 
-    await this._prometheusService.WriteServiceHealthMetricsAsync(
+    await this._prometheusService.WriteHealthCheckDataAsync(
       environment,
       tenant,
       service,
-      metrics,
+      data,
       cancellationToken);
 
     return this.NoContent();
