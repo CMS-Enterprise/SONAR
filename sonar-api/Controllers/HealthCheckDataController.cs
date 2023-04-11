@@ -70,19 +70,19 @@ public class HealthCheckDataController : ControllerBase {
 
     this._logger.LogDebug(
       message: "Received service health metrics for " +
-        "environment = \"{environment}\", tenant = \"{tenant}\", service = \"{service}\": {metrics}",
-      environment,
-      tenant,
-      service,
-      data);
+        $"environment = \"{environment}\", tenant = \"{tenant}\", service = \"{service}\": {data}");
 
-    var writtenData = await this._prometheusService.WriteHealthCheckDataAsync(
+    var recordedData = await this._prometheusService.WriteHealthCheckDataAsync(
       environment,
       tenant,
       service,
       data,
       cancellationToken);
 
-    return this.Ok(writtenData);
+    this._logger.LogDebug(
+      message: "Recorded service health metrics for " +
+      $"environment = \"{environment}\", tenant = \"{tenant}\", service = \"{service}\": {recordedData}");
+
+    return this.Ok(recordedData);
   }
 }
