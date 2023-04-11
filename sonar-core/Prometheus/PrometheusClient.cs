@@ -196,6 +196,6 @@ public class PrometheusClient : IPrometheusClient {
       parts.Add($"{duration.Milliseconds}ms");
     }
 
-    return String.Join(separator: " ", parts);
+    return String.Join(separator: "", parts);
   }
 }

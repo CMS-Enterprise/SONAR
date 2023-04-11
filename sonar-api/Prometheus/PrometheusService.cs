@@ -118,7 +118,7 @@ public class PrometheusService : IPrometheusService {
     foreach (var (healthCheck, samples) in healthCheckSamples) {
       var freshSamples = samples.Where(sample => {
         if (!latestHealthCheckDataTimestamps.ContainsKey(healthCheck) ||
-          (sample.Timestamp >= latestHealthCheckDataTimestamps[healthCheck])) {
+          (sample.Timestamp > latestHealthCheckDataTimestamps[healthCheck])) {
           return true;
         }
 
@@ -154,6 +154,8 @@ public class PrometheusService : IPrometheusService {
       tenant,
       service,
       PrometheusClient.ToPrometheusDuration(range));
+
+    this._logger.LogDebug("Querying latest health check data timestamps: {query}", query);
 
     var queryResponse = await this._prometheusClient.QueryAsync(query, DateTime.Now, cancellationToken: cancellationToken);
 
