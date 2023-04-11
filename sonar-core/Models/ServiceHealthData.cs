@@ -11,7 +11,7 @@ public record ServiceHealthData(
 ) {
   public override String ToString() {
     StringBuilder sb = new();
-    sb.Append($"{nameof(HealthCheckSamples)} {{");
+    sb.Append($"{nameof(HealthCheckSamples)} {{ ");
     foreach (var (healthCheck, samples) in this.HealthCheckSamples) {
       sb.Append($"\n  [\"{healthCheck}\"] = {{");
       foreach (var (timestamp, value) in samples ?? ImmutableArray<(DateTime Timestamp, Double Value)>.Empty) {

@@ -124,7 +124,7 @@ public class PrometheusService : IPrometheusService {
       var freshSamples = samples.Where(sample => {
         if (sample.Timestamp < oneHourAgo) {
           this._logger.LogInformation(
-            $"Dropping stale '{healthCheck}' sample ({sample.Timestamp}, {sample.Value}), " +
+            $"Dropping stale '{healthCheck}' sample ({sample.Timestamp}, {sample.Value})," +
             $" more than an hour old.");
           return false;
         }
@@ -132,7 +132,7 @@ public class PrometheusService : IPrometheusService {
         if (latestHealthCheckDataTimestamps.ContainsKey(healthCheck) &&
           (sample.Timestamp < latestHealthCheckDataTimestamps[healthCheck])) {
           this._logger.LogInformation(
-            $"Dropping stale '{healthCheck}' sample ({sample.Timestamp}, {sample.Value}), " +
+            $"Dropping stale '{healthCheck}' sample ({sample.Timestamp}, {sample.Value})," +
             $" older than latest recorded sample.");
           return false;
         }
