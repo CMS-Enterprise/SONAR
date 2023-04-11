@@ -44,10 +44,12 @@ public class PrometheusService : IPrometheusService {
       cancellationToken);
 
     if (freshHealthCheckSamples.Count > 0) {
-      var nameLabel = new Label { Name = "__name__", Value = HealthDataHelper.ServiceHealthCheckDataMetricName };
-      var environmentLabel = new Label { Name = HealthDataHelper.MetricLabelKeys.Environment, Value = environment };
-      var tenantLabel = new Label { Name = HealthDataHelper.MetricLabelKeys.Tenant, Value = tenant };
-      var serviceLabel = new Label { Name = HealthDataHelper.MetricLabelKeys.Service, Value = service };
+      List<Label> sharedTimeSeriesLabels = new() {
+        new Label { Name = "__name__", Value = HealthDataHelper.ServiceHealthCheckDataMetricName },
+        new Label { Name = HealthDataHelper.MetricLabelKeys.Environment, Value = environment },
+        new Label { Name = HealthDataHelper.MetricLabelKeys.Tenant, Value = tenant },
+        new Label { Name = HealthDataHelper.MetricLabelKeys.Service, Value = service }
+      };
 
       var writeRequest = new WriteRequest {
         Metadata = {
@@ -60,10 +62,7 @@ public class PrometheusService : IPrometheusService {
         Timeseries = {
           freshHealthCheckSamples.Select(kvp => new TimeSeries {
             Labels = {
-              nameLabel,
-              environmentLabel,
-              tenantLabel,
-              serviceLabel,
+              sharedTimeSeriesLabels,
               new Label { Name = HealthDataHelper.MetricLabelKeys.HealthCheck, Value = kvp.Key }
             },
             Samples = {
@@ -102,7 +101,11 @@ public class PrometheusService : IPrometheusService {
       CancellationToken cancellationToken) {
 
     var oneHour = TimeSpan.FromHours(1);
-    var oneHourAgo = DateTime.Now.Subtract(oneHour);
+    var oneHourAgo = DateTime.UtcNow.Subtract(oneHour);
+
+    // TODO: Instead of always pulling an hour's worth of recorded timestamps from Prometheus,
+    // TODO (cont): only pull back timestamps as far back as the earliest timestamp in the input;
+    // TODO (cont): if the earliest timestamp is still older than an hour, THEN truncate to one hour.
 
     var latestHealthCheckDataTimestamps = await this.QueryLatestHealthCheckDataTimestampsAsync(
       environment,
