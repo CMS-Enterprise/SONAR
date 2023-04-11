@@ -18,12 +18,12 @@ public interface IPrometheusService {
   /// <param name="data">The health check data to be written.</param>
   /// <param name="cancellationToken">The cancellation token for the async operation.</param>
   /// <returns>
-  /// A new <see cref="ServiceHealthData"/> containing the samples that were actually written.
+  /// A new <see cref="ServiceHealthData"/> containing the samples that were actually written;
   /// can be empty if no samples were written because they all failed the filtering criteria.
   /// </returns>
   /// <exception cref="BadRequestException">If Prometheus returns a 4xx status.</exception>
   /// <exception cref="InternalServerErrorException">If there's any other problem calling Prometheus.</exception>
-  Task WriteHealthCheckDataAsync(
+  Task<ServiceHealthData> WriteHealthCheckDataAsync(
     String environment,
     String tenant,
     String service,

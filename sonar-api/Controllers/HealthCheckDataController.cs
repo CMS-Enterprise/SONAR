@@ -29,9 +29,24 @@ public class HealthCheckDataController : ControllerBase {
     this._prometheusService = prometheusService;
   }
 
+  /// <summary>
+  /// Record the given raw <see cref="ServiceHealthData"/> time series samples for the given environment,
+  /// tenant, and service in Prometheus. Filters out stale and out-of-order samples prior to calling P8s.
+  /// </summary>
+  /// <param name="environment">The environment the data belongs to.</param>
+  /// <param name="tenant">The tenant the data belongs to.</param>
+  /// <param name="service">The service the data belongs to.</param>
+  /// <param name="data">The health check data to be written.</param>
+  /// <param name="cancellationToken">The cancellation token for the async operation.</param>
+  /// <returns>
+  /// A new <see cref="ServiceHealthData"/> containing the samples that were actually written;
+  /// can be empty if no samples were written because they all failed the filtering criteria.
+  /// </returns>
+  /// <exception cref="BadRequestException">If Prometheus returns a 4xx status.</exception>
+  /// <exception cref="InternalServerErrorException">If there's any other problem calling Prometheus.</exception>
   [HttpPost("{environment}/tenants/{tenant}/services/{service}", Name = "RecordMetrics")]
   [Consumes(typeof(ImmutableList<(DateTime Timestamp, Decimal Value)>), contentType: "application/json")]
-  [ProducesResponseType(typeof(NoContentResult), statusCode: (Int32)HttpStatusCode.NoContent)]
+  [ProducesResponseType(typeof(ServiceHealthData), statusCode: (Int32)HttpStatusCode.OK)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: (Int32)HttpStatusCode.BadRequest)]
   [ProducesResponseType((Int32)HttpStatusCode.InternalServerError)]
   public async Task<IActionResult> RecordMetrics(
@@ -40,6 +55,8 @@ public class HealthCheckDataController : ControllerBase {
     [FromRoute] String service,
     [FromBody] ServiceHealthData data,
     CancellationToken cancellationToken = default) {
+
+    // TODO: Add authentication.
 
     if (data.HealthCheckSamples.Count == 0) {
       throw new BadRequestException($"No data provided.");
@@ -59,13 +76,13 @@ public class HealthCheckDataController : ControllerBase {
       service,
       data);
 
-    await this._prometheusService.WriteHealthCheckDataAsync(
+    var writtenData = await this._prometheusService.WriteHealthCheckDataAsync(
       environment,
       tenant,
       service,
       data,
       cancellationToken);
 
-    return this.NoContent();
+    return this.Ok(writtenData);
   }
 }

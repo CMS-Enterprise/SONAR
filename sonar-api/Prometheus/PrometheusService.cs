@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Extensions;
 using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
@@ -29,7 +30,7 @@ public class PrometheusService : IPrometheusService {
   }
 
   /// <inheritdoc/>
-  public async Task WriteHealthCheckDataAsync(
+  public async Task<ServiceHealthData> WriteHealthCheckDataAsync(
     String environment,
     String tenant,
     String service,
@@ -77,6 +78,8 @@ public class PrometheusService : IPrometheusService {
 
       await this._prometheusRemoteProtocolClient.WriteAsync(writeRequest, cancellationToken);
     }
+
+    return new ServiceHealthData(freshHealthCheckSamples);
   }
 
   /// <summary>
