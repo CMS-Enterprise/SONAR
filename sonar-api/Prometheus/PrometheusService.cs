@@ -90,7 +90,7 @@ public class PrometheusService : IPrometheusService {
   /// <param name="tenant">The tenant the samples belong to.</param>
   /// <param name="service">The service the samples belong to.</param>
   /// <param name="healthCheckSamples">The input health check samples.</param>
-  /// <param name="cancellationToken">The cancellation token to use.</param>
+  /// <param name="cancellationToken">The cancellation token for the async operation.</param>
   /// <returns>A new immutable dictionary that maps health check name to health check metric time series samples that
   ///   match the filter criteria.</returns>
   private async Task<IImmutableDictionary<String, IImmutableList<(DateTime Timestamp, Double Value)>>>

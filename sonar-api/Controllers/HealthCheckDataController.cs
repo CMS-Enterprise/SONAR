@@ -47,7 +47,7 @@ public class HealthCheckDataController : ControllerBase {
 
     foreach (var (healthCheck, samples) in data.HealthCheckSamples) {
       if ((samples == null) || (samples.Count == 0)) {
-        throw new BadRequestException($"No samples provided for {healthCheck}.");
+        throw new BadRequestException($"No samples provided for '{healthCheck}'.");
       }
     }
 
