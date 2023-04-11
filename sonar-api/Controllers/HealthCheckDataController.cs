@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Immutable;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -42,10 +41,10 @@ public class HealthCheckDataController : ControllerBase {
   /// A new <see cref="ServiceHealthData"/> containing the samples that were actually written;
   /// can be empty if no samples were written because they all failed the filtering criteria.
   /// </returns>
-  /// <exception cref="BadRequestException">If Prometheus returns a 4xx status.</exception>
+  /// <exception cref="BadRequestException">If the Prometheus request is invalid.</exception>
   /// <exception cref="InternalServerErrorException">If there's any other problem calling Prometheus.</exception>
   [HttpPost("{environment}/tenants/{tenant}/services/{service}", Name = "RecordMetrics")]
-  [Consumes(typeof(ImmutableList<(DateTime Timestamp, Decimal Value)>), contentType: "application/json")]
+  [Consumes(typeof(ServiceHealthData), contentType: "application/json")]
   [ProducesResponseType(typeof(ServiceHealthData), statusCode: (Int32)HttpStatusCode.OK)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: (Int32)HttpStatusCode.BadRequest)]
   [ProducesResponseType((Int32)HttpStatusCode.InternalServerError)]

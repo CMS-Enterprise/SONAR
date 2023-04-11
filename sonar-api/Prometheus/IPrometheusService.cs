@@ -2,6 +2,7 @@ using System;
 using System.Collections.Immutable;
 using System.Threading;
 using System.Threading.Tasks;
+using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Models;
 
 namespace Cms.BatCave.Sonar.Prometheus;

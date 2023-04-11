@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Cms.BatCave.Sonar.Exceptions;
 using Prometheus;
 
 namespace Cms.BatCave.Sonar.Prometheus;
