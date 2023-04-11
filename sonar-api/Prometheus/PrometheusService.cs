@@ -104,11 +104,12 @@ public class PrometheusService : IPrometheusService {
       IImmutableDictionary<String, IImmutableList<(DateTime Timestamp, Double Value)>> healthCheckSamples,
       CancellationToken cancellationToken) {
 
+    var oneHour = TimeSpan.FromHours(1);
+    var oneHourAgo = DateTime.UtcNow.Subtract(oneHour);
     var earliestSampleTimestamp = healthCheckSamples.Min(kvp => kvp.Value.Min(sample => sample.Timestamp));
     var earliestSampleTimeSpan = DateTime.UtcNow - earliestSampleTimestamp;
     // Pull no more than 1 hour's worth of data.
-    var queryTimeSpan = TimeSpan.FromSeconds(
-      Math.Min(earliestSampleTimeSpan.TotalSeconds, TimeSpan.FromHours(1).TotalSeconds));
+    var queryTimeSpan = TimeSpan.FromSeconds(Math.Min(earliestSampleTimeSpan.TotalSeconds, oneHour.TotalSeconds));
 
     var latestHealthCheckDataTimestamps = await this.QueryLatestHealthCheckDataTimestampsAsync(
       environment,
@@ -121,15 +122,22 @@ public class PrometheusService : IPrometheusService {
 
     foreach (var (healthCheck, samples) in healthCheckSamples) {
       var freshSamples = samples.Where(sample => {
-        if (!latestHealthCheckDataTimestamps.ContainsKey(healthCheck) ||
-          (sample.Timestamp > latestHealthCheckDataTimestamps[healthCheck])) {
-          return true;
+        if (sample.Timestamp < oneHourAgo) {
+          this._logger.LogInformation(
+            $"Dropping stale '{healthCheck}' sample ({sample.Timestamp}, {sample.Value}), " +
+            $" more than an hour old.");
+          return false;
         }
 
-        this._logger.LogInformation(
-          $"Dropping stale '{healthCheck}' sample ({sample.Timestamp}, {sample.Value}), " +
-          $"more than an hour old, or older than latest recorded sample.");
-        return false;
+        if (latestHealthCheckDataTimestamps.ContainsKey(healthCheck) &&
+          (sample.Timestamp < latestHealthCheckDataTimestamps[healthCheck])) {
+          this._logger.LogInformation(
+            $"Dropping stale '{healthCheck}' sample ({sample.Timestamp}, {sample.Value}), " +
+            $" older than latest recorded sample.");
+          return false;
+        }
+
+        return true;
       }).ToImmutableList();
 
       if (freshSamples.Count > 0) {
