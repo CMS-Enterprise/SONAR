@@ -422,7 +422,7 @@
 			"response": []
 		},
 		{
-			"name": "Post Service Health Metrics",
+			"name": "Post Service Health Check Data",
 			"event": [
 				{
 					"listen": "prerequest",
