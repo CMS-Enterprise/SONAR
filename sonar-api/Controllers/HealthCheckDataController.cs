@@ -68,7 +68,7 @@ public class HealthCheckDataController : ControllerBase {
     }
 
     this._logger.LogDebug(
-      message: "Received service health metrics for " +
+      message: "Received service health check data for " +
         $"environment = \"{environment}\", tenant = \"{tenant}\", service = \"{service}\": {data}");
 
     var recordedData = await this._prometheusService.WriteHealthCheckDataAsync(
@@ -79,7 +79,7 @@ public class HealthCheckDataController : ControllerBase {
       cancellationToken);
 
     this._logger.LogDebug(
-      message: "Recorded service health metrics for " +
+      message: "Recorded service health check data for " +
         $"environment = \"{environment}\", tenant = \"{tenant}\", service = \"{service}\": {recordedData}");
 
     return this.Ok(recordedData);
