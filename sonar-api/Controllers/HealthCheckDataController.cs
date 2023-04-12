@@ -80,7 +80,7 @@ public class HealthCheckDataController : ControllerBase {
 
     this._logger.LogDebug(
       message: "Recorded service health metrics for " +
-      $"environment = \"{environment}\", tenant = \"{tenant}\", service = \"{service}\": {recordedData}");
+        $"environment = \"{environment}\", tenant = \"{tenant}\", service = \"{service}\": {recordedData}");
 
     return this.Ok(recordedData);
   }
