@@ -19,3 +19,7 @@ export const HealthCheckItem = {
 export const HeadingContainer = {
   padding: 5
 }
+
+export const StatusHistoryContainer = {
+  padding: 5
+}

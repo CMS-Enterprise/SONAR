@@ -37,6 +37,9 @@ export function getHealthStatusClass(status: HealthStatus | null | undefined) {
     case HealthStatus.Degraded:
       result = 'degraded';
       break;
+    case HealthStatus.AtRisk:
+      result = 'atRisk';
+      break;
     default:
       result = 'offline';
   }

@@ -4,6 +4,7 @@ import { Accordion } from '@cmsgov/design-system';
 import { ServiceHierarchyHealth } from 'api/data-contracts';
 import { getHealthStatusIndicator } from 'helpers/ServiceHierarchyHelper';
 import { HeadingContainer, RootServiceContainer } from 'styles';
+import StatusHistoryModule from '../StatusHistory/StatusHistoryModule';
 import ChildService from './ChildService';
 import HealthCheckList from './HealthCheckList';
 
@@ -11,9 +12,12 @@ const RootService: React.FC<{
   environmentName: string,
   tenantName: string,
   rootService: ServiceHierarchyHealth,
-  services: ServiceHierarchyHealth[]
+  services: ServiceHierarchyHealth[],
+  addTimestamp: (tileData: any, tileId: string) => void,
+  closeDrawer: () => void,
+  selectedTileId: string
 }> =
-  ({ environmentName, tenantName, rootService, services }) => {
+  ({ environmentName, tenantName, rootService, services, addTimestamp, closeDrawer, selectedTileId }) => {
     return (
       <div style={{
         ...RootServiceContainer,
@@ -22,6 +26,14 @@ const RootService: React.FC<{
       >
         <div style={HeadingContainer}>
           {rootService.name}
+        </div>
+        <div>
+          <StatusHistoryModule
+            addTimestamp={addTimestamp}
+            closeDrawer={closeDrawer}
+            selectedTileId={selectedTileId}
+            rootServiceName={rootService.name ? rootService.name : ""}
+          />
         </div>
         <div>
           {rootService.healthChecks ? (

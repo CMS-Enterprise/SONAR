@@ -66,4 +66,37 @@ code {
 
 .offline-icon {
   color: var(--sonar-red);
+  background-color: grey;
+  --button-solid-alt__background-color--hover: grey;
+  --accordion__background-color--hover: grey;
+}
+
+.onlineTile {
+  background-color: forestgreen;
+  --button-solid-alt__background-color--hover: grey;
+  --accordion__background-color--hover: grey;
+}
+
+.degradedTile {
+  background-color: orange;
+  --button-solid-alt__background-color--hover: grey;
+  --accordion__background-color--hover: grey;
+}
+
+.offlineTile {
+  background-color: red;
+  --button-solid-alt__background-color--hover: grey;
+  --accordion__background-color--hover: grey;
+}
+
+.atRiskTile {
+  background-color: yellow;
+  --button-solid-alt__background-color--hover: grey;
+  --accordion__background-color--hover: grey;
+}
+
+.selected {
+  /*border-radius: 9px;*/
+  border-color:  #bd13b8;
+  border-width: 3px;
 }
