@@ -459,14 +459,14 @@
 					}
 				},
 				"url": {
-					"raw": "{{SONAR_BASE_URL}}/api/v2/health-metrics/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/my-root",
+					"raw": "{{SONAR_BASE_URL}}/api/v2/health-check-data/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/my-root",
 					"host": [
 						"{{SONAR_BASE_URL}}"
 					],
 					"path": [
 						"api",
 						"v2",
-						"health-metrics",
+						"health-check-data",
 						"{{TEST_ENVIRONMENT}}",
 						"tenants",
 						"{{TEST_TENANT}}",
