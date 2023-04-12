@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Text;
 using Cms.BatCave.Sonar.Extensions;
 
@@ -24,4 +25,8 @@ public record ServiceHealthData(
     sb.Append("\n}");
     return sb.ToString();
   }
+
+  public Int32 TotalHealthChecks => this.HealthCheckSamples.Count;
+
+  public Int32 TotalSamples => this.HealthCheckSamples.Sum(kvp => kvp.Value.Count);
 }
