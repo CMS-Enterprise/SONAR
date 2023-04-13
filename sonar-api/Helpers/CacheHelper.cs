@@ -171,7 +171,9 @@ public class CacheHelper {
 
     var groupedResults = existingCachedValues.GroupBy(
       p => new {
-        Id = p.ServiceHealthCache.Id, Service = p.ServiceHealthCache.Service, Timestamp = p.ServiceHealthCache.Timestamp
+        Id = p.ServiceHealthCache.Id,
+        Service = p.ServiceHealthCache.Service,
+        Timestamp = p.ServiceHealthCache.Timestamp
       },
       checks => checks.HealthCheckCache,
       (key, g) => new { ServiceId = key.Id, Service = key.Service, Timestamp = key.Timestamp, Checks = g.ToList() });

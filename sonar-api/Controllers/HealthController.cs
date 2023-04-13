@@ -172,7 +172,7 @@ public class HealthController : ControllerBase {
       foreach (var ie in e.InnerExceptions) {
         this._logger.LogError(
           message: "Unexpected error ({ExceptionType}): {Message}",
-          ie.GetType() ,
+          ie.GetType(),
           ie.Message
         );
       }
