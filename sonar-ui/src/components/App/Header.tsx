@@ -14,6 +14,9 @@ const Header = () => {
         <li>
           <Link to="/environment-view">Environment View</Link>
         </li>
+        <li>
+          <Link to="/detail-view">Detail View</Link>
+        </li>
       </ul>
     </nav>
   )
