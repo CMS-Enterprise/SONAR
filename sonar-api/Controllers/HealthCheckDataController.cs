@@ -83,7 +83,6 @@ public class HealthCheckDataController : ControllerBase {
       message: $"Received {data.TotalSamples} samples from {data.TotalHealthChecks} health checks for" +
        $" environment = \"{environment}\", tenant = \"{tenant}\", service = \"{service}\": {data}");
 
-
     var recordedData = await this._prometheusService.WriteHealthCheckDataAsync(
       environment,
       tenant,
