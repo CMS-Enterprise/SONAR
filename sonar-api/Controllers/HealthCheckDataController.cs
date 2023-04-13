@@ -80,8 +80,9 @@ public class HealthCheckDataController : ControllerBase {
     }
 
     this._logger.LogDebug(
-      message: $"Received {data.TotalSamples} samples from {data.TotalHealthChecks} health checks for" +
-        $" environment = '{environment}', tenant = '{tenant}', service = '{service}'");
+      message: "Received health check sample data for " +
+       $"environment = \"{environment}\", tenant = \"{tenant}\", service = \"{service}\": {data}");
+
 
     var recordedData = await this._prometheusService.WriteHealthCheckDataAsync(
       environment,
