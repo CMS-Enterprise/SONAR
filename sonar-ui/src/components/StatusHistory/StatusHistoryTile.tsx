@@ -1,6 +1,8 @@
 import { Button } from '@cmsgov/design-system';
 import React, { useEffect, useState } from 'react';
+import { HealthStatus } from '../../api/data-contracts';
 import { getHealthStatusClass } from '../../helpers/ServiceHierarchyHelper';
+import { renderStatusIcon } from '../../helpers/StatusHistoryHelper';
 
 const StatusHistoryTile: React.FC<{
   id: string,
@@ -19,17 +21,18 @@ const StatusHistoryTile: React.FC<{
     }
   }
 
+
+
   return (
     <span style={{ margin: 2 }}>
       <Button
-        isAlternate
         variation="solid"
         onClick={handleSelect}
         size="small"
-        className={selectedTileId === id ? "selected" : getHealthStatusClass(statusTimestampTuple.status)}
+        className={getHealthStatusClass(statusTimestampTuple.status) + (selectedTileId === id ? " selected" : "")}
         style={{ borderRadius: 9 }}
       >
-        {statusTimestampTuple.timestamp}<br /> {statusTimestampTuple.status.toString()}
+        {renderStatusIcon(statusTimestampTuple.status)}
       </Button>
     </span>
 

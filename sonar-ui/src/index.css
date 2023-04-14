@@ -78,6 +78,7 @@ code {
 }
 
 .degradedTile {
+  color: black;
   background-color: orange;
   --button-solid-alt__background-color--hover: grey;
   --accordion__background-color--hover: grey;
@@ -91,6 +92,7 @@ code {
 
 .atRiskTile {
   background-color: yellow;
+  color: black;
   --button-solid-alt__background-color--hover: grey;
   --accordion__background-color--hover: grey;
 }
