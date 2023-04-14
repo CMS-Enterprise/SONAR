@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Data;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -14,17 +15,20 @@ namespace Cms.BatCave.Sonar.Tests;
 ///   Creates a single ASP.NET in-process TestServer that can be used for all the test methods in a
 ///   test class. A single database will be shared for all of the tests in the class.
 /// </summary>
-public sealed class ApiIntegrationTestFixture : IDisposable, IAsyncDisposable, ILoggerProvider {
-  private readonly Task _runTask;
-  private readonly WebApplication _app;
-  public TestServer Server { get; }
+public class ApiIntegrationTestFixture : IDisposable, ILoggerProvider {
+  private Task? _runTask;
+  private WebApplication? _app;
+  public TestServer Server { get; private set; }
   public String FixtureId { get; }
 
-  public event EventHandler<LogMessageEventArgs> LogMessageEvent;
+  public event EventHandler<LogMessageEventArgs>? LogMessageEvent;
 
   public ApiIntegrationTestFixture() {
     // Create a unique identifier for this test fixture instance
     this.FixtureId = Guid.NewGuid().ToString().Split("-").First();
+  }
+
+  public void InitializeHost(Action<WebApplicationBuilder> build) {
 
     // Create the WebApplicationBuilder used to run the sonar-api but override
     // certain dependencies for testing purposes
@@ -33,6 +37,8 @@ public sealed class ApiIntegrationTestFixture : IDisposable, IAsyncDisposable, I
         Array.Empty<String>(),
         new TestDependencies($"sonar_test_{this.FixtureId}", this)
       );
+
+    build(builder);
 
     // Use the in-process ASP.NET TestServer instead of the normal HTTP server.
     builder.WebHost.UseTestServer();
@@ -82,21 +88,23 @@ public sealed class ApiIntegrationTestFixture : IDisposable, IAsyncDisposable, I
     await action(scope.ServiceProvider, cancellationToken);
   }
 
-  public void Dispose() {
-    using (var scope = this._app.Services.CreateScope()) {
-      var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
-      dbContext.Database.EnsureDeleted();
-    }
-
-    this._app.StopAsync();
-    this.Server.Dispose();
-    // Wait for the ASP.NET core application to exit.
-    this._runTask.ConfigureAwait(false).GetAwaiter().GetResult();
-    this._runTask.Dispose();
-  }
-
   public ILogger CreateLogger(String categoryName) {
     return new TestLogger(this, categoryName);
+  }
+
+  public RequestBuilder CreateAdminRequest(String url) {
+    return this.WithDependencies(provider => {
+      var config = provider.GetRequiredService<IConfiguration>();
+      var apiKey = config.GetValue<String>("ApiKey");
+      return this.CreateAuthenticatedRequest(url, apiKey ?? "");
+    });
+  }
+
+  public RequestBuilder CreateAuthenticatedRequest(String url, String apiKey) {
+    return this.Server.CreateRequest(url)
+      .And(req => {
+        req.Headers.Add("ApiKey", apiKey);
+      });
   }
 
   private class TestLogger : ILogger {
@@ -131,14 +139,36 @@ public sealed class ApiIntegrationTestFixture : IDisposable, IAsyncDisposable, I
 
     private class UnitDisposable : IDisposable {
       public static readonly UnitDisposable Instance = new UnitDisposable();
+
       private UnitDisposable() {
       }
+
       public void Dispose() {
       }
     }
   }
 
-  public async ValueTask DisposeAsync() {
+  protected virtual void Dispose(Boolean disposing) {
+    if (disposing) {
+      using (var scope = this._app.Services.CreateScope()) {
+        var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
+        dbContext.Database.EnsureDeleted();
+      }
+
+      this._app.StopAsync();
+      this.Server.Dispose();
+      // Wait for the ASP.NET core application to exit.
+      this._runTask.ConfigureAwait(false).GetAwaiter().GetResult();
+      this._runTask.Dispose();
+    }
+  }
+
+  public void Dispose() {
+    this.Dispose(true);
+    GC.SuppressFinalize(this);
+  }
+
+  public virtual async ValueTask DisposeAsync() {
     await using (var scope = this._app.Services.CreateAsyncScope()) {
       var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
       await dbContext.Database.EnsureDeletedAsync();

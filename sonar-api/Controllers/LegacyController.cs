@@ -13,6 +13,7 @@ using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models.Legacy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Cms.BatCave.Sonar.Controllers;
@@ -24,15 +25,18 @@ public class LegacyController : ControllerBase {
   private readonly HealthDataHelper _healthDataHelper;
   private readonly ServiceDataHelper _serviceDataHelper;
   private readonly IOptions<LegacyEndpointConfiguration> _configuration;
+  private readonly ILogger<LegacyController> _logger;
 
   public LegacyController(
     HealthDataHelper healthDataHelper,
     ServiceDataHelper serviceDataHelper,
-    IOptions<LegacyEndpointConfiguration> configuration) {
+    IOptions<LegacyEndpointConfiguration> configuration,
+    ILogger<LegacyController> logger) {
 
     this._healthDataHelper = healthDataHelper;
     this._serviceDataHelper = serviceDataHelper;
     this._configuration = configuration;
+    this._logger = logger;
   }
 
   [HttpGet]
@@ -81,14 +85,20 @@ public class LegacyController : ControllerBase {
               if (tenantStatuses.TryGetValue(svc.Name!, out var serviceInfo)) {
                 return new LegacyServiceInfo(svc, serviceInfo.Config, serviceInfo.Status);
               } else {
-                throw new InvalidOperationException(
-                  $"The v1 service endpoint configuration referenced a service that was not found (Environment: {svc.Environment}, Tenant: {svc.Tenant}): {svc.Name}"
-                );
+                this._logger.LogWarning(
+                  "The v1 service endpoint configuration referenced a service that was not found (Environment: {Environment}, Tenant: {Tenant}): {ServiceName}",
+                  svc.Environment,
+                  svc.Tenant,
+                  svc.Name);
+                return new LegacyServiceInfo(svc);
               }
             } else {
-              throw new InvalidOperationException(
-                $"The v1 service endpoint configuration referenced a tenant that was not found (Environment: {svc.Environment}): {svc.Tenant}"
+              this._logger.LogWarning(
+                "The v1 service endpoint configuration referenced a tenant that was not found (Environment: {Environment}): {Tenant}",
+                svc.Environment,
+                svc.Tenant
               );
+              return new LegacyServiceInfo(svc);
             }
           } else {
             return new LegacyServiceInfo(svc);
@@ -155,7 +165,7 @@ public class LegacyController : ControllerBase {
       case HealthStatus.Degraded:
         return LegacyHealthStatus.Degraded;
       default:
-        throw new ArgumentOutOfRangeException(nameof(status), status, null);
+        throw new ArgumentOutOfRangeException(nameof(status), status, $"Unknown value for {nameof(HealthStatus)}.");
     }
   }
 

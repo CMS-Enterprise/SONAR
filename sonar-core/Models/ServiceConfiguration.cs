@@ -11,8 +11,8 @@ public record ServiceConfiguration(
   String Name,
   [Required]
   String DisplayName,
-  String? Description,
-  Uri? Url,
-  IImmutableList<HealthCheckModel>? HealthChecks,
-  IImmutableSet<String>? Children
+  String? Description = null,
+  Uri? Url = null,
+  IImmutableList<HealthCheckModel>? HealthChecks = null,
+  IImmutableSet<String>? Children = null
 );

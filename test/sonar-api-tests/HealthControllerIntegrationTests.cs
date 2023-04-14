@@ -3,13 +3,11 @@ using System.Collections.Immutable;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Extensions;
-using Cms.BatCave.Sonar.Json;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,11 +22,6 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
   private const String TestRootServiceName = "TestRootService";
   private const String TestChildServiceName = "TestChildService";
   private const String TestHealthCheckName = "TestHealthCheck";
-
-  private static readonly JsonSerializerOptions SerializerOptions = new JsonSerializerOptions {
-    Converters = { new JsonStringEnumConverter(), new ArrayTupleConverterFactory() },
-    PropertyNameCaseInsensitive = true
-  };
 
   private static readonly HealthCheckModel TestHealthCheck =
     new(
@@ -93,7 +86,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
   public async Task RecordServiceHealth_MissingEnvironmentReturnsNotFound() {
     var missingEnvironmentName = Guid.NewGuid().ToString();
     var response = await
-      this.CreateAdminRequest($"/api/v2/health/{missingEnvironmentName}/tenants/foo/services/bar")
+      this.Fixture.CreateAdminRequest($"/api/v2/health/{missingEnvironmentName}/tenants/foo/services/bar")
         .AddHeader(name: "Accept", value: "application/json")
         .And(req => {
           req.Content = JsonContent.Create(new ServiceHealth(
@@ -143,7 +136,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
     var missingTenantName = Guid.NewGuid().ToString();
 
     var response = await
-      this.CreateAdminRequest($"/api/v2/health/{existingEnvironmentName}/tenants/{missingTenantName}/services/foo")
+      this.Fixture.CreateAdminRequest($"/api/v2/health/{existingEnvironmentName}/tenants/{missingTenantName}/services/foo")
         .AddHeader(name: "Accept", value: "application/json")
         .And(req => {
           req.Content = JsonContent.Create(new ServiceHealth(
@@ -184,7 +177,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
     var testTenant = Guid.NewGuid().ToString();
 
     var createConfigResponse = await
-      this.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(HealthControllerIntegrationTests.TestRootOnlyConfiguration);
         })
@@ -201,7 +194,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
     var missingServiceName = Guid.NewGuid().ToString();
     // Record health status
     var response = await
-      this.CreateAdminRequest(
+      this.Fixture.CreateAdminRequest(
           $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{missingServiceName}")
         .And(req => {
           req.Content = JsonContent.Create(new ServiceHealth(
@@ -250,7 +243,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
 
     // Record health status
     var response = await
-      this.CreateAdminRequest(
+      this.Fixture.CreateAdminRequest(
           $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{HealthControllerIntegrationTests.TestRootServiceName}")
         .And(req => {
           req.Content = JsonContent.Create(new ServiceHealth(
@@ -305,7 +298,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
 
     // Record health status
     var response = await
-      this.CreateAdminRequest(
+      this.Fixture.CreateAdminRequest(
           $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{HealthControllerIntegrationTests.TestRootServiceName}")
         .And(req => {
           req.Content = JsonContent.Create(new ServiceHealth(
@@ -345,7 +338,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
 
     // Record health status
     var response = await
-      this.CreateAdminRequest(
+      this.Fixture.CreateAdminRequest(
           $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{HealthControllerIntegrationTests.TestRootServiceName}")
         .And(req => {
           req.Content = JsonContent.Create(new ServiceHealth(
@@ -381,7 +374,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
 
     // Record health status
     var response = await
-      this.CreateAdminRequest(
+      this.Fixture.CreateAdminRequest(
           $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{HealthControllerIntegrationTests.TestRootServiceName}")
         .And(req => {
           req.Content = JsonContent.Create(new ServiceHealth(
@@ -400,7 +393,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
 
     // Attempt to record out of sequence health status
     response = await
-      this.CreateAdminRequest(
+      this.Fixture.CreateAdminRequest(
           $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{HealthControllerIntegrationTests.TestRootServiceName}")
         .And(req => {
           req.Content = JsonContent.Create(new ServiceHealth(
@@ -520,7 +513,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
     var testTenant = Guid.NewGuid().ToString();
 
     var createConfigResponse = await
-      this.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(new ServiceHierarchyConfiguration(
             ImmutableArray<ServiceConfiguration>.Empty,
@@ -709,26 +702,6 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
     Assert.Equal(expected: (expectedTimestamp, rootStatus), actual: rootHealthCheck.Value);
   }
 
-  private async Task<(String, String)> CreateTestConfiguration(ServiceHierarchyConfiguration configuration) {
-    // Create Service Configuration
-    var testEnvironment = Guid.NewGuid().ToString();
-    var testTenant = Guid.NewGuid().ToString();
-
-    var createConfigResponse = await
-      this.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
-        .And(req => {
-          req.Content = JsonContent.Create(configuration);
-        })
-        .PostAsync();
-
-    // This should always succeed, This isn't what is being tested.
-    AssertHelper.Precondition(
-      createConfigResponse.IsSuccessStatusCode,
-      message: "Failed to create test configuration."
-    );
-    return (testEnvironment, testTenant);
-  }
-
   private async Task RecordServiceHealth(
     String testEnvironment,
     String testTenant,
@@ -739,7 +712,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
 
     // Record health status
     var response = await
-      this.CreateAdminRequest(
+      this.Fixture.CreateAdminRequest(
           $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{serviceName}")
         .And(req => {
           req.Content = JsonContent.Create(new ServiceHealth(

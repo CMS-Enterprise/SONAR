@@ -128,7 +128,7 @@ public class HealthCheckModelJsonConverter : JsonConverter<HealthCheckModel> {
 
         return new HealthCheckModel(
           nameElement.GetString() ?? throw new JsonException($"The {nameof(HealthCheckModel.Name)} property is required."),
-          descriptionElement.GetString() ?? throw new JsonException($"The {nameof(HealthCheckModel.Description)} property is required."),
+          descriptionElement.GetString(),
           type,
           definition
         );
