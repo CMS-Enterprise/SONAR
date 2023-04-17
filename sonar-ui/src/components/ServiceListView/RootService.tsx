@@ -1,4 +1,5 @@
 import React from 'react';
+import { Accordion } from '@cmsgov/design-system';
 
 import { ServiceHierarchyHealth } from 'api/data-contracts';
 import { getHealthStatusIndicator } from 'helpers/ServiceHierarchyHelper';
@@ -23,21 +24,21 @@ const RootService: React.FC<{
         <div>
           {rootService.healthChecks ? (
             <div>
-              <HealthCheckList healthChecks={rootService.healthChecks}/>
+              <HealthCheckList rootServiceName={rootService.name} healthChecks={rootService.healthChecks}/>
             </div>
           ) : null}
           {rootService.children && rootService.children.length > 0 ?
             <>
-              <div style={HeadingContainer}>
+              <div className="ds-l-col" >
                 Services:
               </div>
-              <ul>
+              <Accordion bordered>
                 {rootService.children.map(child => (
-                  <li key={child.name}>
-                    <ChildService childService={child} services={services}/>
-                  </li>
+                  <div key={child.name}>
+                    <ChildService servicePath={rootService.name} childService={child} services={services}/>
+                  </div>
                 ))}
-              </ul>
+              </Accordion>
             </>
             : null}
         </div>

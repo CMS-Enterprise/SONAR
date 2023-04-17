@@ -22,14 +22,14 @@ const ServiceView = () => {
   }, []);
 
   return services ? (
-    <div>
+    <section className="ds-l-container">
       <div>
         {services.map(rootService => (
           <div key={rootService.name}>
             <RootService rootService={rootService} services={services}/>
           </div>))}
       </div>
-    </div>
+    </section>
   ) : null
 }
 

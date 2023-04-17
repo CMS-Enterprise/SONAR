@@ -1,39 +1,40 @@
 import React from 'react';
+import { AccordionItem } from '@cmsgov/design-system';
 
 import { ServiceHierarchyHealth } from 'api/data-contracts';
-import { ChildServiceContainer, HeadingContainer } from 'styles';
+import { ChildServiceContainer } from 'styles';
 import HealthCheckList from './HealthCheckList';
 
 const ChildService: React.FC<{
+  servicePath?: string | null,
   childService: ServiceHierarchyHealth,
   services: ServiceHierarchyHealth[]
 }> =
-  ({ childService, services }) => {
+  ({ servicePath, childService, services }) => {
     return (
       <div style={{ ...ChildServiceContainer }}>
-        <div style={HeadingContainer}>
-          {childService.name}
-        </div>
-        <div>
-          {childService.healthChecks ? (
-            <div>
-              <HealthCheckList healthChecks={childService.healthChecks}/>
-            </div>
-          ) : null}
-          {childService.children && childService.children.length > 0 ?
-            <>
-              <div style={HeadingContainer}>
-                Services:
+        <AccordionItem heading={childService.name}>
+          <div>
+            {childService.healthChecks ? (
+              <div>
+                <HealthCheckList rootServiceName={`${servicePath}/${childService.name}`} healthChecks={childService.healthChecks}/>
               </div>
-              <ul>
-                {childService.children.map(child => (
-                  <li key={child.name}>
-                    <ChildService childService={child} services={services}/>
-                  </li>
-                ))}
-              </ul>
-            </> : null}
-        </div>
+            ) : null}
+            {childService.children && childService.children.length > 0 ?
+              <>
+                <div className="ds-l-col">
+                  Services:
+                </div>
+                <ul>
+                  {childService.children.map(child => (
+                    <div key={child.name}>
+                      <ChildService servicePath={`${servicePath}/${childService.name}`} childService={child} services={services}/>
+                    </div>
+                  ))}
+                </ul>
+              </> : null}
+          </div>
+        </AccordionItem>
       </div>
     )
   }
