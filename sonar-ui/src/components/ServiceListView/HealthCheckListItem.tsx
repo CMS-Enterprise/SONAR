@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 
 import { AccordionItem } from '@cmsgov/design-system';
 import TimeSeriesChart from 'components/Charts/TimeSeriesChart'
@@ -17,7 +17,7 @@ const HealthCheckListItem: React.FC<{
 
   useEffect(() => {
     const sonarClient = createSonarClient();
-    sonarClient.getTsHealthcheck()
+    sonarClient.getTsHealthcheck(environmentName, tenantName, rootServiceName, healthCheckName)
       .then((res) => {
         setTsData(res.data);
       })
@@ -37,7 +37,6 @@ const HealthCheckListItem: React.FC<{
       ['2023-04-13T03:45:49.836', 5]
     ];
 
-
   //Transform Date to Timestamps, ts data can be in one of two forms https://apexcharts.com/docs/series/
   const transformedData = mockData.map(data =>
     [new Date(data[TIMESTAMP_DATA]).getTime(), Number(data[HEALTHSTATUS_DATA])]
@@ -45,7 +44,7 @@ const HealthCheckListItem: React.FC<{
 
   return (
     <AccordionItem heading={`${healthCheckName}: ${healthCheckStatus}`}>
-      <TimeSeriesChart timeSeriesData={transformedData} />
+      <TimeSeriesChart healthCheckName={healthCheckName} timeSeriesData={transformedData} />
       <div style={{display:'flex',  justifyContent:'center'}}>
         <div style={{flexGrow:'1', flexShrink:'0'}}>
           <ChartsTable timeSeriesData={transformedData}/>

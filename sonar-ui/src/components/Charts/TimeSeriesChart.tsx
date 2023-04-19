@@ -1,11 +1,11 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import Chart from 'react-apexcharts';
 import { ApexOptions } from "apexcharts";
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableRow } from '@cmsgov/design-system';
 
 const TimeSeriesChart: React.FC<{
+  healthCheckName:string,
   timeSeriesData:number[][]
-}> = ({ timeSeriesData }) => {
+}> = ({ healthCheckName, timeSeriesData }) => {
 
   const chartSeries = {
     series: [{
@@ -13,27 +13,9 @@ const TimeSeriesChart: React.FC<{
     }]
   };
 
-  //Code
-  const chartOptions = {
-    options:{
-      chart: {
-        stacked: false,
-        height: 350,
-
-      },
-      xaxis: {
-        type: 'datetime',
-        labels: {
-          format: 'yyyy-MM-ddThh:mm:ss.fffZ',
-        }
-      }
-    },
-    selection: '1m'
-  };
-
-  const testOptions:ApexOptions = {
+  const chartOptions:ApexOptions = {
     chart: {
-      id: 'area-datetime',
+      id: healthCheckName,
       type: 'area',
       stacked: false,
       height: 350,
@@ -52,19 +34,40 @@ const TimeSeriesChart: React.FC<{
     xaxis: {
       type: 'datetime',
     },
+    yaxis: {
+      min: 0,
+      tickAmount: 5
+    },
+    tooltip: {
+      x: {
+        format: 'yyyy-MM-dd hh:mm:ss'
+      },
+      custom: function({series, seriesIndex, dataPointIndex, w}) {
+        return '<div>' +
+          '<div ><b>'+ healthCheckName + '</b></div>' +
+          '<div><b>HealthStatus</b>: ' + series[seriesIndex][dataPointIndex] + '</div>' +
+        '</div>';
+      }
+    }
   }
 
   const updateData = (timeline:string) => {
-    const MS = 1000;
-    const MIN = 60 * MS;
-    const HR = 60 * MIN;
+    const SEC = 1000;
+    const MIN = 60 * SEC;
     const currentTime = new Date().getTime()
-    chartOptions.selection = timeline;
 
     switch (timeline) {
+      case '30s':
+        ApexCharts.exec(
+          healthCheckName,
+          'zoomX',
+          currentTime,
+          currentTime + (30 * SEC)
+        )
+        break
       case '1m':
         ApexCharts.exec(
-          'area-datetime',
+          healthCheckName,
           'zoomX',
           currentTime,
           currentTime + (1 * MIN)
@@ -72,34 +75,19 @@ const TimeSeriesChart: React.FC<{
         break
       case '5m':
         ApexCharts.exec(
-          'area-datetime',
+          healthCheckName,
           'zoomX',
           currentTime,
           currentTime + (5 * MIN)
         )
         break
-      case '30m':
+      case 'all':
+        // Maximum time of 10 minutes
         ApexCharts.exec(
-          'area-datetime',
+          healthCheckName,
           'zoomX',
           currentTime,
-          currentTime + (30 * MIN)
-        )
-        break
-      case '1h':
-        ApexCharts.exec(
-          'area-datetime',
-          'zoomX',
-          currentTime,
-          currentTime + (1 * HR)
-        )
-        break
-      case '24h':
-        ApexCharts.exec(
-          'area-datetime',
-          'zoomX',
-          currentTime,
-          currentTime + (24 * HR)
+          currentTime + (10 * MIN)
         )
         break
       default:
@@ -109,29 +97,17 @@ const TimeSeriesChart: React.FC<{
   return (
     <div>
       <div className="toolbar">
-        <button id="1m" onClick={() => updateData('1m')} className={(chartOptions.selection === '1m' ? 'active' : '')}>
-          1m
-        </button>
+        <button id="30s" onClick={() => updateData('30s')}>30s</button>
         &nbsp;
-        <button id="5m" onClick={() => updateData('5m')} className={(chartOptions.selection === '5m' ? 'active' : '')}>
-          5m
-        </button>
+        <button id="1m" onClick={() => updateData('1m')}>1m</button>
         &nbsp;
-        <button id="30m" onClick={() => updateData('30m')} className={(chartOptions.selection === '30m' ? 'active' : '')}>
-          30m
-        </button>
+        <button id="5m" onClick={() => updateData('5m')}>5m</button>
         &nbsp;
-        <button id="1h" onClick={() => updateData('1h')} className={(chartOptions.selection === '1h' ? 'active' : '')}>
-          1h
-        </button>
-        &nbsp;
-        <button id="24h" onClick={() => updateData('24h')} className={(chartOptions.selection === '24h' ? 'active' : '')}>
-          24h
-        </button>
+        <button id="all" onClick={() => updateData('all')}>All</button>
       </div>
 
       <Chart
-        options={testOptions}
+        options={chartOptions}
         series={chartSeries.series}
         type='area'
         width='100%'
@@ -140,5 +116,4 @@ const TimeSeriesChart: React.FC<{
     </div>
   )
 }
-
 export default TimeSeriesChart;

@@ -1,7 +1,5 @@
-import React, { useEffect } from 'react';
-import Chart from 'react-apexcharts';
-import { ApexOptions } from "apexcharts";
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableRow } from '@cmsgov/design-system';
+import React from 'react';
+import { Table, TableBody, TableCell, TableHead, TableRow } from '@cmsgov/design-system';
 
 const ChartsTable: React.FC<{
   timeSeriesData: number[][]
