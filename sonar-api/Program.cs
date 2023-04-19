@@ -5,7 +5,6 @@ using System.Reflection;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Asp.Versioning;
-using Asp.Versioning.Routing;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Json;
@@ -15,12 +14,12 @@ using Cms.BatCave.Sonar.Options;
 using CommandLine;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Cms.BatCave.Sonar;
 
@@ -41,9 +40,26 @@ public class Program {
             name: "v2",
             new OpenApiInfo {
               Title = "SONAR API v2",
-              Version = "v2"
+              Version = "2"
             }
           );
+          options.SwaggerDoc(
+            name: "v1",
+            new OpenApiInfo {
+              Title = "Legacy Health Check API",
+              Version = "1"
+            }
+          );
+          options.DocInclusionPredicate((docName, description) => {
+            if (description.TryGetMethodInfo(out var method) && (method.DeclaringType != null)) {
+              var versionAttribute = method.DeclaringType.GetCustomAttribute<ApiVersionAttribute>();
+              if (versionAttribute != null) {
+                return versionAttribute.Versions.Any(v => $"v{v.MajorVersion?.ToString() ?? v.ToString()}" == docName);
+              }
+            }
+
+            return false;
+          });
           options.IncludeXmlComments(Path.Combine(
             AppContext.BaseDirectory,
             $"{Assembly.GetExecutingAssembly().GetName().Name}.xml"
@@ -51,6 +67,7 @@ public class Program {
 
           options.OperationFilter<DefaultContentTypeOperationFilter>();
           options.SchemaFilter<TupleSchemaFilter>();
+          options.DocumentFilter<FillInVersionParameterFilter>();
         });
 
         builder.WebHost.UseUrls("http://0.0.0.0:8081");
@@ -101,12 +118,9 @@ public class Program {
 
     mvcBuilder.Services
       .AddApiVersioning(options => {
-        options.RouteConstraintName = "apiVersion";
+        // options.RouteConstraintName = "apiVersion";
         options.UnsupportedApiVersionStatusCode = 404;
-        options.DefaultApiVersion = new ApiVersion(2);
-        options.AssumeDefaultVersionWhenUnspecified = true;
-      })
-      .AddMvc();
+      });
 
     var app = builder.Build();
 
@@ -187,12 +201,11 @@ public class Program {
     app.UseSwagger(swaggerOptions => {
       swaggerOptions.RouteTemplate = "api/doc/{documentName}/open-api.{json|yaml}";
     });
-    if (app.Environment.IsDevelopment()) {
-      app.UseSwaggerUI(swaggerUiOptions => {
-        swaggerUiOptions.SwaggerEndpoint("/api/doc/v2/open-api.json", "v2");
-        swaggerUiOptions.RoutePrefix = "api/doc-ui";
-      });
-    }
+    app.UseSwaggerUI(swaggerUiOptions => {
+      swaggerUiOptions.SwaggerEndpoint(url: "/api/doc/v2/open-api.json", name: "Version 2");
+      swaggerUiOptions.SwaggerEndpoint(url: "/api/doc/v1/open-api.json", name: "Version 1 (Legacy)");
+      swaggerUiOptions.RoutePrefix = "api/doc-ui";
+    });
 
     await app.RunAsync();
 
@@ -224,6 +237,7 @@ public class Program {
   }
 
   private const Int32 ApiKeyByteLength = 32;
+
   private static Boolean ValidateApiKey(
     ILogger logger,
     String configApiKey) {

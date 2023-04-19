@@ -11,8 +11,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace Cms.BatCave.Sonar.Controllers;
 
 [ApiController]
-[ApiVersion(2)]
-[Route("api/v{version:apiVersion}/admin")]
+[ApiVersionNeutral]
+[Route("api/admin")]
 public class AdminController : ControllerBase {
   private readonly DataContext _dataContext;
   private readonly ApiKeyDataHelper _apiKeyDataHelper;

@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Asp.Versioning;
 using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +14,7 @@ namespace Cms.BatCave.Sonar.Controllers;
 
 [ApiController]
 [Route("api/test")]
+[ApiVersionNeutral]
 public class TestDataController : ControllerBase {
   private readonly PrometheusRemoteWriteClient _remoteWriteClient;
 

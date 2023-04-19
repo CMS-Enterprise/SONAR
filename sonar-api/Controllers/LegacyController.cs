@@ -40,7 +40,6 @@ public class LegacyController : ControllerBase {
   }
 
   [HttpGet]
-  [HttpGet("/")]
   public async Task<IActionResult> GetAllServices(CancellationToken cancellationToken) {
     var config = this._configuration.Value;
 
