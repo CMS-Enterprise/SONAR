@@ -6,18 +6,23 @@ import { ChildServiceContainer } from 'styles';
 import HealthCheckList from './HealthCheckList';
 
 const ChildService: React.FC<{
+  environmentName: string,
+  tenantName: string,
   servicePath?: string | null,
   childService: ServiceHierarchyHealth,
   services: ServiceHierarchyHealth[]
 }> =
-  ({ servicePath, childService, services }) => {
+  ({ environmentName, tenantName, servicePath, childService, services }) => {
     return (
       <div style={{ ...ChildServiceContainer }}>
         <AccordionItem heading={childService.name}>
           <div>
             {childService.healthChecks ? (
               <div>
-                <HealthCheckList rootServiceName={`${servicePath}/${childService.name}`} healthChecks={childService.healthChecks}/>
+                <HealthCheckList environmentName={environmentName}
+                                 tenantName={tenantName}
+                                 rootServiceName={`${servicePath}/${childService.name}`}
+                                 healthChecks={childService.healthChecks}/>
               </div>
             ) : null}
             {childService.children && childService.children.length > 0 ?
@@ -28,7 +33,11 @@ const ChildService: React.FC<{
                 <ul>
                   {childService.children.map(child => (
                     <div key={child.name}>
-                      <ChildService servicePath={`${servicePath}/${childService.name}`} childService={child} services={services}/>
+                      <ChildService environmentName={environmentName}
+                                    tenantName={tenantName}
+                                    servicePath={`${servicePath}/${childService.name}`}
+                                    childService={child}
+                                    services={services}/>
                     </div>
                   ))}
                 </ul>

@@ -7,12 +7,14 @@ import { HttpResponse } from 'api/http-client';
 
 const ServiceView = () => {
   const [services, setServices] = useState<ServiceHierarchyHealth[] | null>(null);
+  const environmentName = 'foo';
+  const tenantName = 'baz'
 
   useEffect(() => {
     // create sonar client
     const sonarClient = createSonarClient();
 
-    sonarClient.getServiceHierarchyHealth('foo', 'baz')
+    sonarClient.getServiceHierarchyHealth(environmentName, tenantName)
       .then((res: HttpResponse<ServiceHierarchyHealth[], ProblemDetails | void>) => {
         setServices(res.data);
       })
@@ -26,7 +28,10 @@ const ServiceView = () => {
       <div>
         {services.map(rootService => (
           <div key={rootService.name}>
-            <RootService rootService={rootService} services={services}/>
+            <RootService environmentName={environmentName}
+                         tenantName={tenantName}
+                         rootService={rootService}
+                         services={services}/>
           </div>))}
       </div>
     </section>

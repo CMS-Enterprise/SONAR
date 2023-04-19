@@ -5,10 +5,12 @@ import { DateTimeHealthStatusValueTuple, HealthStatus } from 'api/data-contracts
 import HealthCheckListItem from 'components/ServiceListView/HealthCheckListItem';
 
 const HealthCheckList: React.FC<{
+  environmentName: string,
+  tenantName: string,
   rootServiceName?: string | null,
   healthChecks: Record<string, DateTimeHealthStatusValueTuple>
 }> =
-  ({ rootServiceName, healthChecks }) => {
+  ({ environmentName, tenantName, rootServiceName, healthChecks }) => {
     return (
       <div className="ds-l-col">
         Health Checks:
@@ -25,7 +27,11 @@ const HealthCheckList: React.FC<{
           return (
             <div key={i}>
               <Accordion bordered>
-                <HealthCheckListItem rootServiceName={rootServiceName} healthCheckName={key} healthCheckStatus={healthChecks[key][1]}/>
+                <HealthCheckListItem environmentName={environmentName}
+                                     tenantName={tenantName}
+                                     rootServiceName={rootServiceName}
+                                     healthCheckName={key}
+                                     healthCheckStatus={healthChecks[key][1]}/>
               </Accordion>
             </div>
           );

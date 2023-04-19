@@ -8,10 +8,12 @@ import ChildService from './ChildService';
 import HealthCheckList from './HealthCheckList';
 
 const RootService: React.FC<{
+  environmentName: string,
+  tenantName: string,
   rootService: ServiceHierarchyHealth,
   services: ServiceHierarchyHealth[]
 }> =
-  ({ rootService, services }) => {
+  ({ environmentName, tenantName, rootService, services }) => {
     return (
       <div style={{
         ...RootServiceContainer,
@@ -24,7 +26,10 @@ const RootService: React.FC<{
         <div>
           {rootService.healthChecks ? (
             <div>
-              <HealthCheckList rootServiceName={rootService.name} healthChecks={rootService.healthChecks}/>
+              <HealthCheckList environmentName={environmentName}
+                               tenantName={tenantName}
+                               rootServiceName={rootService.name}
+                               healthChecks={rootService.healthChecks}/>
             </div>
           ) : null}
           {rootService.children && rootService.children.length > 0 ?
@@ -35,7 +40,11 @@ const RootService: React.FC<{
               <Accordion bordered>
                 {rootService.children.map(child => (
                   <div key={child.name}>
-                    <ChildService servicePath={rootService.name} childService={child} services={services}/>
+                    <ChildService environmentName={environmentName}
+                                  tenantName={tenantName}
+                                  servicePath={rootService.name}
+                                  childService={child}
+                                  services={services}/>
                   </div>
                 ))}
               </Accordion>
