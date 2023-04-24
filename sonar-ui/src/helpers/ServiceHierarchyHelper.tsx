@@ -25,7 +25,7 @@ export function getHealthStatusIndicator(status: HealthStatus | undefined) {
   return result;
 }
 
-export function getHealthStatusClass(status: HealthStatus | null | undefined) {
+export function getHealthStatusClass(status: HealthStatus | null | undefined, isTile: boolean) {
   let result;
   switch (status) {
     case HealthStatus.Unknown:
@@ -43,5 +43,5 @@ export function getHealthStatusClass(status: HealthStatus | null | undefined) {
     default:
       result = 'offline';
   }
-  return result;
+  return result + (isTile ? "-tile" : "");
 }

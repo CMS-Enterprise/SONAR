@@ -71,28 +71,35 @@ code {
   --accordion__background-color--hover: grey;
 }
 
-.onlineTile {
-  background-color: forestgreen;
+.online-tile {
+  background-color: var(--sonar-green);
   --button-solid-alt__background-color--hover: grey;
   --accordion__background-color--hover: grey;
 }
 
-.degradedTile {
+.degraded-tile {
   color: black;
-  background-color: orange;
+  background-color: var(--sonar-orange);
   --button-solid-alt__background-color--hover: grey;
   --accordion__background-color--hover: grey;
 }
 
-.offlineTile {
-  background-color: red;
+.offline-tile {
+  background-color: var(--sonar-red);
   --button-solid-alt__background-color--hover: grey;
   --accordion__background-color--hover: grey;
 }
 
-.atRiskTile {
+.atRisk-tile {
   background-color: yellow;
   color: black;
+  --button-solid-alt__background-color--hover: grey;
+  --accordion__background-color--hover: grey;
+}
+
+.unknown-tile {
+  background-color: var(--sonar-grey);
+  color: white;
   --button-solid-alt__background-color--hover: grey;
   --accordion__background-color--hover: grey;
 }

@@ -42,7 +42,7 @@ const EnvironmentItem: React.FC<{
       <AccordionItem heading={environment.environmentName}
                      isControlledOpen={selected}
                      onChange={handleToggle}
-                     buttonClassName={getHealthStatusClass(environment.aggregateStatus)}>
+                     buttonClassName={getHealthStatusClass(environment.aggregateStatus, false)}>
         {
           loading ? (<Spinner />) :
           tenants?.filter(t=> t.environmentName === environment.environmentName)
