@@ -14,4 +14,8 @@ public static class DateTimeExtensions {
   public static Double MillisSinceUnixEpoch(this DateTime value) {
     return value.ToUniversalTime().Subtract(DateTime.UnixEpoch).TotalMilliseconds;
   }
+
+  public static Double SecondsSinceUnixEpoch(this DateTime value) {
+    return value.MillisSinceUnixEpoch() / 1000.0;
+  }
 }

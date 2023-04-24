@@ -2,6 +2,9 @@
 bin/
 obj/
 
+# test coverage results
+test/**/TestResults/
+
 # user settings
 *.suo
 *.user

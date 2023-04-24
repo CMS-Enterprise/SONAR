@@ -169,14 +169,14 @@ public class PrometheusService : IPrometheusService {
 
     this._logger.LogDebug("Querying latest health check data timestamps: {query}", query);
 
-    var queryResponse = await this._prometheusClient.QueryAsync(query, DateTime.Now, cancellationToken: cancellationToken);
+    var queryResponse = await this._prometheusClient.QueryAsync(query, DateTime.UtcNow, cancellationToken: cancellationToken);
 
     var latestServiceHealthMetricsTimestamps = queryResponse.Data?.Result.ToDictionary(
       keySelector: result => result.Labels[HealthDataHelper.MetricLabelKeys.HealthCheck],
       elementSelector: result => {
         var millisSinceUnixEpoch = Math.Round((result.Values?.Max(sample => sample.Timestamp) ?? 0) * 1000);
         var unixDateTimeOffset = DateTimeOffset.FromUnixTimeMilliseconds((Int64)millisSinceUnixEpoch);
-        return unixDateTimeOffset.DateTime;
+        return unixDateTimeOffset.UtcDateTime;
       }).ToImmutableDictionary();
 
     return latestServiceHealthMetricsTimestamps ?? ImmutableDictionary<String, DateTime>.Empty;
