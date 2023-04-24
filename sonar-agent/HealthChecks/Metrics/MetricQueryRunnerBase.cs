@@ -51,7 +51,7 @@ public abstract class MetricQueryRunnerBase : IMetricQueryRunner {
   }
 
   public async Task<IImmutableList<(DateTime Timestamp, Decimal Value)>?> QueryRangeAsync(
-    String healthCheckName,
+    HealthCheckIdentifier healthCheck,
     String expression,
     DateTime start,
     DateTime end,
@@ -69,19 +69,19 @@ public abstract class MetricQueryRunnerBase : IMetricQueryRunner {
     // Error handling
     if (qrResult.Data == null) {
       // No data, bad request
-      this.Logger.LogWarning(message: "Returned nothing for health check: {HealthCheck}", healthCheckName);
+      this.Logger.LogWarning(message: "Returned nothing for health check: {HealthCheck}", healthCheck);
       return null;
     } else if (qrResult.Data.Result.Count > 1) {
       // Bad config, multiple time series returned
       this.Logger.LogWarning(
         message: "Invalid configuration, multiple time series returned for health check: {HealthCheck}",
-        healthCheckName);
+        healthCheck);
       return null;
     } else if ((qrResult.Data.Result.Count == 0) ||
       (qrResult.Data.Result[0].Values == null) ||
       (qrResult.Data.Result[0].Values!.Count == 0)) {
       // No samples
-      this.Logger.LogWarning(message: "Returned no samples for health check: {HealthCheck}", healthCheckName);
+      this.Logger.LogWarning(message: "Returned no samples for health check: {HealthCheck}", healthCheck);
       return null;
     } else {
       // Successfully obtained samples for query, Convert from (Decimal, String) to (DateTime, Decimal)

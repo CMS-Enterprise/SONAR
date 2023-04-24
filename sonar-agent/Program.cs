@@ -2,15 +2,20 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Agent.Configuration;
+using Cms.BatCave.Sonar.Agent.HealthChecks;
+using Cms.BatCave.Sonar.Agent.HealthChecks.Metrics;
 using Cms.BatCave.Sonar.Agent.Options;
 using Cms.BatCave.Sonar.Agent.Logger;
 using Cms.BatCave.Sonar.Configuration;
+using Cms.BatCave.Sonar.Loki;
 using Cms.BatCave.Sonar.Models;
+using Cms.BatCave.Sonar.Prometheus;
 using CommandLine;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -130,8 +135,69 @@ internal class Program {
 
     logger.LogInformation("Initializing SONAR Agent...");
 
+
+    // Create HealthCheck Queue Processors
+
+    // Prometheus client
+    HttpClient CreatePrometheusHttpClient() {
+      var promHttpClient = new HttpClient();
+      promHttpClient.Timeout = TimeSpan.FromSeconds(agentConfig.Value.AgentInterval);
+      promHttpClient.BaseAddress = new Uri(
+        $"{promConfig.Value.Protocol}://{promConfig.Value.Host}:{promConfig.Value.Port}/");
+      return promHttpClient;
+    }
+
+    var promClient = new PrometheusClient(CreatePrometheusHttpClient);
+
+    // Loki Client
+    HttpClient CreateLokiHttpClient() {
+      var lokiHttpClient = new HttpClient();
+      lokiHttpClient.Timeout = TimeSpan.FromSeconds(agentConfig.Value.AgentInterval);
+      lokiHttpClient.BaseAddress = new Uri(
+        $"{lokiConfig.Value.Protocol}://{lokiConfig.Value.Host}:{lokiConfig.Value.Port}/");
+      return lokiHttpClient;
+    }
+
+    var lokiClient = new LokiClient(CreateLokiHttpClient);
+
+    using var httpHealthCheckQueue = new HealthCheckQueueProcessor<HttpHealthCheckDefinition>(
+      new HttpHealthCheckEvaluator(
+        agentConfig,
+        loggerFactory.CreateLogger<HttpHealthCheckEvaluator>()),
+      httpHealthCheckConfiguration,
+      loggerFactory.CreateLogger<HealthCheckQueueProcessor<HttpHealthCheckDefinition>>()
+    );
+
+    using var prometheusHealthCheckQueue = new HealthCheckQueueProcessor<MetricHealthCheckDefinition>(
+      new MetricHealthCheckEvaluator(
+        new CachingMetricQueryRunner(
+          new PrometheusMetricQueryRunner(
+            promClient,
+            loggerFactory.CreateLogger<PrometheusMetricQueryRunner>())),
+        loggerFactory.CreateLogger<MetricHealthCheckEvaluator>()
+      ),
+      agentConfig,
+      loggerFactory.CreateLogger<HealthCheckQueueProcessor<MetricHealthCheckDefinition>>()
+    );
+
+    using var lokiHealthCheckQueue = new HealthCheckQueueProcessor<MetricHealthCheckDefinition>(
+      new MetricHealthCheckEvaluator(
+        new CachingMetricQueryRunner(
+          new LokiMetricQueryRunner(
+            lokiClient,
+            loggerFactory.CreateLogger<LokiMetricQueryRunner>())),
+        loggerFactory.CreateLogger<MetricHealthCheckEvaluator>()
+      ),
+      agentConfig,
+      loggerFactory.CreateLogger<HealthCheckQueueProcessor<MetricHealthCheckDefinition>>()
+    );
+
+    var httpQueueProcessorTask = httpHealthCheckQueue.Run(token);
+    var prometheusQueueProcessorTask = prometheusHealthCheckQueue.Run(token);
+    var lokiQueueProcessorTask = lokiHealthCheckQueue.Run(token);
+
     var healthCheckHelper = new HealthCheckHelper(
-      loggerFactory, apiConfig, promConfig, lokiConfig, agentConfig, httpHealthCheckConfiguration);
+      loggerFactory, apiConfig, agentConfig, httpHealthCheckQueue, prometheusHealthCheckQueue, lokiHealthCheckQueue);
     var tasks = new List<Task>();
 
     // Run task that calls Health Check function for every tenant

@@ -17,10 +17,8 @@ public interface IMetricQueryRunner {
   ///   Executes a query expression in a metric data source and returns the resulting single metric
   ///   time-series as an <see cref="IImmutableList{TimeSeriesValue}" />
   /// </summary>
-  /// <param name="healthCheckName">
-  ///   The name of the health check this query is for. This argument is provided mainly for logging
-  ///   purposes. It will typically be a combination of the service name and health
-  ///   check name (i.e. "my-service/my-health-check"), but this is not a contractual guarantee.
+  /// <param name="healthCheck">
+  ///   The identifier of the health check this query is for.
   /// </param>
   /// <param name="expression">
   ///   The metric query expression.
@@ -39,7 +37,7 @@ public interface IMetricQueryRunner {
   ///   timestamps and Decimal values.
   /// </returns>
   Task<IImmutableList<(DateTime Timestamp, Decimal Value)>?> QueryRangeAsync(
-    String healthCheckName,
+    HealthCheckIdentifier healthCheck,
     String expression,
     DateTime start,
     DateTime end,

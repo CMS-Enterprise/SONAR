@@ -23,25 +23,25 @@ public class HealthCheckHelper {
   private readonly ILoggerFactory _loggerFactory;
   private readonly ILogger<HealthCheckHelper> _logger;
   private readonly IOptions<ApiConfiguration> _apiConfig;
-  private readonly IOptions<PrometheusConfiguration> _promConfig;
-  private readonly IOptions<LokiConfiguration> _lokiConfig;
   private readonly INotifyOptionsChanged<AgentConfiguration> _agentConfig;
-  private readonly INotifyOptionsChanged<HealthCheckQueueProcessorConfiguration> _httpHealthCheckConfiguration;
+  private readonly HealthCheckQueueProcessor<HttpHealthCheckDefinition> _httpHealthCheckQueue;
+  private readonly HealthCheckQueueProcessor<MetricHealthCheckDefinition> _prometheusHealthCheckQueue;
+  private readonly HealthCheckQueueProcessor<MetricHealthCheckDefinition> _lokiHealthCheckQueue;
 
   public HealthCheckHelper(
     ILoggerFactory loggerFactory,
     IOptions<ApiConfiguration> apiConfig,
-    IOptions<PrometheusConfiguration> promConfig,
-    IOptions<LokiConfiguration> lokiConfig,
     INotifyOptionsChanged<AgentConfiguration> agentConfig,
-    INotifyOptionsChanged<HealthCheckQueueProcessorConfiguration> httpHealthCheckConfiguration) {
+    HealthCheckQueueProcessor<HttpHealthCheckDefinition> httpHealthCheckQueue,
+    HealthCheckQueueProcessor<MetricHealthCheckDefinition> prometheusHealthCheckQueue,
+    HealthCheckQueueProcessor<MetricHealthCheckDefinition> lokiHealthCheckQueue) {
     this._loggerFactory = loggerFactory;
     this._logger = loggerFactory.CreateLogger<HealthCheckHelper>();
     this._apiConfig = apiConfig;
-    this._promConfig = promConfig;
-    this._lokiConfig = lokiConfig;
     this._agentConfig = agentConfig;
-    this._httpHealthCheckConfiguration = httpHealthCheckConfiguration;
+    this._httpHealthCheckQueue = httpHealthCheckQueue;
+    this._prometheusHealthCheckQueue = prometheusHealthCheckQueue;
+    this._lokiHealthCheckQueue = lokiHealthCheckQueue;
   }
 
   public async Task RunScheduledHealthCheck(
@@ -56,64 +56,6 @@ public class HealthCheckHelper {
     sonarHttpClient.Timeout = TimeSpan.FromSeconds(this._agentConfig.Value.AgentInterval);
     var client = new SonarClient(configRoot, baseUrl: this._apiConfig.Value.BaseUrl, sonarHttpClient);
     await client.ReadyAsync(token);
-
-    // Prometheus client
-    HttpClient CreatePrometheusHttpClient() {
-      var promHttpClient = new HttpClient();
-      promHttpClient.Timeout = TimeSpan.FromSeconds(this._agentConfig.Value.AgentInterval);
-      promHttpClient.BaseAddress = new Uri(
-        $"{this._promConfig.Value.Protocol}://{this._promConfig.Value.Host}:{this._promConfig.Value.Port}/");
-      return promHttpClient;
-    }
-
-    var promClient = new PrometheusClient(CreatePrometheusHttpClient);
-
-    // Loki Client
-    HttpClient CreateLokiHttpClient() {
-      var lokiHttpClient = new HttpClient();
-      lokiHttpClient.Timeout = TimeSpan.FromSeconds(this._agentConfig.Value.AgentInterval);
-      lokiHttpClient.BaseAddress = new Uri(
-        $"{this._lokiConfig.Value.Protocol}://{this._lokiConfig.Value.Host}:{this._lokiConfig.Value.Port}/");
-      return lokiHttpClient;
-    }
-
-    var lokiClient = new LokiClient(CreateLokiHttpClient);
-
-    using var httpHealthCheckQueue = new HealthCheckQueueProcessor<HttpHealthCheckDefinition>(
-      new HttpHealthCheckEvaluator(
-        this._agentConfig,
-        this._loggerFactory.CreateLogger<HttpHealthCheckEvaluator>()),
-      this._httpHealthCheckConfiguration,
-      this._loggerFactory.CreateLogger<HealthCheckQueueProcessor<HttpHealthCheckDefinition>>()
-    );
-
-    using var prometheusHealthCheckQueue = new HealthCheckQueueProcessor<MetricHealthCheckDefinition>(
-      new MetricHealthCheckEvaluator(
-        new CachingMetricQueryRunner(
-          new PrometheusMetricQueryRunner(
-            promClient,
-            this._loggerFactory.CreateLogger<PrometheusMetricQueryRunner>())),
-        this._loggerFactory.CreateLogger<MetricHealthCheckEvaluator>()
-      ),
-      this._agentConfig,
-      this._loggerFactory.CreateLogger<HealthCheckQueueProcessor<MetricHealthCheckDefinition>>()
-    );
-
-    using var lokiHealthCheckQueue = new HealthCheckQueueProcessor<MetricHealthCheckDefinition>(
-      new MetricHealthCheckEvaluator(
-        new CachingMetricQueryRunner(
-          new LokiMetricQueryRunner(
-            lokiClient,
-            this._loggerFactory.CreateLogger<LokiMetricQueryRunner>())),
-        this._loggerFactory.CreateLogger<MetricHealthCheckEvaluator>()
-      ),
-      this._agentConfig,
-      this._loggerFactory.CreateLogger<HealthCheckQueueProcessor<MetricHealthCheckDefinition>>()
-    );
-
-    var httpQueueProcessor = httpHealthCheckQueue.Run(token);
-    var prometheusQueueProcessor = prometheusHealthCheckQueue.Run(token);
-    var lokiQueueProcessor = lokiHealthCheckQueue.Run(token);
 
     while (!token.IsCancellationRequested) {
       // Configs
@@ -156,25 +98,27 @@ public class HealthCheckHelper {
 
         foreach (var healthCheck in healthChecks) {
           Task<HealthStatus> futureStatus;
+          var healthCheckId = new HealthCheckIdentifier(env, tenant, service.Name, healthCheck.Name);
+
           switch (healthCheck.Type) {
             case HealthCheckType.PrometheusMetric:
-              futureStatus = prometheusHealthCheckQueue.QueueHealthCheck(
+              futureStatus = this._prometheusHealthCheckQueue.QueueHealthCheck(
                 tenant,
-                $"{service.Name}/{healthCheck.Name}",
+                healthCheckId,
                 (MetricHealthCheckDefinition)healthCheck.Definition
               );
               break;
             case HealthCheckType.LokiMetric:
-              futureStatus = lokiHealthCheckQueue.QueueHealthCheck(
+              futureStatus = this._lokiHealthCheckQueue.QueueHealthCheck(
                 tenant,
-                $"{service.Name}/{healthCheck.Name}",
+                healthCheckId,
                 (MetricHealthCheckDefinition)healthCheck.Definition
               );
               break;
             case HealthCheckType.HttpRequest:
-              futureStatus = httpHealthCheckQueue.QueueHealthCheck(
+              futureStatus = this._httpHealthCheckQueue.QueueHealthCheck(
                 tenant,
-                $"{service.Name}/{healthCheck.Name}",
+                healthCheckId,
                 (HttpHealthCheckDefinition)healthCheck.Definition
               );
               break;
@@ -238,8 +182,6 @@ public class HealthCheckHelper {
         await Task.Delay(interval.Subtract(elapsed), token);
       }
     }
-
-    await Task.WhenAll(httpQueueProcessor, prometheusQueueProcessor, lokiQueueProcessor);
   }
 
   private async Task SendHealthData(

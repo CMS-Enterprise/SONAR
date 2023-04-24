@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading;
+using Cms.BatCave.Sonar.Agent.HealthChecks;
 using Cms.BatCave.Sonar.Agent.HealthChecks.Metrics;
 using Moq;
 using TimeSeries = System.Collections.Immutable.IImmutableList<(System.DateTime Timestamp, System.Decimal Value)>;
@@ -13,12 +14,12 @@ public static class MockMetricQueryRunner {
     var mock = new Mock<IMetricQueryRunner>();
 
     mock.Setup(qr => qr.QueryRangeAsync(
-        It.IsAny<String>(),
+        It.IsAny<HealthCheckIdentifier>(),
         It.IsAny<String>(),
         It.IsAny<DateTime>(),
         It.IsAny<DateTime>(),
         It.IsAny<CancellationToken>()))
-      .ReturnsAsync<String, String, DateTime, DateTime, CancellationToken, IMetricQueryRunner, TimeSeries?>(
+      .ReturnsAsync<HealthCheckIdentifier, String, DateTime, DateTime, CancellationToken, IMetricQueryRunner, TimeSeries?>(
         (name, query, start, end, token) => result
       );
 
@@ -29,12 +30,12 @@ public static class MockMetricQueryRunner {
     var mock = new Mock<IMetricQueryRunner>();
 
     mock.Setup(qr => qr.QueryRangeAsync(
-        It.IsAny<String>(),
+        It.IsAny<HealthCheckIdentifier>(),
         It.IsAny<String>(),
         It.IsAny<DateTime>(),
         It.IsAny<DateTime>(),
         It.IsAny<CancellationToken>()))
-      .ReturnsAsync<String, String, DateTime, DateTime, CancellationToken, IMetricQueryRunner, TimeSeries?>(
+      .ReturnsAsync<HealthCheckIdentifier, String, DateTime, DateTime, CancellationToken, IMetricQueryRunner, TimeSeries?>(
         (name, query, start, end, token) => GenerateData(start, end).ToImmutableList()
       );
 

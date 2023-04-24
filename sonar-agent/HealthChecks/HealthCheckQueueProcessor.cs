@@ -49,7 +49,7 @@ public sealed class HealthCheckQueueProcessor<TDefinition> : IDisposable
   /// </summary>
   private readonly
     ConcurrentDictionary<String,
-      ConcurrentQueue<(TaskCompletionSource<HealthStatus> Future, String Name, TDefinition Definition)>>
+      ConcurrentQueue<(TaskCompletionSource<HealthStatus> Future, HealthCheckIdentifier HealthCheck, TDefinition Definition)>>
     _healthCheckQueues =
       new(StringComparer.OrdinalIgnoreCase);
 
@@ -134,15 +134,14 @@ public sealed class HealthCheckQueueProcessor<TDefinition> : IDisposable
         if (this._healthCheckQueues.TryGetValue(tenant, out var queue) && queue.TryDequeue(out var check)) {
           var taskId = Guid.NewGuid();
           this._logger.LogTrace(
-            "[{ThreadId}] Starting health check \"{HealthCheck}\" ({TaskId}) tenant \"{Tenant}\"",
+            "[{ThreadId}] Starting health check \"{HealthCheck}\" ({TaskId})",
             Environment.CurrentManagedThreadId,
-            check.Name,
-            taskId,
-            tenant
+            check.HealthCheck,
+            taskId
           );
           this._runningHealthChecks.TryAdd(
             taskId,
-            this.RunHealthCheckAsync(taskId, check.Future, check.Name, check.Definition, cancellationToken)
+            this.RunHealthCheckAsync(taskId, check.Future, check.HealthCheck, check.Definition, cancellationToken)
           );
 
           success = true;
@@ -171,19 +170,19 @@ public sealed class HealthCheckQueueProcessor<TDefinition> : IDisposable
   /// </returns>
   public Task<HealthStatus> QueueHealthCheck(
     String tenant,
-    String healthCheckName,
+    HealthCheckIdentifier healthCheck,
     TDefinition healthCheckDefinition) {
 
     var future = new TaskCompletionSource<HealthStatus>();
     this._healthCheckQueues.AddOrUpdate(
       tenant,
       addValueFactory: (_) => {
-        var queue = new ConcurrentQueue<(TaskCompletionSource<HealthStatus>, String, TDefinition)>();
-        queue.Enqueue((future, healthCheckName, healthCheckDefinition));
+        var queue = new ConcurrentQueue<(TaskCompletionSource<HealthStatus>, HealthCheckIdentifier, TDefinition)>();
+        queue.Enqueue((future, healthCheck, healthCheckDefinition));
         return queue;
       },
       updateValueFactory: (_, queue) => {
-        queue.Enqueue((future, healthCheckName, healthCheckDefinition));
+        queue.Enqueue((future, healthCheck, healthCheckDefinition));
         return queue;
       }
     );
@@ -214,7 +213,7 @@ public sealed class HealthCheckQueueProcessor<TDefinition> : IDisposable
   private async Task RunHealthCheckAsync(
     Guid taskId,
     TaskCompletionSource<HealthStatus> future,
-    String healthCheckName,
+    HealthCheckIdentifier healthCheck,
     TDefinition healthCheckDefinition,
     CancellationToken cancellationToken) {
 
@@ -222,18 +221,18 @@ public sealed class HealthCheckQueueProcessor<TDefinition> : IDisposable
       this._logger.LogDebug(
         "[{ThreadId}] Evaluating Health Check Evaluation (HealthCheck: {HealthCheck}, TaskId: {TaskId})",
         Environment.CurrentManagedThreadId,
-        healthCheckName,
+        healthCheck,
         taskId
       );
       var result = await this._healthCheckEvaluator.EvaluateHealthCheckAsync(
-        healthCheckName,
+        healthCheck,
         healthCheckDefinition,
         cancellationToken
       );
       this._logger.LogDebug(
         "[{ThreadId}] Health Check Complete (HealthCheck: {HealthCheck}, Status: {Status}, TaskId: {TaskId})",
         Environment.CurrentManagedThreadId,
-        healthCheckName,
+        healthCheck,
         result,
         taskId
       );
@@ -241,8 +240,8 @@ public sealed class HealthCheckQueueProcessor<TDefinition> : IDisposable
     } catch (OperationCanceledException) {
       future.SetCanceled(cancellationToken);
       this._logger.LogDebug(
-        "Health Check Canceled (HealthCheck: {HealthCheck}, TaskId: {TaskId}",
-        healthCheckName,
+        "Health Check Canceled (HealthCheck: {HealthCheck}, TaskId: {TaskId})",
+        healthCheck,
         taskId
       );
     } catch (Exception ex) {

@@ -34,7 +34,7 @@ public class HttpHealthCheckEvaluator : IHealthCheckEvaluator<HttpHealthCheckDef
   }
 
   public async Task<HealthStatus> EvaluateHealthCheckAsync(
-    String name,
+    HealthCheckIdentifier healthCheck,
     HttpHealthCheckDefinition definition,
     CancellationToken cancellationToken = default) {
 
@@ -66,7 +66,7 @@ public class HttpHealthCheckEvaluator : IHealthCheckEvaluator<HttpHealthCheckDef
         } else {
           this._logger.LogWarning(
             "Invalid AuthorizationHeader value for health check {HealthCheck}",
-            name
+            healthCheck
           );
         }
       }
@@ -96,7 +96,7 @@ public class HttpHealthCheckEvaluator : IHealthCheckEvaluator<HttpHealthCheckDef
             "Status code condition {StatusCode} => {ServiceHealth} met for health check {HealthCheck}",
             statusCode,
             statusCondition.Status,
-            name
+            healthCheck
           );
 
           currCheck = statusCondition.Status;
@@ -109,7 +109,7 @@ public class HttpHealthCheckEvaluator : IHealthCheckEvaluator<HttpHealthCheckDef
         this._logger.LogDebug(
           "No status code conditions matched {StatusCode} for health check {HealthCheck}",
           statusCode,
-          name
+          healthCheck
         );
 
         return HealthStatus.Offline;
@@ -125,7 +125,7 @@ public class HttpHealthCheckEvaluator : IHealthCheckEvaluator<HttpHealthCheckDef
           this._logger.LogDebug(
             "Request duration exceeded threshold ({Threshold}) for health check {HealthCheck}",
             responseCondition.ResponseTime,
-            name
+            healthCheck
           );
 
           currCheck = responseCondition.Status;
@@ -139,7 +139,7 @@ public class HttpHealthCheckEvaluator : IHealthCheckEvaluator<HttpHealthCheckDef
         e,
         "Request to {Url} failed for health check {HealthCheck}: {Message}",
         definition.Url,
-        name,
+        healthCheck,
         e.Message
       );
 
@@ -149,7 +149,7 @@ public class HttpHealthCheckEvaluator : IHealthCheckEvaluator<HttpHealthCheckDef
       this._logger.LogWarning(
         "Invalid Health Check URL: {Url} for health check {HealthCheck}",
         definition.Url,
-        name
+        healthCheck
       );
 
       return HealthStatus.Unknown;
@@ -162,7 +162,7 @@ public class HttpHealthCheckEvaluator : IHealthCheckEvaluator<HttpHealthCheckDef
         this._logger.LogDebug(
           "Request to {Url} timed out for health check {HealthCheck}",
           definition.Url,
-          name
+          healthCheck
         );
 
         return HealthStatus.Offline;

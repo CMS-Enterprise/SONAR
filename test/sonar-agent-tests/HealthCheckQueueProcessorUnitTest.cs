@@ -36,11 +36,11 @@ public class HealthCheckQueueProcessorUnitTest {
       Enumerable.Range(start: 0, count: maximumConcurrency)
         .Select(i =>
           (Tenant: Guid.NewGuid().ToString(),
-            Name: $"HealthCheck{i}",
+            Identifer: new HealthCheckIdentifier("env", "ten", "svc", $"HealthCheck{i}"),
             Definition: new TestHealthCheckDefinition(RandomHealthStatus())))
         .ToList();
 
-    var futures = healthChecks.Select(hc => processor.QueueHealthCheck(hc.Tenant, hc.Name, hc.Definition)).ToList();
+    var futures = healthChecks.Select(hc => processor.QueueHealthCheck(hc.Tenant, hc.Identifer, hc.Definition)).ToList();
 
     var cancellation = new CancellationTokenSource();
 
@@ -95,11 +95,11 @@ public class HealthCheckQueueProcessorUnitTest {
       Enumerable.Range(start: 0, count: maximumConcurrency + 2)
         .Select(i =>
           (Tenant: Guid.NewGuid().ToString(),
-            Name: $"HealthCheck{i}",
+            Identifier: new HealthCheckIdentifier("foo", "bar", "baz", $"HealthCheck{i}"),
             Definition: new TestHealthCheckDefinition(RandomHealthStatus())))
         .ToList();
 
-    var futures = healthChecks.Select(hc => processor.QueueHealthCheck(hc.Tenant, hc.Name, hc.Definition)).ToList();
+    var futures = healthChecks.Select(hc => processor.QueueHealthCheck(hc.Tenant, hc.Identifier, hc.Definition)).ToList();
 
     var cancellation = new CancellationTokenSource();
 
@@ -154,7 +154,7 @@ public class HealthCheckQueueProcessorUnitTest {
 
   private class TestHealthCheckEvaluator : IHealthCheckEvaluator<TestHealthCheckDefinition> {
     public async Task<HealthStatus> EvaluateHealthCheckAsync(
-      String name,
+      HealthCheckIdentifier healthCheck,
       TestHealthCheckDefinition definition,
       CancellationToken cancellationToken = default) {
 

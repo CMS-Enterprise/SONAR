@@ -2,6 +2,7 @@ using System;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
+using Cms.BatCave.Sonar.Agent.HealthChecks;
 using Cms.BatCave.Sonar.Agent.HealthChecks.Metrics;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Models;
@@ -34,7 +35,7 @@ public class MetricHealthCheckEvaluatorUnitTest {
     );
 
     var result = await evaluator.EvaluateHealthCheckAsync(
-      "example",
+      new HealthCheckIdentifier("env", "ten", "svc", "example"),
       new MetricHealthCheckDefinition(
         TimeSpan.FromSeconds(10),
         "example",
@@ -71,7 +72,7 @@ public class MetricHealthCheckEvaluatorUnitTest {
     );
 
     var result = await evaluator.EvaluateHealthCheckAsync(
-      "example",
+      new HealthCheckIdentifier("env", "ten", "svc", "example"),
       new MetricHealthCheckDefinition(
         TimeSpan.FromSeconds(10),
         "example",

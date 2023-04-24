@@ -32,33 +32,33 @@ public class CachingMetricQueryRunner : IMetricQueryRunner {
   }
 
   public async Task<IImmutableList<(DateTime Timestamp, Decimal Value)>?> QueryRangeAsync(
-    String healthCheckName,
+    HealthCheckIdentifier healthCheck,
     String expression,
     DateTime start,
     DateTime end,
     CancellationToken cancellationToken) {
 
-    var cacheBasedStart = this.GetStartDate(healthCheckName, expression, start);
+    var cacheBasedStart = this.GetStartDate(healthCheck, expression, start);
 
     var samples = await this._innerQueryRunner.QueryRangeAsync(
-      healthCheckName,
+      healthCheck,
       expression,
       cacheBasedStart,
       end,
       cancellationToken
     );
 
-    return samples != null ? this.UpdateCache(healthCheckName, expression, samples, start) : null;
+    return samples != null ? this.UpdateCache(healthCheck.ToString(), expression, samples, start) : null;
   }
 
   private DateTime GetStartDate(
-    String name,
+    HealthCheckIdentifier healthCheck,
     String expression,
     DateTime start) {
 
     // If no cached values, use the original start date
     // Else, cached values exist, calculate start date from last cached value.
-    if (!this._cache.TryGetValue((name, expression), out var cachedData) || (cachedData.Count == 0)) {
+    if (!this._cache.TryGetValue((healthCheck.ToString(), expression), out var cachedData) || (cachedData.Count == 0)) {
       return start;
     } else {
       var lastCachedTimestamp = cachedData.Last().Timestamp;

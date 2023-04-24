@@ -27,7 +27,7 @@ public class MetricHealthCheckEvaluator : IHealthCheckEvaluator<MetricHealthChec
   }
 
   public async Task<HealthStatus> EvaluateHealthCheckAsync(
-    String name,
+    HealthCheckIdentifier healthCheck,
     MetricHealthCheckDefinition definition,
     CancellationToken cancellationToken = default) {
 
@@ -36,7 +36,7 @@ public class MetricHealthCheckEvaluator : IHealthCheckEvaluator<MetricHealthChec
 
     // Get metric samples
     var qrResult = await this._queryRunner.QueryRangeAsync(
-      name,
+      healthCheck,
       definition.Expression,
       end.Subtract(definition.Duration),
       end,
@@ -46,7 +46,7 @@ public class MetricHealthCheckEvaluator : IHealthCheckEvaluator<MetricHealthChec
     // Failed to get valid query results.
     return qrResult == null ?
       HealthStatus.Unknown :
-      this.ProcessMetricSamples(name, definition.Conditions, qrResult);
+      this.ProcessMetricSamples(healthCheck, definition.Conditions, qrResult);
   }
 
   /// <summary>
@@ -64,7 +64,7 @@ public class MetricHealthCheckEvaluator : IHealthCheckEvaluator<MetricHealthChec
   ///   The time series the conditions are being evaluated against.
   /// </param>
   private HealthStatus ProcessMetricSamples(
-    String name,
+    HealthCheckIdentifier healthCheck,
     IImmutableList<MetricHealthCondition> conditions,
     IImmutableList<(DateTime Timestamp, Decimal Value)> samples) {
 
@@ -72,7 +72,7 @@ public class MetricHealthCheckEvaluator : IHealthCheckEvaluator<MetricHealthChec
     var currCheck = HealthStatus.Online;
     if (samples.Count == 0) {
       // No samples
-      this._logger.LogWarning(message: "Returned no samples for health check: {HealthCheck}", name);
+      this._logger.LogWarning(message: "Returned no samples for health check: {HealthCheck}", healthCheck);
       currCheck = HealthStatus.Unknown;
     } else {
       foreach (var condition in conditions) {
