@@ -3,6 +3,7 @@ import React from 'react';
 import { AccordionItem } from '@cmsgov/design-system';
 import TimeSeriesChart from 'components/Charts/TimeSeriesChart'
 import ChartsTable from 'components/Charts/ChartsTable'
+import { chartsFlexContainer, chartsFlexItem } from 'components/Charts/charts.style';
 
 const HealthCheckListItem: React.FC<{
   environmentName: string,
@@ -45,12 +46,12 @@ const HealthCheckListItem: React.FC<{
   return (
     <AccordionItem heading={`${healthCheckName}: ${healthCheckStatus}`}>
       <TimeSeriesChart healthCheckName={healthCheckName} timeSeriesData={transformedData} />
-      <div style={{display:'flex',  justifyContent:'center'}}>
-        <div style={{flexGrow:'1', flexShrink:'0'}}>
+      <div style={chartsFlexContainer}>
+        <div style={chartsFlexItem}>
           <ChartsTable timeSeriesData={transformedData}/>
         </div>
 
-        <div style={{flexGrow:'1', flexShrink:'0'}}>
+        <div style={chartsFlexItem}>
           {healthCheckName.toLowerCase().includes("http") &&
             <p>
               <b>Offline</b>: Value {'>'} 50<br />
