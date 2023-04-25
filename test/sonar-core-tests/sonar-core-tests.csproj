@@ -1,5 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <Import Project="../test-with-coverage.targets" />
+
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
     <RootNamespace>Cms.BatCave.Sonar.Tests</RootNamespace>

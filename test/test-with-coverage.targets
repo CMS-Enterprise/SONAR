@@ -1,0 +1,16 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <ItemGroup>
+    <PackageReference Include="ReportGenerator" Version="5.1.19" GeneratePathProperty="true" />
+  </ItemGroup>
+
+  <Target Name="test-with-coverage">
+    <RemoveDir Directories="test-results" />
+    <Exec Command='dotnet test --collect:"XPlat Code Coverage" --results-directory="test-results"' />
+    <ReportGenerator
+      ReportFiles="test-results/**/coverage.cobertura.xml"
+      ReportTypes="Html"
+      TargetDirectory="test-results/html-coverage-report" />
+  </Target>
+
+</Project>

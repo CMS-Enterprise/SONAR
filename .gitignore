@@ -3,7 +3,7 @@ bin/
 obj/
 
 # test coverage results
-test/**/TestResults/
+test/**/test-results/
 
 # user settings
 *.suo
