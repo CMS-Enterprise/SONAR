@@ -73,7 +73,7 @@
             "conditions": [
               {
                 "status": "Online",
-                "statusCodes": [200],
+                "statusCodes": [200, 201],
                 "type": "HttpStatusCode"
               },
               {

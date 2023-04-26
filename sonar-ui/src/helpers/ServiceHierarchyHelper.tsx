@@ -45,3 +45,28 @@ export function getHealthStatusClass(status: HealthStatus | null | undefined) {
   }
   return result;
 }
+
+export function getOperatorPunctuation(symbol:string | null | undefined) {
+  let result;
+  switch (symbol) {
+    case 'Equal':
+      result = '='
+      break;
+    case 'NotEqual':
+      result = '!='
+      break;
+    case 'GreaterThan':
+      result = '>'
+      break;
+    case 'GreaterThanOrEqual':
+      result = '>='
+      break;
+    case 'LessThan':
+      result = '<'
+      break;
+    case 'LessThanOrEqual':
+      result = '<='
+      break;
+  }
+  return result;
+}

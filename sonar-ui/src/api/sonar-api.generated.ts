@@ -13,14 +13,12 @@ import {
   ApiKey,
   ApiKeyConfiguration,
   ApiKeyDetails,
-  DateTimeDoubleValueTuple,
   EnvironmentHealth,
   ProblemDetails,
   ServiceHealth,
   ServiceHealthData,
   ServiceHierarchyConfiguration,
   ServiceHierarchyHealth,
-  ServiceHierarchyHealthHistory,
   TenantHealth,
   UptimeModel,
 } from "./data-contracts";
@@ -254,114 +252,6 @@ tenant, and service in Prometheus. Filters out stale and out-of-order samples pr
       method: "POST",
       body: data,
       type: ContentType.Json,
-      format: "json",
-      ...params,
-    });
-  /**
-   * No description
-   *
-   * @tags HealthCheckData
-   * @name GetHealthCheckData
-   * @request GET:/api/v2/health-check-data/{environment}/tenants/{tenant}/services/{service}/health-check/{healthCheck}
-   */
-  getHealthCheckData = (
-    environment: string,
-    tenant: string,
-    service: string,
-    healthCheck: string,
-    query?: {
-      /** @format date-time */
-      queryStart?: string;
-      /** @format date-time */
-      queryEnd?: string;
-    },
-    params: RequestParams = {},
-  ) =>
-    this.request<DateTimeDoubleValueTuple[], any>({
-      path: `/api/v2/health-check-data/${environment}/tenants/${tenant}/services/${service}/health-check/${healthCheck}`,
-      method: "GET",
-      query: query,
-      format: "json",
-      ...params,
-    });
-  /**
-   * No description
-   *
-   * @tags HealthHistory
-   * @name GetServicesHealthHistory
-   * @summary Get the health history for all services within the specified Tenant.
-   * @request GET:/api/v2/health-history/{environment}/tenants/{tenant}
-   */
-  getServicesHealthHistory = (
-    environment: string,
-    tenant: string,
-    query?: {
-      /**
-       * The queries first evaluation time.  The start and end time cannot be greater
-       * than 24 hours (default is current time)
-       * @format date-time
-       */
-      start?: string;
-      /**
-       * The queries evaluation time stops on or before this time.  The start and end time
-       * cannot be greater than 24 hours (default is current time minus 1 hour)
-       * @format date-time
-       */
-      end?: string;
-      /**
-       * The number of seconds that is incremented on each step.  Step cannot be greater
-       * than 3600 (default 30)
-       * @format int32
-       */
-      step?: number;
-    },
-    params: RequestParams = {},
-  ) =>
-    this.request<ServiceHierarchyHealthHistory[], ProblemDetails | void>({
-      path: `/api/v2/health-history/${environment}/tenants/${tenant}`,
-      method: "GET",
-      query: query,
-      format: "json",
-      ...params,
-    });
-  /**
-   * @description Get the health history for a specific service and its children.
-   *
-   * @tags HealthHistory
-   * @name GetServiceHealthHistory
-   * @summary Get the health history for a specific service, specified by its path in the service hierarchy.
-   * @request GET:/api/v2/health-history/{environment}/tenants/{tenant}/services/{servicePath}
-   */
-  getServiceHealthHistory = (
-    environment: string,
-    tenant: string,
-    servicePath: string,
-    query?: {
-      /**
-       * The queries first evaluation time.  The start and end time cannot be greater
-       * than 24 hours (default is current time)
-       * @format date-time
-       */
-      start?: string;
-      /**
-       * The queries evaluation time stops on or before this time.  The start and end time
-       * cannot be greater than 24 hours (default is current time minus 1 hour)
-       * @format date-time
-       */
-      end?: string;
-      /**
-       * The number of seconds that is incremented on each step.  Step cannot be greater
-       * than 3600 (default 30)
-       * @format int32
-       */
-      step?: number;
-    },
-    params: RequestParams = {},
-  ) =>
-    this.request<ServiceHierarchyHealthHistory, ProblemDetails | void>({
-      path: `/api/v2/health-history/${environment}/tenants/${tenant}/services/${servicePath}`,
-      method: "GET",
-      query: query,
       format: "json",
       ...params,
     });

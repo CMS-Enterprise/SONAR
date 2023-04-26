@@ -48,6 +48,19 @@ const TimeSeriesChart: React.FC<{
           '<div><b>HealthStatus</b>: ' + series[seriesIndex][dataPointIndex] + '</div>' +
         '</div>';
       }
+    },
+    annotations: {
+      yaxis: [
+        {
+          y: 1,
+          y2: 2,
+          borderColor: '#000',
+          fillColor: '#FEB019',
+          label: {
+            text: 'Y-axis range'
+          }
+        }
+      ]
     }
   }
 

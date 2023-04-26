@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { AccordionItem } from '@cmsgov/design-system';
 import TimeSeriesChart from 'components/Charts/TimeSeriesChart'
 import ChartsTable from 'components/Charts/ChartsTable'
 import { chartsFlexContainer, chartsFlexItem } from 'components/Charts/charts.style';
+import { createSonarClient } from 'helpers/ApiHelper';
+import { HealthCheckDefinition, ServiceHierarchyConfiguration } from 'api/data-contracts';
+import ThresholdTable from './ThresholdTable';
 
 const HealthCheckListItem: React.FC<{
   environmentName: string,
@@ -12,6 +15,7 @@ const HealthCheckListItem: React.FC<{
   healthCheckName: string,
   healthCheckStatus: string
 }> = ({ environmentName, tenantName, rootServiceName, healthCheckName, healthCheckStatus}) => {
+  const [svcHierachyCfg, setSvcHierachyCfg] = useState<ServiceHierarchyConfiguration | null>(null);
   /*
   //TODO API Call to TS healthCheck
   const [tsData, setTsData] = useState<timeSeriesData[] | null>(null);
@@ -25,6 +29,16 @@ const HealthCheckListItem: React.FC<{
       .catch(e => console.log(`Error fetching Time Series Data: ${e.message}`));
   }, []);
    */
+
+  useEffect(() => {
+    const sonarClient = createSonarClient();
+    sonarClient.getTenant(environmentName, tenantName)
+      .then((res) => {
+        setSvcHierachyCfg(res.data);
+      })
+      .catch(e => console.log(`Error fetching tenants: ${e.message}`));
+  });
+
   const TIMESTAMP_DATA = 0;
   const HEALTHSTATUS_DATA = 1;
 
@@ -52,31 +66,28 @@ const HealthCheckListItem: React.FC<{
         </div>
 
         <div style={chartsFlexItem}>
-          {healthCheckName.toLowerCase().includes("http") &&
-            <p>
-              <b>Offline</b>: Value {'>'} 50<br />
-              <b>Degraded</b>: Response Time {'>'} 500ms<br />
-              <b>Online</b>: StatusCode in (200, 201, 204)
-            </p>
-          }
-          {
-            healthCheckName.toLowerCase().includes("loki") &&
-            <p>
-              <b>Loki Query</b>: {rootServiceName}/{healthCheckName}<br /><br />
-              <b>Offline</b>: Value {'>'} 4<br />
-              <b>Degraded</b>: Value {'>'} 3<br />
-              <b>AtRisk</b>: Value {'>'} 2
-            </p>
-          }
-          {
-            !healthCheckName.toLowerCase().includes("http") &&
-            !healthCheckName.toLowerCase().includes("loki") &&
-            <p>
-              <b>Prometheus Query</b>: {rootServiceName}/{healthCheckName}<br /><br />
-              <b>Offline</b>: Value {'>'} 60<br />
-              <b>Degraded</b>: Value {'>'} 20
-            </p>
-          }
+
+          <div>
+            {svcHierachyCfg?.services?.map((s: any) =>
+              s.healthChecks.filter((hc:any) => hc.name === healthCheckName).map((hc:any) =>
+                <span>{hc.definition.conditions.map((c:any) => c.status)}</span>
+
+
+
+              )
+            )}
+          </div>
+          <ThresholdTable svcHierarchyCfg={svcHierachyCfg}
+                          rootServiceName={rootServiceName}
+                          healthCheckName={healthCheckName}
+                          healthCheckStatus={healthCheckStatus}
+          />
+
+
+
+
+
+
         </div>
       </div>
     </AccordionItem>
@@ -84,3 +95,4 @@ const HealthCheckListItem: React.FC<{
 };
 
 export default HealthCheckListItem;
+
