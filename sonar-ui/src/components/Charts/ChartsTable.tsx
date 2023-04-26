@@ -23,10 +23,10 @@ const ChartsTable: React.FC<{
         <TableBody>
           {timeSeriesData.map(data =>
             <TableRow>
-              <TableCell stackedTitle="Document title">
+              <TableCell>
                 {new Date(data[TIMESTAMP_DATA]).toTimeString()}
               </TableCell>
-              <TableCell stackedTitle="Description">
+              <TableCell>
                 {data[HEALTHSTATUS_DATA]}
               </TableCell>
             </TableRow>

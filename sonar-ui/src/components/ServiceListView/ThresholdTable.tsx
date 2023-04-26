@@ -1,9 +1,7 @@
 import React from 'react';
-import { Accordion } from '@cmsgov/design-system';
 
 import { HealthCheckType, ServiceHierarchyConfiguration } from 'api/data-contracts';
 import { getOperatorPunctuation } from 'helpers/ServiceHierarchyHelper';
-
 
 const ThresholdTable: React.FC<{
   svcHierarchyCfg: ServiceHierarchyConfiguration | null,
@@ -43,7 +41,7 @@ const ThresholdTable: React.FC<{
           </div>
         )
       default:
-        throw new Error("Unable to determine metric type.");
+        console.error('Unexpected metric type.');
         break;
     }
   }

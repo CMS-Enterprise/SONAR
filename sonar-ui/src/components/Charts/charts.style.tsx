@@ -1,9 +1,15 @@
 export const chartsFlexContainer = {
   display:'flex',
-  justifyContent:'center'
+  justifyContent:'left',
+  overflow: 'hidden',
 }
-
-export const chartsFlexItem = {
-  flexGrow:'1',
-  flexShrink:'0'
+export const chartsFlexTable = {
+  flexGrow:'0',
+  flexShrink:'0',
+  margin: '10px'
+}
+export const chartsFlexThreshold = {
+  flexGrow:'0',
+  flexShrink:'1',
+  margin: '10px'
 }

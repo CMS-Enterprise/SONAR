@@ -1,11 +1,46 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Chart from 'react-apexcharts';
 import { ApexOptions } from "apexcharts";
+import { HealthCheckType, ServiceHierarchyConfiguration } from 'api/data-contracts';
 
 const TimeSeriesChart: React.FC<{
+  svcHierarchyCfg: ServiceHierarchyConfiguration | null,
   healthCheckName:string,
   timeSeriesData:number[][]
-}> = ({ healthCheckName, timeSeriesData }) => {
+}> = ({ svcHierarchyCfg, healthCheckName, timeSeriesData }) => {
+  const chartAnnotations = {
+    annotations: {
+      yaxis: [{}]
+    }
+  }
+
+  //TODO TESTING
+  useEffect(()  => {
+    svcHierarchyCfg?.services?.map((s: any) =>
+      s.healthChecks.filter((hc:any) => (hc.name === healthCheckName && hc.type != HealthCheckType.HttpRequest)).map((hc:any) =>
+        hc.definition.conditions.map((c:any) =>
+          chartAnnotations.annotations.yaxis.push({
+            y: c.threshold,
+            borderColor: 'grey',
+            label: {
+              text: `${c.status}`,
+              position: 'left',
+              textAnchor: 'start',
+              offsetX: 10,
+              borderColor: 'grey',
+              style: {
+                color: 'white',
+                background: 'grey',
+              }
+            }
+          })
+        )
+      )
+    )
+  }, [chartAnnotations]);
+
+
+
 
   const chartSeries = {
     series: [{
@@ -44,23 +79,10 @@ const TimeSeriesChart: React.FC<{
       },
       custom: function({series, seriesIndex, dataPointIndex, w}) {
         return '<div>' +
-          '<div ><b>'+ healthCheckName + '</b></div>' +
+          '<div><b>'+ healthCheckName + '</b></div>' +
           '<div><b>HealthStatus</b>: ' + series[seriesIndex][dataPointIndex] + '</div>' +
         '</div>';
       }
-    },
-    annotations: {
-      yaxis: [
-        {
-          y: 1,
-          y2: 2,
-          borderColor: '#000',
-          fillColor: '#FEB019',
-          label: {
-            text: 'Y-axis range'
-          }
-        }
-      ]
     }
   }
 
@@ -107,6 +129,30 @@ const TimeSeriesChart: React.FC<{
     }
   }
 
+  const updateYAxis = ()  => {
+    svcHierarchyCfg?.services?.map((s: any) =>
+      s.healthChecks.filter((hc:any) => (hc.name === healthCheckName && hc.type != HealthCheckType.HttpRequest)).map((hc:any) =>
+        hc.definition.conditions.map((c:any) =>
+          ApexCharts.exec(healthCheckName, "addYaxisAnnotation", {
+            y: c.threshold,
+            borderColor: 'grey',
+            label: {
+              text: `${c.status}`,
+              position: 'left',
+              textAnchor: 'start',
+              offsetX: 10,
+              borderColor: 'grey',
+              style: {
+                color: 'white',
+                background: 'grey',
+              },
+            },
+          })
+        )
+      )
+    )
+  };
+
   return (
     <div>
       <div className="toolbar">
@@ -117,6 +163,10 @@ const TimeSeriesChart: React.FC<{
         <button id="5m" onClick={() => updateData('5m')}>5m</button>
         &nbsp;
         <button id="all" onClick={() => updateData('all')}>All</button>
+        &nbsp;
+        <button id="update" onClick={() => updateYAxis()}>Update</button>
+        &nbsp;
+
       </div>
 
       <Chart
@@ -126,7 +176,11 @@ const TimeSeriesChart: React.FC<{
         width='100%'
         height='400'
       />
+
+
     </div>
   )
 }
 export default TimeSeriesChart;
+
+
