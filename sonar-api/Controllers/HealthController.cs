@@ -339,6 +339,10 @@ public class HealthController : ControllerBase {
       await this._serviceDataHelper.GetSpecificService(environment, tenant, servicePath, serviceChildIdsLookup,
         cancellationToken);
 
+    if (existingService == null) {
+      throw new ResourceNotFoundException(nameof(Service), servicePath);
+    }
+
     var serviceStatuses = await this._healthDataHelper.GetServiceStatuses(
       environment, tenant, cancellationToken
     );

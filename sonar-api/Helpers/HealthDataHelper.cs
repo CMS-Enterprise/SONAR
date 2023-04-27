@@ -293,6 +293,52 @@ public class HealthDataHelper {
     return processResult(response.Data);
   }
 
+  public async Task<T>
+  GetPrometheusQueryRangeValue<T>(
+    IPrometheusClient prometheusClient,
+    String promQuery, DateTime start, DateTime end, TimeSpan step,
+    Func<QueryResults, T> processResult, CancellationToken cancellationToken) {
+
+    try {
+      var response = await prometheusClient.QueryRangeAsync(
+        $"{promQuery}",
+        start.ToUniversalTime(),
+        end.ToUniversalTime(),
+        step,
+        cancellationToken: cancellationToken
+      );
+
+      if (response.Status != ResponseStatus.Success) {
+        this._logger.LogError(
+          message: "Unexpected error querying service health status from Prometheus ({ErrorType}): {ErrorMessage}",
+          response.ErrorType,
+          response.Error
+        );
+        throw new InternalServerErrorException(
+          errorType: "PrometheusApiError",
+          message: "Error querying service health status."
+        );
+      }
+
+      if (response.Data == null) {
+        this._logger.LogError(
+          message: "Prometheus unexpectedly returned null data for query {Query}",
+          promQuery
+        );
+        throw new InternalServerErrorException(
+          errorType: "PrometheusApiError",
+          message: "Error querying service health status."
+        );
+      }
+      return processResult(response.Data);
+    } catch (Exception e) {
+
+      throw new InternalServerErrorException(
+        errorType: "PrometheusApiError",
+        message: $"Error querying service health history status. {e.Message}"
+      );
+    }
+  }
   private (DateTime timestamp, HealthStatus status)? GetEffectiveHealthStatus(
     String metricName,
     IEnumerable<(IImmutableDictionary<String, String> Labels, (Decimal Timestamp, String Flag) Value)> group) {

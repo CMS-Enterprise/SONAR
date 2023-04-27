@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "5f43dc80-00a4-497a-9865-5849edc0fd0a",
+		"_postman_id": "d2cfbb1f-e48f-40c4-8729-2aca79ac1c33",
 		"name": "SONAR",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "20614257"
+		"_exporter_id": "26427260"
 	},
 	"item": [
 		{
@@ -90,6 +90,84 @@
 						"{{TEST_ENVIRONMENT}}",
 						"tenants",
 						"{{TEST_TENANT}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Tenant Health History",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{SONAR_BASE_URL}}/api/v2/health-history/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}?step=10",
+					"host": [
+						"{{SONAR_BASE_URL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"health-history",
+						"{{TEST_ENVIRONMENT}}",
+						"tenants",
+						"{{TEST_TENANT}}"
+					],
+					"query": [
+						{
+							"key": "start",
+							"value": "",
+							"disabled": true
+						},
+						{
+							"key": "end",
+							"value": null,
+							"disabled": true
+						},
+						{
+							"key": "step",
+							"value": "10"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Service Health History",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{SONAR_BASE_URL}}/api/v2/health-history/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE_PATH}}?step=10",
+					"host": [
+						"{{SONAR_BASE_URL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"health-history",
+						"{{TEST_ENVIRONMENT}}",
+						"tenants",
+						"{{TEST_TENANT}}",
+						"services",
+						"{{TEST_SERVICE_PATH}}"
+					],
+					"query": [
+						{
+							"key": "start",
+							"value": "",
+							"disabled": true
+						},
+						{
+							"key": "end",
+							"value": null,
+							"disabled": true
+						},
+						{
+							"key": "step",
+							"value": "10"
+						}
 					]
 				}
 			},
