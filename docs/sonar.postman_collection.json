@@ -477,6 +477,72 @@
 			},
 			"response": []
 		},
+    {
+      "name": "Get Service Health Check Data (no start and end specified)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{SONAR_BASE_URL}}/api/v2/health-check-data/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE}}/health-check/{{TEST_HEALTH_CHECK}}",
+          "host": [
+            "{{SONAR_BASE_URL}}"
+          ],
+          "path": [
+            "api",
+            "v2",
+            "health-check-data",
+            "{{TEST_ENVIRONMENT}}",
+            "tenants",
+            "{{TEST_TENANT}}",
+            "services",
+            "{{TEST_SERVICE}}",
+            "health-check",
+            "{{TEST_HEALTH_CHECK}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Service Health Check Data (start and end specified)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{SONAR_BASE_URL}}/api/v2/health-check-data/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE}}/health-check/{{TEST_HEALTH_CHECK}}/yyyy-MM-ddTHH:mm:ssZ/yyyy-MM-ddTHH:mm:ssZ",
+          "host": [
+            "{{SONAR_BASE_URL}}"
+          ],
+          "path": [
+            "api",
+            "v2",
+            "health-check-data",
+            "{{TEST_ENVIRONMENT}}",
+            "tenants",
+            "{{TEST_TENANT}}",
+            "services",
+            "{{TEST_SERVICE}}",
+            "health-check",
+            "{{TEST_HEALTH_CHECK}}",
+            "yyyy-MM-ddTHH:mm:ssZ",
+            "yyyy-MM-ddTHH:mm:ssZ"
+          ]
+        }
+      },
+      "response": []
+    },
 		{
 			"name": "Create Admin Api Key",
 			"request": {

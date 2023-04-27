@@ -54,4 +54,32 @@ public interface IPrometheusService {
     String service,
     TimeSpan range,
     CancellationToken cancellationToken = default);
+
+  /// <summary>
+  /// Get single metric time series for a specific health check under the given environment, tenant, and service
+  /// recorded to Prometheus between a specified start and end DateTime; otherwise get health check metric data
+  /// samples from within the last 10 minutes UTC.
+  /// </summary>
+  /// <param name="environment">The environment to get timestamps for.</param>
+  /// <param name="tenant">The tenant to get timestamps for.</param>
+  /// <param name="service">The service to get timestamps for.</param>
+  /// <param name="healthCheck">The health check to get timestamps for.</param>
+  /// <param name="start">The starting DateTime of the results.</param>
+  /// <param name="end">The desired ending DateTime of the results.</param>
+  /// <param name="cancellationToken">The cancellation token for the async operation.</param>
+  /// <returns>
+  /// Timestamps and metric values of the health check between the specified starting and ending date time OR from
+  /// within the last 10 minutes UTC; can be empty if there are no samples for the health check under the
+  /// environment, tenant, service in the time range.
+  /// </returns>
+  /// <exception cref="BadRequestException">If Prometheus returns a 4xx status.</exception>
+  /// <exception cref="InternalServerErrorException">If there's any other problem calling Prometheus.</exception>
+  Task<IImmutableList<(DateTime, Double)>> QuerySpecificHealthCheckDataAsync(
+    String environment,
+    String tenant,
+    String service,
+    String healthCheck,
+    DateTime start,
+    DateTime end,
+    CancellationToken cancellationToken);
 }

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Extensions;
 using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
+using Cms.BatCave.Sonar.Query;
 using Microsoft.Extensions.Logging;
 using Prometheus;
 
@@ -180,5 +181,60 @@ public class PrometheusService : IPrometheusService {
       }).ToImmutableDictionary();
 
     return latestServiceHealthMetricsTimestamps ?? ImmutableDictionary<String, DateTime>.Empty;
+  }
+
+  /// <inheritdoc/>
+  public async Task<IImmutableList<(DateTime, Double)>> QuerySpecificHealthCheckDataAsync(
+    String environment,
+    String tenant,
+    String service,
+    String healthCheck,
+    DateTime start,
+    DateTime end,
+    CancellationToken cancellationToken) {
+
+    // Example query:
+    // sonar_healthcheck_data{environment='foo',tenant='baz',service='my-root',check='my-root-health-check'}[start:end]
+
+    var query = String.Format(
+      format: "{0}{{environment='{1}',tenant='{2}',service='{3}',check='{4}'}}",
+      HealthDataHelper.ServiceHealthCheckDataMetricName,
+      environment,
+      tenant,
+      service,
+      healthCheck);
+
+    this._logger.LogDebug(
+      "Querying health check data timestamps from {start} to {end} (UTC): {query}",
+      start, end, query);
+
+    var queryResponse = await this._prometheusClient.QueryRangeAsync(
+      query,
+      start,
+      end,
+      TimeSpan.FromSeconds(30),
+      timeout: null,
+      cancellationToken);
+
+    var timestampMetrics = new List<(DateTime, Double)>();
+    var serviceHealthMetrics = queryResponse.Data?.Result.ToDictionary(
+      keySelector: result => result.Labels[HealthDataHelper.MetricLabelKeys.HealthCheck],
+      elementSelector: result => {
+        if (result.Values?.Count > 0) {
+          foreach (var sample in result.Values) {
+            var millisSinceUnixEpoch = Math.Round(sample.Timestamp * 1000);
+            var unixDateTimeOffset = DateTimeOffset.FromUnixTimeMilliseconds((Int64)millisSinceUnixEpoch);
+            var metricValue = sample.Value;
+            timestampMetrics.Add((unixDateTimeOffset.DateTime, Convert.ToDouble(metricValue)));
+          }
+        }
+        return timestampMetrics;
+      });
+
+    if (serviceHealthMetrics.ToImmutableDictionary().IsEmpty) {
+      return new List<(DateTime, Double)>().ToImmutableList();
+    }
+
+    return serviceHealthMetrics[healthCheck].ToImmutableList();
   }
 }

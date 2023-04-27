@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -97,5 +99,55 @@ public class HealthCheckDataController : ControllerBase {
         $" environment = '{environment}', tenant = '{tenant}', service = '{service}'");
 
     return this.Ok(recordedData);
+  }
+
+  /// <summary>
+  /// Retrieves the given raw <see cref="ServiceHealthData"/> time series samples for the given environment,
+  /// tenant, service, and health check in Prometheus. Filters out samples outside of the given start and end date time
+  /// (or if those are not given, filters out samples from more than 10 minutes ago UTC) prior to calling P8s.
+  /// </summary>
+  /// <param name="environment">The environment to get timestamps for.</param>
+  /// <param name="tenant">The tenant to get timestamps for.</param>
+  /// <param name="service">The service to get timestamps for.</param>
+  /// <param name="healthCheck">The name of the health check to get timestamps for.</param>
+  /// <param name="cancellationToken">The cancellation token for the async operation.</param>
+  /// <returns>
+  /// A new <see cref="IImmutableList<(DateTime, Double)>"/> containing the samples that were actually written;
+  /// can be empty if no samples were written because they all failed the filtering criteria.
+  /// </returns>
+  /// <exception cref="BadRequestException">If the Prometheus request is invalid.</exception>
+  /// <exception cref="InternalServerErrorException">If there's any other problem calling Prometheus.</exception>
+  [HttpGet("{environment}/tenants/{tenant}/services/{service}/health-check/{healthCheck}", Name = "GetHealthCheckData")]
+  [ProducesResponseType(typeof(IImmutableList<(DateTime, Double)>), statusCode: (Int32)HttpStatusCode.OK)]
+  public async Task<IActionResult> GetHealthCheckData(
+    [FromRoute] String environment,
+    [FromRoute] String tenant,
+    [FromRoute] String service,
+    [FromRoute] String healthCheck,
+    [FromQuery] DateTime? queryStart, // Nullable so we don't get Unix epoch as a default if not provided in query; we'll provide our own defaults
+    [FromQuery] DateTime? queryEnd,
+    CancellationToken cancellationToken = default) {
+
+    queryEnd ??= DateTime.UtcNow;
+    queryStart ??= queryEnd.Value.Subtract(TimeSpan.FromMinutes(10));
+
+    if (queryEnd <= queryStart) {
+      throw new BadRequestException("Query end time must be after query start time.");
+    }
+
+    if ((queryEnd - queryStart) > TimeSpan.FromDays(7)) {
+      throw new BadRequestException("Query time range is too large.");
+    }
+
+    var timestampedHealthCheckMetrics = await this._prometheusService.QuerySpecificHealthCheckDataAsync(
+      environment,
+      tenant,
+      service,
+      healthCheck,
+      start: queryStart.Value,
+      end: queryEnd.Value,
+      cancellationToken);
+
+    return this.Ok(timestampedHealthCheckMetrics);
   }
 }
