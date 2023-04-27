@@ -21,6 +21,8 @@ namespace Cms.BatCave.Sonar.Controllers;
 [ApiVersion(2)]
 [Route("api/v{version:apiVersion}/keys")]
 public class ApiKeyController : ControllerBase {
+  private const Int32 ApiKeyByteLength = 32;
+
   private readonly DataContext _dbContext;
   private readonly DbSet<ApiKey> _apiKeysTable;
   private readonly EnvironmentDataHelper _envDataHelper;
@@ -45,9 +47,8 @@ public class ApiKeyController : ControllerBase {
   ///   Generates and encodes API key value.
   /// </summary>
   /// <returns>The encoded API key value.</returns>
-  public static String GenerateApiKeyValue() {
-    Int32 apiKeyByteLength = 32;
-    var apiKey = new Byte[apiKeyByteLength];
+  private static String GenerateApiKeyValue() {
+    var apiKey = new Byte[ApiKeyByteLength];
     String encodedApiKey = "";
 
     using (var rng = RandomNumberGenerator.Create()) {
@@ -71,7 +72,7 @@ public class ApiKeyController : ControllerBase {
   /// <response code="401">The API key in the header is not authorized for creating an API key.</response>
   [HttpPost]
   [Consumes(typeof(ApiKeyDetails), contentType: "application/json")]
-  [ProducesResponseType(typeof(ApiKey), statusCode: 201)]
+  [ProducesResponseType(typeof(ApiKeyConfiguration), statusCode: 201)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 400)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 401)]
   public async Task<ActionResult> CreateApiKey(
@@ -93,36 +94,41 @@ public class ApiKeyController : ControllerBase {
         $"The authentication credential provided is not authorized to {adminActivity}.");
     }
 
-    ApiKeyController.ValidateEnvAndTenant(apiKeyDetails.Environment, apiKeyDetails.Tenant);
+    ValidateEnvAndTenant(apiKeyDetails.Environment, apiKeyDetails.Tenant);
 
     await using var tx =
       await this._dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
 
     try {
-      Guid? environmentId = null;
-      Guid? tenantId = null;
-
-      if (apiKeyDetails.Tenant == null) {
-        var env = await this._envDataHelper.FetchExistingEnvAsync(
+      var environment =
+        await this._envDataHelper.FetchExistingEnvAsync(
           apiKeyDetails.Environment,
           cancellationToken);
-        environmentId = env.Id;
-      } else {
-        var tenant = await this._tenantDataHelper.FetchExistingTenantAsync(
+
+      Tenant? tenant = null;
+
+      if (apiKeyDetails.Tenant != null) {
+        tenant = await this._tenantDataHelper.FetchExistingTenantAsync(
+          // Verified by ValidateEnvAndTenant
           apiKeyDetails.Environment!,
           apiKeyDetails.Tenant,
           cancellationToken);
-        tenantId = tenant.Id;
       }
 
       // Record new API key
       var createdApiKey = await this._apiKeysTable.AddAsync(
-        new ApiKey(GenerateApiKeyValue(), apiKeyDetails.ApiKeyType, environmentId, tenantId),
+        new ApiKey(
+          GenerateApiKeyValue(),
+          apiKeyDetails.ApiKeyType,
+          environment?.Id,
+          tenant?.Id),
         cancellationToken
       );
       await this._dbContext.SaveChangesAsync(cancellationToken);
 
-      response = this.StatusCode((Int32)HttpStatusCode.Created, createdApiKey.Entity);
+      response = this.StatusCode(
+        (Int32)HttpStatusCode.Created,
+        ToApiKeyConfig(environment, tenant, createdApiKey.Entity));
       await tx.CommitAsync(cancellationToken);
     } catch {
       await tx.RollbackAsync(cancellationToken);
@@ -143,7 +149,7 @@ public class ApiKeyController : ControllerBase {
   /// <response code="404">The specified API key, environment, or tenant was not found.</response>
   [HttpPut]
   [Consumes(typeof(ApiKeyConfiguration), contentType: "application/json")]
-  [ProducesResponseType(typeof(ApiKey), statusCode: 200)]
+  [ProducesResponseType(typeof(ApiKeyDetails), statusCode: 200)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 400)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
   public async Task<ActionResult> UpdateApiKey(
@@ -184,8 +190,13 @@ public class ApiKeyController : ControllerBase {
         existingApiKey.Type = apiKeyConfig.ApiKeyType;
       }
 
+      var env = await this._envDataHelper.FetchExistingEnvAsync(
+        apiKeyConfig.Environment!,
+        cancellationToken);
+
+      Tenant? tenant = null;
       if (apiKeyConfig.Tenant != null) {
-        var tenant = await this._tenantDataHelper.FetchExistingTenantAsync(
+        tenant = await this._tenantDataHelper.FetchExistingTenantAsync(
           apiKeyConfig.Environment!,
           apiKeyConfig.Tenant,
           cancellationToken);
@@ -195,10 +206,6 @@ public class ApiKeyController : ControllerBase {
           existingApiKey.TenantId = tenant.Id;
         }
       } else {
-        var env = await this._envDataHelper.FetchExistingEnvAsync(
-          apiKeyConfig.Environment,
-          cancellationToken);
-
         if (existingApiKey.EnvironmentId != env.Id) {
           // API key is now associated with specified environment instead of tenant
           existingApiKey.EnvironmentId = env.Id;
@@ -211,7 +218,11 @@ public class ApiKeyController : ControllerBase {
 
       // Save
       await this._dbContext.SaveChangesAsync(cancellationToken);
-      response = this.Ok(existingApiKey);
+      response = this.Ok(new ApiKeyDetails(
+        existingApiKey.Type,
+        env.Name,
+        tenant?.Name
+      ));
       await tx.CommitAsync(cancellationToken);
     } catch {
       await tx.RollbackAsync(cancellationToken);
@@ -226,13 +237,13 @@ public class ApiKeyController : ControllerBase {
   /// </summary>
   /// <param name="apiKeyConfig">The API key ,type and, if they exist, environment and tenant.</param>
   /// <param name="cancellationToken"></param>
-  /// <response code="200">The API key configuration led to a successful deletion.</response>
+  /// <response code="204">The API key configuration led to a successful deletion.</response>
   /// <response code="400">The API key configuration is not valid.</response>
   /// <response code="401">The API key in the header is not authorized for deleting an API key.</response>
   /// <response code="404">The specified API key, environment, or tenant was not found.</response>
   [HttpDelete]
   [Consumes(typeof(ApiKeyConfiguration), contentType: "application/json")]
-  [ProducesResponseType(typeof(ApiKey), statusCode: 200)]
+  [ProducesResponseType(statusCode: 204)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 400)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
   public async Task<ActionResult> DeleteApiKey(
@@ -252,8 +263,6 @@ public class ApiKeyController : ControllerBase {
       throw new ForbiddenException(
         $"The authentication credential provided is not authorized to {adminActivity}.");
     }
-
-    ApiKeyController.ValidateApiKeyConfig(apiKeyConfig);
 
     await using var tx =
       await this._dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
@@ -315,7 +324,7 @@ public class ApiKeyController : ControllerBase {
       throw;
     }
 
-    return this.StatusCode((Int32)HttpStatusCode.OK);
+    return this.StatusCode((Int32)HttpStatusCode.NoContent);
   }
 
   private static void ValidateApiKeyConfig(ApiKeyConfiguration apiKeyConfig) {
@@ -359,5 +368,18 @@ public class ApiKeyController : ControllerBase {
         );
       }
     }
+  }
+
+  private static ApiKeyConfiguration ToApiKeyConfig(
+    Data.Environment? environment,
+    Tenant? tenant,
+    ApiKey entity) {
+
+    return new ApiKeyConfiguration(
+      entity.Key,
+      entity.Type,
+      environment?.Name,
+      tenant?.Name
+    );
   }
 }

@@ -238,7 +238,6 @@ public class ConfigurationHelper {
     // TODO(BATAPI-208): make this a dependency injected via the ConfigurationHelper constructor
     using var http = new HttpClient();
     var client = new SonarClient(this._configRoot, this._apiConfig.Value.BaseUrl, http);
-    await client.ReadyAsync(token);
 
     foreach (var tenantServices in tenantServiceDictionary) {
       var tenant = tenantServices.Key;
@@ -264,7 +263,6 @@ public class ConfigurationHelper {
     // SONAR client
     using var http = new HttpClient();
     var client = new SonarClient(this._configRoot, this._apiConfig.Value.BaseUrl, http);
-    await client.ReadyAsync(token);
 
     try {
       await client.DeleteTenantAsync(this._apiConfig.Value.Environment, tenant, token);

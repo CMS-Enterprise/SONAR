@@ -55,7 +55,6 @@ public class HealthCheckHelper {
     using var sonarHttpClient = new HttpClient();
     sonarHttpClient.Timeout = TimeSpan.FromSeconds(this._agentConfig.Value.AgentInterval);
     var client = new SonarClient(configRoot, baseUrl: this._apiConfig.Value.BaseUrl, sonarHttpClient);
-    await client.ReadyAsync(token);
 
     while (!token.IsCancellationRequested) {
       // Configs
