@@ -42,15 +42,15 @@ const HealthCheckListItem: React.FC<{
   const TIMESTAMP_DATA = 0;
   const HEALTHSTATUS_DATA = 1;
 
-  const mockData: any[][] =
-    {
+  const mockData =
+    [
       ['2023-04-13T03:45:24.836', 0],
       ['2023-04-13T03:45:29.836', 2],
       ['2023-04-13T03:45:34.836', 10],
       ['2023-04-13T03:45:39.836', 33],
       ['2023-04-13T03:45:44.836', 58],
       ['2023-04-13T03:45:49.836', 70]
-    };
+    ];
 
   //Transform Date to Timestamps, ts data can be in one of two forms https://apexcharts.com/docs/series/
   const transformedData = mockData.map(data =>

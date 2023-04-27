@@ -14,7 +14,7 @@ services:
       - "shared"
 
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.38.0
     restart: always
     ports: ["9090:9090"]
     volumes:

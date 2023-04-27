@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Chart from 'react-apexcharts';
 import { ApexOptions } from "apexcharts";
 import { HealthCheckType, ServiceHierarchyConfiguration } from 'api/data-contracts';
@@ -8,39 +8,7 @@ const TimeSeriesChart: React.FC<{
   healthCheckName:string,
   timeSeriesData:number[][]
 }> = ({ svcHierarchyCfg, healthCheckName, timeSeriesData }) => {
-  const chartAnnotations = {
-    annotations: {
-      yaxis: [{}]
-    }
-  }
-
-  //TODO TESTING
-  useEffect(()  => {
-    svcHierarchyCfg?.services?.map((s: any) =>
-      s.healthChecks.filter((hc:any) => (hc.name === healthCheckName && hc.type != HealthCheckType.HttpRequest)).map((hc:any) =>
-        hc.definition.conditions.map((c:any) =>
-          chartAnnotations.annotations.yaxis.push({
-            y: c.threshold,
-            borderColor: 'grey',
-            label: {
-              text: `${c.status}`,
-              position: 'left',
-              textAnchor: 'start',
-              offsetX: 10,
-              borderColor: 'grey',
-              style: {
-                color: 'white',
-                background: 'grey',
-              }
-            }
-          })
-        )
-      )
-    )
-  }, [chartAnnotations]);
-
-
-
+  const [displayAnnotation, setDisplayAnnotation] = useState(false);
 
   const chartSeries = {
     series: [{
@@ -60,7 +28,9 @@ const TimeSeriesChart: React.FC<{
         autoScaleYaxis: true
       },
       toolbar: {
-        autoSelected: 'zoom'
+        tools: {
+          reset: false
+        }
       }
     },
     dataLabels: {
@@ -116,13 +86,18 @@ const TimeSeriesChart: React.FC<{
           currentTime + (5 * MIN)
         )
         break
-      case 'all':
-        // Maximum time of 10 minutes
+      case '10m':
         ApexCharts.exec(
           healthCheckName,
           'zoomX',
           currentTime,
           currentTime + (10 * MIN)
+        )
+        break
+      case 'all':
+        ApexCharts.exec(
+          healthCheckName,
+          'resetSeries'
         )
         break
       default:
@@ -146,12 +121,19 @@ const TimeSeriesChart: React.FC<{
                 color: 'white',
                 background: 'grey',
               },
-            },
+            }
           })
         )
       )
     )
+    setDisplayAnnotation(true);
   };
+
+  const clearAnnotation = () => {
+    ApexCharts.exec(healthCheckName, 'clearAnnotations');
+    ApexCharts.exec(healthCheckName, 'clearAnnotations');
+    setDisplayAnnotation(false);
+  }
 
   return (
     <div>
@@ -162,10 +144,15 @@ const TimeSeriesChart: React.FC<{
         &nbsp;
         <button id="5m" onClick={() => updateData('5m')}>5m</button>
         &nbsp;
+        <button id="10m" onClick={() => updateData('10m')}>10m</button>
+        &nbsp;
         <button id="all" onClick={() => updateData('all')}>All</button>
         &nbsp;
-        <button id="update" onClick={() => updateYAxis()}>Update</button>
-        &nbsp;
+        { displayAnnotation?
+          <button id="hideAnnotation" onClick={() => clearAnnotation()}>Hide Annotations</button>:
+          <button id="displayAnnotation" onClick={() => updateYAxis()}>Display Annotations</button>
+        }
+
 
       </div>
 
