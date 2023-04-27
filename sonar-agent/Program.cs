@@ -171,9 +171,20 @@ internal class Program {
     using var prometheusHealthCheckQueue = new HealthCheckQueueProcessor<MetricHealthCheckDefinition>(
       new MetricHealthCheckEvaluator(
         new CachingMetricQueryRunner(
-          new PrometheusMetricQueryRunner(
-            promClient,
-            loggerFactory.CreateLogger<PrometheusMetricQueryRunner>())),
+          new ReportingMetricQueryRunner(
+            new PrometheusMetricQueryRunner(
+              promClient,
+              loggerFactory.CreateLogger<PrometheusMetricQueryRunner>()),
+            () => {
+              var httpClient = new HttpClient();
+              httpClient.Timeout = TimeSpan.FromSeconds(agentConfig.Value.AgentInterval);
+              try {
+                return (httpClient, new SonarClient(configuration, baseUrl: apiConfig.Value.BaseUrl, httpClient));
+              } catch {
+                httpClient.Dispose();
+                throw;
+              }
+            })),
         loggerFactory.CreateLogger<MetricHealthCheckEvaluator>()
       ),
       agentConfig,
