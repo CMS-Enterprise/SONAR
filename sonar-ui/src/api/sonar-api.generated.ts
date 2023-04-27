@@ -13,6 +13,7 @@ import {
   ApiKey,
   ApiKeyConfiguration,
   ApiKeyDetails,
+  DateTimeDoubleValueTuple,
   EnvironmentHealth,
   ProblemDetails,
   ServiceHealth,
@@ -252,6 +253,33 @@ tenant, and service in Prometheus. Filters out stale and out-of-order samples pr
       method: "POST",
       body: data,
       type: ContentType.Json,
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags HealthCheckData
+   * @name GetHealthCheckData
+   * @request GET:/api/v2/health-check-data/{environment}/tenants/{tenant}/services/{service}/health-check/{healthCheck}
+   */
+  getHealthCheckData = (
+    environment: string,
+    tenant: string,
+    service: string,
+    healthCheck: string,
+    query?: {
+      /** @format date-time */
+      queryStart?: string;
+      /** @format date-time */
+      queryEnd?: string;
+    },
+    params: RequestParams = {},
+  ) =>
+    this.request<DateTimeDoubleValueTuple[], any>({
+      path: `/api/v2/health-check-data/${environment}/tenants/${tenant}/services/${service}/health-check/${healthCheck}`,
+      method: "GET",
+      query: query,
       format: "json",
       ...params,
     });

@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 
-import { AccordionItem } from '@cmsgov/design-system';
-import TimeSeriesChart from 'components/Charts/TimeSeriesChart'
-import ChartsTable from 'components/Charts/ChartsTable'
-import { chartsFlexContainer, chartsFlexTable, chartsFlexThreshold } from 'components/Charts/charts.style';
 import { createSonarClient } from 'helpers/ApiHelper';
-import { ServiceHierarchyConfiguration } from 'api/data-contracts';
-import ThresholdTable from './ThresholdTable';
+import { HealthCheckModel, HealthCheckType, ServiceConfiguration, ServiceHierarchyConfiguration } from 'api/data-contracts';
+import { IHealthCheckDefinition } from 'types';
+import { AccordionItem } from '@cmsgov/design-system';
+import { chartsFlexContainer, chartsFlexTable, chartsFlexThreshold } from './HealthCheckListItem.Style';
+import HealthCheckListItemTimeSeriesChart from './HealthCheckListItemTimeSeriesChart'
+import HealthCheckListItemTable from './HealthCheckListItemTable'
+import HealthCheckListItemThreshold from './Thresholds';
 
 const HealthCheckListItem: React.FC<{
   environmentName: string,
@@ -15,7 +16,7 @@ const HealthCheckListItem: React.FC<{
   healthCheckName: string,
   healthCheckStatus: string
 }> = ({ environmentName, tenantName, rootServiceName, healthCheckName, healthCheckStatus}) => {
-  const [svcHierachyCfg, setSvcHierachyCfg] = useState<ServiceHierarchyConfiguration | null>(null);
+  const [svcHierarchyCfg, setSvcHierarchyCfg] = useState<ServiceHierarchyConfiguration | null>(null);
   /*
   //TODO API Call to TS healthCheck
   const [tsData, setTsData] = useState<timeSeriesData[] | null>(null);
@@ -34,9 +35,9 @@ const HealthCheckListItem: React.FC<{
     const sonarClient = createSonarClient();
     sonarClient.getTenant(environmentName, tenantName)
       .then((res) => {
-        setSvcHierachyCfg(res.data);
+        setSvcHierarchyCfg(res.data);
       })
-      .catch(e => console.log(`Error fetching tenants: ${e.message}`));
+      .catch(e => console.log(`Error Service Hierarchy Configuration: ${e.message}`));
   }, [environmentName, tenantName]);
 
   const TIMESTAMP_DATA = 0;
@@ -59,24 +60,32 @@ const HealthCheckListItem: React.FC<{
 
   return (
     <AccordionItem heading={`${healthCheckName}: ${healthCheckStatus}`}>
-      <TimeSeriesChart svcHierarchyCfg={svcHierachyCfg}
-                       healthCheckName={healthCheckName}
-                       timeSeriesData={transformedData}
-      />
+      {
+        svcHierarchyCfg?.services?.map((s: ServiceConfiguration) => s.healthChecks
+          ?.filter((hc: HealthCheckModel) => hc.name === healthCheckName && hc.type !== HealthCheckType.HttpRequest)
+          .map((hc: HealthCheckModel) =>
+            <HealthCheckListItemTimeSeriesChart svcDefinitions={hc.definition as IHealthCheckDefinition}
+                                                healthCheckName={healthCheckName}
+                                                timeSeriesData={transformedData}
+            />
+          )
+        )
+      }
 
       <div style={chartsFlexContainer}>
         <div style={chartsFlexTable}>
-          <ChartsTable timeSeriesData={transformedData}/>
+          <HealthCheckListItemTable timeSeriesData={transformedData}/>
         </div>
 
         <div style={chartsFlexThreshold}>
-          <ThresholdTable svcHierarchyCfg={svcHierachyCfg}
-                          rootServiceName={rootServiceName}
-                          healthCheckName={healthCheckName}
-                          healthCheckStatus={healthCheckStatus}
+          <HealthCheckListItemThreshold svcHierarchyCfg={svcHierarchyCfg}
+                                        rootServiceName={rootServiceName}
+                                        healthCheckName={healthCheckName}
+                                        healthCheckStatus={healthCheckStatus}
           />
         </div>
       </div>
+
     </AccordionItem>
   );
 };

@@ -1,13 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+
 import Chart from 'react-apexcharts';
 import { ApexOptions } from "apexcharts";
-import { HealthCheckType, ServiceHierarchyConfiguration } from 'api/data-contracts';
+import { IHealthCheckCondition, IHealthCheckDefinition } from 'types';
 
 const TimeSeriesChart: React.FC<{
-  svcHierarchyCfg: ServiceHierarchyConfiguration | null,
+  svcDefinitions: IHealthCheckDefinition | null,
   healthCheckName:string,
   timeSeriesData:number[][]
-}> = ({ svcHierarchyCfg, healthCheckName, timeSeriesData }) => {
+}> = ({ svcDefinitions, healthCheckName, timeSeriesData }) => {
   const [displayAnnotation, setDisplayAnnotation] = useState(false);
 
   const chartSeries = {
@@ -104,57 +105,51 @@ const TimeSeriesChart: React.FC<{
     }
   }
 
-  const updateYAxis = ()  => {
-    svcHierarchyCfg?.services?.map((s: any) =>
-      s.healthChecks.filter((hc:any) => (hc.name === healthCheckName && hc.type != HealthCheckType.HttpRequest)).map((hc:any) =>
-        hc.definition.conditions.map((c:any) =>
-          ApexCharts.exec(healthCheckName, "addYaxisAnnotation", {
-            y: c.threshold,
-            borderColor: 'grey',
-            label: {
-              text: `${c.status}`,
-              position: 'left',
-              textAnchor: 'start',
-              offsetX: 10,
-              borderColor: 'grey',
-              style: {
-                color: 'white',
-                background: 'grey',
-              },
-            }
-          })
-        )
-      )
-    )
+  const displayAnnotations = () => {
     setDisplayAnnotation(true);
+    svcDefinitions?.conditions.forEach((c: IHealthCheckCondition) => (
+      ApexCharts.exec(healthCheckName, 'addYaxisAnnotation', {
+        y: c.threshold,
+        borderColor: 'grey',
+        label: {
+          text: `${c.status}`,
+          position: 'left',
+          textAnchor: 'start',
+          offsetX: 10,
+          borderColor: 'grey',
+          style: {
+            color: 'white',
+            background: 'grey',
+          },
+        }
+      }, true)
+    ))
   };
 
-  const clearAnnotation = () => {
-    ApexCharts.exec(healthCheckName, 'clearAnnotations');
-    ApexCharts.exec(healthCheckName, 'clearAnnotations');
+  const clearAnnotations = () => {
     setDisplayAnnotation(false);
+
+    //TODO BATAPI-241
+    ApexCharts.exec(healthCheckName, 'clearAnnotations');
+    ApexCharts.exec(healthCheckName, 'clearAnnotations');
   }
 
   return (
     <div>
-      <div className="toolbar">
-        <button id="30s" onClick={() => updateData('30s')}>30s</button>
-        &nbsp;
-        <button id="1m" onClick={() => updateData('1m')}>1m</button>
-        &nbsp;
-        <button id="5m" onClick={() => updateData('5m')}>5m</button>
-        &nbsp;
-        <button id="10m" onClick={() => updateData('10m')}>10m</button>
-        &nbsp;
-        <button id="all" onClick={() => updateData('all')}>All</button>
-        &nbsp;
-        { displayAnnotation?
-          <button id="hideAnnotation" onClick={() => clearAnnotation()}>Hide Annotations</button>:
-          <button id="displayAnnotation" onClick={() => updateYAxis()}>Display Annotations</button>
-        }
-
-
-      </div>
+      <button id="30s" onClick={() => updateData('30s')}>30s</button>
+      &nbsp;
+      <button id="1m" onClick={() => updateData('1m')}>1m</button>
+      &nbsp;
+      <button id="5m" onClick={() => updateData('5m')}>5m</button>
+      &nbsp;
+      <button id="10m" onClick={() => updateData('10m')}>10m</button>
+      &nbsp;
+      <button id="all" onClick={() => updateData('all')}>All</button>
+      &nbsp;
+      { displayAnnotation?
+        <button id="hideAnnotation" onClick={() => clearAnnotations()}>Hide Annotations</button>:
+        <button id="displayAnnotation" onClick={() => displayAnnotations()}>Display Annotations</button>
+      }
 
       <Chart
         options={chartOptions}
@@ -163,8 +158,6 @@ const TimeSeriesChart: React.FC<{
         width='100%'
         height='400'
       />
-
-
     </div>
   )
 }
