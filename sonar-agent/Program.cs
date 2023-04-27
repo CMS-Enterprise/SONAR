@@ -50,7 +50,8 @@ internal class Program {
         optional: true,
         reloadOnChange: true)
       .AddJsonFile(
-        Path.Combine(opts.AppSettingsLocation, $"appsettings.{Environment.GetEnvironmentVariable("ENVIRONMENT") ?? "Development"}.json"),
+        Path.Combine(opts.AppSettingsLocation,
+          $"appsettings.{Environment.GetEnvironmentVariable("ENVIRONMENT") ?? "Development"}.json"),
         optional: true,
         reloadOnChange: true)
       .AddEnvironmentVariables();
@@ -184,7 +185,8 @@ internal class Program {
                 httpClient.Dispose();
                 throw;
               }
-            })),
+            },
+            loggerFactory.CreateLogger<ReportingMetricQueryRunner>())),
         loggerFactory.CreateLogger<MetricHealthCheckEvaluator>()
       ),
       agentConfig,
