@@ -1,44 +1,69 @@
-import React from 'react';
-import { HealthStatus } from '../../api/data-contracts';
+import { Spinner } from '@cmsgov/design-system';
+import React, { useEffect, useState } from 'react';
+import {
+  DateTimeHealthStatusValueTuple,
+  ProblemDetails,
+  ServiceHierarchyHealth,
+  ServiceHierarchyHealthHistory
+} from '../../api/data-contracts';
+import { HttpResponse } from '../../api/http-client';
+import { createSonarClient } from '../../helpers/ApiHelper';
 import { HeadingContainer, StatusHistoryContainer } from '../../styles';
 import StatusHistoryTile from './StatusHistoryTile';
 
-const statusHistoryItems = [
-  { id: 1, timestamp: "8:00", status: HealthStatus.Online },
-  { id: 2, timestamp: "8:10", status: HealthStatus.Degraded },
-  { id: 3, timestamp: "8:20", status: HealthStatus.Online },
-  { id: 4, timestamp: "8:30", status: HealthStatus.AtRisk },
-  { id: 5, timestamp: "8:40", status: HealthStatus.Online },
-  { id: 6, timestamp: "8:50", status: HealthStatus.Degraded },
-  { id: 7, timestamp: "9:00", status: HealthStatus.Online },
-  { id: 8, timestamp: "9:10", status: HealthStatus.Offline },
-  { id: 9, timestamp: "9:20", status: HealthStatus.Online },
-  { id: 10, timestamp: "9:30", status: HealthStatus.Unknown }
-]
-
 const StatusHistoryModule: React.FC<{
-  addTimestamp: (tileData: any, tileId: string) => void,
+  addTimestamp: (tupleData: DateTimeHealthStatusValueTuple, tileId: string, serviceData: ServiceHierarchyHealth) => void,
   closeDrawer: () => void,
   selectedTileId: string,
-  rootServiceName: string
-}> = ({ addTimestamp, closeDrawer, selectedTileId, rootServiceName }) => {
+  rootService: ServiceHierarchyHealth,
+  environmentName: string,
+  tenantName: string
+}> = ({ addTimestamp, closeDrawer, selectedTileId, rootService, environmentName, tenantName }) => {
+  // store rootService name
+  const rootServiceName = rootService.name ? rootService.name : "";
+  const [historyData, setHistoryData] = useState<ServiceHierarchyHealthHistory | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const sonarClient = createSonarClient();
+    // get start & end dates
+    const dateObj = new Date();
+    const end = dateObj.toISOString();
+    (dateObj.setHours(dateObj.getHours() - 12));
+    const start = dateObj.toISOString();
+    console.log(`start: ${start}, end: ${end}`);
+    const step = 2160;
+    sonarClient.getServiceHealthHistory(environmentName, tenantName, rootServiceName, {start, end, step})
+      .then((res: HttpResponse<ServiceHierarchyHealthHistory, ProblemDetails | void>) => {
+        console.log(res.data);
+        setHistoryData(res.data);
+        setLoading(false);
+      })
+      .catch((e: HttpResponse<ServiceHierarchyHealthHistory, ProblemDetails | void>) => {
+        console.log(`Error fetching health metrics: ${e.error}`);
+      });
+  }, []);
+
   return (
     <>
       <div style={HeadingContainer}>
         Status History:
       </div>
-      <div style={StatusHistoryContainer}>
-        {statusHistoryItems.map((item, index) => (
-          <StatusHistoryTile
-            key={item.timestamp}
-            id={`${rootServiceName}-${index}`}
-            statusTimestampTuple={item}
-            addTimestamp={addTimestamp}
-            closeDrawer={closeDrawer}
-            selectedTileId={selectedTileId}
-          />
-        ))}
-      </div>
+      {loading ? (<Spinner />) : (
+        <div style={StatusHistoryContainer}>
+          {historyData?.aggregateStatus?.map((item, index) => (
+            <StatusHistoryTile
+              key={`${rootServiceName}-${index}`}
+              id={`${rootServiceName}-${index}`}
+              statusTimestampTuple={item}
+              addTimestamp={addTimestamp}
+              closeDrawer={closeDrawer}
+              selectedTileId={selectedTileId}
+              rootService={rootService}
+            />
+          ))}
+        </div>
+      )}
     </>
 
   )

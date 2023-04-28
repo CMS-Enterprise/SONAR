@@ -1,10 +1,10 @@
-import { Button, Drawer } from '@cmsgov/design-system';
 import React, { useEffect, useState } from 'react';
-
-import { ProblemDetails, ServiceHierarchyHealth } from 'api/data-contracts';
+import { DateTimeHealthStatusValueTuple, ProblemDetails, ServiceHierarchyHealth } from 'api/data-contracts';
 import RootService from 'components/ServiceListView/RootService';
 import { createSonarClient } from 'helpers/ApiHelper';
 import { HttpResponse } from 'api/http-client';
+import { StatusHistoryView } from 'interfaces/global_interfaces';
+import StatusHistoryDrawer from '../components/StatusHistory/StatusHistoryDrawer';
 
 const ServiceView = () => {
   const [services, setServices] = useState<ServiceHierarchyHealth[] | null>(null);
@@ -12,7 +12,7 @@ const ServiceView = () => {
   const tenantName = 'baz'
   const [showDrawer, setShowDrawer] = useState(false);
   const [selectedTileId, setSelectedTileId] = useState<string>("");
-  const [selectedTileData, setSelectedTileData] = useState<any>(null);
+  const [statusHistoryViewData, setStatusHistoryViewData] = useState<StatusHistoryView | null>(null);
 
   useEffect(() => {
     // create sonar client
@@ -28,35 +28,38 @@ const ServiceView = () => {
   }, []);
 
   useEffect(() => {
-    if (selectedTileData) {
+    if (statusHistoryViewData) {
       setShowDrawer(true);
     } else {
       setShowDrawer(false);
     }
-  }, [selectedTileData]);
+  }, [statusHistoryViewData]);
 
-  const addTimestamp = (tileData: any, tileId: string) => {
-    console.log(tileData.status);
-    setSelectedTileData(tileData);
+  const addTimestamp = (tupleData: DateTimeHealthStatusValueTuple, tileId: string, serviceData: ServiceHierarchyHealth) => {
+    console.log(tupleData[1]);
     setSelectedTileId(tileId);
+    const viewData: StatusHistoryView = {
+      serviceData: serviceData,
+      statusTimestampTuple: tupleData
+    }
+    setStatusHistoryViewData(viewData);
   }
 
   const closeDrawer = () => {
     setShowDrawer(false);
-    setSelectedTileData(null);
+    setStatusHistoryViewData(null);
     setSelectedTileId("");
   }
 
   return services ? (
     <section className="ds-l-container">
       {showDrawer && (
-        <Drawer heading={"Selected Timestamps"} onCloseClick={closeDrawer}>
-          {selectedTileData && (
-            <div>
-              {selectedTileData.timestamp}: {selectedTileData.status}
-            </div>
-          )}
-        </Drawer>
+        <StatusHistoryDrawer
+          statusHistoryViewData={statusHistoryViewData}
+          closeDrawer={closeDrawer}
+          environment={environmentName}
+          tenant={tenantName}
+        />
       )}
       <div>
         {services.map(rootService => (

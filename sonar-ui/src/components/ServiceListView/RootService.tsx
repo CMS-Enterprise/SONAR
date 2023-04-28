@@ -1,7 +1,10 @@
 import React from 'react';
 import { Accordion } from '@cmsgov/design-system';
 
-import { ServiceHierarchyHealth } from 'api/data-contracts';
+import {
+  DateTimeHealthStatusValueTuple,
+  ServiceHierarchyHealth,
+} from 'api/data-contracts';
 import { getHealthStatusIndicator } from 'helpers/ServiceHierarchyHelper';
 import { HeadingContainer, RootServiceContainer } from 'styles';
 import StatusHistoryModule from '../StatusHistory/StatusHistoryModule';
@@ -13,11 +16,12 @@ const RootService: React.FC<{
   tenantName: string,
   rootService: ServiceHierarchyHealth,
   services: ServiceHierarchyHealth[],
-  addTimestamp: (tileData: any, tileId: string) => void,
+  addTimestamp: (tupleData: DateTimeHealthStatusValueTuple, tileId: string, serviceData: ServiceHierarchyHealth) => void,
   closeDrawer: () => void,
   selectedTileId: string
 }> =
   ({ environmentName, tenantName, rootService, services, addTimestamp, closeDrawer, selectedTileId }) => {
+
     return (
       <div style={{
         ...RootServiceContainer,
@@ -32,7 +36,9 @@ const RootService: React.FC<{
             addTimestamp={addTimestamp}
             closeDrawer={closeDrawer}
             selectedTileId={selectedTileId}
-            rootServiceName={rootService.name ? rootService.name : ""}
+            rootService={rootService}
+            environmentName={environmentName}
+            tenantName={tenantName}
           />
         </div>
         <div>

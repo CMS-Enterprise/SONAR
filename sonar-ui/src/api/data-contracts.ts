@@ -50,7 +50,7 @@ export type DateTimeDoubleValueTuple = (string | number)[];
  * @maxItems 2
  * @minItems 2
  */
-export type DateTimeHealthStatusValueTuple = (string | HealthStatus)[];
+export type DateTimeHealthStatusValueTuple = [string, HealthStatus];
 
 export interface EnvironmentHealth {
   environmentName?: string | null;
@@ -82,25 +82,6 @@ export enum HealthStatus {
   Offline = "Offline",
 }
 
-export interface MetricData {
-  metricName?: string | null;
-  metricType?: MetricType;
-  helpText?: string | null;
-  timeSeries?: DateTimeDoubleValueTuple[] | null;
-  labels?: Record<string, string>;
-}
-
-export enum MetricType {
-  Unknown = "Unknown",
-  Counter = "Counter",
-  Gauge = "Gauge",
-  Histogram = "Histogram",
-  Gaugehistogram = "Gaugehistogram",
-  Summary = "Summary",
-  Info = "Info",
-  Stateset = "Stateset",
-}
-
 export interface ProblemDetails {
   type?: string | null;
   title?: string | null;
@@ -128,6 +109,14 @@ export interface ServiceHealth {
   healthChecks?: Record<string, HealthStatus>;
 }
 
+export interface ServiceHealthData {
+  healthCheckSamples?: Record<string, DateTimeDoubleValueTuple[]>;
+  /** @format int32 */
+  totalHealthChecks?: number;
+  /** @format int32 */
+  totalSamples?: number;
+}
+
 export interface ServiceHierarchyConfiguration {
   services?: ServiceConfiguration[] | null;
   rootServices?: string[] | null;
@@ -144,6 +133,16 @@ export interface ServiceHierarchyHealth {
   aggregateStatus?: HealthStatus;
   healthChecks?: Record<string, DateTimeHealthStatusValueTuple>;
   children?: ServiceHierarchyHealth[] | null;
+}
+
+export interface ServiceHierarchyHealthHistory {
+  name?: string | null;
+  displayName?: string | null;
+  description?: string | null;
+  /** @format uri */
+  url?: string | null;
+  aggregateStatus?: DateTimeHealthStatusValueTuple[] | null;
+  children?: ServiceHierarchyHealthHistory[] | null;
 }
 
 export interface TenantHealth {

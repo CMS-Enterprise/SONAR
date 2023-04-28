@@ -1,27 +1,25 @@
 import { Button } from '@cmsgov/design-system';
-import React, { useEffect, useState } from 'react';
-import { HealthStatus } from '../../api/data-contracts';
+import React from 'react';
+import { DateTimeHealthStatusValueTuple, ServiceHierarchyHealth } from '../../api/data-contracts';
 import { getHealthStatusClass } from '../../helpers/ServiceHierarchyHelper';
 import { renderStatusIcon } from '../../helpers/StatusHistoryHelper';
 
 const StatusHistoryTile: React.FC<{
   id: string,
-  statusTimestampTuple: any,
-  addTimestamp: (tileData: any, tileId: string) => void,
+  statusTimestampTuple: DateTimeHealthStatusValueTuple,
+  addTimestamp: (tupleData: DateTimeHealthStatusValueTuple, tileId: string, serviceData: ServiceHierarchyHealth) => void,
   closeDrawer: () => void,
-  selectedTileId: string
-}> = ({ id, statusTimestampTuple, addTimestamp, closeDrawer, selectedTileId }) => {
-
+  selectedTileId: string,
+  rootService: ServiceHierarchyHealth
+}> = ({ id, statusTimestampTuple, addTimestamp, closeDrawer, selectedTileId, rootService }) => {
   const handleSelect = () => {
     if (selectedTileId !== id) {
-      addTimestamp(statusTimestampTuple, id)
+      addTimestamp(statusTimestampTuple, id, rootService);
     } else {
       // close drawer
       closeDrawer();
     }
   }
-
-
 
   return (
     <span style={{ margin: 2 }}>
@@ -29,10 +27,10 @@ const StatusHistoryTile: React.FC<{
         variation="solid"
         onClick={handleSelect}
         size="small"
-        className={getHealthStatusClass(statusTimestampTuple.status, true) + (selectedTileId === id ? " selected" : "")}
+        className={getHealthStatusClass(statusTimestampTuple[1], true) + (selectedTileId === id ? " selected" : "")}
         style={{ borderRadius: 9 }}
       >
-        {renderStatusIcon(statusTimestampTuple.status)}
+        {renderStatusIcon(statusTimestampTuple[1])}
       </Button>
     </span>
 
