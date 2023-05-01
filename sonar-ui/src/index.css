@@ -109,3 +109,8 @@ code {
   border-color:  #bd13b8;
   border-width: 3px;
 }
+
+.drawer-container {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}

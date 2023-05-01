@@ -27,7 +27,7 @@ const StatusHistoryTile: React.FC<{
         variation="solid"
         onClick={handleSelect}
         size="small"
-        className={getHealthStatusClass(statusTimestampTuple[1], true) + (selectedTileId === id ? " selected" : "")}
+        className={getHealthStatusClass(statusTimestampTuple[1]) + '-tile' + (selectedTileId === id ? " selected" : "")}
         style={{ borderRadius: 9 }}
       >
         {renderStatusIcon(statusTimestampTuple[1])}

@@ -3,6 +3,7 @@ import { Accordion } from '@cmsgov/design-system';
 
 import { DateTimeHealthStatusValueTuple, HealthStatus } from 'api/data-contracts';
 import HealthCheckListItem from 'components/ServiceListView/HealthCheckListItem';
+import { validateHealthCheckObj } from '../../helpers/HealthCheckHelper';
 
 const HealthCheckList: React.FC<{
   environmentName: string,
@@ -16,15 +17,7 @@ const HealthCheckList: React.FC<{
         Health Checks:
         {Object.keys(healthChecks).map((key, i) => {
           const healthCheckObj: DateTimeHealthStatusValueTuple = healthChecks[key];
-          if (!healthCheckObj) {
-            return null;
-          }
-          if ((healthCheckObj.length !== 2) ||
-            !((typeof healthCheckObj[0] === 'string') && (healthCheckObj[1] in HealthStatus))) {
-            console.error(`Unexpected service health status: ${healthCheckObj}`);
-            return null;
-          }
-          return (
+          const displayComponent = (
             <div key={i}>
               <Accordion bordered>
                 <HealthCheckListItem environmentName={environmentName}
@@ -35,6 +28,8 @@ const HealthCheckList: React.FC<{
               </Accordion>
             </div>
           );
+
+          return validateHealthCheckObj(healthCheckObj, displayComponent);
         })}
       </div>
     )

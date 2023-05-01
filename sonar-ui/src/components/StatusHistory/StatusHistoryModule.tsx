@@ -32,8 +32,8 @@ const StatusHistoryModule: React.FC<{
     (dateObj.setHours(dateObj.getHours() - 12));
     const start = dateObj.toISOString();
     console.log(`start: ${start}, end: ${end}`);
-    const step = 2160;
-    sonarClient.getServiceHealthHistory(environmentName, tenantName, rootServiceName, {start, end, step})
+    const stepSeconds = 2160;
+    sonarClient.getServiceHealthHistory(environmentName, tenantName, rootServiceName, {start, end, step: stepSeconds})
       .then((res: HttpResponse<ServiceHierarchyHealthHistory, ProblemDetails | void>) => {
         console.log(res.data);
         setHistoryData(res.data);
@@ -42,7 +42,7 @@ const StatusHistoryModule: React.FC<{
       .catch((e: HttpResponse<ServiceHierarchyHealthHistory, ProblemDetails | void>) => {
         console.log(`Error fetching health metrics: ${e.error}`);
       });
-  }, []);
+  }, [environmentName, tenantName, rootServiceName]);
 
   return (
     <>

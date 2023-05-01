@@ -1,27 +1,22 @@
 import React from 'react';
 import { DateTimeHealthStatusValueTuple, HealthStatus } from '../../api/data-contracts';
+import { validateHealthCheckObj } from '../../helpers/HealthCheckHelper';
 
 const StatusHistoryHealthCheckList: React.FC<{
   healthChecks: Record<string, DateTimeHealthStatusValueTuple>
 }> = ({ healthChecks }) => {
   return (
-    <div style={{marginTop: 10}}>
+    <div className={"drawer-container"}>
       <b>Health Checks:</b>
       {Object.keys(healthChecks).map((key, i) => {
         const healthCheckObj: DateTimeHealthStatusValueTuple = healthChecks[key];
-        if (!healthCheckObj) {
-          return null;
-        }
-        if ((healthCheckObj.length !== 2) ||
-          !((typeof healthCheckObj[0] === 'string') && (healthCheckObj[1] in HealthStatus))) {
-          console.error(`Unexpected service health status: ${healthCheckObj}`);
-          return null;
-        }
-        return (
+        const displayComponent = (
           <div key={i}>
             {key}: {healthChecks[key][1]}
           </div>
         );
+
+        return validateHealthCheckObj(healthCheckObj, displayComponent);
       })}
     </div>
   );

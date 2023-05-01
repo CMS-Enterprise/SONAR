@@ -19,7 +19,7 @@ const EnvironmentView = () => {
       })
       .catch(e => console.log(`Error fetching environments: ${e.message}`));
   }, []);
-  
+
   return (
     <section className="ds-l-container">
       <div className="ds-l-row">
