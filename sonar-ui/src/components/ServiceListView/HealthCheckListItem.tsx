@@ -7,7 +7,7 @@ import { AccordionItem } from '@cmsgov/design-system';
 import { chartsFlexContainer, chartsFlexTable, chartsFlexThreshold } from './HealthCheckListItem.Style';
 import HealthCheckListItemTimeSeriesChart from './HealthCheckListItemTimeSeriesChart'
 import HealthCheckListItemTable from './HealthCheckListItemTable'
-import HealthCheckListItemThreshold from './Thresholds';
+import HealthCheckListItemThresholds from './HealthCheckListItemThresholds';
 
 const HealthCheckListItem: React.FC<{
   environmentName: string,
@@ -78,10 +78,10 @@ const HealthCheckListItem: React.FC<{
         </div>
 
         <div style={chartsFlexThreshold}>
-          <HealthCheckListItemThreshold svcHierarchyCfg={svcHierarchyCfg}
-                                        rootServiceName={rootServiceName}
-                                        healthCheckName={healthCheckName}
-                                        healthCheckStatus={healthCheckStatus}
+          <HealthCheckListItemThresholds svcHierarchyCfg={svcHierarchyCfg}
+                                         rootServiceName={rootServiceName}
+                                         healthCheckName={healthCheckName}
+                                         healthCheckStatus={healthCheckStatus}
           />
         </div>
       </div>

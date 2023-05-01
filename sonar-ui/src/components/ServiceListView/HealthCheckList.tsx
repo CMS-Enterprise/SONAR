@@ -1,7 +1,7 @@
 import React from 'react';
 import { Accordion } from '@cmsgov/design-system';
 
-import { DateTimeHealthStatusValueTuple, HealthStatus } from 'api/data-contracts';
+import { DateTimeHealthStatusValueTuple } from 'api/data-contracts';
 import HealthCheckListItem from 'components/ServiceListView/HealthCheckListItem';
 import { validateHealthCheckObj } from '../../helpers/HealthCheckHelper';
 

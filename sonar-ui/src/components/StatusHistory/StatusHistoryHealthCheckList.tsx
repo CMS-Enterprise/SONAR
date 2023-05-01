@@ -1,5 +1,5 @@
 import React from 'react';
-import { DateTimeHealthStatusValueTuple, HealthStatus } from '../../api/data-contracts';
+import { DateTimeHealthStatusValueTuple } from '../../api/data-contracts';
 import { validateHealthCheckObj } from '../../helpers/HealthCheckHelper';
 
 const StatusHistoryHealthCheckList: React.FC<{
