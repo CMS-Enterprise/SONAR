@@ -9,19 +9,6 @@
  * ---------------------------------------------------------------
  */
 
-export interface ApiKey {
-  /**
-   * @minLength 0
-   * @maxLength 44
-   */
-  key?: string | null;
-  type?: ApiKeyType;
-  /** @format uuid */
-  environmentId?: string | null;
-  /** @format uuid */
-  tenantId?: string | null;
-}
-
 export interface ApiKeyConfiguration {
   apiKey?: string | null;
   apiKeyType?: ApiKeyType;
@@ -50,7 +37,7 @@ export type DateTimeDoubleValueTuple = (string | number)[];
  * @maxItems 2
  * @minItems 2
  */
-export type DateTimeHealthStatusValueTuple = [string, HealthStatus];
+export type DateTimeHealthStatusValueTuple = (string | HealthStatus)[];
 
 export interface EnvironmentHealth {
   environmentName?: string | null;

@@ -11,7 +11,7 @@ In the project directory, you can run:
 
 ### Before you start
 Install any dependencies using `npm install` \
-Auto generate the api `npm run generate-api-client` after building sonar-api
+Auto generate the api `npm run generate-api-client` while having the sonar-api running.
 
 ### `npm start`
 
