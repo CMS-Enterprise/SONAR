@@ -3,11 +3,12 @@ import React, { useState } from 'react';
 import Chart from 'react-apexcharts';
 import { ApexOptions } from "apexcharts";
 import { IHealthCheckCondition, IHealthCheckDefinition } from 'types';
+import { HealthStatus } from 'api/data-contracts';
 
 const TimeSeriesChart: React.FC<{
   svcDefinitions: IHealthCheckDefinition | null,
   healthCheckName:string,
-  timeSeriesData:number[][]
+  timeSeriesData:(number)[][]
 }> = ({ svcDefinitions, healthCheckName, timeSeriesData }) => {
   const [displayAnnotation, setDisplayAnnotation] = useState(false);
 

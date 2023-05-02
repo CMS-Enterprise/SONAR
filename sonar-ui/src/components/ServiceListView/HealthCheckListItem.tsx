@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 
 import { createSonarClient } from 'helpers/ApiHelper';
-import { HealthCheckModel, HealthCheckType, ServiceConfiguration, ServiceHierarchyConfiguration } from 'api/data-contracts';
+import { DateTimeDoubleValueTuple, HealthCheckModel, HealthCheckType,
+  HealthStatus, ServiceConfiguration, ServiceHierarchyConfiguration } from 'api/data-contracts';
 import { IHealthCheckDefinition } from 'types';
 import { AccordionItem } from '@cmsgov/design-system';
 import { chartsFlexContainer, chartsFlexTable, chartsFlexThreshold } from './HealthCheckListItem.Style';
@@ -17,19 +18,8 @@ const HealthCheckListItem: React.FC<{
   healthCheckStatus: string
 }> = ({ environmentName, tenantName, rootServiceName, healthCheckName, healthCheckStatus}) => {
   const [svcHierarchyCfg, setSvcHierarchyCfg] = useState<ServiceHierarchyConfiguration | null>(null);
-  /*
-  //TODO API Call to TS healthCheck
-  const [tsData, setTsData] = useState<timeSeriesData[] | null>(null);
+  const [tsData, setTsData] = useState<DateTimeDoubleValueTuple[] | null>(null);
 
-  useEffect(() => {
-    const sonarClient = createSonarClient();
-    sonarClient.getTsHealthcheck(environmentName, tenantName, rootServiceName, healthCheckName)
-      .then((res) => {
-        setTsData(res.data);
-      })
-      .catch(e => console.log(`Error fetching Time Series Data: ${e.message}`));
-  }, []);
-   */
 
   useEffect(() => {
     const sonarClient = createSonarClient();
@@ -38,23 +28,24 @@ const HealthCheckListItem: React.FC<{
         setSvcHierarchyCfg(res.data);
       })
       .catch(e => console.log(`Error Service Hierarchy Configuration: ${e.message}`));
-  }, [environmentName, tenantName]);
+
+    if (rootServiceName != null){
+      sonarClient.getHealthCheckData(environmentName, tenantName, rootServiceName, healthCheckName)
+        .then((res) => {
+          setTsData(res.data);
+        })
+        .catch(e => console.log(`Error fetching Time Series Data: ${e.message}`));
+    }
+
+  }, [environmentName, tenantName, rootServiceName, healthCheckName]);
 
   const TIMESTAMP_DATA = 0;
   const HEALTHSTATUS_DATA = 1;
 
-  const mockData =
-    [
-      ['2023-04-13T03:45:24.836', 0],
-      ['2023-04-13T03:45:29.836', 2],
-      ['2023-04-13T03:45:34.836', 10],
-      ['2023-04-13T03:45:39.836', 33],
-      ['2023-04-13T03:45:44.836', 58],
-      ['2023-04-13T03:45:49.836', 70]
-    ];
+
 
   //Transform Date to Timestamps, ts data can be in one of two forms https://apexcharts.com/docs/series/
-  const transformedData = mockData.map(data =>
+  const transformedData: number[][] | undefined = tsData?.map(data =>
     [new Date(data[TIMESTAMP_DATA]).getTime(), Number(data[HEALTHSTATUS_DATA])]
   );
 
@@ -64,20 +55,31 @@ const HealthCheckListItem: React.FC<{
         svcHierarchyCfg?.services?.map((s: ServiceConfiguration) => s.healthChecks
           ?.filter((hc: HealthCheckModel) => hc.name === healthCheckName && hc.type !== HealthCheckType.HttpRequest)
           .map((hc: HealthCheckModel) =>
-            <HealthCheckListItemTimeSeriesChart svcDefinitions={hc.definition as IHealthCheckDefinition}
-                                                healthCheckName={healthCheckName}
-                                                timeSeriesData={transformedData}
-            />
+            { transformedData != null &&
+              <HealthCheckListItemTimeSeriesChart svcDefinitions={hc.definition as IHealthCheckDefinition}
+                                                  healthCheckName={healthCheckName}
+                                                  timeSeriesData={transformedData}
+              />
+            }
           )
         )
       }
 
       <div style={chartsFlexContainer}>
+        {  tsData?.map(data =>
+          console.log(healthCheckName, new Date(data[TIMESTAMP_DATA]).getTime(), Number(data[HEALTHSTATUS_DATA]))
+        )
+
+
+        }
         <div style={chartsFlexTable}>
-          <HealthCheckListItemTable timeSeriesData={transformedData}/>
+          { transformedData != null &&
+            <HealthCheckListItemTable timeSeriesData={transformedData}/>
+          }
         </div>
 
         <div style={chartsFlexThreshold}>
+
           <HealthCheckListItemThresholds svcHierarchyCfg={svcHierarchyCfg}
                                          rootServiceName={rootServiceName}
                                          healthCheckName={healthCheckName}

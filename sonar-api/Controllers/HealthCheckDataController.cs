@@ -64,6 +64,7 @@ public class HealthCheckDataController : ControllerBase {
     [FromBody] ServiceHealthData data,
     CancellationToken cancellationToken = default) {
 
+    Console.WriteLine("healthcheck" + service);
     // TODO: This is temporary pending the outcome of a spike to determine an annotation/middleware based
     // TODO (cont): approach for authorizing endpoints.
     await this._apiKeyDataHelper.ValidateTenantPermission(
@@ -97,6 +98,8 @@ public class HealthCheckDataController : ControllerBase {
     this._logger.LogDebug(
       message: $"Recorded {recordedData.TotalSamples} samples from {recordedData.TotalHealthChecks} health checks for" +
         $" environment = '{environment}', tenant = '{tenant}', service = '{service}'");
+
+    Console.WriteLine("healthcheck " + data );
 
     return this.Ok(recordedData);
   }

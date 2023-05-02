@@ -197,9 +197,21 @@ internal class Program {
     using var lokiHealthCheckQueue = new HealthCheckQueueProcessor<MetricHealthCheckDefinition>(
       new MetricHealthCheckEvaluator(
         new CachingMetricQueryRunner(
-          new LokiMetricQueryRunner(
-            lokiClient,
-            loggerFactory.CreateLogger<LokiMetricQueryRunner>())),
+          new ReportingMetricQueryRunner(
+            new LokiMetricQueryRunner(
+              lokiClient,
+              loggerFactory.CreateLogger<LokiMetricQueryRunner>()),
+            () => {
+              var httpClient = new HttpClient();
+              httpClient.Timeout = TimeSpan.FromSeconds(agentConfig.Value.AgentInterval);
+              try {
+                return (httpClient, new SonarClient(configuration, baseUrl: apiConfig.Value.BaseUrl, httpClient));
+              } catch {
+                httpClient.Dispose();
+                throw;
+              }
+            },
+            loggerFactory.CreateLogger<ReportingMetricQueryRunner>())),
         loggerFactory.CreateLogger<MetricHealthCheckEvaluator>()
       ),
       agentConfig,
