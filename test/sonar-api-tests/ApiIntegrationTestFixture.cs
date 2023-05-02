@@ -150,16 +150,18 @@ public class ApiIntegrationTestFixture : IDisposable, ILoggerProvider {
 
   protected virtual void Dispose(Boolean disposing) {
     if (disposing) {
-      using (var scope = this._app.Services.CreateScope()) {
-        var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
-        dbContext.Database.EnsureDeleted();
-      }
+      if (this._app is not null) {
+        using (var scope = this._app.Services.CreateScope()) {
+          var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
+          dbContext.Database.EnsureDeleted();
+        }
 
-      this._app.StopAsync();
-      this.Server.Dispose();
-      // Wait for the ASP.NET core application to exit.
-      this._runTask.ConfigureAwait(false).GetAwaiter().GetResult();
-      this._runTask.Dispose();
+        this._app.StopAsync();
+        this.Server.Dispose();
+        // Wait for the ASP.NET core application to exit.
+        this._runTask.ConfigureAwait(false).GetAwaiter().GetResult();
+        this._runTask.Dispose();
+      }
     }
   }
 
