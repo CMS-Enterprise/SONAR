@@ -1,5 +1,6 @@
 import { HealthCheckDefinition } from "api/data-contracts"
 
+// TODO BATAPI-238
 export interface IHealthCheckDefinition extends HealthCheckDefinition {
   duration: string,
   expression: string,
