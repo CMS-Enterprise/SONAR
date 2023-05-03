@@ -4,7 +4,7 @@ import { HealthCheckModel, HealthCheckType, ServiceConfiguration, ServiceHierarc
 import { getOperatorPunctuation } from 'helpers/ServiceHierarchyHelper';
 import { IHealthCheckCondition, IHealthCheckDefinition, IHealthCheckHttpCondition } from 'types';
 
-const Thresholds: React.FC<{
+const TimeSeriesThresholds: React.FC<{
   svcHierarchyCfg: ServiceHierarchyConfiguration | null,
   rootServiceName?: string | null,
   healthCheckName: string,
@@ -18,7 +18,7 @@ const Thresholds: React.FC<{
           <div>
             <b>Http Request</b>
             {definition?.conditions.map((c:IHealthCheckHttpCondition, index:number) =>
-              <div>
+              <div key={healthCheckName + '-httpCondition-' + index}>
                 { c.type === 'HttpStatusCode' &&
                   <span><b>{c.status}</b>: {c.type} in [{(index ? ', ' : '') + c.statusCodes}] </span>
                 }
@@ -32,13 +32,13 @@ const Thresholds: React.FC<{
       case HealthCheckType.LokiMetric:
       case HealthCheckType.PrometheusMetric:
         return(
-          <div>
+          <div >
             <b>{(metricType === HealthCheckType.LokiMetric)?'Loki Query' :' Prometheus Query'}</b>: {rootServiceName}/{healthCheckName}<br />
             <b>Expression</b>: {definition?.expression} <br /><br />
-            {definition?.conditions.map((c:IHealthCheckCondition, index:number) =>
-              <div>
+            {definition?.conditions.map((c:IHealthCheckCondition, index:number) => (
+              <div key={healthCheckName + '-queryCondition-' + index}>
                 <span><b>{c.status}</b>: Value {getOperatorPunctuation(c.operator)} {c.threshold} </span>
-              </div>
+              </div>)
             )}
           </div>
         )
@@ -53,12 +53,14 @@ const Thresholds: React.FC<{
       {svcHierarchyCfg?.services?.map((s: ServiceConfiguration) => s.healthChecks
         ?.filter((hc: HealthCheckModel) => hc.name === healthCheckName)
         .map((hc: HealthCheckModel) =>
-          displayThreshold(hc.type, (hc.definition as IHealthCheckDefinition))
+          <div key={healthCheckName + '-tsThresholds'}>
+            {displayThreshold(hc.type, (hc.definition as IHealthCheckDefinition))}
+          </div>
         )
       )}
     </div>
   )
 }
 
-export default Thresholds;
+export default TimeSeriesThresholds;
 

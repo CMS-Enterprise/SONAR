@@ -1,40 +1,33 @@
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableRow } from '@cmsgov/design-system';
+import { chartsTableProperties } from './HealthCheckListItem.Style';
 
-const ChartsTable: React.FC<{
+
+const HealthCheckListItemTimeSeriesChart: React.FC<{
+  healthCheckName: string
   timeSeriesData: number[][]
-}> = ({ timeSeriesData }) => {
+}> = ({ healthCheckName, timeSeriesData }) => {
   const TIMESTAMP_DATA = 0;
   const HEALTHSTATUS_DATA = 1;
 
   return (
-    <div>
-      <Table scrollable>
-        <TableHead>
-          <TableRow>
-            <TableCell>
-              Timestamp
-            </TableCell>
-            <TableCell>
-              HealthStatus
-            </TableCell>
+    <Table style={chartsTableProperties}>
+      <TableHead>
+        <TableRow >
+          <TableCell>Timestamp</TableCell>
+          <TableCell>HealthStatus</TableCell>
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {timeSeriesData?.map((data, index:number) =>
+          <TableRow key={healthCheckName+'-row-'+index}>
+            <TableCell>{new Date(data[TIMESTAMP_DATA]).toISOString()}</TableCell>
+            <TableCell>{data[HEALTHSTATUS_DATA]}</TableCell>
           </TableRow>
-        </TableHead>
-        <TableBody>
-          {timeSeriesData.map(data =>
-            <TableRow>
-              <TableCell>
-                {new Date(data[TIMESTAMP_DATA]).toTimeString()}
-              </TableCell>
-              <TableCell>
-                {data[HEALTHSTATUS_DATA]}
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
-    </div>
+        )}
+      </TableBody>
+    </Table>
   );
 };
 
-export default ChartsTable;
+export default HealthCheckListItemTimeSeriesChart;

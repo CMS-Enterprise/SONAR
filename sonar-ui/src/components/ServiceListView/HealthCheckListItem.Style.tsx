@@ -1,15 +1,23 @@
-export const chartsFlexContainer = {
+export const chartsContainer = {
   display:'flex',
-  justifyContent:'left',
   overflow: 'hidden',
+  flexDirection: "column"
 }
-export const chartsFlexTable = {
-  flexGrow:'0',
-  flexShrink:'0',
-  margin: '10px'
-}
-export const chartsFlexThreshold = {
+
+export const chartsThreshold = {
   flexGrow:'0',
   flexShrink:'1',
-  margin: '10px'
+  margin: '10px',
+}
+
+export const chartsTable = {
+  flexGrow:'0',
+  flexShrink:'0',
+  margin: '10px',
+  height: '300px',
+  overflow: 'scroll',
+}
+
+export const chartsTableProperties = {
+  width: '100%'
 }

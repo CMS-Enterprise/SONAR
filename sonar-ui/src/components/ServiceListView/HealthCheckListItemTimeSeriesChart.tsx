@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import Chart from 'react-apexcharts';
 import { ApexOptions } from "apexcharts";
 import { IHealthCheckCondition, IHealthCheckDefinition } from 'types';
-import { HealthStatus } from 'api/data-contracts';
 
 const TimeSeriesChart: React.FC<{
   svcDefinitions: IHealthCheckDefinition | null,
@@ -40,6 +39,9 @@ const TimeSeriesChart: React.FC<{
     },
     xaxis: {
       type: 'datetime',
+      labels: {
+        datetimeUTC: true
+      }
     },
     yaxis: {
       min: 0,
@@ -61,39 +63,31 @@ const TimeSeriesChart: React.FC<{
   const updateData = (timeline:string) => {
     const SEC = 1000;
     const MIN = 60 * SEC;
-    const currentTime = new Date().getTime()
+    const latestTimestamp = new Date(timeSeriesData[0][0]).getTime();
 
     switch (timeline) {
       case '30s':
         ApexCharts.exec(
           healthCheckName,
           'zoomX',
-          currentTime,
-          currentTime + (30 * SEC)
+          latestTimestamp - (30 * SEC),
+          latestTimestamp
         )
         break
       case '1m':
         ApexCharts.exec(
           healthCheckName,
           'zoomX',
-          currentTime,
-          currentTime + (1 * MIN)
+          latestTimestamp - (1 * MIN),
+          latestTimestamp
         )
         break
       case '5m':
         ApexCharts.exec(
           healthCheckName,
           'zoomX',
-          currentTime,
-          currentTime + (5 * MIN)
-        )
-        break
-      case '10m':
-        ApexCharts.exec(
-          healthCheckName,
-          'zoomX',
-          currentTime,
-          currentTime + (10 * MIN)
+          latestTimestamp - (5 * MIN),
+          latestTimestamp
         )
         break
       case 'all':
@@ -142,8 +136,6 @@ const TimeSeriesChart: React.FC<{
       <button id="1m" onClick={() => updateData('1m')}>1m</button>
       &nbsp;
       <button id="5m" onClick={() => updateData('5m')}>5m</button>
-      &nbsp;
-      <button id="10m" onClick={() => updateData('10m')}>10m</button>
       &nbsp;
       <button id="all" onClick={() => updateData('all')}>All</button>
       &nbsp;

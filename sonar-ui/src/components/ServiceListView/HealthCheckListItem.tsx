@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 
 import { createSonarClient } from 'helpers/ApiHelper';
 import { DateTimeDoubleValueTuple, HealthCheckModel, HealthCheckType,
-  HealthStatus, ServiceConfiguration, ServiceHierarchyConfiguration } from 'api/data-contracts';
+  ServiceConfiguration, ServiceHierarchyConfiguration } from 'api/data-contracts';
 import { IHealthCheckDefinition } from 'types';
 import { AccordionItem } from '@cmsgov/design-system';
-import { chartsFlexContainer, chartsFlexTable, chartsFlexThreshold } from './HealthCheckListItem.Style';
+import { chartsTable, chartsThreshold } from './HealthCheckListItem.Style';
 import HealthCheckListItemTimeSeriesChart from './HealthCheckListItemTimeSeriesChart'
 import HealthCheckListItemTable from './HealthCheckListItemTable'
 import HealthCheckListItemThresholds from './HealthCheckListItemThresholds';
@@ -19,7 +19,6 @@ const HealthCheckListItem: React.FC<{
 }> = ({ environmentName, tenantName, rootServiceName, healthCheckName, healthCheckStatus}) => {
   const [svcHierarchyCfg, setSvcHierarchyCfg] = useState<ServiceHierarchyConfiguration | null>(null);
   const [tsData, setTsData] = useState<DateTimeDoubleValueTuple[] | null>(null);
-
 
   useEffect(() => {
     const sonarClient = createSonarClient();
@@ -43,51 +42,39 @@ const HealthCheckListItem: React.FC<{
   const HEALTHSTATUS_DATA = 1;
 
 
-
   //Transform Date to Timestamps, ts data can be in one of two forms https://apexcharts.com/docs/series/
-  const transformedData: number[][] | undefined = tsData?.map(data =>
-    [new Date(data[TIMESTAMP_DATA]).getTime(), Number(data[HEALTHSTATUS_DATA])]
-  );
+  const transformedData = tsData?.map(data =>
+    [data[TIMESTAMP_DATA], data[HEALTHSTATUS_DATA]]
+  ).reverse() as number[][];
 
   return (
     <AccordionItem heading={`${healthCheckName}: ${healthCheckStatus}`}>
       {
         svcHierarchyCfg?.services?.map((s: ServiceConfiguration) => s.healthChecks
           ?.filter((hc: HealthCheckModel) => hc.name === healthCheckName && hc.type !== HealthCheckType.HttpRequest)
-          .map((hc: HealthCheckModel) =>
-            { transformedData != null &&
-              <HealthCheckListItemTimeSeriesChart svcDefinitions={hc.definition as IHealthCheckDefinition}
+          .map((hc: HealthCheckModel) => (
+              <HealthCheckListItemTimeSeriesChart key={healthCheckName + '-tsChart'}
+                                                  svcDefinitions={hc.definition as IHealthCheckDefinition}
                                                   healthCheckName={healthCheckName}
                                                   timeSeriesData={transformedData}
               />
-            }
+            )
           )
         )
       }
 
-      <div style={chartsFlexContainer}>
-        {  tsData?.map(data =>
-          console.log(healthCheckName, new Date(data[TIMESTAMP_DATA]).getTime(), Number(data[HEALTHSTATUS_DATA]))
-        )
-
-
-        }
-        <div style={chartsFlexTable}>
-          { transformedData != null &&
-            <HealthCheckListItemTable timeSeriesData={transformedData}/>
-          }
-        </div>
-
-        <div style={chartsFlexThreshold}>
-
-          <HealthCheckListItemThresholds svcHierarchyCfg={svcHierarchyCfg}
-                                         rootServiceName={rootServiceName}
-                                         healthCheckName={healthCheckName}
-                                         healthCheckStatus={healthCheckStatus}
-          />
-        </div>
+      <div style={chartsThreshold}>
+        <HealthCheckListItemThresholds svcHierarchyCfg={svcHierarchyCfg}
+                                       rootServiceName={rootServiceName}
+                                       healthCheckName={healthCheckName}
+                                       healthCheckStatus={healthCheckStatus}
+        />
       </div>
 
+      <div style={chartsTable}>
+        <HealthCheckListItemTable healthCheckName={healthCheckName}
+                                  timeSeriesData={transformedData}/>
+      </div>
     </AccordionItem>
   );
 };
