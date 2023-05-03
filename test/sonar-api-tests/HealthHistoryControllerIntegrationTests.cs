@@ -12,7 +12,7 @@ using Cms.BatCave.Sonar.Models;
 
 namespace Cms.BatCave.Sonar.Tests;
 
-public class HealthHistoryControllerIntegrationTests: ApiControllerTestsBase  {
+public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
   private const String RootServiceName = "TestRootService";
   private const String ChildServiceName = "TestChildService";
   private const String HealthCheckName = "TestHealthCheck";
@@ -72,8 +72,7 @@ public class HealthHistoryControllerIntegrationTests: ApiControllerTestsBase  {
   );
 
   public HealthHistoryControllerIntegrationTests(ApiIntegrationTestFixture fixture, ITestOutputHelper outputHelper) :
-    base(fixture, outputHelper)
-  {
+    base(fixture, outputHelper) {
     this._output = outputHelper;
   }
 
@@ -157,12 +156,11 @@ public class HealthHistoryControllerIntegrationTests: ApiControllerTestsBase  {
   public async Task RootStatusAggregation(
     HealthStatus[] parentStatus,
     HealthStatus[] expectedStatus
-  )
- {
-   var timespan = -expectedStatus?.Length ?? -10;
-   var end = DateTime.UtcNow;
-   var start = DateTime.UtcNow.AddMinutes(timespan);
-   var timestamp = start;
+  ) {
+    var timespan = -expectedStatus?.Length ?? -10;
+    var end = DateTime.UtcNow;
+    var start = DateTime.UtcNow.AddMinutes(timespan);
+    var timestamp = start;
 
     var (testEnvironment, testTenant) =
       await this.CreateTestConfiguration(HealthHistoryControllerIntegrationTests.TestRootOnlyConfiguration);
@@ -200,7 +198,7 @@ public class HealthHistoryControllerIntegrationTests: ApiControllerTestsBase  {
     var serviceHealth = Assert.Single(body);
     Assert.NotNull(serviceHealth);
 
-   if (serviceHealth.AggregateStatus != null) {
+    if (serviceHealth.AggregateStatus != null) {
       var colStatus = serviceHealth.AggregateStatus.Select(x => x.AggregateStatus);
       var healthStatusEnumerable = colStatus as HealthStatus[] ?? colStatus.ToArray();
 
@@ -208,24 +206,23 @@ public class HealthHistoryControllerIntegrationTests: ApiControllerTestsBase  {
       foreach (var hs in expectedStatus) {
         //should have 2 items for each minute (30 second step).
         Assert.Equal(hs, healthStatusEnumerable[index]);
-        Assert.Equal(hs, healthStatusEnumerable[index+1]);
+        Assert.Equal(hs, healthStatusEnumerable[index + 1]);
         index += 2;
       }
-   }
- }
+    }
+  }
 
-    [Theory]
+  [Theory]
   [MemberData(nameof(Data))]
   public async Task RootChildStatusAggregation(
-    HealthStatus[] parentStatus,
-    HealthStatus[] childStatus,
-    HealthStatus[] expectedStatus
-  )
- {
-   var timespan = -expectedStatus?.Length ?? -10;
-   var end = DateTime.UtcNow;
-   var start = DateTime.UtcNow.AddMinutes(timespan);
-   var timestamp = start;
+  HealthStatus[] parentStatus,
+  HealthStatus[] childStatus,
+  HealthStatus[] expectedStatus
+) {
+    var timespan = -expectedStatus?.Length ?? -10;
+    var end = DateTime.UtcNow;
+    var start = DateTime.UtcNow.AddMinutes(timespan);
+    var timestamp = start;
 
     var (testEnvironment, testTenant) =
       await this.CreateTestConfiguration(HealthHistoryControllerIntegrationTests.TestRootChildConfiguration);
@@ -279,7 +276,7 @@ public class HealthHistoryControllerIntegrationTests: ApiControllerTestsBase  {
     Assert.NotNull(serviceHealth.Children);
     var childService = Assert.Single(serviceHealth.Children);
 
-   if (serviceHealth.AggregateStatus != null) {
+    if (serviceHealth.AggregateStatus != null) {
       var colStatus = serviceHealth.AggregateStatus.Select(x => x.AggregateStatus);
       var healthStatusEnumerable = colStatus as HealthStatus[] ?? colStatus.ToArray();
 
@@ -287,25 +284,25 @@ public class HealthHistoryControllerIntegrationTests: ApiControllerTestsBase  {
       foreach (var hs in expectedStatus) {
         //should have 2 items for each minute (30 second step).
         Assert.Equal(hs, healthStatusEnumerable[index]);
-        Assert.Equal(hs, healthStatusEnumerable[index+1]);
+        Assert.Equal(hs, healthStatusEnumerable[index + 1]);
         index += 2;
       }
-   } else {
-     //If no parent service metrics, check the child metrics
-     if (childService.AggregateStatus != null) {
-       var colStatus = childService.AggregateStatus.Select(x => x.AggregateStatus);
-       var healthStatusEnumerable = colStatus as HealthStatus[] ?? colStatus.ToArray();
+    } else {
+      //If no parent service metrics, check the child metrics
+      if (childService.AggregateStatus != null) {
+        var colStatus = childService.AggregateStatus.Select(x => x.AggregateStatus);
+        var healthStatusEnumerable = colStatus as HealthStatus[] ?? colStatus.ToArray();
 
-       var index = 0;
-       foreach (var hs in expectedStatus) {
-         //should have 2 items for each minute (30 second step).
-         Assert.Equal(hs, healthStatusEnumerable[index]);
-         Assert.Equal(hs, healthStatusEnumerable[index + 1]);
-         index += 2;
-       }
-     }
-   }
- }
+        var index = 0;
+        foreach (var hs in expectedStatus) {
+          //should have 2 items for each minute (30 second step).
+          Assert.Equal(hs, healthStatusEnumerable[index]);
+          Assert.Equal(hs, healthStatusEnumerable[index + 1]);
+          index += 2;
+        }
+      }
+    }
+  }
 
   public static IEnumerable<Object[]> Data() {
     yield return new Object[] {
