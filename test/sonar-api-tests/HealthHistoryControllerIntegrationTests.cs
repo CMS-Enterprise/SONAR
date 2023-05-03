@@ -104,63 +104,6 @@ public class HealthHistoryControllerIntegrationTests: ApiControllerTestsBase  {
 
 
   [Theory]
-  [MemberData(nameof(TestData))]
-  public async Task RootServiceTest(
-    HealthStatus[] RecordedStatus,
-    HealthStatus[] NotRecordedStatus
-    ) {
-
-    var (testEnvironment, testTenant) =
-      await this.CreateTestConfiguration(HealthHistoryControllerIntegrationTests.TestRootOnlyConfiguration);
-
-    var timestamp = DateTime.UtcNow.AddMinutes(-10);
-    var start = timestamp;
-    var end = timestamp.AddMinutes(10);
-
-    //Record the status in Prometheus
-    foreach (var hs in RecordedStatus) {
-      for (var i = 0; i < NumberRecordings; i++) {
-        await this.RecordServiceHealth(
-          testEnvironment,
-          testTenant,
-          HealthHistoryControllerIntegrationTests.RootServiceName,
-          HealthHistoryControllerIntegrationTests.HealthCheckName,
-          timestamp,
-          hs);
-        timestamp = timestamp.AddSeconds(TimeInSecondsBetweenRecordings);
-      }
-    }
-
-    //Query Prometheus via the TestServer and collect the aggregate Status
-    var getResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?start={start.ToLocalTime()}&end={end.ToLocalTime()}&step={Step}")
-        .AddHeader(name: "Accept", value: "application/json")
-        .GetAsync();
-
-    Assert.Equal(
-      expected: HttpStatusCode.OK,
-      actual: getResponse.StatusCode);
-
-    var body = await getResponse.Content.ReadFromJsonAsync<ServiceHierarchyHealthHistory[]>(
-      HealthControllerIntegrationTests.SerializerOptions
-    );
-
-    Assert.NotNull(body);
-    var serviceHealth = Assert.Single(body);
-
-    if (serviceHealth.AggregateStatus != null) {
-      var colStatus = serviceHealth.AggregateStatus.Select(x => x.AggregateStatus);
-      var healthStatusEnumerable = colStatus as HealthStatus[] ?? colStatus.ToArray();
-      foreach (var hs in RecordedStatus) {
-        Assert.Contains(hs, healthStatusEnumerable);
-      }
-      foreach (var hs in NotRecordedStatus) {
-        Assert.DoesNotContain(hs, healthStatusEnumerable);
-      }
-    }
-  }
-
-  [Theory]
   [InlineData(HealthStatus.Unknown)]
   [InlineData(HealthStatus.Online)]
   [InlineData(HealthStatus.AtRisk)]
@@ -210,8 +153,70 @@ public class HealthHistoryControllerIntegrationTests: ApiControllerTestsBase  {
   }
 
   [Theory]
-  [MemberData(nameof(RcTestData))]
+  [MemberData(nameof(Data2))]
   public async Task RootStatusAggregation(
+    HealthStatus[] parentStatus,
+    HealthStatus[] expectedStatus
+  )
+ {
+   var timespan = -expectedStatus?.Length ?? -10;
+   var end = DateTime.UtcNow;
+   var start = DateTime.UtcNow.AddMinutes(timespan);
+   var timestamp = start;
+
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(HealthHistoryControllerIntegrationTests.TestRootOnlyConfiguration);
+
+    //Record the status in Prometheus
+    foreach (var hs in parentStatus) {
+      for (var i = 0; i < NumberRecordings; i++) {
+        await this.RecordServiceHealth(
+          testEnvironment,
+          testTenant,
+          HealthHistoryControllerIntegrationTests.RootServiceName,
+          HealthHistoryControllerIntegrationTests.HealthCheckName,
+          timestamp,
+          hs);
+        timestamp = timestamp.AddSeconds(TimeInSecondsBetweenRecordings);
+      }
+    }
+
+    var getResponse = await
+      this.Fixture.Server.CreateRequest($"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?start={start.ToLocalTime()}&end={end.ToLocalTime()}&step={Step}")
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.OK,
+      actual: getResponse.StatusCode);
+
+    var body = await getResponse.Content.ReadFromJsonAsync<ServiceHierarchyHealthHistory[]>(
+      HealthControllerIntegrationTests.SerializerOptions
+    );
+
+    Assert.NotNull(body);
+
+    // The parent and child service should have the recorded status
+    var serviceHealth = Assert.Single(body);
+    Assert.NotNull(serviceHealth);
+
+   if (serviceHealth.AggregateStatus != null) {
+      var colStatus = serviceHealth.AggregateStatus.Select(x => x.AggregateStatus);
+      var healthStatusEnumerable = colStatus as HealthStatus[] ?? colStatus.ToArray();
+
+      var index = 0;
+      foreach (var hs in expectedStatus) {
+        //should have 2 items for each minute (30 second step).
+        Assert.Equal(hs, healthStatusEnumerable[index]);
+        Assert.Equal(hs, healthStatusEnumerable[index+1]);
+        index += 2;
+      }
+   }
+ }
+
+    [Theory]
+  [MemberData(nameof(Data))]
+  public async Task RootChildStatusAggregation(
     HealthStatus[] parentStatus,
     HealthStatus[] childStatus,
     HealthStatus[] expectedStatus
@@ -302,22 +307,7 @@ public class HealthHistoryControllerIntegrationTests: ApiControllerTestsBase  {
    }
  }
 
-  public static IEnumerable<Object[]> TestData() {
-    yield return new Object[] {
-      new HealthStatus[] { HealthStatus.Online, HealthStatus.AtRisk, HealthStatus.Degraded },
-      new HealthStatus[] { HealthStatus.Offline, HealthStatus.Unknown }
-    };
-    yield return new Object[] {
-      new HealthStatus[] { HealthStatus.Online, HealthStatus.AtRisk, HealthStatus.Degraded, HealthStatus.Offline },
-      new HealthStatus[] { HealthStatus.Unknown }
-    };
-    yield return new Object[] {
-      new HealthStatus[] { HealthStatus.Online, HealthStatus.Degraded, HealthStatus.Offline },
-      new HealthStatus[] { HealthStatus.Unknown, HealthStatus.AtRisk }
-    };
-  }
-
-  public static IEnumerable<Object[]> RcTestData() {
+  public static IEnumerable<Object[]> Data() {
     yield return new Object[] {
       new HealthStatus[] { HealthStatus.Online, HealthStatus.AtRisk, HealthStatus.Degraded },
       new HealthStatus[] { HealthStatus.Online, HealthStatus.Online, HealthStatus.Offline },
@@ -337,6 +327,17 @@ public class HealthHistoryControllerIntegrationTests: ApiControllerTestsBase  {
       new HealthStatus[] {  },
       new HealthStatus[] { HealthStatus.Online, HealthStatus.Online, HealthStatus.Degraded },
       new HealthStatus[] { HealthStatus.Online, HealthStatus.Online, HealthStatus.Degraded }
+    };
+  }
+
+  public static IEnumerable<Object[]> Data2() {
+    yield return new Object[] {
+      new HealthStatus[] { HealthStatus.Online, HealthStatus.AtRisk, HealthStatus.Degraded },
+      new HealthStatus[] { HealthStatus.Online, HealthStatus.AtRisk, HealthStatus.Degraded }
+    };
+    yield return new Object[] {
+      new HealthStatus[] { HealthStatus.Online, HealthStatus.Online, HealthStatus.Online, HealthStatus.Online, HealthStatus.Unknown, HealthStatus.Unknown, HealthStatus.Unknown },
+      new HealthStatus[] { HealthStatus.Online, HealthStatus.Online, HealthStatus.Online, HealthStatus.Online, HealthStatus.Unknown, HealthStatus.Unknown, HealthStatus.Unknown },
     };
   }
 
