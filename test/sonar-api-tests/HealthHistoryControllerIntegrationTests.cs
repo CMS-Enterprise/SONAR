@@ -3,27 +3,33 @@ using Xunit;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Enumeration;
-using Cms.BatCave.Sonar.Extensions;
 using Cms.BatCave.Sonar.Models;
 
 namespace Cms.BatCave.Sonar.Tests;
 
 public class HealthHistoryControllerIntegrationTests: ApiControllerTestsBase  {
-  private const String TestRootServiceName = "TestRootService";
-  private const String TestChildServiceName = "TestChildService";
-  private const String TestHealthCheckName = "TestHealthCheck";
+  private const String RootServiceName = "TestRootService";
+  private const String ChildServiceName = "TestChildService";
+  private const String HealthCheckName = "TestHealthCheck";
   private ITestOutputHelper _output;
+
+  //Each status in the array (parentStatus, childStatus) will be recorded 6 times in one minute.
+  //The time in between each recording is 10 seconds
+  const Int32 NumberRecordings = 6;
+  const Int32 TimeInSecondsBetweenRecordings = 10;
+  //When querying prometheus the step will be a 30 second step.
+  //Therefore, there will be 2 retrieved recordings for each minute
+  const Int32 Step = 30;
 
 
   private static readonly HealthCheckModel TestHealthCheck =
     new(
-      HealthHistoryControllerIntegrationTests.TestHealthCheckName,
+      HealthHistoryControllerIntegrationTests.HealthCheckName,
       Description: "Health Check Description",
       HealthCheckType.PrometheusMetric,
       new MetricHealthCheckDefinition(
@@ -36,25 +42,25 @@ public class HealthHistoryControllerIntegrationTests: ApiControllerTestsBase  {
   private static readonly ServiceHierarchyConfiguration TestRootOnlyConfiguration = new(
     ImmutableList.Create(
       new ServiceConfiguration(
-        HealthHistoryControllerIntegrationTests.TestRootServiceName,
+        HealthHistoryControllerIntegrationTests.RootServiceName,
         DisplayName: "Display Name", Description: null, Url: null,
         ImmutableList.Create(HealthHistoryControllerIntegrationTests.TestHealthCheck),
         Children: null)
     ),
-    ImmutableHashSet<String>.Empty.Add(HealthHistoryControllerIntegrationTests.TestRootServiceName)
+    ImmutableHashSet<String>.Empty.Add(HealthHistoryControllerIntegrationTests.RootServiceName)
   );
 
   private static readonly ServiceHierarchyConfiguration TestRootChildConfiguration = new(
     ImmutableList.Create(
       new ServiceConfiguration(
-        HealthHistoryControllerIntegrationTests.TestRootServiceName,
+        HealthHistoryControllerIntegrationTests.RootServiceName,
         DisplayName: "Display Name",
         Description: null,
         Url: null,
         ImmutableList.Create(HealthHistoryControllerIntegrationTests.TestHealthCheck),
-        ImmutableHashSet<String>.Empty.Add(HealthHistoryControllerIntegrationTests.TestChildServiceName)),
+        ImmutableHashSet<String>.Empty.Add(HealthHistoryControllerIntegrationTests.ChildServiceName)),
       new ServiceConfiguration(
-        HealthHistoryControllerIntegrationTests.TestChildServiceName,
+        HealthHistoryControllerIntegrationTests.ChildServiceName,
         DisplayName: "Display Name",
         Description: null,
         Url: null,
@@ -62,7 +68,7 @@ public class HealthHistoryControllerIntegrationTests: ApiControllerTestsBase  {
         Children: null
       )
     ),
-    ImmutableHashSet<String>.Empty.Add(HealthHistoryControllerIntegrationTests.TestRootServiceName)
+    ImmutableHashSet<String>.Empty.Add(HealthHistoryControllerIntegrationTests.RootServiceName)
   );
 
   public HealthHistoryControllerIntegrationTests(ApiIntegrationTestFixture fixture, ITestOutputHelper outputHelper) :
@@ -74,7 +80,7 @@ public class HealthHistoryControllerIntegrationTests: ApiControllerTestsBase  {
   [Theory]
   [InlineData("/api/v2/environments")]
   [InlineData("/api/v2/health-history/{testEnvironment}/tenants/{testTenant}")]
-  [InlineData($"/api/v2/health-history/{{testEnvironment}}/tenants/{{testTenant}}/services/{HealthHistoryControllerIntegrationTests.TestRootServiceName}")]
+  [InlineData($"/api/v2/health-history/{{testEnvironment}}/tenants/{{testTenant}}/services/{HealthHistoryControllerIntegrationTests.RootServiceName}")]
   public async Task HealthHistoryURLTest(
     string urlpath) {
 
@@ -100,13 +106,9 @@ public class HealthHistoryControllerIntegrationTests: ApiControllerTestsBase  {
   [Theory]
   [MemberData(nameof(TestData))]
   public async Task RootServiceTest(
-    Decimal minutes,
     HealthStatus[] RecordedStatus,
     HealthStatus[] NotRecordedStatus
     ) {
-
-    const Int32 numberRecordings = 12;
-    const Int32 timeInSecondsBetweenRecordings = 5;
 
     var (testEnvironment, testTenant) =
       await this.CreateTestConfiguration(HealthHistoryControllerIntegrationTests.TestRootOnlyConfiguration);
@@ -115,26 +117,23 @@ public class HealthHistoryControllerIntegrationTests: ApiControllerTestsBase  {
     var start = timestamp;
     var end = timestamp.AddMinutes(10);
 
-    this._output.WriteLine($"UTC   start: {start} end: {end}");
-    this._output.WriteLine($"Local start: {start.ToLocalTime()} end: {end.ToLocalTime()}");
-
     //Record the status in Prometheus
     foreach (var hs in RecordedStatus) {
-      for (var i = 0; i < numberRecordings; i++) {
+      for (var i = 0; i < NumberRecordings; i++) {
         await this.RecordServiceHealth(
           testEnvironment,
           testTenant,
-          HealthHistoryControllerIntegrationTests.TestRootServiceName,
-          HealthHistoryControllerIntegrationTests.TestHealthCheckName,
+          HealthHistoryControllerIntegrationTests.RootServiceName,
+          HealthHistoryControllerIntegrationTests.HealthCheckName,
           timestamp,
           hs);
-        timestamp = timestamp.AddSeconds(timeInSecondsBetweenRecordings);
+        timestamp = timestamp.AddSeconds(TimeInSecondsBetweenRecordings);
       }
     }
 
     //Query Prometheus via the TestServer and collect the aggregate Status
     var getResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?start={start.ToLocalTime()}&end={end.ToLocalTime()}&step=30")
+      this.Fixture.Server.CreateRequest($"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?start={start.ToLocalTime()}&end={end.ToLocalTime()}&step={Step}")
         .AddHeader(name: "Accept", value: "application/json")
         .GetAsync();
 
@@ -151,9 +150,7 @@ public class HealthHistoryControllerIntegrationTests: ApiControllerTestsBase  {
 
     if (serviceHealth.AggregateStatus != null) {
       var colStatus = serviceHealth.AggregateStatus.Select(x => x.AggregateStatus);
-
       var healthStatusEnumerable = colStatus as HealthStatus[] ?? colStatus.ToArray();
-
       foreach (var hs in RecordedStatus) {
         Assert.Contains(hs, healthStatusEnumerable);
       }
@@ -161,9 +158,7 @@ public class HealthHistoryControllerIntegrationTests: ApiControllerTestsBase  {
         Assert.DoesNotContain(hs, healthStatusEnumerable);
       }
     }
-
   }
-
 
   [Theory]
   [InlineData(HealthStatus.Unknown)]
@@ -172,8 +167,6 @@ public class HealthHistoryControllerIntegrationTests: ApiControllerTestsBase  {
   [InlineData(HealthStatus.Degraded)]
   [InlineData(HealthStatus.Offline)]
   public async Task AllStatusTypesTest(HealthStatus testStatus) {
-    const Int32 numberRecordings = 12;
-    const Int32 timeInSecondsBetweenRecordings = 5;
 
     var (testEnvironment, testTenant) =
       await this.CreateTestConfiguration(HealthHistoryControllerIntegrationTests.TestRootOnlyConfiguration);
@@ -181,19 +174,19 @@ public class HealthHistoryControllerIntegrationTests: ApiControllerTestsBase  {
     var timestamp = DateTime.UtcNow.AddMinutes(-10);
     var start = timestamp;
     var end = timestamp.AddMinutes(10);
-    for (var i = 0; i < numberRecordings; i++) {
+    for (var i = 0; i < NumberRecordings; i++) {
       await this.RecordServiceHealth(
         testEnvironment,
         testTenant,
-        HealthHistoryControllerIntegrationTests.TestRootServiceName,
-        HealthHistoryControllerIntegrationTests.TestHealthCheckName,
+        HealthHistoryControllerIntegrationTests.RootServiceName,
+        HealthHistoryControllerIntegrationTests.HealthCheckName,
         timestamp,
         testStatus);
-      timestamp = timestamp.AddSeconds(timeInSecondsBetweenRecordings);
+      timestamp = timestamp.AddSeconds(TimeInSecondsBetweenRecordings);
     }
 
     var getResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?start={start.ToLocalTime()}&end={end.ToLocalTime()}&step=30")
+      this.Fixture.Server.CreateRequest($"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?start={start.ToLocalTime()}&end={end.ToLocalTime()}&step={Step}")
         .AddHeader(name: "Accept", value: "application/json")
         .GetAsync();
 
@@ -210,32 +203,20 @@ public class HealthHistoryControllerIntegrationTests: ApiControllerTestsBase  {
 
     if (serviceHealth.AggregateStatus != null) {
       var colStatus = serviceHealth.AggregateStatus.Select(x => x.AggregateStatus);
-
       var healthStatusEnumerable = colStatus as HealthStatus[] ?? colStatus.ToArray();
       Assert.Contains(testStatus, healthStatusEnumerable);
-      Assert.Equal(HealthHistoryControllerIntegrationTests.TestRootServiceName, serviceHealth.Name);
+      Assert.Equal(HealthHistoryControllerIntegrationTests.RootServiceName, serviceHealth.Name);
     }
-
   }
 
-
-
   [Theory]
-  [MemberData(nameof(RCTestData))]
+  [MemberData(nameof(RcTestData))]
   public async Task RootStatusAggregation(
     HealthStatus[] parentStatus,
     HealthStatus[] childStatus,
-    HealthStatus[]? expectedStatus
+    HealthStatus[] expectedStatus
   )
  {
-   //Each status in the array (parentStatus, childStatus) will be recorded 6 times in one minute.
-   //The time in between each recording is 10 seconds
-   const Int32 numberRecordings = 6;
-   const Int32 timeInSecondsBetweenRecordings = 10;
-   //When querying prometheus the step will be a 30 second step.
-   //Therefore, there will be 2 retrieved recordings for each minute
-   const Int32 step = 30;
-
    var timespan = -expectedStatus?.Length ?? -10;
    var end = DateTime.UtcNow;
    var start = DateTime.UtcNow.AddMinutes(timespan);
@@ -246,34 +227,34 @@ public class HealthHistoryControllerIntegrationTests: ApiControllerTestsBase  {
 
     //Record the status in Prometheus
     foreach (var hs in parentStatus) {
-      for (var i = 0; i < numberRecordings; i++) {
+      for (var i = 0; i < NumberRecordings; i++) {
         await this.RecordServiceHealth(
           testEnvironment,
           testTenant,
-          HealthHistoryControllerIntegrationTests.TestRootServiceName,
-          HealthHistoryControllerIntegrationTests.TestHealthCheckName,
+          HealthHistoryControllerIntegrationTests.RootServiceName,
+          HealthHistoryControllerIntegrationTests.HealthCheckName,
           timestamp,
           hs);
-        timestamp = timestamp.AddSeconds(timeInSecondsBetweenRecordings);
+        timestamp = timestamp.AddSeconds(TimeInSecondsBetweenRecordings);
       }
     }
 
     timestamp = start;
     foreach (var hs in childStatus) {
-      for (var i = 0; i < numberRecordings; i++) {
+      for (var i = 0; i < NumberRecordings; i++) {
         await this.RecordServiceHealth(
           testEnvironment,
           testTenant,
-          HealthHistoryControllerIntegrationTests.TestChildServiceName,
-          HealthHistoryControllerIntegrationTests.TestHealthCheckName,
+          HealthHistoryControllerIntegrationTests.ChildServiceName,
+          HealthHistoryControllerIntegrationTests.HealthCheckName,
           timestamp,
           hs);
-        timestamp = timestamp.AddSeconds(timeInSecondsBetweenRecordings);
+        timestamp = timestamp.AddSeconds(TimeInSecondsBetweenRecordings);
       }
     }
 
     var getResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?start={start.ToLocalTime()}&end={end.ToLocalTime()}&step={step}")
+      this.Fixture.Server.CreateRequest($"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?start={start.ToLocalTime()}&end={end.ToLocalTime()}&step={Step}")
         .AddHeader(name: "Accept", value: "application/json")
         .GetAsync();
 
@@ -323,23 +304,20 @@ public class HealthHistoryControllerIntegrationTests: ApiControllerTestsBase  {
 
   public static IEnumerable<Object[]> TestData() {
     yield return new Object[] {
-      -10,
       new HealthStatus[] { HealthStatus.Online, HealthStatus.AtRisk, HealthStatus.Degraded },
       new HealthStatus[] { HealthStatus.Offline, HealthStatus.Unknown }
     };
     yield return new Object[] {
-      -30,
       new HealthStatus[] { HealthStatus.Online, HealthStatus.AtRisk, HealthStatus.Degraded, HealthStatus.Offline },
       new HealthStatus[] { HealthStatus.Unknown }
     };
     yield return new Object[] {
-      -30,
       new HealthStatus[] { HealthStatus.Online, HealthStatus.Degraded, HealthStatus.Offline },
       new HealthStatus[] { HealthStatus.Unknown, HealthStatus.AtRisk }
     };
   }
 
-  public static IEnumerable<Object[]> RCTestData() {
+  public static IEnumerable<Object[]> RcTestData() {
     yield return new Object[] {
       new HealthStatus[] { HealthStatus.Online, HealthStatus.AtRisk, HealthStatus.Degraded },
       new HealthStatus[] { HealthStatus.Online, HealthStatus.Online, HealthStatus.Offline },
