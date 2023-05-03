@@ -4,28 +4,25 @@ import RootService from 'components/ServiceListView/RootService';
 import { createSonarClient } from 'helpers/ApiHelper';
 import { HttpResponse } from 'api/http-client';
 import { StatusHistoryView } from 'interfaces/global_interfaces';
+import { useQuery } from 'react-query';
 import StatusHistoryDrawer from '../components/StatusHistory/StatusHistoryDrawer';
 
 const ServiceView = () => {
-  const [services, setServices] = useState<ServiceHierarchyHealth[] | null>(null);
+  const sonarClient = createSonarClient();
   const environmentName = 'foo';
   const tenantName = 'baz'
+
   const [showDrawer, setShowDrawer] = useState(false);
   const [selectedTileId, setSelectedTileId] = useState<string>("");
   const [statusHistoryViewData, setStatusHistoryViewData] = useState<StatusHistoryView | null>(null);
 
-  useEffect(() => {
-    // create sonar client
-    const sonarClient = createSonarClient();
-
-    sonarClient.getServiceHierarchyHealth(environmentName, tenantName)
+  const { isLoading, isError, data, error } = useQuery<ServiceHierarchyHealth[], Error>(
+    ["services"],
+    () => sonarClient.getServiceHierarchyHealth(environmentName, tenantName)
       .then((res: HttpResponse<ServiceHierarchyHealth[], ProblemDetails | void>) => {
-        setServices(res.data);
+        return res.data;
       })
-      .catch((e: HttpResponse<ServiceHierarchyHealth[], ProblemDetails | void>) => {
-        console.log(`Error fetching health metrics: ${e.error}`);
-      });
-  }, []);
+  );
 
   useEffect(() => {
     if (statusHistoryViewData) {
@@ -51,7 +48,7 @@ const ServiceView = () => {
     setSelectedTileId("");
   }
 
-  return services ? (
+  return data ? (
     <section className="ds-l-container">
       {showDrawer && (
         <StatusHistoryDrawer
@@ -62,13 +59,13 @@ const ServiceView = () => {
         />
       )}
       <div>
-        {services.map(rootService => (
+        {data.map(rootService => (
           <div key={rootService.name}>
             <RootService
               environmentName={environmentName}
               tenantName={tenantName}
               rootService={rootService}
-              services={services}
+              services={data}
               addTimestamp={addTimestamp}
               closeDrawer={closeDrawer}
               selectedTileId={selectedTileId}

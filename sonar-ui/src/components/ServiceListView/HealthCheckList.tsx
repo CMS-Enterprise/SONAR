@@ -3,7 +3,7 @@ import { Accordion } from '@cmsgov/design-system';
 
 import { DateTimeHealthStatusValueTuple } from 'api/data-contracts';
 import HealthCheckListItem from 'components/ServiceListView/HealthCheckListItem';
-import { validateHealthCheckObj } from '../../helpers/HealthCheckHelper';
+import { validateHealthCheckObj } from 'helpers/HealthCheckHelper';
 
 const HealthCheckList: React.FC<{
   environmentName: string,

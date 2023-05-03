@@ -37,7 +37,7 @@ export type DateTimeDoubleValueTuple = (string | number)[];
  * @maxItems 2
  * @minItems 2
  */
-export type DateTimeHealthStatusValueTuple = [string, HealthStatus];
+export type DateTimeHealthStatusValueTuple = (string | HealthStatus)[];
 
 export interface EnvironmentHealth {
   environmentName?: string | null;

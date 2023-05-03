@@ -1,5 +1,6 @@
 import { Spinner } from '@cmsgov/design-system';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { useQuery } from 'react-query';
 import {
   DateTimeHealthStatusValueTuple,
   ProblemDetails,
@@ -8,6 +9,7 @@ import {
 } from '../../api/data-contracts';
 import { HttpResponse } from '../../api/http-client';
 import { createSonarClient } from '../../helpers/ApiHelper';
+import { calculateHistoryRange } from '../../helpers/StatusHistoryHelper';
 import { HeadingContainer, StatusHistoryContainer } from '../../styles';
 import StatusHistoryTile from './StatusHistoryTile';
 
@@ -21,37 +23,25 @@ const StatusHistoryModule: React.FC<{
 }> = ({ addTimestamp, closeDrawer, selectedTileId, rootService, environmentName, tenantName }) => {
   // store rootService name
   const rootServiceName = rootService.name ? rootService.name : "";
-  const [historyData, setHistoryData] = useState<ServiceHierarchyHealthHistory | null>(null);
-  const [loading, setLoading] = useState(true);
+  const sonarClient = createSonarClient();
 
-  useEffect(() => {
-    const sonarClient = createSonarClient();
-    // get start & end dates
-    const dateObj = new Date();
-    const end = dateObj.toISOString();
-    (dateObj.setHours(dateObj.getHours() - 12));
-    const start = dateObj.toISOString();
-    console.log(`start: ${start}, end: ${end}`);
-    const stepSeconds = 2160;
-    sonarClient.getServiceHealthHistory(environmentName, tenantName, rootServiceName, {start, end, step: stepSeconds})
+  const { isLoading, isError, data, error } = useQuery<ServiceHierarchyHealthHistory, Error>(
+    ["statusHistory", environmentName, tenantName, rootServiceName],
+    () => sonarClient.getServiceHealthHistory(environmentName, tenantName, rootServiceName, calculateHistoryRange())
       .then((res: HttpResponse<ServiceHierarchyHealthHistory, ProblemDetails | void>) => {
         console.log(res.data);
-        setHistoryData(res.data);
-        setLoading(false);
+        return res.data;
       })
-      .catch((e: HttpResponse<ServiceHierarchyHealthHistory, ProblemDetails | void>) => {
-        console.log(`Error fetching health metrics: ${e.error}`);
-      });
-  }, [environmentName, tenantName, rootServiceName]);
+  );
 
   return (
     <>
       <div style={HeadingContainer}>
         Status History:
       </div>
-      {loading ? (<Spinner />) : (
+      {isLoading ? (<Spinner />) : (
         <div style={StatusHistoryContainer}>
-          {historyData?.aggregateStatus?.map((item, index) => (
+          {data?.aggregateStatus?.map((item, index) => (
             <StatusHistoryTile
               key={`${rootServiceName}-${index}`}
               id={`${rootServiceName}-${index}`}

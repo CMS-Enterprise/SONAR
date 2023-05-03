@@ -7,12 +7,14 @@ import Header from './components/App/Header';
 import EnvironmentView from './pages/EnvironmentView';
 import Home from './pages/Home';
 import ServiceView from './pages/ServiceView';
-
+import { QueryClient, QueryClientProvider } from "react-query";
 import './App.css';
+
+const queryClient = new QueryClient();
 
 function App() {
   return (
-    <>
+    <QueryClientProvider client={queryClient}>
       <Router>
         <Header />
         <div>
@@ -23,7 +25,7 @@ function App() {
           </Routes>
         </div>
       </Router>
-    </>
+    </QueryClientProvider>
   );
 }
 

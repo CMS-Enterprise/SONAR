@@ -1,10 +1,10 @@
 import React from 'react';
-import { useEffect, useState } from 'react';
 import { AccordionItem, Spinner } from '@cmsgov/design-system';
 import { EnvironmentHealth, TenantHealth } from 'api/data-contracts';
 import { getHealthStatusClass } from 'helpers/ServiceHierarchyHelper';
 import { createSonarClient } from 'helpers/ApiHelper';
 import TenantItem from 'components/Tenant/TenantItem';
+import { useQuery } from 'react-query';
 
 const EnvironmentItem: React.FC<{
   environment: EnvironmentHealth,
@@ -14,20 +14,16 @@ const EnvironmentItem: React.FC<{
   statusColor: string
 }> =
   ({ environment, open, selected, setOpen, statusColor }) => {
-    const [tenants, setTenants] = useState<TenantHealth[] | null>(null);
-    const [loading, setLoading] = useState(true);
+    const sonarClient = createSonarClient();
 
-    useEffect(() => {
-      if (selected) {
-        const sonarClient = createSonarClient();
-        sonarClient.getTenants()
-          .then((res) => {
-            setTenants(res.data);
-            setLoading(false);
+    const { isLoading, isError, data, error } = useQuery<TenantHealth[], Error>({
+      queryKey: ["tenantHealth"],
+      enabled: selected,
+      queryFn: () => sonarClient.getTenants()
+        .then((res) => {
+          return res.data;
         })
-          .catch(e => console.log(`Error fetching tenants: ${e.message}`));
-      }
-    }, [selected]);
+    })
 
     const handleToggle = () => {
       const expanded =
@@ -42,8 +38,8 @@ const EnvironmentItem: React.FC<{
                      onChange={handleToggle}
                      buttonClassName={getHealthStatusClass(environment.aggregateStatus)}>
         {
-          loading ? (<Spinner />) :
-          tenants?.filter(t=> t.environmentName === environment.environmentName)
+          isLoading ? (<Spinner />) :
+          data?.filter(t=> t.environmentName === environment.environmentName)
             .map(t =>
               <TenantItem key={t.tenantName}
                           tenant={t}/>

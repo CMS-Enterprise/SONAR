@@ -20,3 +20,15 @@ export const renderStatusIcon = (status: HealthStatus) => {
   }
   return result;
 }
+
+export const calculateHistoryRange = () => {
+  // calculate start and end dates statically for now.
+  const dateObj = new Date();
+  const end = dateObj.toISOString();
+  (dateObj.setHours(dateObj.getHours() - 12));
+  const start = dateObj.toISOString();
+  console.log(`start: ${start}, end: ${end}`);
+  const stepSeconds = 2160;
+
+  return { start, end, step: stepSeconds };
+}
