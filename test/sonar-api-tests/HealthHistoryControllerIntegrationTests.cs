@@ -128,7 +128,7 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
     }
 
     var getResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?start={start.ToLocalTime()}&end={end.ToLocalTime()}&step={Step}")
+      this.Fixture.Server.CreateRequest($"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?start={start}&end={end}&step={Step}")
         .AddHeader(name: "Accept", value: "application/json")
         .GetAsync();
 
@@ -179,7 +179,7 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
     }
 
     var getResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?start={start.ToLocalTime()}&end={end.ToLocalTime()}&step={Step}")
+      this.Fixture.Server.CreateRequest($"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?start={start}&end={end}&step={Step}")
         .AddHeader(name: "Accept", value: "application/json")
         .GetAsync();
 
@@ -255,7 +255,7 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
     }
 
     var getResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?start={start.ToLocalTime()}&end={end.ToLocalTime()}&step={Step}")
+      this.Fixture.Server.CreateRequest($"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?start={start}&end={end}&step={Step}")
         .AddHeader(name: "Accept", value: "application/json")
         .GetAsync();
 
