@@ -20,11 +20,11 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
 
   //Each status in the array (parentStatus, childStatus) will be recorded 6 times in one minute.
   //The time in between each recording is 10 seconds
-  const Int32 NumberRecordings = 6;
-  const Int32 TimeInSecondsBetweenRecordings = 10;
+  private const Int32 NumberRecordings = 6;
+  private const Int32 TimeInSecondsBetweenRecordings = 10;
   //When querying prometheus the step will be a 30 second step.
   //Therefore, there will be 2 retrieved recordings for each minute
-  const Int32 Step = 30;
+  private const Int32 Step = 30;
 
 
   private static readonly HealthCheckModel TestHealthCheck =
@@ -152,14 +152,13 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
   }
 
   [Theory]
-  [MemberData(nameof(Data2))]
+  [MemberData(nameof(HealthStatusData2))]
   public async Task RootStatusAggregation(
     HealthStatus[] parentStatus,
     HealthStatus[] expectedStatus
   ) {
-    var timespan = -expectedStatus?.Length ?? -10;
     var end = DateTime.UtcNow;
-    var start = DateTime.UtcNow.AddMinutes(timespan);
+    var start = DateTime.UtcNow.AddMinutes(-expectedStatus.Length);
     var timestamp = start;
 
     var (testEnvironment, testTenant) =
@@ -199,29 +198,29 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
     Assert.NotNull(serviceHealth);
 
     if (serviceHealth.AggregateStatus != null) {
-      var colStatus = serviceHealth.AggregateStatus.Select(x => x.AggregateStatus);
-      var healthStatusEnumerable = colStatus as HealthStatus[] ?? colStatus.ToArray();
+
+      //Expecting 2 items for each minute(30 second step)
+      Assert.Equal(serviceHealth.AggregateStatus.Count, expectedStatus.Length*2);
 
       var index = 0;
       foreach (var hs in expectedStatus) {
         //should have 2 items for each minute (30 second step).
-        Assert.Equal(hs, healthStatusEnumerable[index]);
-        Assert.Equal(hs, healthStatusEnumerable[index + 1]);
+        Assert.Equal(hs,  serviceHealth.AggregateStatus[index].AggregateStatus);
+        Assert.Equal(hs, serviceHealth.AggregateStatus[index + 1].AggregateStatus);
         index += 2;
       }
     }
   }
 
   [Theory]
-  [MemberData(nameof(Data))]
+  [MemberData(nameof(HealthStatusData))]
   public async Task RootChildStatusAggregation(
   HealthStatus[] parentStatus,
   HealthStatus[] childStatus,
   HealthStatus[] expectedStatus
-) {
-    var timespan = -expectedStatus?.Length ?? -10;
+  ) {
     var end = DateTime.UtcNow;
-    var start = DateTime.UtcNow.AddMinutes(timespan);
+    var start = DateTime.UtcNow.AddMinutes(-expectedStatus.Length);
     var timestamp = start;
 
     var (testEnvironment, testTenant) =
@@ -277,34 +276,36 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
     var childService = Assert.Single(serviceHealth.Children);
 
     if (serviceHealth.AggregateStatus != null) {
-      var colStatus = serviceHealth.AggregateStatus.Select(x => x.AggregateStatus);
-      var healthStatusEnumerable = colStatus as HealthStatus[] ?? colStatus.ToArray();
+
+      //Expecting 2 items for each minute(30 second step)
+      Assert.Equal(serviceHealth.AggregateStatus.Count, expectedStatus.Length*2);
 
       var index = 0;
       foreach (var hs in expectedStatus) {
         //should have 2 items for each minute (30 second step).
-        Assert.Equal(hs, healthStatusEnumerable[index]);
-        Assert.Equal(hs, healthStatusEnumerable[index + 1]);
+        Assert.Equal(hs,  serviceHealth.AggregateStatus[index].AggregateStatus);
+        Assert.Equal(hs, serviceHealth.AggregateStatus[index + 1].AggregateStatus);
         index += 2;
       }
     } else {
       //If no parent service metrics, check the child metrics
       if (childService.AggregateStatus != null) {
-        var colStatus = childService.AggregateStatus.Select(x => x.AggregateStatus);
-        var healthStatusEnumerable = colStatus as HealthStatus[] ?? colStatus.ToArray();
+
+        //Expecting 2 items for each minute(30 second step)
+        Assert.Equal(childService.AggregateStatus.Count, expectedStatus.Length*2);
 
         var index = 0;
         foreach (var hs in expectedStatus) {
           //should have 2 items for each minute (30 second step).
-          Assert.Equal(hs, healthStatusEnumerable[index]);
-          Assert.Equal(hs, healthStatusEnumerable[index + 1]);
+          Assert.Equal(hs,  childService.AggregateStatus[index].AggregateStatus);
+          Assert.Equal(hs, childService.AggregateStatus[index + 1].AggregateStatus);
           index += 2;
         }
       }
     }
   }
 
-  public static IEnumerable<Object[]> Data() {
+  public static IEnumerable<Object[]> HealthStatusData() {
     yield return new Object[] {
       new HealthStatus[] { HealthStatus.Online, HealthStatus.AtRisk, HealthStatus.Degraded },
       new HealthStatus[] { HealthStatus.Online, HealthStatus.Online, HealthStatus.Offline },
@@ -327,7 +328,7 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
     };
   }
 
-  public static IEnumerable<Object[]> Data2() {
+  public static IEnumerable<Object[]> HealthStatusData2() {
     yield return new Object[] {
       new HealthStatus[] { HealthStatus.Online, HealthStatus.AtRisk, HealthStatus.Degraded },
       new HealthStatus[] { HealthStatus.Online, HealthStatus.AtRisk, HealthStatus.Degraded }
