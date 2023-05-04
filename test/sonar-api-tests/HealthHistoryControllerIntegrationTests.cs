@@ -200,12 +200,12 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
     if (serviceHealth.AggregateStatus != null) {
 
       //Expecting 2 items for each minute(30 second step)
-      Assert.Equal(serviceHealth.AggregateStatus.Count, expectedStatus.Length*2);
+      Assert.Equal(serviceHealth.AggregateStatus.Count, expectedStatus.Length * 2);
 
       var index = 0;
       foreach (var hs in expectedStatus) {
         //should have 2 items for each minute (30 second step).
-        Assert.Equal(hs,  serviceHealth.AggregateStatus[index].AggregateStatus);
+        Assert.Equal(hs, serviceHealth.AggregateStatus[index].AggregateStatus);
         Assert.Equal(hs, serviceHealth.AggregateStatus[index + 1].AggregateStatus);
         index += 2;
       }
@@ -278,12 +278,12 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
     if (serviceHealth.AggregateStatus != null) {
 
       //Expecting 2 items for each minute(30 second step)
-      Assert.Equal(serviceHealth.AggregateStatus.Count, expectedStatus.Length*2);
+      Assert.Equal(serviceHealth.AggregateStatus.Count, expectedStatus.Length * 2);
 
       var index = 0;
       foreach (var hs in expectedStatus) {
         //should have 2 items for each minute (30 second step).
-        Assert.Equal(hs,  serviceHealth.AggregateStatus[index].AggregateStatus);
+        Assert.Equal(hs, serviceHealth.AggregateStatus[index].AggregateStatus);
         Assert.Equal(hs, serviceHealth.AggregateStatus[index + 1].AggregateStatus);
         index += 2;
       }
@@ -292,12 +292,12 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
       if (childService.AggregateStatus != null) {
 
         //Expecting 2 items for each minute(30 second step)
-        Assert.Equal(childService.AggregateStatus.Count, expectedStatus.Length*2);
+        Assert.Equal(childService.AggregateStatus.Count, expectedStatus.Length * 2);
 
         var index = 0;
         foreach (var hs in expectedStatus) {
           //should have 2 items for each minute (30 second step).
-          Assert.Equal(hs,  childService.AggregateStatus[index].AggregateStatus);
+          Assert.Equal(hs, childService.AggregateStatus[index].AggregateStatus);
           Assert.Equal(hs, childService.AggregateStatus[index + 1].AggregateStatus);
           index += 2;
         }
