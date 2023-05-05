@@ -34,6 +34,7 @@
     <Content Include="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <None Include="test-inputs/**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

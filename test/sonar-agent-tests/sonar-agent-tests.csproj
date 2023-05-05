@@ -28,4 +28,8 @@
     <ProjectReference Include="..\..\sonar-agent\sonar-agent.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="test-inputs/**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  
 </Project>

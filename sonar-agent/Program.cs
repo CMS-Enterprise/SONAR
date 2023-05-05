@@ -13,6 +13,7 @@ using Cms.BatCave.Sonar.Agent.HealthChecks.Metrics;
 using Cms.BatCave.Sonar.Agent.Options;
 using Cms.BatCave.Sonar.Agent.Logger;
 using Cms.BatCave.Sonar.Configuration;
+using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Loki;
 using Cms.BatCave.Sonar.Models;
 using Cms.BatCave.Sonar.Prometheus;
@@ -122,7 +123,7 @@ internal class Program {
       // Load and merge configs
       servicesHierarchy = await configurationHelper.LoadAndValidateJsonServiceConfig(
         opts, agentConfig.Value, token);
-    } catch (Exception ex) when (ex is InvalidOperationException or JsonException) {
+    } catch (Exception ex) when (ex is InvalidConfigurationException) {
       logger.LogError(ex, "Invalid Service Configuration: {Message}", ex.Message);
       return 1;
     } catch (ArgumentException ex) {

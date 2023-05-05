@@ -15,10 +15,8 @@ using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 using Environment = Cms.BatCave.Sonar.Data.Environment;
 using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
-using HealthCheck = Cms.BatCave.Sonar.Data.HealthCheck;
 
 namespace Cms.BatCave.Sonar.Controllers;
 
@@ -85,7 +83,7 @@ public class ConfigurationController : ControllerBase {
       (await this._serviceDataHelper.FetchExistingHealthChecks(serviceMap.Keys, cancellationToken))
       .ToLookup(hc => hc.ServiceId);
 
-    return this.Ok(ConfigurationController.CreateServiceHierarchy(serviceMap, healthCheckByService, serviceRelationshipsByParent));
+    return this.Ok(CreateServiceHierarchy(serviceMap, healthCheckByService, serviceRelationshipsByParent));
   }
 
   /// <summary>
@@ -129,7 +127,7 @@ public class ConfigurationController : ControllerBase {
       throw new ForbiddenException($"The authentication credential provided is not authorized to {activity}.");
     }
 
-    ConfigurationController.ValidateServiceHierarchy(hierarchy);
+    ValidateServiceHierarchy(hierarchy);
 
     await using var tx =
       await this._dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
@@ -235,7 +233,7 @@ public class ConfigurationController : ControllerBase {
 
       response = this.Created(
         this.Url.Action(nameof(this.GetConfiguration), new { environment, tenant }) ?? String.Empty,
-        ConfigurationController.CreateServiceHierarchy(
+        CreateServiceHierarchy(
           servicesByName.Values.ToImmutableDictionary(svc => svc.Id),
           createdHealthChecks.ToLookup(hc => hc.ServiceId),
           createdRelationships.ToLookup(rel => rel.ParentServiceId)
@@ -252,15 +250,6 @@ public class ConfigurationController : ControllerBase {
 
       // Commit transaction
       await tx.CommitAsync(cancellationToken);
-    } catch (DbUpdateException dbException)
-      when (dbException.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation }) {
-
-      await tx.RollbackAsync(cancellationToken);
-
-      response = this.BadRequest(new ProblemDetails {
-        Title = "The specified list of services contained multiple services with the same name.",
-        Type = ProblemTypes.InvalidConfiguration
-      });
     } catch {
       await tx.RollbackAsync(cancellationToken);
       throw;
@@ -303,7 +292,7 @@ public class ConfigurationController : ControllerBase {
       tenant,
       "update configuration",
       cancellationToken);
-    ConfigurationController.ValidateServiceHierarchy(hierarchy);
+    ValidateServiceHierarchy(hierarchy);
 
     await using var tx =
       await this._dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
@@ -546,7 +535,7 @@ public class ConfigurationController : ControllerBase {
       var updatedRelationships =
         await this._serviceDataHelper.FetchExistingRelationships(updatedServiceMap.Keys, cancellationToken);
 
-      response = this.Ok(ConfigurationController.CreateServiceHierarchy(
+      response = this.Ok(CreateServiceHierarchy(
         updatedServiceMap,
         updatedHealthChecks.ToLookup(hc => hc.ServiceId),
         updatedRelationships.ToLookup(rel => rel.ParentServiceId)
@@ -596,42 +585,13 @@ public class ConfigurationController : ControllerBase {
   }
 
   private static void ValidateServiceHierarchy(ServiceHierarchyConfiguration hierarchy) {
-    var serviceNames =
-      hierarchy.Services.Select(svc => svc.Name).ToImmutableHashSet(StringComparer.OrdinalIgnoreCase);
-
-    var missingRootServices =
-      hierarchy.RootServices
-        .Where(rootSvcName => !serviceNames.Contains(rootSvcName))
-        .ToImmutableList();
-    if (missingRootServices.Any()) {
+    try {
+      hierarchy.Validate();
+    } catch (InvalidConfigurationException e) {
       throw new BadRequestException(
-        message: "One or more of the specified root services do not exist in the services array.",
+        message: e.Message,
         ProblemTypes.InvalidConfiguration,
-        new Dictionary<String, Object?> {
-          { nameof(ServiceHierarchyConfiguration.RootServices), missingRootServices }
-        }
-      );
-    }
-
-    var missingChildServices =
-      hierarchy.Services
-        .Select(svc =>
-          new {
-            svc.Name,
-            Children = svc.Children?.Where(child => !serviceNames.Contains(child)).ToImmutableList()
-          })
-        .Where(v => v.Children?.Any() == true)
-        .ToImmutableList();
-
-    if (missingChildServices.Any()) {
-      throw new BadRequestException(
-        message:
-        "One or more of the specified services contained a reference to a child service that did not exist in the services array.",
-        ProblemTypes.InvalidConfiguration,
-        new Dictionary<String, Object?> {
-          { nameof(ServiceHierarchyConfiguration.Services), missingChildServices }
-        }
-      );
+        (e.Data as IDictionary<String, Object?>)!);
     }
   }
 

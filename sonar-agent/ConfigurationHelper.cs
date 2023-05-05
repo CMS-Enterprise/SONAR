@@ -11,12 +11,12 @@ using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Agent.Configuration;
 using Cms.BatCave.Sonar.Agent.Options;
 using Cms.BatCave.Sonar.Configuration;
+using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Models;
 using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using String = System.String;
 
 namespace Cms.BatCave.Sonar.Agent;
 
@@ -41,10 +41,34 @@ public class ConfigurationHelper {
     this._kubeClient = null;
   }
 
-  private static readonly JsonSerializerOptions ConfigSerializerOptions = new JsonSerializerOptions {
+  private static readonly JsonSerializerOptions ConfigSerializerOptions = new() {
     PropertyNameCaseInsensitive = true,
     Converters = { new JsonStringEnumConverter() }
   };
+
+  public static ServiceHierarchyConfiguration GetServiceHierarchyConfigurationFromJson(String jsonString) {
+    try {
+      var configuration =
+        JsonSerializer.Deserialize<ServiceHierarchyConfiguration>(jsonString, ConfigSerializerOptions);
+
+      if (configuration == null) {
+        throw new InvalidConfigurationException("Invalid JSON service configuration: deserialized object is null.");
+      }
+
+      configuration.Validate();
+      return configuration;
+    } catch (Exception e) {
+      throw new InvalidConfigurationException(message: $"Invalid JSON service configuration: {e.Message}", e);
+    }
+  }
+
+  public static async Task<ServiceHierarchyConfiguration> GetServiceHierarchyConfigurationFromJsonAsync(
+    Stream jsonStream,
+    CancellationToken cancellationToken = default) {
+
+    var jsonString = await new StreamReader(jsonStream).ReadToEndAsync(cancellationToken);
+    return GetServiceHierarchyConfigurationFromJson(jsonString);
+  }
 
   /// <summary>
   ///   Load Service Configuration from both local files and the Kubernetes API according to command line
@@ -139,58 +163,7 @@ public class ConfigurationHelper {
 
     foreach (var config in filePaths) {
       await using var inputStream = new FileStream(config, FileMode.Open, FileAccess.Read);
-      try {
-        var serviceHierarchy =
-          await JsonSerializer.DeserializeAsync<ServiceHierarchyConfiguration>(
-            inputStream,
-            ConfigurationHelper.ConfigSerializerOptions,
-            token
-          );
-        if (serviceHierarchy == null) {
-          throw new InvalidOperationException(
-            $"The specified service configuration file ({config}) could not be deserialized."
-          );
-        }
-
-        var serviceNames = new HashSet<String>(StringComparer.OrdinalIgnoreCase);
-        // Ensure that each service in the list has a unique name
-        // Check if a child service exists as a service
-        foreach (var service in serviceHierarchy.Services) {
-          if (serviceNames.Contains(service.Name)) {
-            throw new InvalidOperationException(
-              $"The specified service configuration file ({config}) is not valid. The service name '{service.Name}' is used multiple times."
-            );
-          } else {
-            serviceNames.Add(service.Name);
-          }
-
-          if (service.Children != null) {
-            foreach (var child in service.Children) {
-              // Don't use serviceNames here because we don't want the order in which services are
-              // declared to matter
-              if (!serviceHierarchy.Services.Any(svc => String.Equals(svc.Name, child, StringComparison.OrdinalIgnoreCase))) {
-                throw new InvalidOperationException(
-                  $"The specified service configuration file ({config}) is not valid. The child service '{child}' does not exist in the services array."
-                );
-              }
-            }
-          }
-        }
-
-        // Check if root service exists as a service
-        foreach (var rootService in serviceHierarchy.RootServices) {
-          if (!serviceNames.Contains(rootService)) {
-            throw new InvalidOperationException(
-              $"The specified service configuration file ({config}) is not valid. The root service {rootService} does not exist in the services array."
-            );
-          }
-        }
-
-        // Add valid config to list
-        services.Add(serviceHierarchy);
-      } catch (KeyNotFoundException) {
-        throw new InvalidOperationException("Service configuration is invalid.");
-      }
+      services.Add(await GetServiceHierarchyConfigurationFromJsonAsync(inputStream, token));
     }
 
     return services.Aggregate(MergeConfigurations);
@@ -379,55 +352,6 @@ public class ConfigurationHelper {
     return unsortedConfigs.OrderBy(c => c.order).ToList();
   }
 
-  private ServiceHierarchyConfiguration? ValidateServiceConfiguration((Int16 order, String data) config) {
-
-    var serviceHierarchy =
-      JsonSerializer.Deserialize<ServiceHierarchyConfiguration>(
-        config.data,
-        ConfigurationHelper.ConfigSerializerOptions);
-    if (serviceHierarchy == null) {
-      throw new InvalidOperationException(
-        $"The specified service configuration file ({config}) could not be deserialized.");
-    }
-
-    var serviceNames = new HashSet<String>(StringComparer.OrdinalIgnoreCase);
-
-    // Ensure that each service in the list has a unique name
-    // Check if a child service exists as a service
-    foreach (var service in serviceHierarchy.Services) {
-      if (serviceNames.Contains(service.Name)) {
-        throw new InvalidOperationException(
-          $"The specified service configuration file ({config}) is not valid. The service name '{service.Name}' is used multiple times."
-          );
-      } else {
-        serviceNames.Add(service.Name);
-      }
-
-      if (service.Children != null) {
-        foreach (var child in service.Children) {
-          // Don't use serviceNames here because we don't want the order in which services are
-          // declared to matter
-          if (!serviceHierarchy.Services.Any(svc => String.Equals(svc.Name, child, StringComparison.OrdinalIgnoreCase))) {
-            throw new InvalidOperationException(
-              $"The specified service configuration file ({config}) is not valid. The child service '{child}' does not exist in the services array."
-              );
-          }
-        }
-      }
-    }
-
-    // Check if root service exists as a service
-    foreach (var rootService in serviceHierarchy.RootServices) {
-      if (!serviceNames.Contains(rootService)) {
-        throw new InvalidOperationException(
-          $"The specified service configuration file ({config}) is not valid. The root service {rootService} does not exist in the services array."
-          );
-      }
-    }
-
-    return serviceHierarchy;
-  }
-
   public ServiceHierarchyConfiguration? GetServicesHierarchy(
     List<(Int16 order, String data)> sortedConfigs) {
 
@@ -435,14 +359,7 @@ public class ConfigurationHelper {
 
     // Get valid service configuration
     foreach (var config in sortedConfigs) {
-      try {
-        var serviceHierarchy = this.ValidateServiceConfiguration(config);
-
-        // Add valid config to list
-        services.Add(serviceHierarchy);
-      } catch (KeyNotFoundException) {
-        throw new InvalidOperationException("Service configuration is invalid.");
-      }
+      services.Add(GetServiceHierarchyConfigurationFromJson(config.data));
     }
 
     return services.Aggregate(MergeConfigurations);
