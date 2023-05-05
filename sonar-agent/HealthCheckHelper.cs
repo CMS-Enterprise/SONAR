@@ -67,65 +67,69 @@ public class HealthCheckHelper {
       try {
         tenantResult = await client.GetTenantAsync(env, tenant, token);
       } catch (ApiException e) {
-        if (tenantResult == null) {
-          Console.WriteLine($"Tenant {tenant} does not exist. Health check run is exiting.");
-          break;
-        }
+        this._logger.LogError($"Sonar Central reports Tenant {tenant} does not exist.");
+      } catch (HttpRequestException ex) {
+        this._logger.LogError($"An network error occurred attempting to get tenant information from Sonar Central: {ex.Message}");
+      } catch (TaskCanceledException ex) {
+        this._logger.LogError($"HTTP request timed out attempting get tenant information from Sonar Central: {ex.Message}");
+      } catch (Exception ex) {
+        this._logger.LogError($"Failed to get Tenant configuration from Sonar Central for Environment: {env} Tenant: {tenant} : {ex.Message}");
       }
-
-      this._logger.LogDebug("Service Count: {ServiceCount}", tenantResult.Services.Count);
 
       var pendingHealthChecks = new List<(String Service, String HealthCheck, Task<HealthStatus> Status)>();
       // Iterate over each service
-      foreach (var service in tenantResult.Services) {
-        // Get service's health checks here
-        var healthChecks = service.HealthChecks;
-        // If no checks are returned, continue
-        if ((healthChecks == null) || (healthChecks.Count == 0)) {
-          if ((service.Children == null) || (service.Children.Count == 0)) {
-            // This service serves no purpose in configuration
-            this._logger.LogWarning(
-              "No Health Checks or child services associated with {ServiceName}",
-              service.Name
-            );
-          } else {
-            this._logger.LogDebug("No Health Checks associated with service {ServiceName}", service.Name);
+      if (tenantResult != null) {
+        this._logger.LogDebug("Service Count: {ServiceCount}", tenantResult.Services.Count);
+        foreach (var service in tenantResult.Services) {
+          // Get service's health checks here
+          var healthChecks = service.HealthChecks;
+          // If no checks are returned, continue
+          if ((healthChecks == null) || (healthChecks.Count == 0)) {
+            if ((service.Children == null) || (service.Children.Count == 0)) {
+              // This service serves no purpose in configuration
+              this._logger.LogWarning(
+                "No Health Checks or child services associated with {ServiceName}",
+                service.Name
+              );
+            } else {
+              this._logger.LogDebug("No Health Checks associated with service {ServiceName}", service.Name);
+            }
+
+            continue;
           }
 
-          continue;
-        }
+          foreach (var healthCheck in healthChecks) {
+            Task<HealthStatus> futureStatus;
+            var healthCheckId = new HealthCheckIdentifier(env, tenant, service.Name, healthCheck.Name);
 
-        foreach (var healthCheck in healthChecks) {
-          Task<HealthStatus> futureStatus;
-          var healthCheckId = new HealthCheckIdentifier(env, tenant, service.Name, healthCheck.Name);
+            switch (healthCheck.Type) {
+              case HealthCheckType.PrometheusMetric:
+                futureStatus = this._prometheusHealthCheckQueue.QueueHealthCheck(
+                  tenant,
+                  healthCheckId,
+                  (MetricHealthCheckDefinition)healthCheck.Definition
+                );
+                break;
+              case HealthCheckType.LokiMetric:
+                futureStatus = this._lokiHealthCheckQueue.QueueHealthCheck(
+                  tenant,
+                  healthCheckId,
+                  (MetricHealthCheckDefinition)healthCheck.Definition
+                );
+                break;
+              case HealthCheckType.HttpRequest:
+                futureStatus = this._httpHealthCheckQueue.QueueHealthCheck(
+                  tenant,
+                  healthCheckId,
+                  (HttpHealthCheckDefinition)healthCheck.Definition
+                );
+                break;
+              default:
+                throw new NotSupportedException("Healthcheck Type is not supported.");
+            }
 
-          switch (healthCheck.Type) {
-            case HealthCheckType.PrometheusMetric:
-              futureStatus = this._prometheusHealthCheckQueue.QueueHealthCheck(
-                tenant,
-                healthCheckId,
-                (MetricHealthCheckDefinition)healthCheck.Definition
-              );
-              break;
-            case HealthCheckType.LokiMetric:
-              futureStatus = this._lokiHealthCheckQueue.QueueHealthCheck(
-                tenant,
-                healthCheckId,
-                (MetricHealthCheckDefinition)healthCheck.Definition
-              );
-              break;
-            case HealthCheckType.HttpRequest:
-              futureStatus = this._httpHealthCheckQueue.QueueHealthCheck(
-                tenant,
-                healthCheckId,
-                (HttpHealthCheckDefinition)healthCheck.Definition
-              );
-              break;
-            default:
-              throw new NotSupportedException("Healthcheck Type is not supported.");
+            pendingHealthChecks.Add((service.Name, healthCheck.Name, futureStatus));
           }
-
-          pendingHealthChecks.Add((service.Name, healthCheck.Name, futureStatus));
         }
       }
 
@@ -181,6 +185,7 @@ public class HealthCheckHelper {
         await Task.Delay(interval.Subtract(elapsed), token);
       }
     }
+    sonarHttpClient.Dispose();
   }
 
   private async Task SendHealthData(
