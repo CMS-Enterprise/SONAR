@@ -14,7 +14,7 @@ export const chartsTable = {
   flexGrow:'0',
   flexShrink:'0',
   margin: '10px',
-  height: '300px',
+  maxHeight: '300px',
   overflow: 'scroll',
 }
 

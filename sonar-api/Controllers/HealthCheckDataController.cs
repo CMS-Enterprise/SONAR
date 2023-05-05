@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -64,7 +65,6 @@ public class HealthCheckDataController : ControllerBase {
     [FromBody] ServiceHealthData data,
     CancellationToken cancellationToken = default) {
 
-    Console.WriteLine("healthcheck" + service);
     // TODO: This is temporary pending the outcome of a spike to determine an annotation/middleware based
     // TODO (cont): approach for authorizing endpoints.
     await this._apiKeyDataHelper.ValidateTenantPermission(
@@ -99,8 +99,6 @@ public class HealthCheckDataController : ControllerBase {
       message: $"Recorded {recordedData.TotalSamples} samples from {recordedData.TotalHealthChecks} health checks for" +
         $" environment = '{environment}', tenant = '{tenant}', service = '{service}'");
 
-    Console.WriteLine("healthcheck " + data );
-
     return this.Ok(recordedData);
   }
 
@@ -122,6 +120,7 @@ public class HealthCheckDataController : ControllerBase {
   /// <exception cref="InternalServerErrorException">If there's any other problem calling Prometheus.</exception>
   [HttpGet("{environment}/tenants/{tenant}/services/{service}/health-check/{healthCheck}", Name = "GetHealthCheckData")]
   [ProducesResponseType(typeof(IImmutableList<(DateTime, Double)>), statusCode: (Int32)HttpStatusCode.OK)]
+  [ProducesResponseType(typeof(ProblemDetails), statusCode: (Int32)HttpStatusCode.BadRequest)]
   public async Task<IActionResult> GetHealthCheckData(
     [FromRoute] String environment,
     [FromRoute] String tenant,

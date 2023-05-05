@@ -275,7 +275,7 @@ tenant, and service in Prometheus. Filters out stale and out-of-order samples pr
     },
     params: RequestParams = {},
   ) =>
-    this.request<DateTimeDoubleValueTuple[], any>({
+    this.request<DateTimeDoubleValueTuple[], ProblemDetails>({
       path: `/api/v2/health-check-data/${environment}/tenants/${tenant}/services/${service}/health-check/${healthCheck}`,
       method: "GET",
       query: query,

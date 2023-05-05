@@ -6,8 +6,8 @@ import { IHealthCheckCondition, IHealthCheckDefinition } from 'types';
 
 const TimeSeriesChart: React.FC<{
   svcDefinitions: IHealthCheckDefinition | null,
-  healthCheckName:string,
-  timeSeriesData:(number)[][]
+  healthCheckName: string,
+  timeSeriesData: number[][]
 }> = ({ svcDefinitions, healthCheckName, timeSeriesData }) => {
   const [displayAnnotation, setDisplayAnnotation] = useState(false);
 
