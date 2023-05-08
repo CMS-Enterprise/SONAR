@@ -220,6 +220,12 @@ public class HealthCheckHelper {
         e.StatusCode,
         e.Message
       );
+    } catch (HttpRequestException ex) {
+      this._logger.LogError(message: "An network error occurred attempting to record status data for {Environment} {Tenant} in Sonar Central: {ExceptionMsg}", env, tenant, ex.Message);
+    } catch (TaskCanceledException ex) {
+      this._logger.LogError(message: "HTTP request timed out attempting to record status data for {Environment} {Tenant} in Sonar Central: {ExceptionMsg}", env, tenant, ex.Message);
+    } catch (Exception ex) {
+      this._logger.LogError(message: "Failed to to record status data for {Environment} {Tenant} in Sonar Central: {ExceptionMsg}", env, tenant, ex.Message);
     }
   }
 }
