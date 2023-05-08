@@ -66,14 +66,18 @@ public class HealthCheckHelper {
       ServiceHierarchyConfiguration? tenantResult = null;
       try {
         tenantResult = await client.GetTenantAsync(env, tenant, token);
-      } catch (ApiException e) {
-        this._logger.LogError($"Sonar Central reports Tenant {tenant} does not exist.");
+      } catch (ApiException ex) {
+        if (ex.StatusCode == 404) {
+          //tenant no longer exists, breaking out of loop and exiting
+          break;
+        }
+        this._logger.LogError(message: "Sonar Central reports Tenant {Tenant} does not exist.", tenant);
       } catch (HttpRequestException ex) {
-        this._logger.LogError($"An network error occurred attempting to get tenant information from Sonar Central: {ex.Message}");
+        this._logger.LogError(message: "An network error occurred attempting to get tenant information {Tenant} from Sonar Central: {ExceptionMsg}", tenant, ex.Message);
       } catch (TaskCanceledException ex) {
-        this._logger.LogError($"HTTP request timed out attempting get tenant information from Sonar Central: {ex.Message}");
+        this._logger.LogError(message: "HTTP request timed out attempting get tenant information {Tenant} from Sonar Central: {ExceptionMsg}", tenant, ex.Message);
       } catch (Exception ex) {
-        this._logger.LogError($"Failed to get Tenant configuration from Sonar Central for Environment: {env} Tenant: {tenant} : {ex.Message}");
+        this._logger.LogError(message: "Failed to get Tenant configuration from Sonar Central for Environment {Environment} Tenant {Tenant} : {ExceptionMsg}", env, tenant, ex.Message);
       }
 
       var pendingHealthChecks = new List<(String Service, String HealthCheck, Task<HealthStatus> Status)>();
@@ -185,7 +189,6 @@ public class HealthCheckHelper {
         await Task.Delay(interval.Subtract(elapsed), token);
       }
     }
-    sonarHttpClient.Dispose();
   }
 
   private async Task SendHealthData(
