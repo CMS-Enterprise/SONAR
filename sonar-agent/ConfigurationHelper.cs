@@ -207,7 +207,7 @@ public class ConfigurationHelper {
     Dictionary<String, ServiceHierarchyConfiguration> tenantServiceDictionary,
     CancellationToken token) {
 
-    // Create sonar client and send all tenant configurations
+    // SONAR client
     // TODO(BATAPI-208): make this a dependency injected via the ConfigurationHelper constructor
     using var http = new HttpClient();
     var client = new SonarClient(this._configRoot, this._apiConfig.Value.BaseUrl, http);
@@ -217,18 +217,14 @@ public class ConfigurationHelper {
       var servicesHierarchy = tenantServices.Value;
       try {
         // Set up service configuration for specified environment and tenant
-        await client.CreateTenantAsync(this._apiConfig.Value.Environment, tenant, servicesHierarchy, token);
+        await client.CreateTenantAsync(
+            this._apiConfig.Value.Environment, tenant, servicesHierarchy, token);
       } catch (ApiException requestException) {
         if (requestException.StatusCode == 409) {
           // Updating service configuration for existing environment and tenant
-          await client.UpdateTenantAsync(this._apiConfig.Value.Environment, tenant, servicesHierarchy, token);
+          await client.UpdateTenantAsync(
+              this._apiConfig.Value.Environment, tenant, servicesHierarchy, token);
         }
-      } catch (HttpRequestException ex) {
-        this._logger.LogError($"An network error occurred attempting to setup configuration in Sonar Central for Tenant {tenant} : {ex.Message}");
-      } catch (TaskCanceledException ex) {
-        this._logger.LogError($"HTTP request timed out attempting setup configuration in Sonar Central for Tenant {tenant} : {ex.Message}");
-      } catch (Exception ex) {
-        this._logger.LogError($"Failed to setup configuration in Sonar Central for Tenant {tenant} : {ex.Message}");
       }
     }
   }
