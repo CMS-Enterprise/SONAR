@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Asp.Versioning;
 using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
 
@@ -11,6 +12,7 @@ namespace Cms.BatCave.Sonar.Controllers;
 
 [ApiController]
 [ApiVersion(2)]
+[AllowAnonymous]
 [Route("api/v{version:apiVersion}/tenants")]
 public class TenantController : ControllerBase {
   private readonly TenantDataHelper _tenantDataHelper;

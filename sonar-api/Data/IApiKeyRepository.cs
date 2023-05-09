@@ -13,5 +13,5 @@ public interface IApiKeyRepository {
   Task<ApiKey?> FindAsync(String encKey, CancellationToken cancellationToken);
   Task<List<ApiKeyConfiguration>> GetKeysAsync(CancellationToken cancelToken);
   Task<List<ApiKeyConfiguration>> GetEnvKeysAsync(Guid environmentId, CancellationToken cancelToken);
-  Task<List<ApiKeyConfiguration>> GetTenantKeysAsync(ApiKey encKey, CancellationToken cancelToken);
+  Task<List<ApiKeyConfiguration>> GetTenantKeysAsync(Guid environmentId, Guid tenantId, CancellationToken cancelToken);
 }

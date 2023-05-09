@@ -12,6 +12,7 @@ using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
 using Cms.BatCave.Sonar.Prometheus;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Enum = System.Enum;
 using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
@@ -20,6 +21,7 @@ namespace Cms.BatCave.Sonar.Controllers;
 
 [ApiController]
 [ApiVersion(2)]
+[AllowAnonymous]
 [Route("api/v{version:apiVersion}/health-history")]
 public class HealthHistoryController : ControllerBase {
 

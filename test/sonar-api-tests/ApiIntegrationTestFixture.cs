@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Controllers;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Enumeration;
@@ -13,6 +14,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Cms.BatCave.Sonar.Tests;
 
@@ -99,9 +101,8 @@ public class ApiIntegrationTestFixture : IDisposable, ILoggerProvider {
 
   public RequestBuilder CreateAdminRequest(String url) {
     return this.WithDependencies(provider => {
-      var config = provider.GetRequiredService<IConfiguration>();
-      var apiKey = config.GetValue<String>("ApiKey");
-      return this.CreateAuthenticatedRequest(url, apiKey ?? "");
+      var config = provider.GetRequiredService<IOptions<SecurityConfiguration>>();
+      return this.CreateAuthenticatedRequest(url, config.Value.DefaultApiKey ?? "");
     });
   }
 

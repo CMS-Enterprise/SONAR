@@ -2,13 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Asp.Versioning;
+using Cms.BatCave.Sonar.Authentication;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -19,6 +22,7 @@ namespace Cms.BatCave.Sonar.Controllers;
 
 [ApiController]
 [ApiVersion(2)]
+[Authorize(Policy = "AllowScopedAdmin")]
 [Route("api/v{version:apiVersion}/keys")]
 public class ApiKeyController : ControllerBase {
   private const String ApiKeyHeader = "ApiKey";
@@ -59,33 +63,22 @@ public class ApiKeyController : ControllerBase {
 
     const String activity = "create an API key";
 
-    var encKey = this.Request.Headers[ApiKeyHeader].SingleOrDefault();
-    if (encKey == null) {
-      throw new UnauthorizedException($"Authentication is required to {activity}.");
-    }
-
     //Make sure the parameters to create a key are correct.
-    this.ValidateParametersToCreateKey(apiKeyDetails);
+    ValidateParametersToCreateKey(apiKeyDetails);
 
-    //if encKey matches key from configuration - admin privileges - create key.
-    if (this.MatchDefaultApiKey(encKey) != null) {
-      var createdApiKey = await this._apiKeys.AddAsync(apiKeyDetails, cancellationToken);
-      return this.StatusCode((Int32)HttpStatusCode.Created, createdApiKey);
-    } else {
-      var environment =
-        !String.IsNullOrEmpty(apiKeyDetails.Environment) ?
-          await this._environmentsTable.FirstOrDefaultAsync(e => e.Name == apiKeyDetails.Environment,
-            cancellationToken) :
-          null;
-      var tenant =
-        !String.IsNullOrEmpty(apiKeyDetails.Tenant) ?
-          await this._tenantsTable.FirstOrDefaultAsync(t => t.Name == apiKeyDetails.Tenant, cancellationToken) :
-          null;
-      //If permissions are good create the key
-      await this.ValidatePermission(encKey, environment?.Id, tenant?.Id, activity, cancellationToken);
-      var createdApiKey = await this._apiKeys.AddAsync(apiKeyDetails, cancellationToken);
-      return this.StatusCode((Int32)HttpStatusCode.Created, createdApiKey);
-    }
+    var environment =
+      !String.IsNullOrEmpty(apiKeyDetails.Environment) ?
+        await this._environmentsTable.FirstOrDefaultAsync(e => e.Name == apiKeyDetails.Environment,
+          cancellationToken) :
+        null;
+    var tenant =
+      !String.IsNullOrEmpty(apiKeyDetails.Tenant) ?
+        await this._tenantsTable.FirstOrDefaultAsync(t => t.Name == apiKeyDetails.Tenant, cancellationToken) :
+        null;
+    //If permissions are good create the key
+    ValidatePermission(this.User, environment?.Id, tenant?.Id, activity);
+    var createdApiKey = await this._apiKeys.AddAsync(apiKeyDetails, cancellationToken);
+    return this.StatusCode((Int32)HttpStatusCode.Created, createdApiKey);
   }
 
   /// <summary>
@@ -108,29 +101,17 @@ public class ApiKeyController : ControllerBase {
 
     const String activity = "delete API key";
 
-    var encKey = this.Request.Headers[ApiKeyHeader].SingleOrDefault();
-    if (encKey == null) {
-      throw new UnauthorizedException($"Authentication is required to {activity}.");
-    }
-
-    if (this.MatchDefaultApiKey(encKey) != null) {
-      await this._apiKeys.DeleteAsync(keyId, cancellationToken);
-      return this.StatusCode((Int32)HttpStatusCode.NoContent);
-    }
-
     var targetApiKey = await this._apiKeys.FindAsync(keyId, cancellationToken);
 
-    await this.ValidatePermission(
-      encKey,
+    ValidatePermission(
+      this.User,
       targetApiKey.EnvironmentId,
       targetApiKey.TenantId,
-      activity,
-      cancellationToken);
+      activity);
 
     await this._apiKeys.DeleteAsync(keyId, cancellationToken);
     return this.StatusCode((Int32)HttpStatusCode.NoContent);
   }
-
 
   /// <summary>
   ///   Get API keys.
@@ -146,42 +127,27 @@ public class ApiKeyController : ControllerBase {
   public async Task<ActionResult> GetApiKeys(
     CancellationToken cancellationToken = default) {
 
-    const String activity = "Get list of API keys";
-    var encKey = this.Request.Headers[ApiKeyHeader].SingleOrDefault();
-    if (encKey == null) {
-      throw new UnauthorizedException($"Authentication is required to {activity}.");
-    }
-
-    if (this.MatchDefaultApiKey(encKey) != null) {
-      var result = await this._apiKeys.GetKeysAsync(cancellationToken);
-      return this.StatusCode((Int32)HttpStatusCode.OK, result);
-    }
-
-    //var permKey = await this._apiKeys.GetApiKeyFromEncKeyAsync(encKey, cancellationToken);
-    var permKey = await this._apiKeys.FindAsync(encKey, cancellationToken);
-    if (permKey == null) {
-      throw new ForbiddenException($"Api Key is not authorized to {activity}.");
-    }
-
     List<ApiKeyConfiguration> results;
-    switch (permKey.Type) {
-      case ApiKeyType.Admin when !permKey.EnvironmentId.HasValue:
+    if (this.User.IsInRole("Admin")) {
+      var (environmentId, tenantId) = this.User.GetScope();
+      if (environmentId.HasValue) {
+        if (tenantId.HasValue) {
+          results = await this._apiKeys.GetTenantKeysAsync(environmentId.Value, tenantId.Value, cancellationToken);
+        } else {
+          results = await this._apiKeys.GetEnvKeysAsync(environmentId.Value, cancellationToken);
+        }
+      } else {
+
         results = await this._apiKeys.GetKeysAsync(cancellationToken);
-        break;
-      case ApiKeyType.Admin when permKey.EnvironmentId.HasValue && !permKey.TenantId.HasValue:
-        results = await this._apiKeys.GetEnvKeysAsync(permKey.EnvironmentId.Value, cancellationToken);
-        break;
-      case ApiKeyType.Admin when permKey.EnvironmentId.HasValue && permKey.TenantId.HasValue:
-        results = await this._apiKeys.GetTenantKeysAsync(permKey, cancellationToken);
-        break;
-      default:
-        throw new ForbiddenException($"Api Key is not authorized to {activity}.");
+      }
+    } else {
+      throw new ForbiddenException($"Api Key is not authorized to list API Keys.");
     }
 
     return this.StatusCode((Int32)HttpStatusCode.OK, results);
   }
 
-  private void ValidateParametersToCreateKey(ApiKeyDetails apiKeyDetails) {
+  private static void ValidateParametersToCreateKey(ApiKeyDetails apiKeyDetails) {
     if ((apiKeyDetails.Tenant != null) && (apiKeyDetails.Environment == null)) {
       throw new BadRequestException(
         message: "Tenant is in configuration, but associated Environment is missing.",
@@ -190,60 +156,34 @@ public class ApiKeyController : ControllerBase {
     }
   }
 
-  private async Task ValidatePermission(
-    String encKey,
+  private static void ValidatePermission(
+    ClaimsPrincipal principal,
     Guid? environmentScope,
     Guid? tenantScope,
-    String activity,
-    CancellationToken cancellationToken) {
-
-    var authenticationKey = await this._apiKeys.FindAsync(encKey, cancellationToken);
-    //Get the client Api Key - Make sure the keys permissions allow it to perform an action.
-
-    if (authenticationKey is not { Type: ApiKeyType.Admin }) {
-      throw new ForbiddenException($"The authentication credential provided is not authorized to {activity}.");
-    }
+    String activity) {
 
     //If scope of work requires global admin, make sure authenticated key has global admin scope.
     if ((environmentScope == null) && (tenantScope == null)) {
-      if ((authenticationKey.EnvironmentId != null) || (authenticationKey.TenantId != null)) {
+      if (!principal.IsGlobal()) {
         throw new ForbiddenException(
           $"Api Key not authorized to {activity}, must have global Admin scope.");
       }
-    }
-
-    // Make sure that the Api Key being created is within the scope that the API client is restricted to
-    if (authenticationKey.EnvironmentId.HasValue) {
-      if (authenticationKey.TenantId.HasValue) {
-        if (authenticationKey.TenantId != tenantScope) {
+    } else {
+      var (environmentId, tenantId) = principal.GetScope();
+      if (environmentId.HasValue) {
+        // Make sure that the Api Key being created is within the scope that the API client is restricted to
+        if (tenantId.HasValue) {
+          if (tenantId != tenantScope) {
+            throw new ForbiddenException(
+              $"Api Key not authorized to {activity}, because it has a different Tenant scope."
+            );
+          }
+        } else if (environmentId != environmentScope) {
           throw new ForbiddenException(
-            $"Api Key not authorized to {activity}, because it has a different Tenant scope."
+            $"Api Key not authorized to {activity} because it has a different Environment scope."
           );
         }
-      } else if (authenticationKey.EnvironmentId != environmentScope) {
-        throw new ForbiddenException(
-          $"Api Key not authorized to {activity} because it has a different Environment scope."
-        );
       }
-    }
-  }
-
-  private ApiKey? MatchDefaultApiKey(String? headerApiKey) {
-    if (headerApiKey == null) {
-      return null;
-    }
-
-    var defaultApiKey = this._configuration.GetValue<String>("ApiKey");
-    if (!String.IsNullOrEmpty(defaultApiKey) && String.Equals(defaultApiKey, headerApiKey, StringComparison.Ordinal)) {
-      return new ApiKey(
-        Guid.Empty,
-        defaultApiKey,
-        ApiKeyType.Admin,
-        environmentId: null,
-        tenantId: null
-      );
-    } else {
-      return null;
     }
   }
 }

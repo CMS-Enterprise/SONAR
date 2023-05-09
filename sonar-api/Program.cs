@@ -5,16 +5,21 @@ using System.Reflection;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Asp.Versioning;
+using Cms.BatCave.Sonar.Authentication;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
+using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Json;
 using Cms.BatCave.Sonar.Logger;
 using Cms.BatCave.Sonar.Middlewares;
 using Cms.BatCave.Sonar.OpenApi;
 using Cms.BatCave.Sonar.Options;
 using CommandLine;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -105,6 +110,51 @@ public class Program {
   }
 
   public static WebApplication BuildApplication(WebApplicationBuilder builder) {
+    builder.Services
+      .AddAuthentication(options => {
+        options.DefaultScheme = ApiKeyHeaderAuthenticationHandler.SchemeName;
+      })
+      .AddScheme<AuthenticationSchemeOptions, ApiKeyHeaderAuthenticationHandler>(
+        ApiKeyHeaderAuthenticationHandler.SchemeName,
+        options => {
+          options.ClaimsIssuer = "sonar-api";
+        }
+      );
+
+    builder.Services.AddHttpContextAccessor();
+    builder.Services.AddScoped<IAuthorizationHandler, EnvironmentTenantScopeAuthorizationHandler>();
+
+    var authenticatedPolicy =
+      new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .AddRequirements(new EnvironmentTenantScopeRequirement())
+        .Build();
+
+    var adminPolicy =
+      new AuthorizationPolicyBuilder()
+        .RequireClaim(SonarIdentityClaims.Type, ApiKeyType.Admin.ToString())
+        .AddRequirements(new EnvironmentTenantScopeRequirement())
+        .Build();
+
+    var allowScopedPolicy =
+      new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+
+    var allowScopedAdminPolicy =
+      new AuthorizationPolicyBuilder()
+        .RequireClaim(SonarIdentityClaims.Type, ApiKeyType.Admin.ToString())
+        .Build();
+
+    builder.Services
+      .AddAuthorization(options => {
+        options.AddPolicy("Admin", adminPolicy);
+        // Grant access to ApiKeys that have a different scope than that of the request URL
+        options.AddPolicy("AllowScoped", allowScopedPolicy);
+        options.AddPolicy("AllowScopedAdmin", allowScopedAdminPolicy);
+        options.DefaultPolicy = authenticatedPolicy;
+      });
+
     // Web API Specific Dependencies
     var mvcBuilder = builder.Services.AddControllers(options => {
       options.ReturnHttpNotAcceptable = true;
@@ -138,7 +188,7 @@ public class Program {
     }
 
     app.UseMiddleware<ProblemDetailExceptionMiddleware>();
-    app.UseMiddleware<ApiKeyMiddleware>();
+    app.UseAuthentication();
     app.UseAuthorization();
 
     // Route requests based on Controller attribute annotations

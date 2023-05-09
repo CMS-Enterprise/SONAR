@@ -12,6 +12,7 @@ using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models.Legacy;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -20,6 +21,8 @@ namespace Cms.BatCave.Sonar.Controllers;
 
 [ApiController]
 [ApiVersion(1)]
+// TODO: require an API key for this
+[AllowAnonymous]
 [Route("api/v{version:apiVersion}/services")]
 public class LegacyController : ControllerBase {
   private readonly HealthDataHelper _healthDataHelper;

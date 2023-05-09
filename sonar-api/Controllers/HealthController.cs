@@ -13,6 +13,7 @@ using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -26,6 +27,7 @@ namespace Cms.BatCave.Sonar.Controllers;
 
 [ApiController]
 [ApiVersion(2)]
+[Authorize(Policy = "Admin")]
 [Route("api/v{version:apiVersion}/health")]
 public class HealthController : ControllerBase {
   private readonly PrometheusRemoteWriteClient _remoteWriteClient;
@@ -93,13 +95,6 @@ public class HealthController : ControllerBase {
     CancellationToken cancellationToken = default) {
 
     //Validation
-    await this._apiKeyDataHelper.ValidateTenantPermission(
-      this.Request.Headers["ApiKey"].SingleOrDefault(),
-      requireAdmin: true,
-      environment,
-      tenant,
-      "record a health status",
-      cancellationToken);
     var canonicalHeathStatusDictionary =
       await ValidateHealthStatus(environment, tenant, service, value, cancellationToken);
 
@@ -196,6 +191,7 @@ public class HealthController : ControllerBase {
   [ProducesResponseType(typeof(ServiceHierarchyHealth[]), statusCode: 200)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 500)]
+  [AllowAnonymous]
   public async Task<IActionResult> GetSonarHealth(
     [FromRoute] String environment,
     CancellationToken cancellationToken) {
@@ -310,6 +306,7 @@ public class HealthController : ControllerBase {
   [ProducesResponseType(typeof(ServiceHierarchyHealth[]), statusCode: 200)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
   [ProducesResponseType(500)]
+  [AllowAnonymous]
   public async Task<IActionResult> GetServiceHierarchyHealth(
     [FromRoute] String environment,
     [FromRoute] String tenant,
@@ -341,6 +338,7 @@ public class HealthController : ControllerBase {
   [ProducesResponseType(typeof(ServiceHierarchyHealth[]), statusCode: 200)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
   [ProducesResponseType(500)]
+  [AllowAnonymous]
   public async Task<IActionResult> GetSpecificServiceHierarchyHealth(
     [FromRoute] String environment,
     [FromRoute] String tenant,

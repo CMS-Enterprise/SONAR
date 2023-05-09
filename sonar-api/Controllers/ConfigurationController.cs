@@ -9,10 +9,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Asp.Versioning;
 using Cms.BatCave.Sonar.Data;
-using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Extensions;
 using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Environment = Cms.BatCave.Sonar.Data.Environment;
@@ -22,6 +22,7 @@ namespace Cms.BatCave.Sonar.Controllers;
 
 [ApiController]
 [ApiVersion(2)]
+[Authorize(Policy = "Admin")]
 [Route("api/v{version:apiVersion}/config")]
 public class ConfigurationController : ControllerBase {
   private readonly DataContext _dbContext;
@@ -67,27 +68,13 @@ public class ConfigurationController : ControllerBase {
   [HttpGet("{environment}/tenants/{tenant}", Name = "GetTenant")]
   [ProducesResponseType(typeof(ServiceHierarchyConfiguration), statusCode: 200)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
+  [AllowAnonymous]
   public async Task<ActionResult> GetConfiguration(
     [FromRoute] String environment,
     [FromRoute] String tenant,
     CancellationToken cancellationToken = default) {
 
-    //If no API key is specified, or if the API key doesn't have global access or
-    //explicit access to the tenant, any property that can be consider sensitive in
-    //the ServiceHierarchyConfiguration data structure should be redacted
-    var headerApiKey = this.Request.Headers["ApiKey"].SingleOrDefault();
-    const String activity = "get service hierarchy configuration";
-    Boolean isAuthorized;
-
-    try {
-      // Validation
-      await this._apiKeyDataHelper.ValidateTenantPermission(
-        headerApiKey, true, environment, tenant, activity, cancellationToken);
-      isAuthorized = true;
-    } catch (Exception ex) when (ex is UnauthorizedException or ForbiddenException) {
-      isAuthorized = false;
-    }
-
+    var isAuthorized = this.User.IsInRole("Admin");
 
     var (_, _, serviceMap) = await this._serviceDataHelper.FetchExistingConfiguration(environment, tenant, cancellationToken);
 
@@ -136,18 +123,6 @@ public class ConfigurationController : ControllerBase {
     CancellationToken cancellationToken = default) {
 
     ActionResult response;
-    var headerApiKey = this.Request.Headers["ApiKey"].SingleOrDefault();
-    const String activity = "create a new tenant configuration";
-
-    // Validation
-    var isAdmin = await this._apiKeyDataHelper.ValidateAdminPermission(
-      headerApiKey, global: false, activity, cancellationToken);
-    var envMatches = await this._apiKeyDataHelper.ValidateEnvPermission(
-      headerApiKey, environment, cancellationToken);
-
-    if (!isAdmin || !envMatches) {
-      throw new ForbiddenException($"The authentication credential provided is not authorized to {activity}.");
-    }
 
     await using var tx =
       await this._dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
@@ -172,19 +147,15 @@ public class ConfigurationController : ControllerBase {
 
       Environment environmentEntity;
       if (result == null) {
-        if (isAdmin) {
-          // If the environment does not exist, create it
-          var createdEnvironment = await this._environmentsTable.AddAsync(
-            new Environment(
-              Guid.Empty,
-              environment),
-            cancellationToken
-          );
+        // If the environment does not exist, create it
+        var createdEnvironment = await this._environmentsTable.AddAsync(
+          new Environment(
+            Guid.Empty,
+            environment),
+          cancellationToken
+        );
 
-          environmentEntity = createdEnvironment.Entity;
-        } else {
-          throw new ForbiddenException($"The authentication credential provided is not authorized to {activity}.");
-        }
+        environmentEntity = createdEnvironment.Entity;
       } else {
         environmentEntity = result.Environment;
       }
@@ -304,15 +275,6 @@ public class ConfigurationController : ControllerBase {
     CancellationToken cancellationToken = default) {
 
     ActionResult response;
-
-    // Validate
-    await this._apiKeyDataHelper.ValidateTenantPermission(
-      this.Request.Headers["ApiKey"].SingleOrDefault(),
-      requireAdmin: true,
-      environment,
-      tenant,
-      "update configuration",
-      cancellationToken);
 
     await using var tx =
       await this._dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
@@ -576,15 +538,6 @@ public class ConfigurationController : ControllerBase {
     [FromRoute] String environment,
     [FromRoute] String tenant,
     CancellationToken cancellationToken = default) {
-
-    // Validate
-    await this._apiKeyDataHelper.ValidateTenantPermission(
-      Request.Headers["ApiKey"].SingleOrDefault(),
-      requireAdmin: true,
-      environment,
-      tenant,
-      "delete configuration",
-      cancellationToken);
 
     await using var tx =
       await this._dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);

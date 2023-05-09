@@ -447,7 +447,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
     var testTenant = Guid.NewGuid().ToString();
 
     var createConfigResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(
             TestServiceNameOver100CharConfiguration);
@@ -481,7 +481,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
     var testTenant = Guid.NewGuid().ToString();
 
     var createConfigResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(
             TestServiceNameNotUrlSafe);

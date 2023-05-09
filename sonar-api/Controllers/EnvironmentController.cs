@@ -8,6 +8,7 @@ using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Environment = Cms.BatCave.Sonar.Data.Environment;
@@ -17,6 +18,7 @@ namespace Cms.BatCave.Sonar.Controllers;
 
 [ApiController]
 [ApiVersion(2)]
+[AllowAnonymous]
 [Route("api/v{version:apiVersion}/environments")]
 public class EnvironmentController : ControllerBase {
   private readonly DataContext _dbContext;

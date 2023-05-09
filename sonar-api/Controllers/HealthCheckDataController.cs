@@ -1,8 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Globalization;
-using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,6 +7,7 @@ using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
 using Cms.BatCave.Sonar.Prometheus;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
@@ -22,6 +19,7 @@ namespace Cms.BatCave.Sonar.Controllers;
 /// </summary>
 [ApiController]
 [ApiVersion(2)]
+[Authorize(Policy = "Admin")]
 [Route("api/v{version:apiVersion}/health-check-data")]
 public class HealthCheckDataController : ControllerBase {
 
@@ -65,16 +63,6 @@ public class HealthCheckDataController : ControllerBase {
     [FromBody] ServiceHealthData data,
     CancellationToken cancellationToken = default) {
 
-    // TODO: This is temporary pending the outcome of a spike to determine an annotation/middleware based
-    // TODO (cont): approach for authorizing endpoints.
-    await this._apiKeyDataHelper.ValidateTenantPermission(
-      this.Request.Headers["ApiKey"].SingleOrDefault(),
-      requireAdmin: true,
-      environment,
-      tenant,
-      activity: "record health check data",
-      cancellationToken);
-
     if (data.HealthCheckSamples.Count == 0) {
       throw new BadRequestException($"No data provided.");
     }
@@ -86,8 +74,13 @@ public class HealthCheckDataController : ControllerBase {
     }
 
     this._logger.LogDebug(
-      message: $"Received {data.TotalSamples} samples from {data.TotalHealthChecks} health checks for" +
-       $" environment = '{environment}', tenant = '{tenant}', service = '{service}': {data}");
+      message: "Received {TotalSamples} samples from {TotalHealthChecks} health checks for environment = '{Environment}', tenant = '{Tenant}', service = '{Service}': {Data}",
+      data.TotalSamples,
+      data.TotalHealthChecks,
+      environment,
+      tenant,
+      service,
+      data);
 
     var recordedData = await this._prometheusService.WriteHealthCheckDataAsync(
       environment,
@@ -97,8 +90,12 @@ public class HealthCheckDataController : ControllerBase {
       cancellationToken);
 
     this._logger.LogDebug(
-      message: $"Recorded {recordedData.TotalSamples} samples from {recordedData.TotalHealthChecks} health checks for" +
-        $" environment = '{environment}', tenant = '{tenant}', service = '{service}'");
+      message: "Recorded {TotalSamples} samples from {TotalHealthChecks} health checks for environment = '{Environment}', tenant = '{Tenant}', service = '{Service}'",
+      recordedData.TotalSamples,
+      recordedData.TotalHealthChecks,
+      environment,
+      tenant,
+      service);
 
     return this.Ok(recordedData);
   }
@@ -120,6 +117,7 @@ public class HealthCheckDataController : ControllerBase {
   [HttpGet("{environment}/tenants/{tenant}/services/{service}/health-check/{healthCheck}", Name = "GetHealthCheckData")]
   [ProducesResponseType(typeof(MetricDataCollection), statusCode: (Int32)HttpStatusCode.OK)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: (Int32)HttpStatusCode.BadRequest)]
+  [AllowAnonymous]
   public async Task<IActionResult> GetHealthCheckData(
     [FromRoute] String environment,
     [FromRoute] String tenant,
