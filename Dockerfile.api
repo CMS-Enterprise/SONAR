@@ -12,6 +12,10 @@ RUN dotnet build -c Release
 FROM mcr.microsoft.com/dotnet/aspnet:7.0-alpine3.17
 
 RUN apk add --no-cache snappy-dev
+
+# make sure we are running the most recent version of these libraries
+RUN apk upgrade --no-cache libssl3 libcrypto3
+
 WORKDIR /sonar/sonar-api
 COPY --from=build /sonar/sonar-api/bin/Release/net7.0/* .
 COPY --from=build /sonar/sonar-api/appsettings.json .
