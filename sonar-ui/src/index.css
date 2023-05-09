@@ -1,10 +1,10 @@
-body {
+body, html {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-  'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-  sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+
+  font-family: Verdana, sans-serif;
 }
 
 code {
@@ -18,6 +18,16 @@ code {
   --sonar-gold: #f8C41F;
   --sonar-orange: #F89D0B;
   --sonar-red: #E31C3D;
+
+  --light-foreground-color: #3e3e3e;
+  --light-highlight-color: #3c8ccb;
+  --light-background-color: #fff;
+  --light-accent-color: #e4e3e2;
+
+  --dark-foreground-color: #eee;
+  --dark-highlight-color: #fed368;
+  --dark-background-color: #222831;
+  --dark-accent-color: #4b515a;
 }
 
 .unknown {

@@ -1,0 +1,20 @@
+.themeToggle:global(.react-toggle--checked) :global(.react-toggle-track) {
+  background-color: var(--light-accent-color);
+  color: var(--light-foreground-color);
+}
+
+.themeToggle :global(.react-toggle-track) {
+  background-color: var(--dark-accent-color);
+  color: var(--dark-foreground-color);
+}
+
+.themeToggle:global(.react-toggle--checked):hover :global(.react-toggle-track) {
+  /* !important is necessary to override the default for the toggle component */
+  background-color: var(--dark-highlight-color) !important;
+  color: var(--light-foreground-color);
+}
+
+.themeToggle:hover :global(.react-toggle-track) {
+  background-color: var(--light-highlight-color) !important;
+  color: var(--dark-foreground-color);
+}

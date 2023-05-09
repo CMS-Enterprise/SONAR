@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "SONAR",
+  "name": "System Observability aNd Application Reporting Dashboard",
   "icons": [
     {
       "src": "favicon.ico",

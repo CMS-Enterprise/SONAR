@@ -50,6 +50,37 @@ generated sources can be found in the [`src/api`](./src/api) folder. Will requir
 
 Delete the `node_modules` directory and the `package-lock.json` file, then run `npm i` to regenerate both.
 
+## CSS/Style Standards and Best Practices
+### Emotion Guidelines
+- Emotion is a CSS/JS library that allows for type-safe style composition.
+- Use only [object styles](https://emotion.sh/docs/object-styles) (as opposed to string styles) when styling via the `css` prop.
+  - ex: ```{
+    backgroundColor: 'hotpink',
+    '&:hover': {
+    color: 'lightgreen' }}```
+- The `css` prop is type safe, ```css({ someUnknownCssProperty: blue })``` won't compile.
+
+  #### Global Styles
+  - Global styles, such as colors and fonts, should be kept in the [theme](https://emotion.sh/docs/theming) interface.
+    - To update the theme, navigate to `emotion.d.ts` and add the new properties needed.
+    - To update the values of the new properties, navigate to `themes.ts`
+
+  #### Component-Specific Style Modules
+  - A style module file can be created if a style object is applicable to a single component.
+  - AVOID anonymous inline styles. ex: `style={{ margin: 10 }}`
+  - If style module can be applied to multiple related components, the module file can be placed one level
+    higher in the file tree.
+  - Example of style module export for `SomeComponent`:
+    - ```export function someComponentStyle(theme: Theme) { return css({ color: white, backgroundColor: black }}```
+
+    ##### Style Module File Naming Convention
+    - Component: `Foo.tsx`
+    - Style Module File: `Foo.Style.ts`
+      - Note that the style module file is a `.ts` file, not `.tsx` since there is no `jsx` needed.
+
+### When To Use CMS Design Classes
+- [CMS Design](https://design.cms.gov/v/6.0.1/components/overview/?theme=core) classes should primarily be used for layout and typography.
+
 ## About Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).

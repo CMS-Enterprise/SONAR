@@ -26,13 +26,11 @@ const EnvironmentView = () => {
         {isLoading ? (<Spinner />) :
           data?.map(e => (
             <div className="ds-l-sm-col--6 ds-l-md-col--4" key={e.environmentName} style={{ marginTop: 10, marginBottom: 10 }}>
-              <Accordion bordered>
                 <EnvironmentItem environment={e}
                                  open={open}
                                  selected={e.environmentName === open}
                                  setOpen={setOpen}
                                  statusColor={getHealthStatusIndicator(e.aggregateStatus ? e.aggregateStatus : undefined)} />
-              </Accordion>
             </div>
         ))}
       </div>
