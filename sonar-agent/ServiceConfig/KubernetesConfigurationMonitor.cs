@@ -2,16 +2,18 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Threading;
 using Cms.BatCave.Sonar.Models;
 using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Logging;
 
-namespace Cms.BatCave.Sonar.Agent.Configuration;
+namespace Cms.BatCave.Sonar.Agent.ServiceConfig;
 
 public sealed class KubernetesConfigurationMonitor : IDisposable {
   private readonly ILogger<KubernetesConfigurationMonitor> _logger;
+  private readonly String _environment;
   private readonly ConfigurationHelper _configHelper;
   private readonly IKubernetes _kubeClient;
   private readonly Watcher<V1Namespace> _nsWatcher;
@@ -23,11 +25,15 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
   public event EventHandler<SonarTenantCreatedEventArgs>? TenantCreated;
 
   public KubernetesConfigurationMonitor(
-    ILogger<KubernetesConfigurationMonitor> logger,
-    ConfigurationHelper configHelper) {
+    String environment,
+    ConfigurationHelper configHelper,
+    IKubernetes kubeClient,
+    ILogger<KubernetesConfigurationMonitor> logger) {
+
     this._logger = logger;
+    this._environment = environment;
     this._configHelper = configHelper;
-    this._kubeClient = configHelper.GetKubernetesClient();
+    this._kubeClient = kubeClient;
 
     this._nsWatcher = this.CreateNamespaceWatcher();
     this._cmWatcher = this.CreateConfigMapWatcher();
@@ -38,13 +44,13 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
 
   private Watcher<V1Namespace> CreateNamespaceWatcher() {
     return this._kubeClient.CoreV1.ListNamespaceWithHttpMessagesAsync(
-      labelSelector: ConfigurationHelper.NamespaceLabelSelector, watch: true).Watch<V1Namespace, V1NamespaceList>(
+      labelSelector: KubernetesConfigSource.NamespaceLabelSelector, watch: true).Watch<V1Namespace, V1NamespaceList>(
       this.OnEventNamespace, this.OnErrorNamespace, this.OnClosedNamespace);
   }
 
   private Watcher<V1ConfigMap> CreateConfigMapWatcher() {
     return this._kubeClient.CoreV1.ListConfigMapForAllNamespacesWithHttpMessagesAsync(
-      labelSelector: ConfigurationHelper.ConfigMapLabelSelector, watch: true).Watch<V1ConfigMap, V1ConfigMapList>(
+      labelSelector: KubernetesConfigSource.ConfigMapLabelSelector, watch: true).Watch<V1ConfigMap, V1ConfigMapList>(
       this.OnEventConfigMap, this.OnErrorConfigMap, this.OnClosedConfigMap);
   }
 
@@ -58,7 +64,7 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
 
   private async void OnEventNamespace(WatchEventType eventType, V1Namespace resource) {
     String namespaceName = resource.Metadata.Name;
-    String tenant = this._configHelper.GetTenantFromNamespaceConfig(resource);
+    String tenant = KubernetesConfigSource.GetTenantFromNamespaceConfig(resource);
 
     this._logger.LogDebug(
       "Namespace watcher - {NamespaceName} was {Event}", namespaceName, eventType);
@@ -84,10 +90,10 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
           this.GetTenantServicesHierarchy(namespaceName, tenant);
 
         // delete old tenant from SONAR API
-        await this._configHelper.DeleteServices(prevTenantName, token);
+        await this._configHelper.DeleteServices(this._environment, prevTenantName, token);
 
         // create new tenant in SONAR API with service configuration from previous tenant
-        await this._configHelper.ConfigureServices(servicesHierarchy, token);
+        await this._configHelper.ConfigureServices(this._environment, servicesHierarchy, token);
 
         // schedule health check for new tenant
         this.TenantCreated?.Invoke(this, new SonarTenantCreatedEventArgs(tenant));
@@ -103,10 +109,10 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
       this._knownNamespaceTenants.TryRemove(namespaceName, out _);
 
       // remove configmaps associated with namespace get all configmaps for associated namespace
-      await this._kubeClient.CoreV1.DeleteCollectionNamespacedConfigMapAsync(namespaceName);
+      await this._kubeClient.CoreV1.DeleteCollectionNamespacedConfigMapAsync(namespaceName, cancellationToken: token);
 
       // delete tenant from SONAR API
-      await this._configHelper.DeleteServices(tenant, token);
+      await this._configHelper.DeleteServices(this._environment, tenant, token);
     }
   }
 
@@ -128,34 +134,33 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
     // determine tenant
     var configMapNamespace = resource.Metadata.NamespaceProperty;
     var namespaceConfig =
-      this._kubeClient.CoreV1.ReadNamespaceWithHttpMessagesAsync(configMapNamespace);
-    String tenant = this._configHelper.GetTenantFromNamespaceConfig(namespaceConfig.Result.Body);
+      this._kubeClient.CoreV1.ReadNamespaceWithHttpMessagesAsync(configMapNamespace, cancellationToken: token);
+    var tenant = KubernetesConfigSource.GetTenantFromNamespaceConfig(namespaceConfig.Result.Body);
 
-    Dictionary<String, ServiceHierarchyConfiguration>? servicesHierarchy =
-      this.GetTenantServicesHierarchy(configMapNamespace, tenant);
+    var servicesHierarchy = this.GetTenantServicesHierarchy(configMapNamespace, tenant);
 
-    if (eventType == WatchEventType.Added) {
-
-      // create new Tenant service configuration
-      await this._configHelper.ConfigureServices(servicesHierarchy, token);
-      // associate namespace with tenant
-      this._knownNamespaceTenants[configMapNamespace] = tenant;
-      // schedule health check for new tenant
-      this.TenantCreated?.Invoke(this, new SonarTenantCreatedEventArgs(tenant));
-
-    } else if (eventType == WatchEventType.Modified) {
-
-      // update existing Tenant service configuration
-      await this._configHelper.ConfigureServices(servicesHierarchy, token);
-
-    } else if (eventType == WatchEventType.Deleted) {
-
-      // if associated namespace was NOT deleted
-      if (this._knownNamespaceTenants.ContainsKey(configMapNamespace)) {
+    switch (eventType) {
+      case WatchEventType.Added:
+        // create new Tenant service configuration
+        await this._configHelper.ConfigureServices(this._environment, servicesHierarchy, token);
+        // associate namespace with tenant
+        this._knownNamespaceTenants[configMapNamespace] = tenant;
+        // schedule health check for new tenant
+        this.TenantCreated?.Invoke(this, new SonarTenantCreatedEventArgs(tenant));
+        break;
+      case WatchEventType.Modified:
         // update existing Tenant service configuration
-        await this._configHelper.ConfigureServices(servicesHierarchy, token);
-      }
+        await this._configHelper.ConfigureServices(this._environment, servicesHierarchy, token);
+        break;
+      case WatchEventType.Deleted: {
+          // if associated namespace was NOT deleted
+          if (this._knownNamespaceTenants.ContainsKey(configMapNamespace)) {
+            // update existing Tenant service configuration
+            await this._configHelper.ConfigureServices(this._environment, servicesHierarchy, token);
+          }
 
+          break;
+        }
     }
   }
 
@@ -163,29 +168,22 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
     String namespaceName,
     String tenantName) {
 
-    Dictionary<String, ServiceHierarchyConfiguration> servicesHierarchy =
-      new Dictionary<String, ServiceHierarchyConfiguration>();
+    var servicesHierarchy = new Dictionary<String, ServiceHierarchyConfiguration>();
 
     // get all configmaps for associated namespace
-    V1ConfigMapList? configMaps = this._kubeClient.CoreV1.ListNamespacedConfigMap(namespaceName);
+    var configMaps = this._kubeClient.CoreV1.ListNamespacedConfigMap(namespaceName);
 
-    if (configMaps.Items.Count > 0) {
+    if ((configMaps != null) && (configMaps.Items.Count > 0)) {
       // check if configmap contains service configuration
-      List<(Int16 order, String data)>? sortedConfigs =
-        this._configHelper.GetServiceConfigurationList(configMaps);
-      ServiceHierarchyConfiguration? services = null;
+      var configLayers =
+        KubernetesConfigSource.GetServiceConfigurationLayers(configMaps).ToImmutableList();
 
-      // get tenant's service hierarchy
-      if (sortedConfigs != null && sortedConfigs.Count > 0) {
-        services = this._configHelper.GetServicesHierarchy(sortedConfigs);
-      } else {
-        services = new ServiceHierarchyConfiguration(
-          ImmutableArray<ServiceConfiguration>.Empty,
-          ImmutableHashSet<String>.Empty);
-      }
+      if (configLayers.Any()) {
+        var mergedConfig = configLayers.Aggregate(ServiceConfigMerger.MergeConfigurations);
 
-      if (services != null) {
-        servicesHierarchy.Add(tenantName, services);
+        ServiceConfigValidator.ValidateServiceConfig(mergedConfig);
+
+        servicesHierarchy.Add(tenantName, mergedConfig);
       }
     }
 

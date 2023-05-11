@@ -1,6 +1,6 @@
 using System;
 
-namespace Cms.BatCave.Sonar.Agent.Configuration;
+namespace Cms.BatCave.Sonar.Agent.ServiceConfig;
 public class SonarTenantCreatedEventArgs : EventArgs {
   public String Tenant { get; }
 

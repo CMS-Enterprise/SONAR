@@ -1,7 +1,6 @@
-using System;
 using System.Collections.Generic;
 
-namespace Cms.BatCave.Sonar.System;
+namespace System;
 
 public static class TupleComparer {
   public static IEqualityComparer<(T1, T2)> From<T1, T2>(IEqualityComparer<T1> comparer1, IEqualityComparer<T2> comparer2) {

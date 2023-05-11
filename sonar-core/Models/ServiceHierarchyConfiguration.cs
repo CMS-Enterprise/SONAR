@@ -7,6 +7,8 @@ using System.Linq;
 namespace Cms.BatCave.Sonar.Models;
 
 public record ServiceHierarchyConfiguration : IValidatableObject {
+  public static readonly ServiceHierarchyConfiguration Empty =
+    new ServiceHierarchyConfiguration(ImmutableList<ServiceConfiguration>.Empty, ImmutableHashSet<String>.Empty);
 
   public ServiceHierarchyConfiguration(
     IImmutableList<ServiceConfiguration> services,

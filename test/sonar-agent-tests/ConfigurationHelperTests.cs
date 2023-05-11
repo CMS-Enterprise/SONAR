@@ -2,9 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
+using Cms.BatCave.Sonar.Agent.Configuration;
+using Cms.BatCave.Sonar.Agent.ServiceConfig;
+using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Json;
+using Microsoft.Extensions.Logging;
+using Moq;
 using Xunit;
 
 namespace Cms.BatCave.Sonar.Agent.Tests;
@@ -14,12 +20,20 @@ public class ConfigurationHelperTests {
   [Fact]
   public async Task GetServiceHierarchyConfigurationFromJson_ValidConfiguration_ReturnsConfigurationObject() {
     const String jsonFilePath = "test-inputs/valid-service-config-1.json";
-    await using var jsonStream = new FileStream(jsonFilePath, FileMode.Open, FileAccess.Read);
+    // await using var jsonStream = new FileStream(jsonFilePath, FileMode.Open, FileAccess.Read);
 
-    var configuration = await ConfigurationHelper.GetServiceHierarchyConfigurationFromJsonAsync(jsonStream);
+    var configHelper = new ConfigurationHelper(
+      new LocalFileServiceConfigSource("test", new[] { jsonFilePath }),
+      () => (Mock.Of<IDisposable>(), Mock.Of<ISonarClient>()),
+      Mock.Of<ILogger<ConfigurationHelper>>()
+    );
 
-    Assert.Equal(expected: 4, configuration.Services.Count);
-    Assert.Equal(expected: 2, configuration.RootServices.Count);
+    var configuration = await configHelper.LoadAndValidateJsonServiceConfig(CancellationToken.None);
+
+    Assert.True(configuration.TryGetValue("test", out var tenantConfig));
+
+    Assert.Equal(expected: 4, tenantConfig.Services.Count);
+    Assert.Equal(expected: 2, tenantConfig.RootServices.Count);
   }
 
   [Theory]
@@ -34,14 +48,20 @@ public class ConfigurationHelperTests {
       "Services[0].Name: The Name field is required.",
       "Services[0].HealthChecks[0].Name: The field Name must match the regular expression '^[0-9a-zA-Z_-]+$'."
     })]
-  public async Task GetServiceHierarchyConfigurationFromJson_PostSerializationValidationError_ThrowsInvalidConfigurationException(
-    String testInputFilePath,
-    String[] expectedValidationErrors) {
+  public async Task
+    GetServiceHierarchyConfigurationFromJson_PostSerializationValidationError_ThrowsInvalidConfigurationException(
+      String testInputFilePath,
+      String[] expectedValidationErrors) {
 
-    await using var jsonStream = new FileStream(testInputFilePath, FileMode.Open, FileAccess.Read);
+    var configHelper = new ConfigurationHelper(
+      new LocalFileServiceConfigSource("test", new[] { testInputFilePath }),
+      () => (Mock.Of<IDisposable>(), Mock.Of<ISonarClient>()),
+      Mock.Of<ILogger<ConfigurationHelper>>()
+    );
 
     var exception = await Assert.ThrowsAsync<InvalidConfigurationException>(() =>
-      ConfigurationHelper.GetServiceHierarchyConfigurationFromJsonAsync(jsonStream));
+      configHelper.LoadAndValidateJsonServiceConfig(CancellationToken.None)
+    );
 
     Assert.Equal("Invalid JSON service configuration: One or more validation errors occurred.", exception.Message);
     Assert.True(exception.Data.Contains("errors"));
@@ -65,14 +85,20 @@ public class ConfigurationHelperTests {
     "Invalid JSON service configuration: The Type property is required.")]
   [InlineData("test-inputs/invalid-service-config-missing-keys-2.json",
     "Invalid JSON service configuration: The Name property is required.")]
-  public async Task GetServiceHierarchyConfigurationFromJson_DuringSerializationValidationError_ThrowsInvalidConfigurationException(
+  public async Task
+    GetServiceHierarchyConfigurationFromJson_DuringSerializationValidationError_ThrowsInvalidConfigurationException(
       String testInputFilePath,
       String expectedExceptionMessage) {
 
-    await using var jsonStream = new FileStream(testInputFilePath, FileMode.Open, FileAccess.Read);
+    var configHelper = new ConfigurationHelper(
+      new LocalFileServiceConfigSource("test", new[] { testInputFilePath }),
+      () => (Mock.Of<IDisposable>(), Mock.Of<ISonarClient>()),
+      Mock.Of<ILogger<ConfigurationHelper>>()
+    );
 
     var exception = await Assert.ThrowsAsync<InvalidConfigurationException>(() =>
-      ConfigurationHelper.GetServiceHierarchyConfigurationFromJsonAsync(jsonStream));
+      configHelper.LoadAndValidateJsonServiceConfig(CancellationToken.None)
+    );
 
     Assert.Equal(expectedExceptionMessage, exception.Message);
   }

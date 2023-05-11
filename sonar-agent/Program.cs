@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Text.Json;
+using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,12 +14,14 @@ using Cms.BatCave.Sonar.Agent.HealthChecks;
 using Cms.BatCave.Sonar.Agent.HealthChecks.Metrics;
 using Cms.BatCave.Sonar.Agent.Options;
 using Cms.BatCave.Sonar.Agent.Logger;
+using Cms.BatCave.Sonar.Agent.ServiceConfig;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Loki;
 using Cms.BatCave.Sonar.Models;
 using Cms.BatCave.Sonar.Prometheus;
 using CommandLine;
+using k8s;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -71,7 +75,7 @@ internal class Program {
 
     // Create watcher for each configuration file
     var relativePathRegex = new Regex(@"^\./");
-    var watchers = new List<IDisposable>();
+    var disposables = new List<IDisposable>();
     foreach (var provider in configuration.Providers) {
       if (provider is FileConfigurationProvider fileProvider &&
         fileProvider.Source.FileProvider != null &&
@@ -79,7 +83,7 @@ internal class Program {
         logger.LogInformation("WATCHING {ConfigFileName}",
           fileProvider.Source.FileProvider.GetFileInfo(fileProvider.Source.Path).PhysicalPath);
         var configFileName = relativePathRegex.Replace(fileProvider.Source.Path, replacement: "");
-        watchers.Add(
+        disposables.Add(
           new ConfigurationWatcher(provider).CreateConfigWatcher(Directory.GetCurrentDirectory(), configFileName));
       }
     }
@@ -113,29 +117,62 @@ internal class Program {
     // Traps SIGINT to perform necessary cleanup
     Console.CancelKeyPress += delegate {
       logger.Log(LogLevel.Information, "\nSIGINT received, begin cleanup...");
+      // ReSharper disable once AccessToDisposedClosure
+      // (this is fine, once Program exits this isn't going to get triggered).
       source?.Cancel();
     };
 
+    Kubernetes CreateKubeClient() {
+      var config = agentConfig.Value.InClusterConfig ?
+        KubernetesClientConfiguration.InClusterConfig() :
+        KubernetesClientConfiguration.BuildDefaultConfig();
+
+      var kubernetes = new Kubernetes(config);
+      logger.LogDebug(
+        "Connecting to Kubernetes Host: {Host}, Namespace: {Namespace}, BaseUri: {BaseUri}",
+        config.Host, config.Namespace, kubernetes.BaseUri);
+      return kubernetes;
+    }
+
+    var configFiles = opts.ServiceConfigFiles.ToArray();
+    var configSources = configFiles.Length > 0 ?
+      new[] {
+        new LocalFileServiceConfigSource(agentConfig.Value.DefaultTenant, configFiles)
+      } :
+      Enumerable.Empty<IServiceConfigSource>();
+
+    if (opts.KubernetesConfigurationOption) {
+      var kubeClient = CreateKubeClient();
+      disposables.Add(kubeClient);
+      configSources =
+        configSources.Append(
+          new KubernetesConfigSource(kubeClient, loggerFactory.CreateLogger<KubernetesConfigSource>())
+        );
+    }
+
+    (IDisposable, ISonarClient) SonarClientFactory() {
+      var http = new HttpClient();
+      return (http, new SonarClient(configuration, apiConfig.Value.BaseUrl, http));
+    }
+
     var configurationHelper = new ConfigurationHelper(
-      apiConfig,
-      loggerFactory.CreateLogger<ConfigurationHelper>(),
-      configuration);
-    Dictionary<String, ServiceHierarchyConfiguration> servicesHierarchy;
+      new AggregateServiceConfigSource(configSources),
+      SonarClientFactory,
+      loggerFactory.CreateLogger<ConfigurationHelper>()
+    );
+
+    IDictionary<String, ServiceHierarchyConfiguration> servicesHierarchy;
     try {
       // Load and merge configs
-      servicesHierarchy = await configurationHelper.LoadAndValidateJsonServiceConfig(
-        opts, agentConfig.Value, token);
-    } catch (Exception ex) when (ex is InvalidConfigurationException) {
+      servicesHierarchy = await configurationHelper.LoadAndValidateJsonServiceConfig(token);
+    } catch (Exception ex) when (ex is InvalidConfigurationException or ArgumentException) {
       logger.LogError(ex, "Invalid Service Configuration: {Message}", ex.Message);
-      return 1;
-    } catch (ArgumentException ex) {
-      logger.LogError(ex, "No configuration option specified.");
       return 1;
     }
 
     // Configure service hierarchy
     logger.LogInformation("Configuring services....");
-    await configurationHelper.ConfigureServices(servicesHierarchy, token);
+    await configurationHelper.ConfigureServices(apiConfig.Value.Environment, servicesHierarchy, token);
 
     logger.LogInformation("Initializing SONAR Agent...");
 
@@ -230,13 +267,34 @@ internal class Program {
 
     // Run task that calls Health Check function for every tenant
     if (opts.KubernetesConfigurationOption) {
+      var kubeClient = CreateKubeClient();
       var k8sWatcher = new KubernetesConfigurationMonitor(
-        loggerFactory.CreateLogger<KubernetesConfigurationMonitor>(),
-        configurationHelper);
+        apiConfig.Value.Environment,
+        configurationHelper,
+        kubeClient,
+        loggerFactory.CreateLogger<KubernetesConfigurationMonitor>());
+
+      disposables.Add(kubeClient);
+      disposables.Add(k8sWatcher);
 
       k8sWatcher.TenantCreated += (sender, args) => {
         tasks.Add(healthCheckHelper.RunScheduledHealthCheck(configuration, args.Tenant, token));
       };
+
+      // The namespace watcher will automatically start threads for existing tenants configured via
+      // Kubernetes, but we have to manually start the default tenant if it exists.
+      if (servicesHierarchy.TryGetValue(agentConfig.Value.DefaultTenant, out var services)) {
+        // We don't monitor local files for changes, so if there aren't any services configured,
+        // there is no need to start a thread.
+        if (services.Services.Count > 0) {
+          tasks.Add(
+            healthCheckHelper.RunScheduledHealthCheck(
+              configuration,
+              agentConfig.Value.DefaultTenant,
+              token
+            ));
+        }
+      }
     } else {
       foreach (var kvp in servicesHierarchy.ToList()) {
         tasks.Add(healthCheckHelper.RunScheduledHealthCheck(configuration, kvp.Key, token));
@@ -252,7 +310,7 @@ internal class Program {
 
     await Task.WhenAll(tasks);
 
-    foreach (var watcher in watchers) {
+    foreach (var watcher in disposables) {
       watcher.Dispose();
     }
 
