@@ -6,11 +6,11 @@ import {
   ProblemDetails,
   ServiceHierarchyHealth,
   ServiceHierarchyHealthHistory
-} from '../../api/data-contracts';
-import { HttpResponse } from '../../api/http-client';
-import { createSonarClient } from '../../helpers/ApiHelper';
-import { calculateHistoryRange } from '../../helpers/StatusHistoryHelper';
-import { HeadingContainer, StatusHistoryContainer } from '../../styles';
+} from 'api/data-contracts';
+import { HttpResponse } from 'api/http-client';
+import { createSonarClient } from 'helpers/ApiHelper';
+import { calculateHistoryRange } from 'helpers/StatusHistoryHelper';
+import { getContainerStyle } from '../RootService.Style';
 import StatusHistoryTile from './StatusHistoryTile';
 
 const StatusHistoryModule: React.FC<{
@@ -36,11 +36,11 @@ const StatusHistoryModule: React.FC<{
 
   return (
     <>
-      <div style={HeadingContainer}>
+      <div css={getContainerStyle()} >
         Status History:
       </div>
       {isLoading ? (<Spinner />) : (
-        <div style={StatusHistoryContainer}>
+        <div css={getContainerStyle()} >
           {data?.aggregateStatus?.map((item, index) => (
             <StatusHistoryTile
               key={`${rootServiceName}-${index}`}

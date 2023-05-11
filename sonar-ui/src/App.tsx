@@ -6,8 +6,8 @@ import {
 import { mainStyle } from './App.Style';
 
 import Header from './components/App/Header';
-import EnvironmentView from './pages/EnvironmentView';
-import ServiceView from './pages/ServiceView';
+import Environments from './pages/Environments';
+import Services from './pages/Services';
 import { QueryClient, QueryClientProvider } from 'react-query';
 
 import { LightTheme, DarkTheme } from './themes';
@@ -24,8 +24,9 @@ function App() {
           <Header enableDarkTheme={enableDarkTheme} setEnableDarkTheme={setEnableDarkTheme} />
           <div>
             <Routes>
-              <Route path="/" element={<EnvironmentView />} />
-              <Route path="/service-view" element={<ServiceView />} />
+              <Route path="/" element={null} />
+              <Route path="/environments" element={<Environments />} />
+              <Route path="/services" element={<Services />} />
             </Routes>
           </div>
         </main>

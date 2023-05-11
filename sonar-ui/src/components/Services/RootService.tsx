@@ -1,3 +1,4 @@
+import { useTheme } from '@emotion/react';
 import React from 'react';
 import { Accordion } from '@cmsgov/design-system';
 
@@ -5,11 +6,13 @@ import {
   DateTimeHealthStatusValueTuple,
   ServiceHierarchyHealth,
 } from 'api/data-contracts';
-import { getHealthStatusIndicator } from 'helpers/ServiceHierarchyHelper';
-import { HeadingContainer, RootServiceContainer } from 'styles';
-import StatusHistoryModule from '../StatusHistory/StatusHistoryModule';
+import StatusHistoryModule from './StatusHistory/StatusHistoryModule';
 import ChildService from './ChildService';
 import HealthCheckList from './HealthCheckList';
+import {
+  getContainerStyle,
+  getRootServiceStyle
+} from './RootService.Style';
 
 const RootService: React.FC<{
   environmentName: string,
@@ -21,14 +24,12 @@ const RootService: React.FC<{
   selectedTileId: string
 }> =
   ({ environmentName, tenantName, rootService, services, addTimestamp, closeDrawer, selectedTileId }) => {
+    const theme = useTheme();
 
     return (
-      <div style={{
-        ...RootServiceContainer,
-        borderColor: getHealthStatusIndicator(rootService.aggregateStatus)
-      }}
+      <div css={getRootServiceStyle(theme, rootService.aggregateStatus)}
       >
-        <div style={HeadingContainer}>
+        <div css={getContainerStyle()}>
           {rootService.name}
         </div>
         <div>

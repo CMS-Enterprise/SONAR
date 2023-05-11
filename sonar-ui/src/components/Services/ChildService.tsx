@@ -1,8 +1,7 @@
 import React from 'react';
 import { AccordionItem } from '@cmsgov/design-system';
-
 import { ServiceHierarchyHealth } from 'api/data-contracts';
-import { ChildServiceContainer } from 'styles';
+import { getChildServiceContainerStyle } from './ChildService.Style';
 import HealthCheckList from './HealthCheckList';
 
 const ChildService: React.FC<{
@@ -14,7 +13,7 @@ const ChildService: React.FC<{
 }> =
   ({ environmentName, tenantName, servicePath, childService, services }) => {
     return (
-      <div style={{ ...ChildServiceContainer }}>
+      <div css={getChildServiceContainerStyle()}>
         <AccordionItem heading={childService.name}>
           <div>
             {childService.healthChecks ? (

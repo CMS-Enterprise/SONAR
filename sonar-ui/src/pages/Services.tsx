@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { DateTimeHealthStatusValueTuple, ProblemDetails, ServiceHierarchyHealth } from 'api/data-contracts';
-import RootService from 'components/ServiceListView/RootService';
+import RootService from 'components/Services/RootService';
 import { createSonarClient } from 'helpers/ApiHelper';
 import { HttpResponse } from 'api/http-client';
 import { StatusHistoryView } from 'interfaces/global_interfaces';
 import { useQuery } from 'react-query';
-import StatusHistoryDrawer from '../components/StatusHistory/StatusHistoryDrawer';
+import StatusHistoryDrawer from '../components/Services/StatusHistory/StatusHistoryDrawer';
 
-const ServiceView = () => {
+const Services = () => {
   const sonarClient = createSonarClient();
   const environmentName = 'foo';
   const tenantName = 'baz'
@@ -76,4 +76,4 @@ const ServiceView = () => {
   ) : null
 }
 
-export default ServiceView;
+export default Services;

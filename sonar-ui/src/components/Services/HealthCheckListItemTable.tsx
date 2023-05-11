@@ -1,6 +1,6 @@
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableRow } from '@cmsgov/design-system';
-import { chartsTableProperties } from './HealthCheckListItem.Style';
+import { getChartsTablePropertiesStyle } from './HealthCheckListItem.Style';
 
 
 const HealthCheckListItemTimeSeriesChart: React.FC<{
@@ -11,7 +11,7 @@ const HealthCheckListItemTimeSeriesChart: React.FC<{
   const HEALTHSTATUS_DATA = 1;
 
   return (
-    <Table style={chartsTableProperties}>
+    <Table css={getChartsTablePropertiesStyle()}>
       <TableHead>
         <TableRow >
           <TableCell>Timestamp</TableCell>

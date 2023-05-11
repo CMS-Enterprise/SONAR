@@ -1,28 +1,35 @@
+import { useTheme } from '@emotion/react';
 import React from 'react';
 import { AlertCircleIcon, WarningIcon, CheckCircleIcon} from '@cmsgov/design-system';
 import { TenantHealth, HealthStatus } from 'api/data-contracts';
+import {
+  getIconStyle,
+  TenantItemSpanStyle,
+  TenantItemStyle
+} from './TenantItem.Style';
 
 const TenantItem: React.FC<{
   tenant: TenantHealth,
 }> =
   ({tenant}) => {
+    const theme = useTheme();
     const renderIconSelection = (aggregateStatus: HealthStatus | undefined) => {
       switch (aggregateStatus) {
         case HealthStatus.Online:
-          return <CheckCircleIcon className="online-icon"/>;
+          return <CheckCircleIcon css={getIconStyle(aggregateStatus, theme)} />;
           break;
         case HealthStatus.AtRisk:
-          return <AlertCircleIcon className="atRisk-icon"/> ;
+          return <AlertCircleIcon css={getIconStyle(aggregateStatus, theme)} /> ;
           break;
         case HealthStatus.Degraded:
-          return <AlertCircleIcon className="degraded-icon"/> ;
+          return <AlertCircleIcon css={getIconStyle(aggregateStatus, theme)} /> ;
           break;
         case HealthStatus.Offline:
-          return <WarningIcon className='offline-icon'/> ;
+          return <WarningIcon css={getIconStyle(aggregateStatus, theme)} /> ;
           break;
         case HealthStatus.Unknown:
         default:
-          return <WarningIcon className="unknown-icon"/> ;
+          return <WarningIcon css={getIconStyle(aggregateStatus, theme)} /> ;
           break;
       }
     }
@@ -30,9 +37,9 @@ const TenantItem: React.FC<{
     return (
       <div>
         {tenant.rootServices?.map(rs =>
-          <div className='tenantItem' key={rs.name}>
+          <div css={TenantItemStyle} key={rs.name}>
             <span>{renderIconSelection(rs.aggregateStatus)}</span>
-            <span style={{ verticalAlign:'middle', paddingLeft:'2px' }}>
+            <span css={TenantItemSpanStyle}>
               {tenant.tenantName}: {rs.displayName}
             </span>
           </div>

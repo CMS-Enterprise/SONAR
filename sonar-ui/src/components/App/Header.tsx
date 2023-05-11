@@ -27,10 +27,10 @@ const Header = (props: HeaderProps) => {
             <Link to="/">Home</Link>
           </li>
           <li>
-            <Link to="/service-view">Service View</Link>
+            <Link to="/environments">Environments</Link>
           </li>
           <li>
-            <Link to="/environment-view">Environment View</Link>
+            <Link to="/services">Services</Link>
           </li>
         </ul>
       </nav>

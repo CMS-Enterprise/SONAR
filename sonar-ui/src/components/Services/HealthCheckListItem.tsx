@@ -5,7 +5,10 @@ import { DateTimeDoubleValueTuple, HealthCheckModel, HealthCheckType,
   ServiceConfiguration, ServiceHierarchyConfiguration } from 'api/data-contracts';
 import { IHealthCheckDefinition } from 'types';
 import { AccordionItem } from '@cmsgov/design-system';
-import { chartsTable, chartsThreshold } from './HealthCheckListItem.Style';
+import {
+  getChartsFlexTableStyle,
+  getChartsFlexThresholdStyle
+} from './HealthCheckListItem.Style';
 import HealthCheckListItemTimeSeriesChart from './HealthCheckListItemTimeSeriesChart'
 import HealthCheckListItemTable from './HealthCheckListItemTable'
 import HealthCheckListItemThresholds from './HealthCheckListItemThresholds';
@@ -58,7 +61,7 @@ const HealthCheckListItem: React.FC<{
                     timeSeriesData={transformedData}
                   />
 
-                  <div style={chartsTable}>
+                  <div css={getChartsFlexTableStyle()}>
                     <HealthCheckListItemTable
                       healthCheckName={healthCheckName}
                       timeSeriesData={transformedData}/>
@@ -69,7 +72,7 @@ const HealthCheckListItem: React.FC<{
         )
       }
 
-      <div style={chartsThreshold}>
+      <div css={getChartsFlexThresholdStyle()}>
         {svcHierarchyCfg.data != null &&
           <HealthCheckListItemThresholds svcHierarchyCfg={svcHierarchyCfg.data}
                                          rootServiceName={rootServiceName}
