@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Extensions;
+using Cms.BatCave.Sonar.Models;
 using Microsoft.EntityFrameworkCore;
 using Environment = Cms.BatCave.Sonar.Data.Environment;
 
@@ -204,5 +205,33 @@ public class ServiceDataHelper {
       .Union(relationships.Where(x => x.ParentServiceId == id)
         .SelectMany(y => GetChildren(relationships, y.ServiceId))
       ).ToList();
+  }
+
+  public ServiceHierarchyConfiguration Redact(ServiceHierarchyConfiguration config) {
+    return config with {
+      Services = config.Services.Select(Redact).ToImmutableList()
+    };
+  }
+
+  private static ServiceConfiguration Redact(ServiceConfiguration serviceConfig) {
+    return serviceConfig with {
+      HealthChecks = serviceConfig.HealthChecks?.Select(Redact).ToImmutableList()
+    };
+  }
+
+  private static HealthCheckModel Redact(HealthCheckModel healthCheck) {
+    return healthCheck with {
+      Definition = Redact(healthCheck.Definition)
+    };
+  }
+
+  private static HealthCheckDefinition Redact(HealthCheckDefinition definition) {
+    if (definition is HttpHealthCheckDefinition httpDef) {
+      return httpDef with {
+        AuthorizationHeader = httpDef.AuthorizationHeader != null ? new String(c: '*', count: 32) : null,
+      };
+    }
+
+    return definition;
   }
 }

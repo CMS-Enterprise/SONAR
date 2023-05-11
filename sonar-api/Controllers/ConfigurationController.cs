@@ -72,8 +72,26 @@ public class ConfigurationController : ControllerBase {
     [FromRoute] String tenant,
     CancellationToken cancellationToken = default) {
 
-    var (_, _, serviceMap) = await this._serviceDataHelper.FetchExistingConfiguration(environment, tenant, cancellationToken);
+    //If no API key is specified, or if the API key doesn't have global access or
+    //explicit access to the tenant, any property that can be consider sensitive in
+    //the ServiceHierarchyConfiguration data structure should be redacted
+    var headerApiKey = this.Request.Headers["ApiKey"].SingleOrDefault();
+    const String activity = "get service hierarchy configuration";
+    Boolean isAuthorized;
 
+    try {
+      // Validation
+      await this._apiKeyDataHelper.ValidateAdminPermission(
+        headerApiKey, global: false, activity, cancellationToken);
+      await this._apiKeyDataHelper.ValidateTenantPermission(
+        headerApiKey, environment, tenant, activity, cancellationToken);
+      isAuthorized = true;
+    } catch {
+      isAuthorized = false;
+    }
+
+
+    var (_, _, serviceMap) = await this._serviceDataHelper.FetchExistingConfiguration(environment, tenant, cancellationToken);
 
     var serviceRelationshipsByParent =
       (await this._serviceDataHelper.FetchExistingRelationships(serviceMap.Keys, cancellationToken))
@@ -83,7 +101,13 @@ public class ConfigurationController : ControllerBase {
       (await this._serviceDataHelper.FetchExistingHealthChecks(serviceMap.Keys, cancellationToken))
       .ToLookup(hc => hc.ServiceId);
 
-    return this.Ok(CreateServiceHierarchy(serviceMap, healthCheckByService, serviceRelationshipsByParent));
+    var serviceHierarchy = CreateServiceHierarchy(serviceMap, healthCheckByService, serviceRelationshipsByParent);
+
+    if (!isAuthorized) {
+      serviceHierarchy = this._serviceDataHelper.Redact(serviceHierarchy);
+    }
+
+    return this.Ok(serviceHierarchy);
   }
 
   /// <summary>
