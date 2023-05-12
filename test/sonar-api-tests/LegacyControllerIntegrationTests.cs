@@ -27,15 +27,15 @@ public class LegacyControllerIntegrationTests : ApiControllerTestsBase {
   private LegacyEndpointConfiguration? _config;
 
   private static readonly HealthCheckModel FakeHealthCheck = new(
-    Name: TestHealthCheckName,
-    Description: null,
+    name: TestHealthCheckName,
+    description: null,
     HealthCheckType.HttpRequest,
     new HttpHealthCheckDefinition(
       new Uri("about:blank"),
       Array.Empty<HttpHealthCheckCondition>(),
-      FollowRedirects: default,
-      AuthorizationHeader: default,
-      SkipCertificateValidation: default
+      followRedirects: default,
+      authorizationHeader: default,
+      skipCertificateValidation: default
     )
   );
 
@@ -309,7 +309,7 @@ public class LegacyControllerIntegrationTests : ApiControllerTestsBase {
           new ServiceConfiguration(
             "foo-service",
             "Test Service Foo",
-            HealthChecks: ImmutableList.Create(FakeHealthCheck))
+            healthChecks: ImmutableList.Create(FakeHealthCheck))
         ),
         ImmutableHashSet.Create("foo-service"))
     );
@@ -321,7 +321,7 @@ public class LegacyControllerIntegrationTests : ApiControllerTestsBase {
           new ServiceConfiguration(
             "bar-service",
             "Test Service Bar",
-            HealthChecks: ImmutableList.Create(FakeHealthCheck))
+            healthChecks: ImmutableList.Create(FakeHealthCheck))
         ),
         ImmutableHashSet.Create("bar-service"))
     );
@@ -333,7 +333,7 @@ public class LegacyControllerIntegrationTests : ApiControllerTestsBase {
           new ServiceConfiguration(
             "baz-service",
             "Test Service Bar",
-            HealthChecks: ImmutableList.Create(FakeHealthCheck))
+            healthChecks: ImmutableList.Create(FakeHealthCheck))
         ),
         ImmutableHashSet.Create("baz-service"))
     );

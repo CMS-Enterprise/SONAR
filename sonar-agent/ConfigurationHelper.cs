@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -13,6 +14,7 @@ using Cms.BatCave.Sonar.Agent.Options;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Models;
+using Cms.BatCave.Sonar.Models.Validation;
 using k8s;
 using k8s.Models;
 using Microsoft.Extensions.Configuration;
@@ -52,12 +54,21 @@ public class ConfigurationHelper {
         JsonSerializer.Deserialize<ServiceHierarchyConfiguration>(jsonString, ConfigSerializerOptions);
 
       if (configuration == null) {
-        throw new InvalidConfigurationException("Invalid JSON service configuration: deserialized object is null.");
+        throw new InvalidConfigurationException("Invalid JSON service configuration: Deserialized object is null.");
       }
 
-      configuration.Validate();
+      var validator = new RecursivePropertyValidator();
+      var validationResults = new List<ValidationResult>();
+      var isValid = validator.TryValidateObjectProperties(configuration, validationResults);
+
+      if (!isValid) {
+        throw new InvalidConfigurationException(
+          message: "Invalid JSON service configuration: One or more validation errors occurred.",
+          new Dictionary<String, Object?> { ["errors"] = validationResults });
+      }
+
       return configuration;
-    } catch (Exception e) {
+    } catch (Exception e) when (e is not InvalidConfigurationException) {
       throw new InvalidConfigurationException(message: $"Invalid JSON service configuration: {e.Message}", e);
     }
   }

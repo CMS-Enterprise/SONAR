@@ -1,0 +1,95 @@
+{
+  "services": [
+    {
+      "name": "TooooooooooooooooooooooooooooooooooooooooooooooooooooooooLooooooooooooooooooooooooooooooooooooooooong",
+      "displayName": "Test Application",
+      "description": "A test application that generates arbitrary metrics for testing purpose",
+      "url": "http://localhost:2020/metrics",
+      "children": [],
+      "healthChecks": [
+        {
+          "name": "WayyyyyyyyyyyyyyyyyyTooooooooooooooooooooooooooooooooooooLooooooooooooooooooooooooooooooooooooooooong",
+          "description": "Degraded and Offline periodically based on an example metric.",
+          "definition": {
+            "duration": "0.00:00:20",
+            "expression": "example_saw_wave",
+            "conditions": [
+              {
+                "operator": "GreaterThan",
+                "threshold": 65,
+                "status": "Offline"
+              },
+              {
+                "operator": "GreaterThan",
+                "threshold": 40,
+                "status": "AtRisk"
+              }
+            ]
+          },
+          "type": "prometheusMetric"
+        }
+      ]
+    },
+    {
+      "missing": "\"name\": \"test-application-2\",",
+      "missing": "\"displayName\": \"Test Application\"",
+      "description": "A test application that generates arbitrary metrics for testing purpose",
+      "url": "http://localhost:2020/metrics",
+      "children": [],
+      "healthChecks": [
+        {
+          "name": "example",
+          "description": "Degraded and Offline periodically based on an example metric.",
+          "definition": {
+            "duration": "0.00:00:20",
+            "expression": "example_saw_wave",
+            "conditions": [
+              {
+                "operator": "GreaterThan",
+                "threshold": 65,
+                "status": "Offline"
+              },
+              {
+                "operator": "GreaterThan",
+                "threshold": 40,
+                "status": "AtRisk"
+              }
+            ]
+          },
+          "type": "prometheusMetric"
+        }
+      ]
+    },
+    {
+      "name": "Doesn't Match Re&e* + And + ToooooooooooooooooooooooooooooooooooLoooooooooooooooooooooooong = !@#$%^&",
+      "displayName": "Test Application",
+      "description": "A test application that generates arbitrary metrics for testing purpose",
+      "url": "http://localhost:2020/metrics",
+      "children": [],
+      "healthChecks": [
+        {
+          "name": "Doesn't Match Re&e* + And + ToooooooooooooooooooooooooooooooooooLoooooooooooooooooooooooong = !@#$%^&",
+          "description": "Degraded and Offline periodically based on an example metric.",
+          "definition": {
+            "duration": "0.00:00:20",
+            "expression": "example_saw_wave",
+            "conditions": [
+              {
+                "operator": "GreaterThan",
+                "threshold": 65,
+                "status": "Offline"
+              },
+              {
+                "operator": "GreaterThan",
+                "threshold": 40,
+                "status": "AtRisk"
+              }
+            ]
+          },
+          "type": "prometheusMetric"
+        }
+      ]
+    }
+  ],
+  "missing": "\"rootServices\": [ \"test-application-1\", \"test-application-2\", \"test-application-3\" ]"
+}

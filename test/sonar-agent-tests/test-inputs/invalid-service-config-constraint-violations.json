@@ -1,14 +1,14 @@
 {
   "services": [
     {
-      "missing": "name",
-      "missing": "displayName",
+      "missing": "\"name\": \"service\"",
+      "displayName": "Service",
       "description": "service",
       "url": "http://localhost:8082/api/ready",
       "children": [],
       "healthChecks": [
         {
-          "name": "example",
+          "name": "$#!+%@^^(",
           "description": "example",
           "definition": {
             "duration": "0.00:00:20",

@@ -30,22 +30,22 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
   private static readonly HealthCheckModel TestHealthCheck =
     new(
       HealthHistoryControllerIntegrationTests.HealthCheckName,
-      Description: "Health Check Description",
+      description: "Health Check Description",
       HealthCheckType.PrometheusMetric,
       new MetricHealthCheckDefinition(
         TimeSpan.FromMinutes(1),
-        Expression: "test_metric",
+        expression: "test_metric",
         ImmutableList.Create(
-          new MetricHealthCondition(HealthOperator.GreaterThan, Threshold: 42.0m, HealthStatus.Offline)))
+          new MetricHealthCondition(HealthOperator.GreaterThan, threshold: 42.0m, HealthStatus.Offline)))
     );
 
   private static readonly ServiceHierarchyConfiguration TestRootOnlyConfiguration = new(
     ImmutableList.Create(
       new ServiceConfiguration(
         HealthHistoryControllerIntegrationTests.RootServiceName,
-        DisplayName: "Display Name", Description: null, Url: null,
+        displayName: "Display Name", description: null, url: null,
         ImmutableList.Create(HealthHistoryControllerIntegrationTests.TestHealthCheck),
-        Children: null)
+        children: null)
     ),
     ImmutableHashSet<String>.Empty.Add(HealthHistoryControllerIntegrationTests.RootServiceName)
   );
@@ -54,18 +54,18 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
     ImmutableList.Create(
       new ServiceConfiguration(
         HealthHistoryControllerIntegrationTests.RootServiceName,
-        DisplayName: "Display Name",
-        Description: null,
-        Url: null,
+        displayName: "Display Name",
+        description: null,
+        url: null,
         ImmutableList.Create(HealthHistoryControllerIntegrationTests.TestHealthCheck),
         ImmutableHashSet<String>.Empty.Add(HealthHistoryControllerIntegrationTests.ChildServiceName)),
       new ServiceConfiguration(
         HealthHistoryControllerIntegrationTests.ChildServiceName,
-        DisplayName: "Display Name",
-        Description: null,
-        Url: null,
-        HealthChecks: ImmutableList.Create(HealthHistoryControllerIntegrationTests.TestHealthCheck),
-        Children: null
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        healthChecks: ImmutableList.Create(HealthHistoryControllerIntegrationTests.TestHealthCheck),
+        children: null
       )
     ),
     ImmutableHashSet<String>.Empty.Add(HealthHistoryControllerIntegrationTests.RootServiceName)

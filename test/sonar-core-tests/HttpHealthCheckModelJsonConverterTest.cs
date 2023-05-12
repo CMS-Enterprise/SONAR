@@ -88,7 +88,7 @@ public class HttpHealthCheckModelJsonConverterTest {
   [Fact]
   public void SerializeRoundTrip_HttpCheck_Success() {
     var conditions = new HttpHealthCheckCondition[] {
-      new ResponseTimeCondition(ResponseTime: HttpHealthCheckModelJsonConverterTest.TestHttpResponseTime, HttpHealthCheckModelJsonConverterTest.TestHealthStatusDegraded),
+      new ResponseTimeCondition(responseTime: HttpHealthCheckModelJsonConverterTest.TestHttpResponseTime, HttpHealthCheckModelJsonConverterTest.TestHealthStatusDegraded),
       new StatusCodeCondition(HttpHealthCheckModelJsonConverterTest.TestStatusCodes, HttpHealthCheckModelJsonConverterTest.TestHealthStatusOnline)
     };
     HttpHealthCheckDefinition originalDefinition;
@@ -248,7 +248,3 @@ public class HttpHealthCheckModelJsonConverterTest {
     );
   }
 };
-
-
-
-

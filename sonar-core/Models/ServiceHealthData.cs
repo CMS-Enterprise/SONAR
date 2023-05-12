@@ -1,15 +1,24 @@
 using System;
 using System.Collections.Immutable;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using Cms.BatCave.Sonar.Extensions;
 
 namespace Cms.BatCave.Sonar.Models;
 
-public record ServiceHealthData(
+public record ServiceHealthData {
+
+  public ServiceHealthData(
+    IImmutableDictionary<String, IImmutableList<(DateTime Timestamp, Double Value)>> healthCheckSamples) {
+
+    this.HealthCheckSamples = healthCheckSamples;
+  }
+
   // This is a mapping from health check name to a list of health check metric time series samples.
-  IImmutableDictionary<String, IImmutableList<(DateTime Timestamp, Double Value)>> HealthCheckSamples
-) {
+  [Required]
+  public IImmutableDictionary<String, IImmutableList<(DateTime Timestamp, Double Value)>> HealthCheckSamples { get; init; }
+
   public override String ToString() {
     StringBuilder sb = new();
     sb.Append($"{nameof(HealthCheckSamples)} {{ ");

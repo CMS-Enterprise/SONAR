@@ -1,0 +1,30 @@
+{
+  "services": [
+    {
+      "name": "service",
+      "displayName": "Service",
+      "description": "service",
+      "url": "http://localhost:8082/api/ready",
+      "children": [],
+      "healthChecks": [
+        {
+          "name": "example",
+          "description": "example",
+          "definition": {
+            "duration": "0.00:00:20",
+            "expression": "example",
+            "conditions": [
+              {
+                "operator": "GreaterThan",
+                "threshold": 50,
+                "status": "Offline"
+              }
+            ]
+          },
+          "missing": "\"type\": \"prometheusMetric\""
+        }
+      ]
+    }
+  ],
+  "rootServices": ["service"]
+}

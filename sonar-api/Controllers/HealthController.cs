@@ -285,7 +285,7 @@ public class HealthController : ControllerBase {
       DateTime.UtcNow,
       aggStatus,
       healthChecks.ToImmutableDictionary(),
-      Children: null
+      children: null
     );
   }
 

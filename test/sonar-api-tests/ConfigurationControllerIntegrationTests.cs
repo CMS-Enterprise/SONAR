@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -34,6 +36,8 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
   private const String TestNoChildServiceMatch =
     "One or more of the specified services contained a reference to a child service that did not exist in the services array.";
   private const String TestServiceNameMaxLength = "The field Name must be a string with a maximum length of 100.";
+  private const String TestServiceNameDuplicated =
+    "The specified list of services contained multiple services with the same name.";
 
   private static readonly JsonSerializerOptions SerializerOptions = new JsonSerializerOptions {
     Converters = { new JsonStringEnumConverter(), new ArrayTupleConverterFactory() },
@@ -42,139 +46,139 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
 
   private static readonly HealthCheckModel TestHealthCheck =
     new(
-      ConfigurationControllerIntegrationTests.TestHealthCheckName,
-      Description: "Health Check Description",
+      TestHealthCheckName,
+      description: "Health Check Description",
       HealthCheckType.PrometheusMetric,
       new MetricHealthCheckDefinition(
         TimeSpan.FromMinutes(1),
-        Expression: "test_metric",
+        expression: "test_metric",
         ImmutableList.Create(
-          new MetricHealthCondition(HealthOperator.GreaterThan, Threshold: 42.0m, HealthStatus.Offline)))
+          new MetricHealthCondition(HealthOperator.GreaterThan, threshold: 42.0m, HealthStatus.Offline)))
     );
 
   private static readonly ServiceHierarchyConfiguration TestRootChildConfiguration = new(
     ImmutableList.Create(
       new ServiceConfiguration(
-        ConfigurationControllerIntegrationTests.TestRootServiceName,
-        DisplayName: "Display Name",
-        Description: null,
-        Url: null,
-        ImmutableList.Create(ConfigurationControllerIntegrationTests.TestHealthCheck),
-        ImmutableHashSet<String>.Empty.Add(ConfigurationControllerIntegrationTests.TestChildServiceName)),
+        TestRootServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        ImmutableList.Create(TestHealthCheck),
+        ImmutableHashSet<String>.Empty.Add(TestChildServiceName)),
       new ServiceConfiguration(
-        ConfigurationControllerIntegrationTests.TestChildServiceName,
-        DisplayName: "Display Name",
-        Description: null,
-        Url: null,
-        HealthChecks: ImmutableList.Create(ConfigurationControllerIntegrationTests.TestHealthCheck),
-        Children: null
+        TestChildServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        healthChecks: ImmutableList.Create(TestHealthCheck),
+        children: null
       )
     ),
-    ImmutableHashSet<String>.Empty.Add(ConfigurationControllerIntegrationTests.TestRootServiceName)
+    ImmutableHashSet<String>.Empty.Add(TestRootServiceName)
   );
 
   private static readonly ServiceHierarchyConfiguration TestNoRootServiceMatchConfiguration = new(
     ImmutableList.Create(
       new ServiceConfiguration(
-        ConfigurationControllerIntegrationTests.TestChildServiceName,
-        DisplayName: "Display Name",
-        Description: null,
-        Url: null,
-        ImmutableList.Create(ConfigurationControllerIntegrationTests.TestHealthCheck),
-        Children: null)
+        TestChildServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        ImmutableList.Create(TestHealthCheck),
+        children: null)
     ),
-    ImmutableHashSet<String>.Empty.Add(ConfigurationControllerIntegrationTests.TestRootServiceName)
+    ImmutableHashSet<String>.Empty.Add(TestRootServiceName)
   );
 
   private static readonly ServiceHierarchyConfiguration TestRootServiceCasingMismatchConfiguration = new(
     ImmutableList.Create(
       new ServiceConfiguration(
-        ConfigurationControllerIntegrationTests.TestRootServiceNameCasingMismatch,
-        DisplayName: "Display Name",
-        Description: null,
-        Url: null,
-        HealthChecks: ImmutableList.Create(ConfigurationControllerIntegrationTests.TestHealthCheck),
-        Children: null
+        TestRootServiceNameCasingMismatch,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        healthChecks: ImmutableList.Create(TestHealthCheck),
+        children: null
       )
     ),
-    ImmutableHashSet<String>.Empty.Add(ConfigurationControllerIntegrationTests.TestRootServiceName)
+    ImmutableHashSet<String>.Empty.Add(TestRootServiceName)
   );
 
   private static readonly ServiceHierarchyConfiguration TestDiffServiceDiffCasingConfiguration = new(
     ImmutableList.Create(
       new ServiceConfiguration(
-        ConfigurationControllerIntegrationTests.TestRootServiceName,
-        DisplayName: "Display Name",
-        Description: null,
-        Url: null,
-        HealthChecks: ImmutableList.Create(ConfigurationControllerIntegrationTests.TestHealthCheck),
-        Children: null
+        TestRootServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        healthChecks: ImmutableList.Create(TestHealthCheck),
+        children: null
       ),
       new ServiceConfiguration(
-        ConfigurationControllerIntegrationTests.TestRootServiceNameCasingMismatch,
-        DisplayName: "Display Name",
-        Description: null,
-        Url: null,
-        HealthChecks: ImmutableList.Create(ConfigurationControllerIntegrationTests.TestHealthCheck),
-        Children: null
+        TestRootServiceNameCasingMismatch,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        healthChecks: ImmutableList.Create(TestHealthCheck),
+        children: null
       )
     ),
-    ImmutableHashSet<String>.Empty.Add(ConfigurationControllerIntegrationTests.TestRootServiceName)
+    ImmutableHashSet<String>.Empty.Add(TestRootServiceName)
   );
 
   private static readonly ServiceHierarchyConfiguration TestNoChildServiceMatchConfiguration = new(
     ImmutableList.Create(
       new ServiceConfiguration(
-        ConfigurationControllerIntegrationTests.TestRootServiceName,
-        DisplayName: "Display Name",
-        Description: null,
-        Url: null,
-        ImmutableList.Create(ConfigurationControllerIntegrationTests.TestHealthCheck),
-        ImmutableHashSet<String>.Empty.Add(ConfigurationControllerIntegrationTests.TestChildServiceName))
+        TestRootServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        ImmutableList.Create(TestHealthCheck),
+        ImmutableHashSet<String>.Empty.Add(TestChildServiceName))
     ),
-    ImmutableHashSet<String>.Empty.Add(ConfigurationControllerIntegrationTests.TestRootServiceName)
+    ImmutableHashSet<String>.Empty.Add(TestRootServiceName)
   );
 
   private static readonly ServiceHierarchyConfiguration TestDuplicateServiceNamesConfiguration = new(
     ImmutableList.Create(
       new ServiceConfiguration(
-        ConfigurationControllerIntegrationTests.TestRootServiceName,
-        DisplayName: "Display Name",
-        Description: null,
-        Url: null,
-        ImmutableList.Create(ConfigurationControllerIntegrationTests.TestHealthCheck),
-        ImmutableHashSet<String>.Empty.Add(ConfigurationControllerIntegrationTests.TestChildServiceName)),
+        TestRootServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        ImmutableList.Create(TestHealthCheck),
+        ImmutableHashSet<String>.Empty.Add(TestChildServiceName)),
       new ServiceConfiguration(
-        ConfigurationControllerIntegrationTests.TestChildServiceName,
-        DisplayName: "Display Name",
-        Description: null,
-        Url: null,
-        HealthChecks: ImmutableList.Create(ConfigurationControllerIntegrationTests.TestHealthCheck),
-        Children: null
+        TestChildServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        healthChecks: ImmutableList.Create(TestHealthCheck),
+        children: null
       ),
       new ServiceConfiguration(
-        ConfigurationControllerIntegrationTests.TestChildServiceName,
-        DisplayName: "Display Name",
-        Description: null,
-        Url: null,
-        HealthChecks: ImmutableList.Create(ConfigurationControllerIntegrationTests.TestHealthCheck),
-        Children: null
+        TestChildServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        healthChecks: ImmutableList.Create(TestHealthCheck),
+        children: null
       )
     ),
-    ImmutableHashSet<String>.Empty.Add(ConfigurationControllerIntegrationTests.TestRootServiceName)
+    ImmutableHashSet<String>.Empty.Add(TestRootServiceName)
   );
 
   private static readonly ServiceHierarchyConfiguration TestServiceNameOver100CharConfiguration = new(
     ImmutableList.Create(
       new ServiceConfiguration(
-        ConfigurationControllerIntegrationTests.TestServiceNameOver100Char,
-        DisplayName: "Display Name",
-        Description: null,
-        Url: null,
-        ImmutableList.Create(ConfigurationControllerIntegrationTests.TestHealthCheck),
-        Children: null)
+        TestServiceNameOver100Char,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        ImmutableList.Create(TestHealthCheck),
+        children: null)
     ),
-    ImmutableHashSet<String>.Empty.Add(ConfigurationControllerIntegrationTests.TestServiceNameOver100Char)
+    ImmutableHashSet<String>.Empty.Add(TestServiceNameOver100Char)
   );
 
   public ConfigurationControllerIntegrationTests(ApiIntegrationTestFixture fixture, ITestOutputHelper outputHelper) :
@@ -199,7 +203,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       actual: response.StatusCode);
 
     var body = await response.Content.ReadFromJsonAsync<ProblemDetails>(
-      ConfigurationControllerIntegrationTests.SerializerOptions
+      SerializerOptions
     );
 
     Assert.NotNull(body);
@@ -224,9 +228,9 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
     // Create existing Environment
     await this.Fixture.WithDependenciesAsync(async (provider, cancellationToken) => {
       var dbContext = provider.GetRequiredService<DataContext>();
-      var environments = provider.GetRequiredService<DbSet<Data.Environment>>();
+      var environments = provider.GetRequiredService<DbSet<Environment>>();
 
-      await environments.AddAsync(Data.Environment.New(existingEnvironmentName), cancellationToken);
+      await environments.AddAsync(Environment.New(existingEnvironmentName), cancellationToken);
       await dbContext.SaveChangesAsync(cancellationToken);
     });
 
@@ -242,7 +246,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       actual: response.StatusCode);
 
     var body = await response.Content.ReadFromJsonAsync<ProblemDetails>(
-      ConfigurationControllerIntegrationTests.SerializerOptions
+      SerializerOptions
     );
 
     Assert.NotNull(body);
@@ -281,7 +285,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       actual: getResponse.StatusCode);
 
     var body = await getResponse.Content.ReadFromJsonAsync<ServiceHierarchyConfiguration>(
-      ConfigurationControllerIntegrationTests.SerializerOptions
+      SerializerOptions
     );
 
     Assert.NotNull(body);
@@ -292,7 +296,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
   [Fact]
   public async Task GetConfiguration_ConfigWithServicesReturnsOk() {
     var (testEnvironment, testTenant) =
-      await this.CreateTestConfiguration(ConfigurationControllerIntegrationTests.TestRootChildConfiguration);
+      await this.CreateTestConfiguration(TestRootChildConfiguration);
 
     var getResponse = await
       this.Fixture.Server.CreateRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
@@ -304,13 +308,13 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       actual: getResponse.StatusCode);
 
     var body = await getResponse.Content.ReadFromJsonAsync<ServiceHierarchyConfiguration>(
-      ConfigurationControllerIntegrationTests.SerializerOptions
+      SerializerOptions
     );
 
     Assert.NotNull(body);
     Assert.Single(body.RootServices);
     Assert.Equal(
-      expected: ConfigurationControllerIntegrationTests.TestRootChildConfiguration.Services.Count,
+      expected: TestRootChildConfiguration.Services.Count,
       actual: body.Services.Count);
   }
 
@@ -333,7 +337,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(
-            ConfigurationControllerIntegrationTests.TestNoRootServiceMatchConfiguration);
+            TestNoRootServiceMatchConfiguration);
         })
         .PostAsync();
 
@@ -342,18 +346,14 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       actual: createConfigResponse.StatusCode);
 
     var body = await createConfigResponse.Content.ReadFromJsonAsync<ProblemDetails>(
-      ConfigurationControllerIntegrationTests.SerializerOptions
+      SerializerOptions
     );
 
     Assert.NotNull(body);
-    Assert.Equal(
-      expected: ProblemTypes.InvalidConfiguration,
-      actual: body.Type
-    );
-    Assert.Equal(
-      expected: ConfigurationControllerIntegrationTests.TestNoRootServiceMatch,
-      actual: body.Title
-    );
+    Assert.Equal(expected: "One or more validation errors occurred.", actual: body.Title);
+    Assert.Contains(body.Extensions, filter: kvp => kvp is { Key: "errors", Value: JsonElement });
+    var errors = ((JsonElement)body.Extensions["errors"]!).Deserialize<Dictionary<String, String[]>>()!;
+    Assert.Contains(errors, kvp => kvp.Key == "RootServices" && kvp.Value.Contains(TestNoRootServiceMatch));
   }
 
   [Fact]
@@ -365,7 +365,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(
-            ConfigurationControllerIntegrationTests.TestNoChildServiceMatchConfiguration);
+            TestNoChildServiceMatchConfiguration);
         })
         .PostAsync();
 
@@ -374,18 +374,14 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       actual: createConfigResponse.StatusCode);
 
     var body = await createConfigResponse.Content.ReadFromJsonAsync<ProblemDetails>(
-      ConfigurationControllerIntegrationTests.SerializerOptions
+      SerializerOptions
     );
 
     Assert.NotNull(body);
-    Assert.Equal(
-      expected: ProblemTypes.InvalidConfiguration,
-      actual: body.Type
-    );
-    Assert.Equal(
-      expected: ConfigurationControllerIntegrationTests.TestNoChildServiceMatch,
-      actual: body.Title
-    );
+    Assert.Equal(expected: "One or more validation errors occurred.", actual: body.Title);
+    Assert.Contains(body.Extensions, filter: kvp => kvp is { Key: "errors", Value: JsonElement });
+    var errors = ((JsonElement)body.Extensions["errors"]!).Deserialize<Dictionary<String, String[]>>()!;
+    Assert.Contains(errors, kvp => kvp.Key == "Services" && kvp.Value.Contains(TestNoChildServiceMatch));
   }
 
   [Fact]
@@ -397,7 +393,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(
-            ConfigurationControllerIntegrationTests.TestDuplicateServiceNamesConfiguration);
+            TestDuplicateServiceNamesConfiguration);
         })
         .PostAsync();
 
@@ -406,14 +402,14 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       actual: createConfigResponse.StatusCode);
 
     var body = await createConfigResponse.Content.ReadFromJsonAsync<ProblemDetails>(
-      ConfigurationControllerIntegrationTests.SerializerOptions
+      SerializerOptions
     );
 
     Assert.NotNull(body);
-    Assert.Equal(
-      expected: "The specified list of services contained multiple services with the same name.",
-      actual: body.Title
-    );
+    Assert.Equal(expected: "One or more validation errors occurred.", actual: body.Title);
+    Assert.Contains(body.Extensions, filter: kvp => kvp is { Key: "errors", Value: JsonElement });
+    var errors = ((JsonElement)body.Extensions["errors"]!).Deserialize<Dictionary<String, String[]>>()!;
+    Assert.Contains(errors, kvp => kvp.Key == "Services" && kvp.Value.Contains(TestServiceNameDuplicated));
   }
 
   [Fact]
@@ -425,7 +421,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       this.Fixture.Server.CreateRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(
-            ConfigurationControllerIntegrationTests.TestServiceNameOver100CharConfiguration);
+            TestServiceNameOver100CharConfiguration);
         })
         .PostAsync();
 
@@ -434,7 +430,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       actual: createConfigResponse.StatusCode);
 
     var body = await createConfigResponse.Content.ReadFromJsonAsync<ProblemDetails>(
-      ConfigurationControllerIntegrationTests.SerializerOptions
+      SerializerOptions
     );
 
     Assert.NotNull(body);
@@ -446,8 +442,8 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
     Assert.Equal(JsonValueKind.Array, serviceNameErrorsArray.ValueKind);
     Assert.Equal(1, serviceNameErrorsArray.GetArrayLength());
     Assert.Equal(
-      expected: ConfigurationControllerIntegrationTests.TestServiceNameMaxLength,
-      actual: ConfigurationControllerIntegrationTests.GetExtensionValue<String>(serviceNameErrorsArray[0]));
+      expected: TestServiceNameMaxLength,
+      actual: GetExtensionValue<String>(serviceNameErrorsArray[0]));
   }
 
   [Fact]
@@ -459,7 +455,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       this.Fixture.Server.CreateRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(
-            ConfigurationControllerIntegrationTests.TestServiceNameNotUrlSafe);
+            TestServiceNameNotUrlSafe);
         })
         .PostAsync();
 
@@ -478,7 +474,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(
-            ConfigurationControllerIntegrationTests.TestRootChildConfiguration);
+            TestRootChildConfiguration);
         })
         .PostAsync();
 
@@ -487,7 +483,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       actual: createConfigResponse.StatusCode);
 
     var body = await createConfigResponse.Content.ReadFromJsonAsync<ProblemDetails>(
-      ConfigurationControllerIntegrationTests.SerializerOptions
+      SerializerOptions
     );
 
     Assert.NotNull(body);
@@ -506,7 +502,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(
-            ConfigurationControllerIntegrationTests.TestRootServiceCasingMismatchConfiguration);
+            TestRootServiceCasingMismatchConfiguration);
         })
         .PostAsync();
 
@@ -524,7 +520,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(
-            ConfigurationControllerIntegrationTests.TestDiffServiceDiffCasingConfiguration);
+            TestDiffServiceDiffCasingConfiguration);
         })
         .PostAsync();
 
@@ -533,14 +529,14 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       actual: createConfigResponse.StatusCode);
 
     var body = await createConfigResponse.Content.ReadFromJsonAsync<ProblemDetails>(
-      ConfigurationControllerIntegrationTests.SerializerOptions
+      SerializerOptions
     );
 
     Assert.NotNull(body);
-    Assert.Equal(
-      expected: "The specified list of services contained multiple services with the same name.",
-      actual: body.Title
-    );
+    Assert.Equal(expected: "One or more validation errors occurred.", actual: body.Title);
+    Assert.Contains(body.Extensions, filter: kvp => kvp is { Key: "errors", Value: JsonElement });
+    var errors = ((JsonElement)body.Extensions["errors"]!).Deserialize<Dictionary<String, String[]>>()!;
+    Assert.Contains(errors, kvp => kvp.Key == "Services" && kvp.Value.Contains(TestServiceNameDuplicated));
   }
 
   // UpdateConfiguration scenarios
@@ -562,7 +558,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(
-            ConfigurationControllerIntegrationTests.TestNoRootServiceMatchConfiguration);
+            TestNoRootServiceMatchConfiguration);
         })
         .SendAsync("PUT");
 
@@ -571,18 +567,14 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       actual: updateConfigResponse.StatusCode);
 
     var body = await updateConfigResponse.Content.ReadFromJsonAsync<ProblemDetails>(
-      ConfigurationControllerIntegrationTests.SerializerOptions
+      SerializerOptions
     );
 
     Assert.NotNull(body);
-    Assert.Equal(
-      expected: ProblemTypes.InvalidConfiguration,
-      actual: body.Type
-    );
-    Assert.Equal(
-      expected: ConfigurationControllerIntegrationTests.TestNoRootServiceMatch,
-      actual: body.Title
-    );
+    Assert.Equal(expected: "One or more validation errors occurred.", actual: body.Title);
+    Assert.Contains(body.Extensions, filter: kvp => kvp is { Key: "errors", Value: JsonElement });
+    var errors = ((JsonElement)body.Extensions["errors"]!).Deserialize<Dictionary<String, String[]>>()!;
+    Assert.Contains(errors, kvp => kvp.Key == "RootServices" && kvp.Value.Contains(TestNoRootServiceMatch));
   }
 
   [Fact]
@@ -594,7 +586,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(
-            ConfigurationControllerIntegrationTests.TestNoChildServiceMatchConfiguration);
+            TestNoChildServiceMatchConfiguration);
         })
         .SendAsync("PUT");
 
@@ -603,18 +595,14 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       actual: updateConfigResponse.StatusCode);
 
     var body = await updateConfigResponse.Content.ReadFromJsonAsync<ProblemDetails>(
-      ConfigurationControllerIntegrationTests.SerializerOptions
+      SerializerOptions
     );
 
     Assert.NotNull(body);
-    Assert.Equal(
-      expected: ProblemTypes.InvalidConfiguration,
-      actual: body.Type
-    );
-    Assert.Equal(
-      expected: ConfigurationControllerIntegrationTests.TestNoChildServiceMatch,
-      actual: body.Title
-    );
+    Assert.Equal(expected: "One or more validation errors occurred.", actual: body.Title);
+    Assert.Contains(body.Extensions, filter: kvp => kvp is { Key: "errors", Value: JsonElement });
+    var errors = ((JsonElement)body.Extensions["errors"]!).Deserialize<Dictionary<String, String[]>>()!;
+    Assert.Contains(errors, kvp => kvp.Key == "Services" && kvp.Value.Contains(TestNoChildServiceMatch));
   }
 
   [Fact]
@@ -626,7 +614,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       this.Fixture.CreateAdminRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}")
         .And(req => {
           req.Content = JsonContent.Create(
-            ConfigurationControllerIntegrationTests.TestServiceNameOver100CharConfiguration);
+            TestServiceNameOver100CharConfiguration);
         })
         .SendAsync("PUT");
 
@@ -635,7 +623,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       actual: updateConfigResponse.StatusCode);
 
     var body = await updateConfigResponse.Content.ReadFromJsonAsync<ProblemDetails>(
-      ConfigurationControllerIntegrationTests.SerializerOptions
+      SerializerOptions
     );
 
     Assert.NotNull(body);
@@ -646,8 +634,8 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
     Assert.Equal(JsonValueKind.Array, serviceNameErrorsArray.ValueKind);
     Assert.Equal(1, serviceNameErrorsArray.GetArrayLength());
     Assert.Equal(
-      expected: ConfigurationControllerIntegrationTests.TestServiceNameMaxLength,
-      actual: ConfigurationControllerIntegrationTests.GetExtensionValue<String>(serviceNameErrorsArray[0]));
+      expected: TestServiceNameMaxLength,
+      actual: GetExtensionValue<String>(serviceNameErrorsArray[0]));
   }
 
   [Fact]
@@ -659,7 +647,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       this.Fixture.CreateAdminRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}")
         .And(req => {
           req.Content = JsonContent.Create(
-            ConfigurationControllerIntegrationTests.TestServiceNameNotUrlSafe);
+            TestServiceNameNotUrlSafe);
         })
         .SendAsync("PUT");
 
@@ -678,7 +666,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       this.Fixture.CreateAdminRequest($"/api/v2/config/{missingEnvironmentName}/tenants/foo")
         .And(req => {
           req.Content = JsonContent.Create(
-            ConfigurationControllerIntegrationTests.TestRootChildConfiguration);
+            TestRootChildConfiguration);
         })
         .SendAsync("PUT");
 
@@ -687,7 +675,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       actual: updateConfigResponse.StatusCode);
 
     var body = await updateConfigResponse.Content.ReadFromJsonAsync<ProblemDetails>(
-      ConfigurationControllerIntegrationTests.SerializerOptions
+      SerializerOptions
     );
 
     Assert.NotNull(body);
@@ -715,7 +703,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       this.Fixture.CreateAdminRequest($"/api/v2/config/{existingEnvironment}/tenants/{missingTenantName}")
         .And(req => {
           req.Content = JsonContent.Create(
-            ConfigurationControllerIntegrationTests.TestRootChildConfiguration);
+            TestRootChildConfiguration);
         })
         .SendAsync("PUT");
 
@@ -724,7 +712,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       actual: updateConfigResponse.StatusCode);
 
     var body = await updateConfigResponse.Content.ReadFromJsonAsync<ProblemDetails>(
-      ConfigurationControllerIntegrationTests.SerializerOptions
+      SerializerOptions
     );
 
     Assert.NotNull(body);
@@ -751,7 +739,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(
-            ConfigurationControllerIntegrationTests.TestRootServiceCasingMismatchConfiguration);
+            TestRootServiceCasingMismatchConfiguration);
         })
         .SendAsync("PUT");
 
@@ -776,7 +764,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       actual: getResponse.StatusCode);
 
     var body = await getResponse.Content.ReadFromJsonAsync<ServiceHierarchyConfiguration>(
-      ConfigurationControllerIntegrationTests.SerializerOptions
+      SerializerOptions
     );
 
     // Confirm POST request had no services
@@ -788,7 +776,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       this.Fixture.CreateAdminRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}")
         .And(req => {
           req.Content = JsonContent.Create(
-            ConfigurationControllerIntegrationTests.TestRootChildConfiguration);
+            TestRootChildConfiguration);
         })
         .SendAsync("PUT");
 
@@ -806,14 +794,14 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       actual: getResponse.StatusCode);
 
     body = await getResponse.Content.ReadFromJsonAsync<ServiceHierarchyConfiguration>(
-      ConfigurationControllerIntegrationTests.SerializerOptions
+      SerializerOptions
     );
 
     // Confirm PUT request had services
     Assert.NotNull(body);
     Assert.Single(body.RootServices);
     Assert.Equal(
-      expected: ConfigurationControllerIntegrationTests.TestRootChildConfiguration.Services.Count,
+      expected: TestRootChildConfiguration.Services.Count,
       actual: body.Services.Count);
   }
 
@@ -892,7 +880,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
     return extensionValue switch {
       null => default,
       T typedValue => typedValue,
-      JsonElement element => ConfigurationControllerIntegrationTests.GetElementValue<T>(element),
+      JsonElement element => GetElementValue<T>(element),
       _ => throw new ArgumentException(
         $"The {nameof(extensionValue)} argument was an unexpected type: {extensionValue.GetType().Name}",
         nameof(extensionValue))

@@ -3,20 +3,29 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using Cms.BatCave.Sonar.Exceptions;
 
 namespace Cms.BatCave.Sonar.Models;
 
-public record ServiceHierarchyConfiguration(
+public record ServiceHierarchyConfiguration : IValidatableObject {
+
+  public ServiceHierarchyConfiguration(
+    IImmutableList<ServiceConfiguration> services,
+    IImmutableSet<String> rootServices) {
+
+    this.Services = services;
+    this.RootServices = rootServices;
+  }
+
   [Required]
-  IImmutableList<ServiceConfiguration> Services,
+  public IImmutableList<ServiceConfiguration> Services { get; init; }
+
   [Required]
-  IImmutableSet<String> RootServices
-) {
+  public IImmutableSet<String> RootServices { get; init; }
+
   /// <summary>
-  /// Ensures this <see cref="ServiceHierarchyConfiguration"/> meets all of the validation criteria that cannot be
-  /// expressed via data attributes. This method returns quietly if the object is valid, or throws an exception
-  /// indicating the validation error(s) found if it's invalid.
+  /// Ensures this <see cref="ServiceHierarchyConfiguration"/> meets all of the higher-order validation criteria
+  /// that can't expressed via data attributes. This method returns an empty collection if the object is valid,
+  /// otherwise it returns a list of the validation errors found.
   /// <list type="number">
   ///   <listheader>
   ///     <description>Validation criteria:</description>
@@ -32,20 +41,20 @@ public record ServiceHierarchyConfiguration(
   ///   </item>
   /// </list>
   /// </summary>
-  /// <exception cref="InvalidConfigurationException">If any validation errors are found.</exception>
-  /// <returns>Nothing (quietly) if validation is successful.</returns>
-  public void Validate() {
+  /// <param name="validationContext">The validation context.</param>
+  /// <returns>An empty collection if the object is valid, or a list of errors found if the object is invalid.</returns>
+  public IEnumerable<ValidationResult> Validate(ValidationContext validationContext) {
+    var validationResults = new List<ValidationResult>();
+
     var serviceNames = new HashSet<String>(StringComparer.OrdinalIgnoreCase);
     var duplicateServiceNames =
       this.Services.Where(svc => !serviceNames.Add(svc.Name))
         .ToImmutableList();
 
     if (duplicateServiceNames.Any()) {
-      throw new InvalidConfigurationException(
-        message: "The specified list of services contained multiple services with the same name.",
-        new Dictionary<String, Object?> {
-          [nameof(this.Services)] = duplicateServiceNames
-        });
+      validationResults.Add(new ValidationResult(
+        errorMessage: "The specified list of services contained multiple services with the same name.",
+        new[] { nameof(this.Services) }));
     }
 
     var missingRootServices =
@@ -54,11 +63,9 @@ public record ServiceHierarchyConfiguration(
         .ToImmutableList();
 
     if (missingRootServices.Any()) {
-      throw new InvalidConfigurationException(
-        message: "One or more of the specified root services do not exist in the services array.",
-        new Dictionary<String, Object?> {
-          [nameof(this.RootServices)] = missingRootServices
-        });
+      validationResults.Add(new ValidationResult(
+        errorMessage: "One or more of the specified root services do not exist in the services array.",
+        new[] { nameof(this.RootServices) }));
     }
 
     var missingChildServices =
@@ -72,12 +79,11 @@ public record ServiceHierarchyConfiguration(
         .ToImmutableList();
 
     if (missingChildServices.Any()) {
-      throw new InvalidConfigurationException(
-        message:
-        "One or more of the specified services contained a reference to a child service that did not exist in the services array.",
-        new Dictionary<String, Object?> {
-          [nameof(this.Services)] = missingChildServices
-        });
+      validationResults.Add(new ValidationResult(
+        errorMessage: "One or more of the specified services contained a reference to a child service that did not exist in the services array.",
+      new[] { nameof(this.Services) }));
     }
+
+    return validationResults;
   }
 }

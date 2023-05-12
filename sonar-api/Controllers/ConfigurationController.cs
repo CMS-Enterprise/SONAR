@@ -127,8 +127,6 @@ public class ConfigurationController : ControllerBase {
       throw new ForbiddenException($"The authentication credential provided is not authorized to {activity}.");
     }
 
-    ValidateServiceHierarchy(hierarchy);
-
     await using var tx =
       await this._dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
     try {
@@ -292,7 +290,6 @@ public class ConfigurationController : ControllerBase {
       tenant,
       "update configuration",
       cancellationToken);
-    ValidateServiceHierarchy(hierarchy);
 
     await using var tx =
       await this._dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
@@ -582,17 +579,6 @@ public class ConfigurationController : ControllerBase {
     }
 
     return this.StatusCode((Int32)HttpStatusCode.OK);
-  }
-
-  private static void ValidateServiceHierarchy(ServiceHierarchyConfiguration hierarchy) {
-    try {
-      hierarchy.Validate();
-    } catch (InvalidConfigurationException e) {
-      throw new BadRequestException(
-        message: e.Message,
-        ProblemTypes.InvalidConfiguration,
-        (e.Data as IDictionary<String, Object?>)!);
-    }
   }
 
   //Converts to Model
