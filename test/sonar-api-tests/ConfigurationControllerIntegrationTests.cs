@@ -25,10 +25,13 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
   private const String TestRootServiceName = "TestRootService";
   private const String TestChildServiceName = "TestChildService";
   private const String TestHealthCheckName = "TestHealthCheck";
+  private const String TestHttpHealthCheckName = "TestHttpHealthCheck";
 
   private const String TestRootServiceNameCasingMismatch = "tESTrOOTsERVICE";
   private const String TestServiceNameOver100Char =
     "ServiceNameServiceNameServiceNameServiceNameServiceNameServiceNameServiceNameServiceNameServiceNameService";
+
+  private const String TestHttpServiceName = "TestHttpService";
   private const String TestServiceNameNotUrlSafe = "Test_Service!";
 
   private const String TestNoRootServiceMatch =
@@ -54,6 +57,20 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
         expression: "test_metric",
         ImmutableList.Create(
           new MetricHealthCondition(HealthOperator.GreaterThan, threshold: 42.0m, HealthStatus.Offline)))
+    );
+
+  private static readonly HealthCheckModel TestHttpHealthCheck =
+    new(
+      TestHttpHealthCheckName,
+      description: "Http Health Check Description",
+      HealthCheckType.HttpRequest,
+      new HttpHealthCheckDefinition(
+        url: new Uri("http://httpHealthCheck"),
+        Array.Empty<HttpHealthCheckCondition>(),
+        followRedirects: false,
+        authorizationHeader: "Authorization Header Value",
+        skipCertificateValidation: null
+      )
     );
 
   private static readonly ServiceHierarchyConfiguration TestRootChildConfiguration = new(
@@ -181,6 +198,18 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
     ImmutableHashSet<String>.Empty.Add(TestServiceNameOver100Char)
   );
 
+  private static readonly ServiceHierarchyConfiguration TestHttpConditionAuthConfiguration = new(
+    ImmutableList.Create(
+      new ServiceConfiguration(
+        TestHttpServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        ImmutableList.Create(TestHttpHealthCheck),
+        children: null)
+    ),
+    ImmutableHashSet<String>.Empty.Add(TestHttpServiceName)
+  );
   public ConfigurationControllerIntegrationTests(ApiIntegrationTestFixture fixture, ITestOutputHelper outputHelper) :
     base(fixture, outputHelper) { }
 
@@ -805,24 +834,60 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       actual: body.Services.Count);
   }
 
-  private async Task<(String, String)> CreateTestConfiguration(ServiceHierarchyConfiguration configuration) {
-    // Create Service Configuration
-    var testEnvironment = Guid.NewGuid().ToString();
-    var testTenant = Guid.NewGuid().ToString();
+  [Fact]
+  public async Task GetConfiguration_ConfigWithAuthorizationHeaderReturnsOk() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestHttpConditionAuthConfiguration);
 
-    var createConfigResponse = await
+    var getConfigResponse = await
       this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
-        .And(req => {
-          req.Content = JsonContent.Create(configuration);
-        })
-        .PostAsync();
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
 
-    // This should always succeed, This isn't what is being tested.
-    AssertHelper.Precondition(
-      createConfigResponse.IsSuccessStatusCode,
-      message: "Failed to create test configuration."
+    Assert.Equal(
+      expected: HttpStatusCode.OK,
+      actual: getConfigResponse.StatusCode);
+
+    var body = await getConfigResponse.Content.ReadFromJsonAsync<ServiceHierarchyConfiguration>(SerializerOptions);
+
+    Assert.NotNull(body);
+    var services = Assert.Single(body.Services);
+    var httpHealthCheck = Assert.Single(services.HealthChecks);
+    var httpDefinition = (HttpHealthCheckDefinition)Assert.Single(new[] { httpHealthCheck.Definition });
+
+    Assert.Equal(
+      expected: "Authorization Header Value",
+      actual: httpDefinition.AuthorizationHeader
     );
-    return (testEnvironment, testTenant);
+  }
+
+  [Fact]
+  public async Task GetConfiguration_ConfigWithRedactedAuthorizationHeaderReturnsOk() {
+
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestHttpConditionAuthConfiguration);
+
+    var getConfigResponse = await
+      this.Fixture.Server.CreateRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.OK,
+      actual: getConfigResponse.StatusCode);
+
+    var body = await getConfigResponse.Content.ReadFromJsonAsync<ServiceHierarchyConfiguration>(
+      SerializerOptions);
+
+    Assert.NotNull(body);
+    var services = Assert.Single(body.Services);
+    var httpHealthCheck = Assert.Single(services.HealthChecks);
+    var httpDefinition = (HttpHealthCheckDefinition)Assert.Single(new[] { httpHealthCheck.Definition });
+
+    Assert.Equal(
+      expected: new String(c: '*', count: 32),
+      actual: httpDefinition.AuthorizationHeader
+    );
   }
 
   private async Task<(String, String)> CreateEmptyTestConfiguration() {
@@ -880,7 +945,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
     return extensionValue switch {
       null => default,
       T typedValue => typedValue,
-      JsonElement element => GetElementValue<T>(element),
+      JsonElement element => ConfigurationControllerIntegrationTests.GetElementValue<T>(element),
       _ => throw new ArgumentException(
         $"The {nameof(extensionValue)} argument was an unexpected type: {extensionValue.GetType().Name}",
         nameof(extensionValue))

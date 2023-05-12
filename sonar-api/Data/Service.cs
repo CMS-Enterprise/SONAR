@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Cms.BatCave.Sonar.Data;
 
 [Table("service")]
-[Index(nameof(TenantId), nameof(Name) , IsUnique = true)]
+[Index(nameof(TenantId), nameof(Name), IsUnique = true)]
 public class Service {
   public Guid Id { get; init; }
   public Guid TenantId { get; init; }

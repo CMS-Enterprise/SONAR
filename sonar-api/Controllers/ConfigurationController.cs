@@ -104,7 +104,7 @@ public class ConfigurationController : ControllerBase {
     var serviceHierarchy = CreateServiceHierarchy(serviceMap, healthCheckByService, serviceRelationshipsByParent);
 
     if (!isAuthorized) {
-      serviceHierarchy = this._serviceDataHelper.Redact(serviceHierarchy);
+      serviceHierarchy = ServiceDataHelper.Redact(serviceHierarchy);
     }
 
     return this.Ok(serviceHierarchy);

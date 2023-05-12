@@ -16,13 +16,6 @@ public class ApiKey {
   public Guid? EnvironmentId { get; set; }
   public Guid? TenantId { get; set; }
 
-  public ApiKey() {
-    this.Key = "";
-    this.Type = ApiKeyType.Standard;
-    this.EnvironmentId = null;
-    this.TenantId = null;
-  }
-
   public ApiKey(
     String key,
     ApiKeyType type,

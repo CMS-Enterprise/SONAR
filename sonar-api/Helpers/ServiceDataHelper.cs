@@ -207,7 +207,7 @@ public class ServiceDataHelper {
       ).ToList();
   }
 
-  public ServiceHierarchyConfiguration Redact(ServiceHierarchyConfiguration config) {
+  public static ServiceHierarchyConfiguration Redact(ServiceHierarchyConfiguration config) {
     return config with {
       Services = config.Services.Select(Redact).ToImmutableList()
     };
