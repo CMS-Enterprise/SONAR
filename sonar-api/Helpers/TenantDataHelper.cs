@@ -90,7 +90,7 @@ public class TenantDataHelper {
   private TenantHealth ToTenantHealth(
     Tenant tenant,
     Environment environment,
-    ServiceHierarchyHealth?[]? rootServiceHealth
+    ServiceHierarchyHealth?[] rootServiceHealth
   ) {
     HealthStatus? aggregateStatus = HealthStatus.Unknown;
     DateTime? statusTimestamp = null;
