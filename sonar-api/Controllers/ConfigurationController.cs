@@ -205,7 +205,7 @@ public class ConfigurationController : ControllerBase {
             svc.HealthChecks.Select(hc => HealthCheck.New(
               servicesByName[svc.Name].Id,
               hc.Name,
-              hc.Description,
+              hc.Description ?? String.Empty,
               hc.Type,
               HealthCheck.SerializeDefinition(hc.Type, hc.Definition)
             )) :
@@ -498,7 +498,7 @@ public class ConfigurationController : ControllerBase {
         healthChecksToAdd.Select(healthCheck => HealthCheck.New(
           existingServicesByName[healthCheck.serviceName].Id,
           healthCheck.newHealthCheck.Name,
-          healthCheck.newHealthCheck.Description,
+          healthCheck.newHealthCheck.Description ?? String.Empty,
           healthCheck.newHealthCheck.Type,
           HealthCheck.SerializeDefinition(healthCheck.newHealthCheck.Type, healthCheck.newHealthCheck.Definition)
         )),

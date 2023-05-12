@@ -193,7 +193,7 @@ public class Program {
         logger.LogWarning("Default ApiKey not set in configuration");
       } else {
         // Validate API key
-        Program.ValidateApiKey(logger, config.GetValue<String>("ApiKey"));
+        Program.ValidateApiKey(logger, config.GetValue<String>("ApiKey") ?? String.Empty);
       }
     }
 

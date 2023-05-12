@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Cms.BatCave.Sonar.Data;
 
 [Table("api_key")]
-[Index(propertyNames: new[] { nameof(Key) })]
+[Index(nameof(Key))]
 public class ApiKey {
   [Key]
   [StringLength(44)] // Base64 encoded String for 32 bytes

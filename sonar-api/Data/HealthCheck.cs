@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Cms.BatCave.Sonar.Data;
 
 [Table("health_check")]
-[Index(propertyNames: new[] { nameof(ServiceId), nameof(Name) }, IsUnique = true)]
+[Index(nameof(ServiceId), nameof(Name), IsUnique = true )]
 public class HealthCheck {
   public Guid Id { get; init; }
   public Guid ServiceId { get; init; }

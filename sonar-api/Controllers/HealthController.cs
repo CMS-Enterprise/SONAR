@@ -223,10 +223,18 @@ public class HealthController : ControllerBase {
       await _dbContext.Database.OpenConnectionAsync(cancellationToken: cancellationToken);
     } catch (InvalidOperationException e) {
       // Db connection issue
+      this._logger.LogError(
+        message: "Unexpected DB error: {Message}",
+        e.Message
+      );
       connectionTestResult = HealthStatus.Offline;
       sonarDbTestResult = HealthStatus.Unknown;
     } catch (PostgresException e) {
       // Sonar db issue
+      this._logger.LogError(
+        message: "Unexpected DB error: {Message}",
+        e.Message
+      );
       sonarDbTestResult = HealthStatus.Offline;
     }
 
@@ -263,10 +271,18 @@ public class HealthController : ControllerBase {
         cancellationToken);
     } catch (HttpRequestException e) {
       // Failed readiness probe
+      this._logger.LogError(
+        message: "Unexpected HTTP error: {Message}",
+        e.Message
+      );
       readinessTest = HealthStatus.Offline;
       queryTest = HealthStatus.Unknown;
     } catch (Exception e) {
       // Unknown exception
+      this._logger.LogError(
+        message: "Unexpected HTTP error: {Message}",
+        e.Message
+      );
       readinessTest = HealthStatus.Unknown;
       queryTest = HealthStatus.Unknown;
     }

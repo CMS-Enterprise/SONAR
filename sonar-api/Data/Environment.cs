@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Cms.BatCave.Sonar.Data;
 
 [Table("environment")]
-[Index(propertyNames: new[] { nameof(Name) }, IsUnique = true)]
+[Index(nameof(Name), IsUnique = true)]
 public class Environment {
   public Guid Id { get; init; }
 

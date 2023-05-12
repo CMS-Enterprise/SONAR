@@ -73,7 +73,9 @@ internal class Program {
     var relativePathRegex = new Regex(@"^\./");
     var watchers = new List<IDisposable>();
     foreach (var provider in configuration.Providers) {
-      if (provider is FileConfigurationProvider fileProvider) {
+      if (provider is FileConfigurationProvider fileProvider &&
+        fileProvider.Source.FileProvider != null &&
+        fileProvider.Source.Path != null) {
         logger.LogInformation("WATCHING {ConfigFileName}",
           fileProvider.Source.FileProvider.GetFileInfo(fileProvider.Source.Path).PhysicalPath);
         var configFileName = relativePathRegex.Replace(fileProvider.Source.Path, replacement: "");

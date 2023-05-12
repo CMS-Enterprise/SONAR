@@ -111,11 +111,9 @@ public class HealthCheckDataController : ControllerBase {
   /// <param name="tenant">The tenant to get timestamps for.</param>
   /// <param name="service">The service to get timestamps for.</param>
   /// <param name="healthCheck">The name of the health check to get timestamps for.</param>
+  /// <param name="queryEnd"></param>
   /// <param name="cancellationToken">The cancellation token for the async operation.</param>
-  /// <returns>
-  /// A new <see cref="IImmutableList<(DateTime, Double)>"/> containing the samples that were actually written;
-  /// can be empty if no samples were written because they all failed the filtering criteria.
-  /// </returns>
+  /// <param name="queryStart"></param>
   /// <exception cref="BadRequestException">If the Prometheus request is invalid.</exception>
   /// <exception cref="InternalServerErrorException">If there's any other problem calling Prometheus.</exception>
   [HttpGet("{environment}/tenants/{tenant}/services/{service}/health-check/{healthCheck}", Name = "GetHealthCheckData")]

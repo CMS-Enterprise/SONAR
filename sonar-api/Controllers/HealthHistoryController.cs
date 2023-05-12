@@ -45,6 +45,7 @@ public class HealthHistoryController : ControllerBase {
   ///   The number of seconds that is incremented on each step.  Step cannot be greater
   ///   than 3600 (default 30)
   /// </param>
+  /// <param name="tenant"></param>
   /// <param name="start">
   ///   The queries first evaluation time.  The start and end time cannot be greater
   ///   than 24 hours (default is current time)
@@ -53,6 +54,8 @@ public class HealthHistoryController : ControllerBase {
   ///   The queries evaluation time stops on or before this time.  The start and end time
   ///   cannot be greater than 24 hours (default is current time minus 1 hour)
   /// </param>
+  /// <param name="environment"></param>
+  /// <param name="cancellationToken"></param>
   [HttpGet("{environment}/tenants/{tenant}", Name = "GetServicesHealthHistory")]
   [ProducesResponseType(typeof(ServiceHierarchyHealthHistory[]), statusCode: 200)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
@@ -98,6 +101,7 @@ public class HealthHistoryController : ControllerBase {
   ///   The number of seconds that is incremented on each step.  Step cannot be greater
   ///   than 3600 (default 30)
   /// </param>
+  /// <param name="servicePath"></param>
   /// <param name="start">
   ///   The queries first evaluation time.  The start and end time cannot be greater
   ///   than 24 hours (default is current time)
@@ -106,6 +110,9 @@ public class HealthHistoryController : ControllerBase {
   ///   The queries evaluation time stops on or before this time.  The start and end time
   ///   cannot be greater than 24 hours (default is current time minus 1 hour)
   /// </param>
+  /// <param name="environment"></param>
+  /// <param name="tenant"></param>
+  /// <param name="cancellationToken"></param>
   [HttpGet("{environment}/tenants/{tenant}/services/{*servicePath}", Name = "GetServiceHealthHistory")]
   [ProducesResponseType(typeof(ServiceHierarchyHealthHistory), statusCode: 200)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]

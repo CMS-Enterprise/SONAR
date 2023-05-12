@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Extensions;
 using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
-using Cms.BatCave.Sonar.Query;
 using Microsoft.Extensions.Logging;
 using Prometheus;
 
@@ -230,8 +229,7 @@ public class PrometheusService : IPrometheusService {
         }
         return timestampMetrics;
       });
-
-    if (serviceHealthMetrics.ToImmutableDictionary().IsEmpty) {
+    if ((serviceHealthMetrics == null) || serviceHealthMetrics.ToImmutableDictionary().IsEmpty) {
       return new List<(DateTime, Double)>().ToImmutableList();
     }
 

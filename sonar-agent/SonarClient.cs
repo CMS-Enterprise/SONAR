@@ -14,7 +14,10 @@ public partial class SonarClient {
 
   private readonly String _apiKeyValue;
   public SonarClient(IConfigurationRoot configuration, String baseUrl, HttpClient client) : this(baseUrl, client) {
-    this._apiKeyValue = configuration.GetSection("ApiKey").Value;
+    var apiKeyValue = configuration.GetSection("ApiKey").Value;
+    if (apiKeyValue != null) {
+      this._apiKeyValue = apiKeyValue;
+    }
   }
 
   partial void UpdateJsonSerializerSettings(JsonSerializerOptions settings) {

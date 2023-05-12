@@ -81,7 +81,8 @@ public class ReportingMetricQueryRunner : IMetricQueryRunner {
       if (cancellationToken.IsCancellationRequested) {
         throw;
       } else {
-        this._logger.LogError("HTTP request timed out attempting to report metrics to SONAR API");
+        this._logger.LogError("HTTP request timed out attempting to report metrics to SONAR API, Message: {Message}",
+          ex.Message);
       }
     } finally {
       httpClient.Dispose();

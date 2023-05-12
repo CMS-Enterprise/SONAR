@@ -22,10 +22,13 @@ public class ApiKeyMiddleware {
 
       var headerApiKey = extractedApiKey.Single();
       // Check if header's API key is an existing API key
-      var existingApiKey = await apiKeyHelper.TryMatchApiKeyAsync(headerApiKey, context.RequestAborted);
-      if (existingApiKey == null) {
-        throw new UnauthorizedException("Invalid authentication credential provided.");
+      if (headerApiKey != null) {
+        var existingApiKey = await apiKeyHelper.TryMatchApiKeyAsync(headerApiKey, context.RequestAborted);
+        if (existingApiKey == null) {
+          throw new UnauthorizedException("Invalid authentication credential provided.");
+        }
       }
+
     }
 
     await this._next(context);

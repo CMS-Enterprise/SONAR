@@ -155,7 +155,9 @@ public class ConfigurationHelper {
     var tenantConfigDictionary = this.FetchKubeConfiguration(inClusterConfig);
     foreach (var kvp in tenantConfigDictionary) {
       var services = this.GetServicesHierarchy(kvp.Value);
-      result.Add(kvp.Key, services);
+      if (services != null) {
+        result.Add(kvp.Key, services);
+      }
     }
 
     return result;
@@ -301,7 +303,9 @@ public class ConfigurationHelper {
       var configMaps = this._kubeClient.CoreV1.ListNamespacedConfigMap(item.Metadata.Name);
       var sortedConfigs = this.GetServiceConfigurationList(configMaps);
 
-      results.Add(tenant, sortedConfigs);
+      if (sortedConfigs != null) {
+        results.Add(tenant, sortedConfigs);
+      }
     }
 
     return results;
@@ -377,6 +381,9 @@ public class ConfigurationHelper {
   }
 
   public IKubernetes GetKubernetesClient() {
+    if (this._kubeClient == null) {
+      throw new InvalidOperationException();
+    }
     return this._kubeClient;
   }
 }

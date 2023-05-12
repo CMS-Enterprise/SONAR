@@ -302,7 +302,7 @@ public class ApiKeyController : ControllerBase {
       } else {
         // Check environment
         var env = await this._envDataHelper.FetchExistingEnvAsync(
-          apiKeyConfig.Environment,
+          apiKeyConfig.Environment ?? String.Empty,
           cancellationToken);
 
         if (existingApiKey.EnvironmentId != env.Id) {
@@ -311,6 +311,8 @@ public class ApiKeyController : ControllerBase {
             ProblemTypes.InvalidConfiguration
           );
         }
+
+
       }
 
       // Delete

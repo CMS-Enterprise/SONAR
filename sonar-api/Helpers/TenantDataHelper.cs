@@ -96,19 +96,28 @@ public class TenantDataHelper {
     DateTime? statusTimestamp = null;
 
     foreach (var rs in rootServiceHealth) {
-      if (rs.AggregateStatus.HasValue) {
-        if ((aggregateStatus == null) ||
-          (aggregateStatus < rs.AggregateStatus) ||
-          (rs.AggregateStatus == HealthStatus.Unknown)) {
-          aggregateStatus = rs.AggregateStatus;
-        }
+      if (rs != null) {
 
-        // The child service should always have a timestamp here, but double check anyway
-        if (rs.Timestamp.HasValue &&
-          (!statusTimestamp.HasValue || (rs.Timestamp.Value < statusTimestamp.Value))) {
-          // The status timestamp should always be the *oldest* of the
-          // recorded status data points.
-          statusTimestamp = rs.Timestamp.Value;
+        if (rs.AggregateStatus.HasValue) {
+          if ((aggregateStatus == null) ||
+            (aggregateStatus < rs.AggregateStatus) ||
+            (rs.AggregateStatus == HealthStatus.Unknown)) {
+            aggregateStatus = rs.AggregateStatus;
+          }
+
+          // The child service should always have a timestamp here, but double check anyway
+          if (rs.Timestamp.HasValue &&
+            (!statusTimestamp.HasValue || (rs.Timestamp.Value < statusTimestamp.Value))) {
+            // The status timestamp should always be the *oldest* of the
+            // recorded status data points.
+            statusTimestamp = rs.Timestamp.Value;
+          }
+        } else {
+          // One of the child services has an "unknown" status, that means
+          // this service will also have the "unknown" status.
+          aggregateStatus = null;
+          statusTimestamp = null;
+          break;
         }
       } else {
         // One of the child services has an "unknown" status, that means

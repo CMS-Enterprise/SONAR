@@ -63,7 +63,7 @@ public class ApiKeyDataHelper {
         .Where(e => e.Name == environmentName)
         .SingleOrDefaultAsync(cancellationToken);
 
-    if ((specifiedEnv == null) || (existingApiKey.EnvironmentId != specifiedEnv.Id)) {
+    if ((specifiedEnv == null) || (existingApiKey?.EnvironmentId != specifiedEnv.Id)) {
       return false;
     }
     return true;

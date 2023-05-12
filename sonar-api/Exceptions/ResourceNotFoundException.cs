@@ -49,7 +49,7 @@ public class ResourceNotFoundException : ProblemDetailException {
   public override void GetObjectData(SerializationInfo info, StreamingContext context) {
     base.GetObjectData(info, context);
     info.AddValue(nameof(this.TypeName), this.TypeName);
-    info.AddValue(IdTypeKey, this.ResourceId.GetType().FullName);
+    info.AddValue(IdTypeKey, this.ResourceId?.GetType().FullName);
     info.AddValue(nameof(this.ResourceId), this.ResourceId);
   }
 
