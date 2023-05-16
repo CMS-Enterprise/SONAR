@@ -8,6 +8,44 @@ using Cms.BatCave.Sonar.Models;
 namespace Cms.BatCave.Sonar.Agent.ServiceConfig;
 
 public static class ServiceConfigMerger {
+  /// <summary>
+  ///   Deeply merges two <see cref="ServiceHierarchyConfiguration" /> instances, where values specified
+  ///   in the <paramref name="next" /> instance override values specified in the
+  ///   <paramref name="prev" /> instance.
+  /// </summary>
+  /// <remarks>
+  ///   <para>
+  ///     The contents of the <see cref="ServiceHierarchyConfiguration.Services" /> collections are
+  ///     merged based on <see cref="ServiceConfiguration.Name" /> (case insensitive). Any
+  ///     <see cref="ServiceConfiguration" /> that exists in one of the collections but not the other are
+  ///     included in the resulting <see cref="ServiceHierarchyConfiguration" /> unchanged (Note: this
+  ///     means it is not possible to <em>remove</em> services from the collection, only to add or
+  ///     modified them).
+  ///   </para>
+  ///   <para>
+  ///     The contents of the <see cref="ServiceHierarchyConfiguration.RootServices" /> collections are
+  ///     merged by set union (case insensitive).
+  ///   </para>
+  ///   <para>
+  ///     In addition to the basic properties of <see cref="ServiceConfiguration" />, the
+  ///     <see cref="ServiceConfiguration.HealthChecks" /> collection is also deeply merged. The
+  ///     <see cref="HealthCheckModel" /> instances are merged by <see cref="HealthCheckModel.Name" />
+  ///     (case insensitive). It is possible to change the <see cref="HealthCheckType" /> of a health
+  ///     check from one layer of configuration to another, however, when this is done it is necessary to
+  ///     provided an new <see cref="HealthCheckModel.Definition" /> that matches the new type. In the
+  ///     event, properties from the previous, incompatible <see cref="HealthCheckDefinition" /> will be
+  ///     ignored.
+  ///   </para>
+  ///   <para>
+  ///     Both the <see cref="MetricHealthCheckDefinition" /> type and hte
+  ///     <see cref="HttpHealthCheckDefinition" /> contain lists of conditions used to determine the
+  ///     result of the health check. The conditions do not have a unique identifier and therefor cannot
+  ///     be merged in the same way that other collections in this data structure are merged. Instead, if
+  ///     a non-null set of conditions is provided in the <paramref name="next" /> data structure, it
+  ///     will completely replace the corresponding conditions from the <paramref name="prev" />
+  ///     configuration.
+  ///   </para>
+  /// </remarks>
   public static ServiceHierarchyConfiguration MergeConfigurations(
     ServiceHierarchyConfiguration prev,
     ServiceHierarchyConfiguration next) {
@@ -21,7 +59,7 @@ public static class ServiceConfigMerger {
     // Merge Root Services
     return new ServiceHierarchyConfiguration(
       serviceResults,
-      prev.RootServices.Union(next.RootServices)
+      prev.RootServices.Union(next.RootServices, StringComparer.OrdinalIgnoreCase).ToImmutableHashSet()
     );
   }
 
@@ -36,7 +74,9 @@ public static class ServiceConfigMerger {
       // null here
       nextService.DisplayName ?? prevService.DisplayName,
       nextService.Description ?? prevService.Description,
-      nextService.Url ?? prevService.Url, MergeHealthCheckLists(prevService.HealthChecks, nextService.HealthChecks), MergeChildren(prevService.Children, nextService.Children)
+      nextService.Url ?? prevService.Url,
+      MergeHealthCheckLists(prevService.HealthChecks, nextService.HealthChecks),
+      MergeChildren(prevService.Children, nextService.Children)
     );
   }
 
@@ -144,7 +184,7 @@ public static class ServiceConfigMerger {
           throw new ArgumentOutOfRangeException(
             nameof(mergedType),
             mergedType,
-            message: $"Unexpected {nameof(HealthCheckType)}: {(Int32)mergedType}"
+            $"Unexpected {nameof(HealthCheckType)}: {(Int32)mergedType}"
           );
       }
     }
@@ -160,7 +200,7 @@ public static class ServiceConfigMerger {
       return prevServiceChildren;
     }
 
-    return prevServiceChildren.Union(nextServiceChildren);
+    return prevServiceChildren.Union(nextServiceChildren, StringComparer.OrdinalIgnoreCase).ToImmutableHashSet();
   }
 
   private static IImmutableList<T> MergeBy<T>(
