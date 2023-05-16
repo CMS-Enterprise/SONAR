@@ -90,10 +90,10 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
           this.GetTenantServicesHierarchy(namespaceName, tenant);
 
         // delete old tenant from SONAR API
-        await this._configHelper.DeleteServices(this._environment, prevTenantName, token);
+        await this._configHelper.DeleteServicesAsync(this._environment, prevTenantName, token);
 
         // create new tenant in SONAR API with service configuration from previous tenant
-        await this._configHelper.ConfigureServices(this._environment, servicesHierarchy, token);
+        await this._configHelper.ConfigureServicesAsync(this._environment, servicesHierarchy, token);
 
         // schedule health check for new tenant
         this.TenantCreated?.Invoke(this, new SonarTenantCreatedEventArgs(tenant));
@@ -112,7 +112,7 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
       await this._kubeClient.CoreV1.DeleteCollectionNamespacedConfigMapAsync(namespaceName, cancellationToken: token);
 
       // delete tenant from SONAR API
-      await this._configHelper.DeleteServices(this._environment, tenant, token);
+      await this._configHelper.DeleteServicesAsync(this._environment, tenant, token);
     }
   }
 
@@ -142,7 +142,7 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
     switch (eventType) {
       case WatchEventType.Added:
         // create new Tenant service configuration
-        await this._configHelper.ConfigureServices(this._environment, servicesHierarchy, token);
+        await this._configHelper.ConfigureServicesAsync(this._environment, servicesHierarchy, token);
         // associate namespace with tenant
         this._knownNamespaceTenants[configMapNamespace] = tenant;
         // schedule health check for new tenant
@@ -150,13 +150,13 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
         break;
       case WatchEventType.Modified:
         // update existing Tenant service configuration
-        await this._configHelper.ConfigureServices(this._environment, servicesHierarchy, token);
+        await this._configHelper.ConfigureServicesAsync(this._environment, servicesHierarchy, token);
         break;
       case WatchEventType.Deleted: {
           // if associated namespace was NOT deleted
           if (this._knownNamespaceTenants.ContainsKey(configMapNamespace)) {
             // update existing Tenant service configuration
-            await this._configHelper.ConfigureServices(this._environment, servicesHierarchy, token);
+            await this._configHelper.ConfigureServicesAsync(this._environment, servicesHierarchy, token);
           }
 
           break;

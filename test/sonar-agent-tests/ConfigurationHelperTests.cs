@@ -27,7 +27,7 @@ public class ConfigurationHelperTests {
       Mock.Of<ILogger<ConfigurationHelper>>()
     );
 
-    var configuration = await configHelper.LoadAndValidateJsonServiceConfig(CancellationToken.None);
+    var configuration = await configHelper.LoadAndValidateJsonServiceConfigAsync(CancellationToken.None);
 
     Assert.True(configuration.TryGetValue("test", out var tenantConfig));
 
@@ -59,7 +59,7 @@ public class ConfigurationHelperTests {
     );
 
     var exception = await Assert.ThrowsAsync<InvalidConfigurationException>(() =>
-      configHelper.LoadAndValidateJsonServiceConfig(CancellationToken.None)
+      configHelper.LoadAndValidateJsonServiceConfigAsync(CancellationToken.None)
     );
 
     Assert.Equal("Invalid JSON service configuration: One or more validation errors occurred.", exception.Message);
@@ -96,7 +96,7 @@ public class ConfigurationHelperTests {
     );
 
     var exception = await Assert.ThrowsAsync<InvalidConfigurationException>(() =>
-      configHelper.LoadAndValidateJsonServiceConfig(CancellationToken.None)
+      configHelper.LoadAndValidateJsonServiceConfigAsync(CancellationToken.None)
     );
 
     Assert.Equal(expectedExceptionMessage, exception.Message);

@@ -36,7 +36,7 @@ public class ConfigurationHelper {
   /// <exception cref="ArgumentException">
   ///   Thrown when no tenant configuration is found.
   /// </exception>
-  public async Task<IDictionary<String, ServiceHierarchyConfiguration>> LoadAndValidateJsonServiceConfig(
+  public async Task<IDictionary<String, ServiceHierarchyConfiguration>> LoadAndValidateJsonServiceConfigAsync(
     CancellationToken cancellationToken) {
 
     var configurationByTenant =
@@ -70,7 +70,7 @@ public class ConfigurationHelper {
   ///   Save the specified service configuration to the SONAR API. This configuration may be for a new or
   ///   existing tenant.
   /// </summary>
-  public async Task ConfigureServices(
+  public async Task ConfigureServicesAsync(
     String environment,
     IDictionary<String, ServiceHierarchyConfiguration> tenantServiceDictionary,
     CancellationToken token) {
@@ -102,7 +102,7 @@ public class ConfigurationHelper {
     }
   }
 
-  public async Task DeleteServices(
+  public async Task DeleteServicesAsync(
     String environment,
     String tenant,
     CancellationToken token) {

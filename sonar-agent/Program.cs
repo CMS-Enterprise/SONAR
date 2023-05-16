@@ -3,9 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Security.Authentication;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -164,7 +161,7 @@ internal class Program {
     IDictionary<String, ServiceHierarchyConfiguration> servicesHierarchy;
     try {
       // Load and merge configs
-      servicesHierarchy = await configurationHelper.LoadAndValidateJsonServiceConfig(token);
+      servicesHierarchy = await configurationHelper.LoadAndValidateJsonServiceConfigAsync(token);
     } catch (Exception ex) when (ex is InvalidConfigurationException or ArgumentException) {
       logger.LogError(ex, "Invalid Service Configuration: {Message}", ex.Message);
       return 1;
@@ -172,7 +169,7 @@ internal class Program {
 
     // Configure service hierarchy
     logger.LogInformation("Configuring services....");
-    await configurationHelper.ConfigureServices(apiConfig.Value.Environment, servicesHierarchy, token);
+    await configurationHelper.ConfigureServicesAsync(apiConfig.Value.Environment, servicesHierarchy, token);
 
     logger.LogInformation("Initializing SONAR Agent...");
 
