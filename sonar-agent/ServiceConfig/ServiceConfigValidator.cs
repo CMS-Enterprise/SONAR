@@ -7,11 +7,12 @@ using Cms.BatCave.Sonar.Models.Validation;
 
 namespace Cms.BatCave.Sonar.Agent.ServiceConfig;
 
-public class ServiceConfigValidator {
+public static class ServiceConfigValidator {
+  private static readonly RecursivePropertyValidator Validator = new();
+
   public static void ValidateServiceConfig(ServiceHierarchyConfiguration serviceConfig) {
-    var validator = new RecursivePropertyValidator();
     var validationResults = new List<ValidationResult>();
-    var isValid = validator.TryValidateObjectProperties(serviceConfig, validationResults);
+    var isValid = Validator.TryValidateObjectProperties(serviceConfig, validationResults);
 
     if (!isValid) {
       throw new InvalidConfigurationException(

@@ -88,28 +88,28 @@ public class KubernetesConfigSource : IServiceConfigSource {
   private async Task<IEnumerable<(String NamespaceName, String TenantName)>> GetTenantNamespacesAsync(
     CancellationToken cancellationToken) {
 
-    var list =
+    var namespaceList =
       await this._kubeClient.CoreV1.ListNamespaceAsync(
         labelSelector: NamespaceLabelSelector,
         cancellationToken: cancellationToken);
 
     this._logger.LogDebug(
       "Found Namespaces: {Namespaces}",
-      String.Join(",", list.Items.Select(i => i.Metadata.Name)));
+      String.Join(",", namespaceList.Items.Select(i => i.Metadata.Name)));
 
-    return this.GetTenantNamespaces(list);
+    return this.GetTenantNamespaces(namespaceList);
   }
 
   private IEnumerable<(String NamespaceName, String TenantName)> GetTenantNamespaces(
-    V1NamespaceList list) {
+    V1NamespaceList namespaces) {
 
-    foreach (var item in list.Items) {
-      if (item != null) {
+    foreach (var ns in namespaces.Items) {
+      if (ns != null) {
         // Determine the tenant name based on its labels
-        var tenantName = GetTenantFromNamespaceConfig(item);
+        var tenantName = GetTenantFromNamespaceConfig(ns);
         // Cache the namespace object for this tenant
-        this._tenantNamespaceCache[tenantName] = item;
-        yield return (item.Metadata.Name, tenantName);
+        this._tenantNamespaceCache[tenantName] = ns;
+        yield return (ns.Metadata.Name, tenantName);
       }
     }
   }

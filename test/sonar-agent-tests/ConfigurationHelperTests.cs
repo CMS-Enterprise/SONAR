@@ -20,7 +20,6 @@ public class ConfigurationHelperTests {
   [Fact]
   public async Task GetServiceHierarchyConfigurationFromJson_ValidConfiguration_ReturnsConfigurationObject() {
     const String jsonFilePath = "test-inputs/valid-service-config-1.json";
-    // await using var jsonStream = new FileStream(jsonFilePath, FileMode.Open, FileAccess.Read);
 
     var configHelper = new ConfigurationHelper(
       new LocalFileServiceConfigSource("test", new[] { jsonFilePath }),

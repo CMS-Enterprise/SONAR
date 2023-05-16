@@ -53,13 +53,16 @@ public static class ServiceConfigMerger {
     var serviceResults = MergeBy(
       prev.Services,
       next.Services,
-      match: (svc1, svc2) => String.Equals(svc1.Name, svc2.Name, StringComparison.OrdinalIgnoreCase), MergeServices
+      match: (svc1, svc2) =>
+        String.Equals(svc1.Name, svc2.Name, StringComparison.OrdinalIgnoreCase),
+      MergeServices
     );
 
     // Merge Root Services
     return new ServiceHierarchyConfiguration(
       serviceResults,
-      prev.RootServices.Union(next.RootServices, StringComparer.OrdinalIgnoreCase).ToImmutableHashSet()
+      prev.RootServices.Union(next.RootServices, StringComparer.OrdinalIgnoreCase)
+        .ToImmutableHashSet()
     );
   }
 
@@ -92,7 +95,9 @@ public static class ServiceConfigMerger {
       return MergeBy(
         prevHealthChecks,
         nextHealthChecks,
-        match: (hc1, hc2) => String.Equals(hc1.Name, hc2.Name, StringComparison.OrdinalIgnoreCase), MergeHealthChecks
+        match: (hc1, hc2) =>
+          String.Equals(hc1.Name, hc2.Name, StringComparison.OrdinalIgnoreCase),
+        MergeHealthChecks
       );
     }
   }
@@ -102,7 +107,8 @@ public static class ServiceConfigMerger {
     return new HealthCheckModel(
       prev.Name,
       next.Description ?? prev.Description,
-      mergedType, MergeDefinitions(prev, mergedType, prev.Definition, next.Definition)
+      mergedType,
+      MergeDefinitions(prev, mergedType, prev.Definition, next.Definition)
     );
   }
 
@@ -200,7 +206,8 @@ public static class ServiceConfigMerger {
       return prevServiceChildren;
     }
 
-    return prevServiceChildren.Union(nextServiceChildren, StringComparer.OrdinalIgnoreCase).ToImmutableHashSet();
+    return prevServiceChildren.Union(nextServiceChildren, StringComparer.OrdinalIgnoreCase)
+      .ToImmutableHashSet();
   }
 
   private static IImmutableList<T> MergeBy<T>(
@@ -217,5 +224,4 @@ public static class ServiceConfigMerger {
 
     return result;
   }
-
 }
