@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
@@ -104,7 +105,7 @@ public class ConfigurationHelper {
 
     if (opts.KubernetesConfigurationOption) {
       // load configs from kubernetes api
-      configurationByTenant = this.LoadKubernetesConfiguration(agentConfig.InClusterConfig);
+      configurationByTenant = await this.LoadKubernetesConfigurationAsync(agentConfig.InClusterConfig);
     }
 
     if (opts.ServiceConfigFiles.Any()) {
@@ -144,7 +145,7 @@ public class ConfigurationHelper {
   /// <exception cref="InvalidOperationException">
   ///   One of the service configurations found in Kubernetes was not valid.
   /// </exception>
-  private Dictionary<String, ServiceHierarchyConfiguration> LoadKubernetesConfiguration(Boolean inClusterConfig) {
+  private async Task<Dictionary<String, ServiceHierarchyConfiguration>> LoadKubernetesConfigurationAsync(Boolean inClusterConfig) {
     // TODO(BATAPI-207): currently if an tenant has invalid configuration that prevents configuration being
     // loaded from all tenants. An error in one tenant's configuration should not adversely affect
     // other tenants.
@@ -152,11 +153,13 @@ public class ConfigurationHelper {
     Dictionary<String, ServiceHierarchyConfiguration> result =
       new Dictionary<String, ServiceHierarchyConfiguration>();
 
-    var tenantConfigDictionary = this.FetchKubeConfiguration(inClusterConfig);
+    var tenantConfigDictionary = await this.FetchKubeConfigurationAsync(inClusterConfig);
     foreach (var kvp in tenantConfigDictionary) {
-      var services = this.GetServicesHierarchy(kvp.Value);
-      if (services != null) {
-        result.Add(kvp.Key, services);
+      if (kvp.Value.Count != 0) {
+        var services = this.GetServicesHierarchy(kvp.Value);
+        if (services != null) {
+          result.Add(kvp.Key, services);
+        }
       }
     }
 
@@ -272,7 +275,7 @@ public class ConfigurationHelper {
   ///   ConfigMaps they will be returned in the order specified in the "sonar-config/order" label (from
   ///   least to greatest).
   /// </remarks>
-  private Dictionary<String, List<(Int16 order, String data)>> FetchKubeConfiguration(Boolean inClusterConfig) {
+  private async Task<Dictionary<String, List<(Int16 order, String data)>>> FetchKubeConfigurationAsync(Boolean inClusterConfig) {
 
     var config = inClusterConfig ? KubernetesClientConfiguration.InClusterConfig() :
       KubernetesClientConfiguration.BuildDefaultConfig();
@@ -298,17 +301,69 @@ public class ConfigurationHelper {
         continue;
       }
 
-      // determine tenant and get its service configuration
+      // For this tenant get its service configuration from config maps and secrets
       var tenant = this.GetTenantFromNamespaceConfig(item);
       var configMaps = this._kubeClient.CoreV1.ListNamespacedConfigMap(item.Metadata.Name);
-      var sortedConfigs = this.GetServiceConfigurationList(configMaps);
+      var configMapConfiguration = this.GetServiceConfigurationList(configMaps);
+      var secretConfiguration = await this.GetSecretConfigurationsAsync(item.Metadata.Name);
 
-      if (sortedConfigs != null) {
-        results.Add(tenant, sortedConfigs);
+      // Merge service configuration coming form both secrets and config map and re-order
+      var sortedConfigs = configMapConfiguration.Concat(secretConfiguration)
+        .OrderBy(serviceConfig => serviceConfig.Item1).ToList();
+
+      if (results.ContainsKey(tenant)) {
+        throw new InvalidConfigurationException(
+          $"Multiple namespaces are configured with the same SONAR tenant name: {tenant}",
+          data: new Dictionary<String, Object?> {
+            ["tenant"] = tenant
+          }
+        );
+      }
+
+      results.Add(tenant, sortedConfigs);
+    }
+    return results;
+  }
+
+  private async Task<List<(Int16, String)>> GetSecretConfigurationsAsync(String nameSpace) {
+    var unsortedConfigs = new List<(Int16 order, String data)>();
+
+    if (this._kubeClient == null) {
+      throw new InvalidOperationException(
+        $"The method {nameof(GetSecretConfigurationsAsync)} cannot be called before the Kubernetes API client is initialized"
+      );
+    }
+
+    //Get secrets for this namespace and collect the sonar configuration.  Only one Secret should have sonar configuration
+    var secrets = await this._kubeClient.CoreV1.ListNamespacedSecretWithHttpMessagesAsync(nameSpace);
+    //Iterate over the secrets for this namespaces.
+    if (secrets != null) {
+      foreach (var v1Secret in secrets.Body.Items) {
+        //Get the labels to make sure Sonar is enabled for monitoring.  If no, go to the next secret
+        if (v1Secret == null) {
+          continue;
+        }
+
+        //Check that the secret hase the label sonar-config.  If no, go to the next secret
+        var labels = this.GetConfigurationLabels(v1Secret.Metadata);
+        if (!this.IsSonarConfigMap(labels)) {
+          continue;
+        }
+
+        //We have a secret in this namespace with sonar enabled and sonar-config set.
+        var order = this.GetConfigurationOrder(v1Secret.Metadata);
+        var data = this.GetServiceConfigurationFromSecret(v1Secret);
+        unsortedConfigs.Add((order, data));
       }
     }
 
-    return results;
+    return unsortedConfigs;
+  }
+
+  private String GetServiceConfigurationFromSecret(V1Secret secret) {
+    return secret.Data.ContainsKey(ServiceConfigurationFile) ?
+      Encoding.UTF8.GetString(secret.Data[ServiceConfigurationFile]) :
+      String.Empty;
   }
 
   public String GetTenantFromNamespaceConfig(V1Namespace namespaceConfig) {
@@ -317,13 +372,14 @@ public class ConfigurationHelper {
       namespaceConfig.Metadata.Name;
   }
 
-  private IDictionary<String, String> GetConfigMapLabels(V1ConfigMap map) {
-    var labels = map.Metadata.EnsureLabels();
-    this._logger.LogDebug("Found ConfigMap: {ConfigMap}, Labels: {Labels}",
-      map.Metadata.Name,
+  private IDictionary<String, String> GetConfigurationLabels(V1ObjectMeta meta) {
+    var labels = meta.EnsureLabels();
+    this._logger.LogDebug("Found Secret: {ConfigMap}, Labels: {Labels}",
+        meta.Name,
       String.Join(",", labels.Select(l => l.Key)));
     return labels;
   }
+
 
   private Boolean IsSonarConfigMap(IDictionary<String, String> configMapLabels) {
     if ((configMapLabels == null) ||
@@ -336,16 +392,16 @@ public class ConfigurationHelper {
   }
 
   private Int16 GetConfigurationOrder(
-    V1ConfigMap map,
-    IDictionary<String, String> labels) {
+    V1ObjectMeta meta
+    ) {
 
     // determine order from label, set to max value if order not specified
-    return labels.ContainsKey(ConfigOrderLabel) ?
-      Int16.Parse(map.Metadata.Labels[ConfigOrderLabel]) :
+    return meta.Labels.ContainsKey(ConfigOrderLabel) ?
+      Int16.Parse(meta.Labels[ConfigOrderLabel]) :
       Int16.MaxValue;
   }
 
-  public List<(Int16 order, String data)>? GetServiceConfigurationList(V1ConfigMapList configMaps) {
+  public List<(Int16 order, String data)> GetServiceConfigurationList(V1ConfigMapList configMaps) {
     var unsortedConfigs =
       new List<(Int16 order, String data)>();
 
@@ -353,18 +409,18 @@ public class ConfigurationHelper {
       if (map == null) {
         continue;
       }
-      var labels = this.GetConfigMapLabels(map);
+      var labels = this.GetConfigurationLabels(map.Metadata);
       if (!this.IsSonarConfigMap(labels)) {
         continue;
       }
 
-      var order = this.GetConfigurationOrder(map, labels);
+      var order = this.GetConfigurationOrder(map.Metadata);
 
       unsortedConfigs.Add((order, map.Data.ContainsKey(ServiceConfigurationFile) ?
         map.Data[ServiceConfigurationFile] : String.Empty));
     }
 
-    return unsortedConfigs.OrderBy(c => c.order).ToList();
+    return unsortedConfigs;
   }
 
   public ServiceHierarchyConfiguration? GetServicesHierarchy(

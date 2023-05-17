@@ -20,4 +20,12 @@ items:
       name: invalid-namespace-test
       labels:
         test-label: "test"
+  - apiVersion: v1
+    kind: Namespace
+    metadata:
+      name: secret-test-namespace
+      labels:
+        sonar-monitoring: "enabled"
+        sonar-monitoring/tenant: "baz2"
+        test-label: "secrettest"
 
