@@ -7,7 +7,7 @@ items:
       name: ado-namespace-1
       labels:
         sonar-monitoring: "enabled"
-        sonar-monitoring/tenant: "baz"
+        sonar-monitoring/tenant: "ado-1-tenant"
   - apiVersion: v1
     kind: Namespace
     metadata:
@@ -26,6 +26,7 @@ items:
       name: secret-test-namespace
       labels:
         sonar-monitoring: "enabled"
-        sonar-monitoring/tenant: "baz2"
+        sonar-config-secrets: "enabled"
+        sonar-monitoring/tenant: "secret-test-tenant"
         test-label: "secrettest"
 

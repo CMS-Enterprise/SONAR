@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Models;
@@ -27,8 +28,13 @@ public class KubernetesConfigSource : IServiceConfigSource {
   private const String ConfigOrderLabel = "sonar-config/order";
   private const String ServiceConfigurationFile = "service-config.json";
 
+  /// <summary>
+  ///   This label is set to "true" for namespaces where loading secrets is enabled.
+  /// </summary>
+  public const String SecretConfigLabel = "sonar-config-secrets";
   public const String NamespaceLabelSelector = "sonar-monitoring=enabled";
-  public const String ConfigMapLabelSelector = "sonar-config";
+  public const String ConfigLabel = "sonar-config";
+  public const String ConfigLabelSelector = "sonar-config=true";
 
   private readonly ILogger<KubernetesConfigSource> _logger;
   private readonly IKubernetes _kubeClient;
@@ -37,8 +43,8 @@ public class KubernetesConfigSource : IServiceConfigSource {
     new(StringComparer.OrdinalIgnoreCase);
 
   public KubernetesConfigSource(IKubernetes kubeClient, ILogger<KubernetesConfigSource> logger) {
-    this._logger = logger;
     this._kubeClient = kubeClient;
+    this._logger = logger;
   }
 
   public async IAsyncEnumerable<String> GetTenantsAsync(
@@ -74,15 +80,30 @@ public class KubernetesConfigSource : IServiceConfigSource {
       }
     }
 
+    var namespaceLabels = k8sNamespace.Metadata.Labels;
+
     var configMaps =
       await this._kubeClient.CoreV1.ListNamespacedConfigMapAsync(
         k8sNamespace.Metadata.Name,
+        labelSelector: ConfigLabelSelector,
         cancellationToken: cancellationToken
       );
 
-    foreach (var config in GetServiceConfigurationLayers(configMaps)) {
+    var secrets = SecretsEnabled(namespaceLabels) ?
+      (await this._kubeClient.CoreV1.ListNamespacedSecretAsync(
+        k8sNamespace.Metadata.Name,
+        labelSelector: ConfigLabelSelector,
+        cancellationToken: cancellationToken)).Items :
+      Enumerable.Empty<V1Secret>();
+
+    foreach (var config in GetServiceConfigurationLayers(tenant, configMaps.Items, secrets, this._logger)) {
       yield return config;
     }
+  }
+
+  public static Boolean SecretsEnabled(IDictionary<String, String> namespaceLabels) {
+    return namespaceLabels.TryGetValue(SecretConfigLabel, out var value) &&
+      String.Equals("enabled", value, StringComparison.OrdinalIgnoreCase);
   }
 
   private async Task<IEnumerable<(String NamespaceName, String TenantName)>> GetTenantNamespacesAsync(
@@ -120,49 +141,71 @@ public class KubernetesConfigSource : IServiceConfigSource {
       namespaceConfig.Metadata.Name;
   }
 
+  /// <summary>
+  ///   Processes lists of ConfigMaps and Secrets for the specified tenant, selecting those that are
+  ///   labeled as SONAR configuration, and ordering them according to the corresponding labels.
+  /// </summary>
   public static IEnumerable<ServiceHierarchyConfiguration> GetServiceConfigurationLayers(
-    V1ConfigMapList configMaps) {
+    String tenant,
+    IEnumerable<V1ConfigMap> configMaps,
+    IEnumerable<V1Secret> secrets,
+    ILogger logger) {
 
     var unsortedConfigs = new List<(Int16 order, String data)>();
 
-    foreach (var map in configMaps.Items) {
-      if (map == null) {
-        continue;
-      }
-
-      var labels = GetConfigMapLabels(map);
+    foreach (var map in configMaps) {
+      var labels = map.Metadata.EnsureLabels();
       if (!IsSonarConfigMap(labels)) {
         continue;
       }
 
-      var order = GetConfigurationOrder(map, labels);
+      if (!map.Data.TryGetValue(ServiceConfigurationFile, out var data)) {
+        logger.LogWarning(
+          "The ConfigMap {ConfigMap} for tenant {Tenant} is labeled as SONAR configuration, but it does not contain a {ServiceConfigurationKey} key",
+          map.Metadata.Name,
+          tenant,
+          ServiceConfigurationFile
+        );
+        continue;
+      }
 
-      unsortedConfigs.Add((order, map.Data.ContainsKey(ServiceConfigurationFile) ?
-        map.Data[ServiceConfigurationFile] :
-        String.Empty));
+      unsortedConfigs.Add((GetConfigurationOrder(labels), data));
+    }
+
+    foreach (var secret in secrets) {
+      var labels = secret.Metadata.EnsureLabels();
+      if (!IsSonarConfigMap(labels)) {
+        continue;
+      }
+
+      if (!secret.Data.TryGetValue(ServiceConfigurationFile, out var data)) {
+        logger.LogWarning(
+          "The Secret {Secret} for tenant {Tenant} is labeled as SONAR configuration, but it does not contain a {ServiceConfigurationKey} key",
+          secret.Metadata.Name,
+          tenant,
+          ServiceConfigurationFile
+        );
+        continue;
+      }
+
+      unsortedConfigs.Add((GetConfigurationOrder(labels), Encoding.UTF8.GetString(data)));
     }
 
     return unsortedConfigs.OrderBy(c => c.order)
       .Select(c => JsonServiceConfigDeserializer.Deserialize(c.data));
   }
 
-  private static IDictionary<String, String> GetConfigMapLabels(V1ConfigMap map) {
-    var labels = map.Metadata.EnsureLabels();
-    return labels;
-  }
-
   private static Boolean IsSonarConfigMap(IDictionary<String, String> configMapLabels) {
-    return configMapLabels.ContainsKey(ConfigMapLabelSelector) &&
-      (configMapLabels[ConfigMapLabelSelector] == "true");
+    return configMapLabels.ContainsKey(ConfigLabel) &&
+      (configMapLabels[ConfigLabel] == "true");
   }
 
   private static Int16 GetConfigurationOrder(
-    V1ConfigMap map,
     IDictionary<String, String> labels) {
 
     // determine order from label, set to max value if order not specified
     return labels.ContainsKey(ConfigOrderLabel) ?
-      Int16.Parse(map.Metadata.Labels[ConfigOrderLabel]) :
+      Int16.Parse(labels[ConfigOrderLabel]) :
       Int16.MaxValue;
   }
 }

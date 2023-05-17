@@ -7,12 +7,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Agent.Configuration;
 using Cms.BatCave.Sonar.Agent.HealthChecks;
-using Cms.BatCave.Sonar.Agent.HealthChecks.Metrics;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Enumeration;
-using Cms.BatCave.Sonar.Loki;
 using Cms.BatCave.Sonar.Models;
-using Cms.BatCave.Sonar.Prometheus;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -69,14 +66,30 @@ public class HealthCheckHelper {
       } catch (ApiException ex) {
         if (ex.StatusCode == 404) {
           //tenant no longer exists, breaking out of loop and exiting
-          this._logger.LogError(message: "Sonar Central reports Tenant {Tenant} does not exist.", tenant);
+          this._logger.LogInformation(
+            message: "SONAR API reports Tenant {Tenant} does not exist, health check worker exiting",
+            tenant
+          );
           break;
         }
-        this._logger.LogError(message: "Sonar Central reports Tenant {Tenant} an API error has occurred {Status} {ErrorMessage}", tenant, ex.StatusCode, ex.Message);
+        this._logger.LogError(
+          message: "SONAR API reports Tenant {Tenant} an API error has occurred {Status} {ErrorMessage}",
+          tenant,
+          ex.StatusCode,
+          ex.Message
+        );
       } catch (HttpRequestException ex) {
-        this._logger.LogError(message: "An network error occurred attempting to get tenant information {Tenant} from Sonar Central: {ExceptionMsg}", tenant, ex.Message);
+        this._logger.LogError(
+          message: "An network error occurred attempting to get tenant information {Tenant} from SONAR API: {ExceptionMsg}",
+          tenant,
+          ex.Message
+        );
       } catch (TaskCanceledException ex) {
-        this._logger.LogError(message: "HTTP request timed out attempting get tenant information {Tenant} from Sonar Central: {ExceptionMsg}", tenant, ex.Message);
+        this._logger.LogError(
+          message: "HTTP request timed out attempting get tenant information {Tenant} from SONAR API: {ExceptionMsg}",
+          tenant,
+          ex.Message
+        );
       }
 
       var pendingHealthChecks = new List<(String Service, String HealthCheck, Task<HealthStatus> Status)>();
@@ -220,13 +233,13 @@ public class HealthCheckHelper {
         e.Message
       );
     } catch (HttpRequestException ex) {
-      this._logger.LogError(message: "An network error occurred attempting to record status data for {Environment} {Tenant} in Sonar Central: {ExceptionMsg}", env, tenant, ex.Message);
+      this._logger.LogError(message: "An network error occurred attempting to record status data for {Environment} {Tenant} in SONAR API: {ExceptionMsg}", env, tenant, ex.Message);
     } catch (TaskCanceledException ex) {
       //First check to make sure this is not a local cancellation
       if (token.IsCancellationRequested) {
-        this._logger.LogError(message: "Local client has cancelled the request to record status data for {Environment} {Tenant} in Sonar Central: {ExceptionMsg}", env, tenant, ex.Message);
+        this._logger.LogError(message: "Local client has cancelled the request to record status data for {Environment} {Tenant} in SONAR API: {ExceptionMsg}", env, tenant, ex.Message);
       } else {
-        this._logger.LogError(message: "HTTP request timed out attempting to record status data for {Environment} {Tenant} in Sonar Central: {ExceptionMsg}", env, tenant, ex.Message);
+        this._logger.LogError(message: "HTTP request timed out attempting to record status data for {Environment} {Tenant} in SONAR API: {ExceptionMsg}", env, tenant, ex.Message);
       }
     }
   }
