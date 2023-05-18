@@ -2,14 +2,15 @@ import { Theme } from '@emotion/react';
 
 export const LightTheme : Theme = {
   name: 'Light',
-  foregroundColor: '#3e3e3e',
-  highlightColor: '#3c8ccb',
-  backgroundColor: '#fff',
-  accentColor: '#e4e3e2',
+  textColor: '#5A5A5A',
+  foregroundColor: '#FFF',
+  highlightColor: '#F2F2F2',
+  backgroundColor: '#F2F2F2',
+  accentColor: '#0071BC',
   sonarColors: {
     sonarGreen: '#12890E',
-    sonarGrey: '#808080',
-    sonarGold: '#f8C41F',
+    sonarGrey: '#D9D9D9',
+    sonarGold: '#F9CA35',
     sonarOrange: '#F89D0B',
     sonarRed: '#E31C3D'
   }
@@ -17,14 +18,15 @@ export const LightTheme : Theme = {
 
 export const DarkTheme : Theme = {
   name: 'Dark',
-  foregroundColor: '#eee',
-  highlightColor: '#fed368',
-  backgroundColor: '#222831',
-  accentColor: '#4b515a',
+  textColor: '#F2F2F2',
+  foregroundColor: '#262626',
+  highlightColor: '#5A5A5A',
+  backgroundColor: '#393E46',
+  accentColor: '#FFD369',
   sonarColors: {
     sonarGreen: '#12890E',
-    sonarGrey: '#808080',
-    sonarGold: '#f8C41F',
+    sonarGrey: '#D9D9D9',
+    sonarGold: '#F9CA35',
     sonarOrange: '#F89D0B',
     sonarRed: '#E31C3D'
   }

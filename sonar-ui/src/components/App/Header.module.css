@@ -1,20 +1,52 @@
+.navBar {
+  margin: 15px 50px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.siteTitle {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.navBarRightSide {
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+}
+
+.navLink {
+  margin-right: 40px;
+}
+
 .themeToggle:global(.react-toggle--checked) :global(.react-toggle-track) {
-  background-color: var(--light-accent-color);
-  color: var(--light-foreground-color);
+  background-color: #F2F2F2;
+  color: #3E3E3E;
 }
 
 .themeToggle :global(.react-toggle-track) {
-  background-color: var(--dark-accent-color);
-  color: var(--dark-foreground-color);
+  background-color: #3E3E3E;
+  color: #F2F2F2;
 }
 
 .themeToggle:global(.react-toggle--checked):hover :global(.react-toggle-track) {
   /* !important is necessary to override the default for the toggle component */
-  background-color: var(--dark-highlight-color) !important;
-  color: var(--light-foreground-color);
+  background-color: #FFD369 !important;
+  color: #3E3E3E;
 }
 
 .themeToggle:hover :global(.react-toggle-track) {
-  background-color: var(--light-highlight-color) !important;
-  color: var(--dark-foreground-color);
+  background-color: #0071BC !important;
+  color: #F2F2F2;
+}
+
+.themeToggle:global(.react-toggle--checked) :global(.react-toggle-thumb) {
+  box-shadow: none;
+  border-color: #3E3E3E;
+}
+
+.themeToggle :global(.react-toggle-thumb) {
+  box-shadow: none;
+  border-color: #3E3E3E;
 }

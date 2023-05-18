@@ -24,8 +24,7 @@ function App() {
           <Header enableDarkTheme={enableDarkTheme} setEnableDarkTheme={setEnableDarkTheme} />
           <div>
             <Routes>
-              <Route path="/" element={null} />
-              <Route path="/environments" element={<Environments />} />
+              <Route path="/" element={<Environments />} />
               <Route path="/services" element={<Services />} />
             </Routes>
           </div>

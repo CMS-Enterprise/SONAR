@@ -21,32 +21,23 @@ const Header = (props: HeaderProps) => {
 
   return (
     <header>
-      <nav>
-        <ul>
-          <li>
-            <Link to="/">Home</Link>
-          </li>
-          <li>
-            <Link to="/environments">Environments</Link>
-          </li>
-          <li>
-            <Link to="/services">Services</Link>
-          </li>
-        </ul>
+      <nav className={classes.navBar}>
+        <a href="/" className={classes.siteTitle}>SONAR</a>
+        <div className={classes.navBarRightSide}>
+          <a href="/" className={classes.navLink}>HOME</a>
+          <label>
+            <Toggle
+              defaultChecked={props.enableDarkTheme}
+              className={classes.themeToggle}
+              aria-label="Enable the Dark Theme"
+              icons={{
+                checked: <LightIcon style={ToggleIconStyle} />,
+                unchecked: <DarkIcon style={ToggleIconStyle} />
+              }}
+              onChange={handleThemeChange} />
+          </label>
+        </div>
       </nav>
-      <aside>
-        <label>
-        <Toggle
-          defaultChecked={props.enableDarkTheme}
-          className={classes.themeToggle}
-          aria-label="Enable the Dark Theme"
-          icons={{
-            checked: <LightIcon style={ToggleIconStyle} />,
-            unchecked: <DarkIcon style={ToggleIconStyle} />
-          }}
-          onChange={handleThemeChange} />
-        </label>
-      </aside>
     </header>
   )
 }
