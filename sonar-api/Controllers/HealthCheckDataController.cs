@@ -117,7 +117,7 @@ public class HealthCheckDataController : ControllerBase {
   /// <exception cref="BadRequestException">If the Prometheus request is invalid.</exception>
   /// <exception cref="InternalServerErrorException">If there's any other problem calling Prometheus.</exception>
   [HttpGet("{environment}/tenants/{tenant}/services/{service}/health-check/{healthCheck}", Name = "GetHealthCheckData")]
-  [ProducesResponseType(typeof(IImmutableList<(DateTime, Double)>), statusCode: (Int32)HttpStatusCode.OK)]
+  [ProducesResponseType(typeof(MetricDataCollection), statusCode: (Int32)HttpStatusCode.OK)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: (Int32)HttpStatusCode.BadRequest)]
   public async Task<IActionResult> GetHealthCheckData(
     [FromRoute] String environment,
@@ -148,6 +148,6 @@ public class HealthCheckDataController : ControllerBase {
       end: queryEnd.Value,
       cancellationToken);
 
-    return this.Ok(timestampedHealthCheckMetrics);
+    return this.Ok(new MetricDataCollection(timestampedHealthCheckMetrics));
   }
 }

@@ -12,8 +12,8 @@
 import {
   ApiKeyConfiguration,
   ApiKeyDetails,
-  DateTimeDoubleValueTuple,
   EnvironmentHealth,
+  MetricDataCollection,
   ProblemDetails,
   ServiceHealth,
   ServiceHealthData,
@@ -256,12 +256,15 @@ tenant, and service in Prometheus. Filters out stale and out-of-order samples pr
       ...params,
     });
   /**
-   * No description
-   *
-   * @tags HealthCheckData
-   * @name GetHealthCheckData
-   * @request GET:/api/v2/health-check-data/{environment}/tenants/{tenant}/services/{service}/health-check/{healthCheck}
-   */
+ * No description
+ *
+ * @tags HealthCheckData
+ * @name GetHealthCheckData
+ * @summary Retrieves the given raw Cms.BatCave.Sonar.Models.ServiceHealthData time series samples for the given environment,
+tenant, service, and health check in Prometheus. Filters out samples outside of the given start and end date time
+(or if those are not given, filters out samples from more than 10 minutes ago UTC) prior to calling P8s.
+ * @request GET:/api/v2/health-check-data/{environment}/tenants/{tenant}/services/{service}/health-check/{healthCheck}
+ */
   getHealthCheckData = (
     environment: string,
     tenant: string,
@@ -275,7 +278,7 @@ tenant, and service in Prometheus. Filters out stale and out-of-order samples pr
     },
     params: RequestParams = {},
   ) =>
-    this.request<DateTimeDoubleValueTuple[], ProblemDetails>({
+    this.request<MetricDataCollection, ProblemDetails>({
       path: `/api/v2/health-check-data/${environment}/tenants/${tenant}/services/${service}/health-check/${healthCheck}`,
       method: "GET",
       query: query,

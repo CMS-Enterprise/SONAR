@@ -10,14 +10,18 @@
  */
 
 export interface ApiKeyConfiguration {
-  apiKey?: string | null;
-  apiKeyType?: ApiKeyType;
+  /**
+   * @minLength 0
+   * @maxLength 44
+   */
+  apiKey: string;
+  apiKeyType: ApiKeyType;
   environment?: string | null;
   tenant?: string | null;
 }
 
 export interface ApiKeyDetails {
-  apiKeyType?: ApiKeyType;
+  apiKeyType: ApiKeyType;
   environment?: string | null;
   tenant?: string | null;
 }
@@ -40,7 +44,8 @@ export type DateTimeDoubleValueTuple = (string | number)[];
 export type DateTimeHealthStatusValueTuple = (string | HealthStatus)[];
 
 export interface EnvironmentHealth {
-  environmentName?: string | null;
+  /** @minLength 1 */
+  environmentName: string;
   /** @format date-time */
   timestamp?: string | null;
   aggregateStatus?: HealthStatus;
@@ -49,10 +54,15 @@ export interface EnvironmentHealth {
 export type HealthCheckDefinition = object;
 
 export interface HealthCheckModel {
-  name?: string | null;
+  /**
+   * @minLength 0
+   * @maxLength 100
+   * @pattern ^[0-9a-zA-Z_-]+$
+   */
+  name: string;
   description?: string | null;
-  type?: HealthCheckType;
-  definition?: HealthCheckDefinition;
+  type: HealthCheckType;
+  definition: HealthCheckDefinition;
 }
 
 export enum HealthCheckType {
@@ -69,6 +79,10 @@ export enum HealthStatus {
   Offline = "Offline",
 }
 
+export interface MetricDataCollection {
+  timeSeries: DateTimeDoubleValueTuple[];
+}
+
 export interface ProblemDetails {
   type?: string | null;
   title?: string | null;
@@ -80,8 +94,14 @@ export interface ProblemDetails {
 }
 
 export interface ServiceConfiguration {
-  name?: string | null;
-  displayName?: string | null;
+  /**
+   * @minLength 0
+   * @maxLength 100
+   * @pattern ^[0-9a-zA-Z_-]+$
+   */
+  name: string;
+  /** @minLength 1 */
+  displayName: string;
   description?: string | null;
   /** @format uri */
   url?: string | null;
@@ -91,13 +111,13 @@ export interface ServiceConfiguration {
 
 export interface ServiceHealth {
   /** @format date-time */
-  timestamp?: string;
-  aggregateStatus?: HealthStatus;
-  healthChecks?: Record<string, HealthStatus>;
+  timestamp: string;
+  aggregateStatus: HealthStatus;
+  healthChecks: Record<string, HealthStatus>;
 }
 
 export interface ServiceHealthData {
-  healthCheckSamples?: Record<string, DateTimeDoubleValueTuple[]>;
+  healthCheckSamples: Record<string, DateTimeDoubleValueTuple[]>;
   /** @format int32 */
   totalHealthChecks?: number;
   /** @format int32 */
@@ -105,13 +125,15 @@ export interface ServiceHealthData {
 }
 
 export interface ServiceHierarchyConfiguration {
-  services?: ServiceConfiguration[] | null;
-  rootServices?: string[] | null;
+  services: ServiceConfiguration[];
+  rootServices: string[];
 }
 
 export interface ServiceHierarchyHealth {
-  name?: string | null;
-  displayName?: string | null;
+  /** @minLength 1 */
+  name: string;
+  /** @minLength 1 */
+  displayName: string;
   description?: string | null;
   /** @format uri */
   url?: string | null;
@@ -123,8 +145,10 @@ export interface ServiceHierarchyHealth {
 }
 
 export interface ServiceHierarchyHealthHistory {
-  name?: string | null;
-  displayName?: string | null;
+  /** @minLength 1 */
+  name: string;
+  /** @minLength 1 */
+  displayName: string;
   description?: string | null;
   /** @format uri */
   url?: string | null;
@@ -133,8 +157,10 @@ export interface ServiceHierarchyHealthHistory {
 }
 
 export interface TenantHealth {
-  environmentName?: string | null;
-  tenantName?: string | null;
+  /** @minLength 1 */
+  environmentName: string;
+  /** @minLength 1 */
+  tenantName: string;
   /** @format date-time */
   timestamp?: string | null;
   aggregateStatus?: HealthStatus;
@@ -175,11 +201,12 @@ export interface TimeSpan {
 }
 
 export interface UptimeModel {
-  name?: string | null;
+  /** @minLength 1 */
+  name: string;
   /** @format double */
-  percentUptime?: number;
-  totalUptime?: TimeSpan;
-  currentUptime?: TimeSpan;
-  unknownDuration?: TimeSpan;
-  children?: UptimeModel[] | null;
+  percentUptime: number;
+  totalUptime: TimeSpan;
+  currentUptime: TimeSpan;
+  unknownDuration: TimeSpan;
+  children: UptimeModel[];
 }

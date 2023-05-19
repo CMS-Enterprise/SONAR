@@ -33,7 +33,7 @@ const HealthCheckListItem: React.FC<{
   const healthCheckData = useQuery<DateTimeDoubleValueTuple[], Error>({
     queryKey: ['HealthCheckData-'+healthCheckName],
     queryFn: () => sonarClient.getHealthCheckData(environmentName, tenantName, rootServiceName ? rootServiceName : "", healthCheckName)
-      .then((res) => res.data
+      .then((res) => res.data.timeSeries
       )
     }
   )

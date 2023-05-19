@@ -45,7 +45,7 @@ namespace Cms.BatCave.Sonar.Agent
         /// <param name="body">The API key ,type and, if they exist, environment and tenant.</param>
         /// <returns>The API key configuration led to a successful update.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiKeyConfiguration> KeysPUTAsync(ApiKeyConfiguration body);
+        System.Threading.Tasks.Task<ApiKeyDetails> KeysPUTAsync(ApiKeyConfiguration body);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <summary>
@@ -54,7 +54,7 @@ namespace Cms.BatCave.Sonar.Agent
         /// <param name="body">The API key ,type and, if they exist, environment and tenant.</param>
         /// <returns>The API key configuration led to a successful update.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiKeyConfiguration> KeysPUTAsync(ApiKeyConfiguration body, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task<ApiKeyDetails> KeysPUTAsync(ApiKeyConfiguration body, System.Threading.CancellationToken cancellationToken);
 
         /// <summary>
         /// Deletes existing API key.
@@ -231,6 +231,93 @@ namespace Cms.BatCave.Sonar.Agent
         /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task<ServiceHealthData> RecordHealthCheckDataAsync(string environment, string tenant, string service, ServiceHealthData body, System.Threading.CancellationToken cancellationToken);
 
+        /// <summary>
+        /// Retrieves the given raw Cms.BatCave.Sonar.Models.ServiceHealthData time series samples for the given environment,
+        /// <br/>tenant, service, and health check in Prometheus. Filters out samples outside of the given start and end date time
+        /// <br/>(or if those are not given, filters out samples from more than 10 minutes ago UTC) prior to calling P8s.
+        /// </summary>
+        /// <param name="environment">The environment to get timestamps for.</param>
+        /// <param name="tenant">The tenant to get timestamps for.</param>
+        /// <param name="service">The service to get timestamps for.</param>
+        /// <param name="healthCheck">The name of the health check to get timestamps for.</param>
+        /// <returns>Success</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<MetricDataCollection> GetHealthCheckDataAsync(string environment, string tenant, string service, string healthCheck, System.DateTimeOffset? queryStart, System.DateTimeOffset? queryEnd);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Retrieves the given raw Cms.BatCave.Sonar.Models.ServiceHealthData time series samples for the given environment,
+        /// <br/>tenant, service, and health check in Prometheus. Filters out samples outside of the given start and end date time
+        /// <br/>(or if those are not given, filters out samples from more than 10 minutes ago UTC) prior to calling P8s.
+        /// </summary>
+        /// <param name="environment">The environment to get timestamps for.</param>
+        /// <param name="tenant">The tenant to get timestamps for.</param>
+        /// <param name="service">The service to get timestamps for.</param>
+        /// <param name="healthCheck">The name of the health check to get timestamps for.</param>
+        /// <returns>Success</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<MetricDataCollection> GetHealthCheckDataAsync(string environment, string tenant, string service, string healthCheck, System.DateTimeOffset? queryStart, System.DateTimeOffset? queryEnd, System.Threading.CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Get the health history for all services within the specified Tenant.
+        /// </summary>
+        /// <param name="start">The queries first evaluation time.  The start and end time cannot be greater
+        /// <br/>than 24 hours (default is current time)</param>
+        /// <param name="end">The queries evaluation time stops on or before this time.  The start and end time
+        /// <br/>cannot be greater than 24 hours (default is current time minus 1 hour)</param>
+        /// <param name="step">The number of seconds that is incremented on each step.  Step cannot be greater
+        /// <br/>than 3600 (default 30)</param>
+        /// <returns>Success</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<System.Collections.Generic.ICollection<ServiceHierarchyHealthHistory>> GetServicesHealthHistoryAsync(string environment, string tenant, System.DateTimeOffset? start, System.DateTimeOffset? end, int? step);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Get the health history for all services within the specified Tenant.
+        /// </summary>
+        /// <param name="start">The queries first evaluation time.  The start and end time cannot be greater
+        /// <br/>than 24 hours (default is current time)</param>
+        /// <param name="end">The queries evaluation time stops on or before this time.  The start and end time
+        /// <br/>cannot be greater than 24 hours (default is current time minus 1 hour)</param>
+        /// <param name="step">The number of seconds that is incremented on each step.  Step cannot be greater
+        /// <br/>than 3600 (default 30)</param>
+        /// <returns>Success</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<System.Collections.Generic.ICollection<ServiceHierarchyHealthHistory>> GetServicesHealthHistoryAsync(string environment, string tenant, System.DateTimeOffset? start, System.DateTimeOffset? end, int? step, System.Threading.CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Get the health history for a specific service, specified by its path in the service hierarchy.
+        /// </summary>
+        /// <remarks>
+        /// Get the health history for a specific service and its children.
+        /// </remarks>
+        /// <param name="start">The queries first evaluation time.  The start and end time cannot be greater
+        /// <br/>than 24 hours (default is current time)</param>
+        /// <param name="end">The queries evaluation time stops on or before this time.  The start and end time
+        /// <br/>cannot be greater than 24 hours (default is current time minus 1 hour)</param>
+        /// <param name="step">The number of seconds that is incremented on each step.  Step cannot be greater
+        /// <br/>than 3600 (default 30)</param>
+        /// <returns>Success</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<ServiceHierarchyHealthHistory> GetServiceHealthHistoryAsync(string environment, string tenant, string servicePath, System.DateTimeOffset? start, System.DateTimeOffset? end, int? step);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Get the health history for a specific service, specified by its path in the service hierarchy.
+        /// </summary>
+        /// <remarks>
+        /// Get the health history for a specific service and its children.
+        /// </remarks>
+        /// <param name="start">The queries first evaluation time.  The start and end time cannot be greater
+        /// <br/>than 24 hours (default is current time)</param>
+        /// <param name="end">The queries evaluation time stops on or before this time.  The start and end time
+        /// <br/>cannot be greater than 24 hours (default is current time minus 1 hour)</param>
+        /// <param name="step">The number of seconds that is incremented on each step.  Step cannot be greater
+        /// <br/>than 3600 (default 30)</param>
+        /// <returns>Success</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<ServiceHierarchyHealthHistory> GetServiceHealthHistoryAsync(string environment, string tenant, string servicePath, System.DateTimeOffset? start, System.DateTimeOffset? end, int? step, System.Threading.CancellationToken cancellationToken);
+
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task<System.Collections.Generic.ICollection<TenantHealth>> GetTenantsAsync();
@@ -402,7 +489,7 @@ namespace Cms.BatCave.Sonar.Agent
         /// <param name="body">The API key ,type and, if they exist, environment and tenant.</param>
         /// <returns>The API key configuration led to a successful update.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<ApiKeyConfiguration> KeysPUTAsync(ApiKeyConfiguration body)
+        public virtual System.Threading.Tasks.Task<ApiKeyDetails> KeysPUTAsync(ApiKeyConfiguration body)
         {
             return KeysPUTAsync(body, System.Threading.CancellationToken.None);
         }
@@ -414,7 +501,7 @@ namespace Cms.BatCave.Sonar.Agent
         /// <param name="body">The API key ,type and, if they exist, environment and tenant.</param>
         /// <returns>The API key configuration led to a successful update.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiKeyConfiguration> KeysPUTAsync(ApiKeyConfiguration body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<ApiKeyDetails> KeysPUTAsync(ApiKeyConfiguration body, System.Threading.CancellationToken cancellationToken)
         {
             var urlBuilder_ = new System.Text.StringBuilder();
             urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/api/v2/keys");
@@ -455,7 +542,7 @@ namespace Cms.BatCave.Sonar.Agent
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<ApiKeyConfiguration>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<ApiKeyDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -1651,6 +1738,421 @@ namespace Cms.BatCave.Sonar.Agent
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 500)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Server Error", status_, responseText_, headers_, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Retrieves the given raw Cms.BatCave.Sonar.Models.ServiceHealthData time series samples for the given environment,
+        /// <br/>tenant, service, and health check in Prometheus. Filters out samples outside of the given start and end date time
+        /// <br/>(or if those are not given, filters out samples from more than 10 minutes ago UTC) prior to calling P8s.
+        /// </summary>
+        /// <param name="environment">The environment to get timestamps for.</param>
+        /// <param name="tenant">The tenant to get timestamps for.</param>
+        /// <param name="service">The service to get timestamps for.</param>
+        /// <param name="healthCheck">The name of the health check to get timestamps for.</param>
+        /// <returns>Success</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<MetricDataCollection> GetHealthCheckDataAsync(string environment, string tenant, string service, string healthCheck, System.DateTimeOffset? queryStart, System.DateTimeOffset? queryEnd)
+        {
+            return GetHealthCheckDataAsync(environment, tenant, service, healthCheck, queryStart, queryEnd, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Retrieves the given raw Cms.BatCave.Sonar.Models.ServiceHealthData time series samples for the given environment,
+        /// <br/>tenant, service, and health check in Prometheus. Filters out samples outside of the given start and end date time
+        /// <br/>(or if those are not given, filters out samples from more than 10 minutes ago UTC) prior to calling P8s.
+        /// </summary>
+        /// <param name="environment">The environment to get timestamps for.</param>
+        /// <param name="tenant">The tenant to get timestamps for.</param>
+        /// <param name="service">The service to get timestamps for.</param>
+        /// <param name="healthCheck">The name of the health check to get timestamps for.</param>
+        /// <returns>Success</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<MetricDataCollection> GetHealthCheckDataAsync(string environment, string tenant, string service, string healthCheck, System.DateTimeOffset? queryStart, System.DateTimeOffset? queryEnd, System.Threading.CancellationToken cancellationToken)
+        {
+            if (environment == null)
+                throw new System.ArgumentNullException("environment");
+
+            if (tenant == null)
+                throw new System.ArgumentNullException("tenant");
+
+            if (service == null)
+                throw new System.ArgumentNullException("service");
+
+            if (healthCheck == null)
+                throw new System.ArgumentNullException("healthCheck");
+
+            var urlBuilder_ = new System.Text.StringBuilder();
+            urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/api/v2/health-check-data/{environment}/tenants/{tenant}/services/{service}/health-check/{healthCheck}?");
+            urlBuilder_.Replace("{environment}", System.Uri.EscapeDataString(ConvertToString(environment, System.Globalization.CultureInfo.InvariantCulture)));
+            urlBuilder_.Replace("{tenant}", System.Uri.EscapeDataString(ConvertToString(tenant, System.Globalization.CultureInfo.InvariantCulture)));
+            urlBuilder_.Replace("{service}", System.Uri.EscapeDataString(ConvertToString(service, System.Globalization.CultureInfo.InvariantCulture)));
+            urlBuilder_.Replace("{healthCheck}", System.Uri.EscapeDataString(ConvertToString(healthCheck, System.Globalization.CultureInfo.InvariantCulture)));
+            if (queryStart != null)
+            {
+                urlBuilder_.Append(System.Uri.EscapeDataString("queryStart") + "=").Append(System.Uri.EscapeDataString(queryStart.Value.ToString("s", System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            }
+            if (queryEnd != null)
+            {
+                urlBuilder_.Append(System.Uri.EscapeDataString("queryEnd") + "=").Append(System.Uri.EscapeDataString(queryEnd.Value.ToString("s", System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            }
+            urlBuilder_.Length--;
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<MetricDataCollection>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Get the health history for all services within the specified Tenant.
+        /// </summary>
+        /// <param name="start">The queries first evaluation time.  The start and end time cannot be greater
+        /// <br/>than 24 hours (default is current time)</param>
+        /// <param name="end">The queries evaluation time stops on or before this time.  The start and end time
+        /// <br/>cannot be greater than 24 hours (default is current time minus 1 hour)</param>
+        /// <param name="step">The number of seconds that is incremented on each step.  Step cannot be greater
+        /// <br/>than 3600 (default 30)</param>
+        /// <returns>Success</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<System.Collections.Generic.ICollection<ServiceHierarchyHealthHistory>> GetServicesHealthHistoryAsync(string environment, string tenant, System.DateTimeOffset? start, System.DateTimeOffset? end, int? step)
+        {
+            return GetServicesHealthHistoryAsync(environment, tenant, start, end, step, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Get the health history for all services within the specified Tenant.
+        /// </summary>
+        /// <param name="start">The queries first evaluation time.  The start and end time cannot be greater
+        /// <br/>than 24 hours (default is current time)</param>
+        /// <param name="end">The queries evaluation time stops on or before this time.  The start and end time
+        /// <br/>cannot be greater than 24 hours (default is current time minus 1 hour)</param>
+        /// <param name="step">The number of seconds that is incremented on each step.  Step cannot be greater
+        /// <br/>than 3600 (default 30)</param>
+        /// <returns>Success</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<ServiceHierarchyHealthHistory>> GetServicesHealthHistoryAsync(string environment, string tenant, System.DateTimeOffset? start, System.DateTimeOffset? end, int? step, System.Threading.CancellationToken cancellationToken)
+        {
+            if (environment == null)
+                throw new System.ArgumentNullException("environment");
+
+            if (tenant == null)
+                throw new System.ArgumentNullException("tenant");
+
+            var urlBuilder_ = new System.Text.StringBuilder();
+            urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/api/v2/health-history/{environment}/tenants/{tenant}?");
+            urlBuilder_.Replace("{environment}", System.Uri.EscapeDataString(ConvertToString(environment, System.Globalization.CultureInfo.InvariantCulture)));
+            urlBuilder_.Replace("{tenant}", System.Uri.EscapeDataString(ConvertToString(tenant, System.Globalization.CultureInfo.InvariantCulture)));
+            if (start != null)
+            {
+                urlBuilder_.Append(System.Uri.EscapeDataString("start") + "=").Append(System.Uri.EscapeDataString(start.Value.ToString("s", System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            }
+            if (end != null)
+            {
+                urlBuilder_.Append(System.Uri.EscapeDataString("end") + "=").Append(System.Uri.EscapeDataString(end.Value.ToString("s", System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            }
+            if (step != null)
+            {
+                urlBuilder_.Append(System.Uri.EscapeDataString("step") + "=").Append(System.Uri.EscapeDataString(ConvertToString(step, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            }
+            urlBuilder_.Length--;
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<ServiceHierarchyHealthHistory>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 404)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Not Found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 500)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("Server Error", status_, responseText_, headers_, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Get the health history for a specific service, specified by its path in the service hierarchy.
+        /// </summary>
+        /// <remarks>
+        /// Get the health history for a specific service and its children.
+        /// </remarks>
+        /// <param name="start">The queries first evaluation time.  The start and end time cannot be greater
+        /// <br/>than 24 hours (default is current time)</param>
+        /// <param name="end">The queries evaluation time stops on or before this time.  The start and end time
+        /// <br/>cannot be greater than 24 hours (default is current time minus 1 hour)</param>
+        /// <param name="step">The number of seconds that is incremented on each step.  Step cannot be greater
+        /// <br/>than 3600 (default 30)</param>
+        /// <returns>Success</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<ServiceHierarchyHealthHistory> GetServiceHealthHistoryAsync(string environment, string tenant, string servicePath, System.DateTimeOffset? start, System.DateTimeOffset? end, int? step)
+        {
+            return GetServiceHealthHistoryAsync(environment, tenant, servicePath, start, end, step, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Get the health history for a specific service, specified by its path in the service hierarchy.
+        /// </summary>
+        /// <remarks>
+        /// Get the health history for a specific service and its children.
+        /// </remarks>
+        /// <param name="start">The queries first evaluation time.  The start and end time cannot be greater
+        /// <br/>than 24 hours (default is current time)</param>
+        /// <param name="end">The queries evaluation time stops on or before this time.  The start and end time
+        /// <br/>cannot be greater than 24 hours (default is current time minus 1 hour)</param>
+        /// <param name="step">The number of seconds that is incremented on each step.  Step cannot be greater
+        /// <br/>than 3600 (default 30)</param>
+        /// <returns>Success</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<ServiceHierarchyHealthHistory> GetServiceHealthHistoryAsync(string environment, string tenant, string servicePath, System.DateTimeOffset? start, System.DateTimeOffset? end, int? step, System.Threading.CancellationToken cancellationToken)
+        {
+            if (environment == null)
+                throw new System.ArgumentNullException("environment");
+
+            if (tenant == null)
+                throw new System.ArgumentNullException("tenant");
+
+            if (servicePath == null)
+                throw new System.ArgumentNullException("servicePath");
+
+            var urlBuilder_ = new System.Text.StringBuilder();
+            urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/api/v2/health-history/{environment}/tenants/{tenant}/services/{servicePath}?");
+            urlBuilder_.Replace("{environment}", System.Uri.EscapeDataString(ConvertToString(environment, System.Globalization.CultureInfo.InvariantCulture)));
+            urlBuilder_.Replace("{tenant}", System.Uri.EscapeDataString(ConvertToString(tenant, System.Globalization.CultureInfo.InvariantCulture)));
+            urlBuilder_.Replace("{servicePath}", System.Uri.EscapeDataString(ConvertToString(servicePath, System.Globalization.CultureInfo.InvariantCulture)));
+            if (start != null)
+            {
+                urlBuilder_.Append(System.Uri.EscapeDataString("start") + "=").Append(System.Uri.EscapeDataString(start.Value.ToString("s", System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            }
+            if (end != null)
+            {
+                urlBuilder_.Append(System.Uri.EscapeDataString("end") + "=").Append(System.Uri.EscapeDataString(end.Value.ToString("s", System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            }
+            if (step != null)
+            {
+                urlBuilder_.Append(System.Uri.EscapeDataString("step") + "=").Append(System.Uri.EscapeDataString(ConvertToString(step, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            }
+            urlBuilder_.Length--;
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ServiceHierarchyHealthHistory>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 404)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Not Found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 400)
