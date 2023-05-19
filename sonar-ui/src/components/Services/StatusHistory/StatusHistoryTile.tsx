@@ -11,12 +11,12 @@ const StatusHistoryTile: React.FC<{
   addTimestamp: (tupleData: DateTimeHealthStatusValueTuple, tileId: string, serviceData: ServiceHierarchyHealth) => void,
   closeDrawer: () => void,
   selectedTileId: string,
-  rootService: ServiceHierarchyHealth
-}> = ({ id, statusTimestampTuple, addTimestamp, closeDrawer, selectedTileId, rootService }) => {
+  serviceHealth: ServiceHierarchyHealth
+}> = ({ id, statusTimestampTuple, addTimestamp, closeDrawer, selectedTileId, serviceHealth }) => {
   const theme = useTheme();
   const handleSelect = () => {
     if (selectedTileId !== id) {
-      addTimestamp(statusTimestampTuple, id, rootService);
+      addTimestamp(statusTimestampTuple, id, serviceHealth);
     } else {
       // close drawer
       closeDrawer();

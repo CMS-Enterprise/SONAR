@@ -17,46 +17,53 @@ const StatusHistoryModule: React.FC<{
   addTimestamp: (tupleData: DateTimeHealthStatusValueTuple, tileId: string, serviceData: ServiceHierarchyHealth) => void,
   closeDrawer: () => void,
   selectedTileId: string,
-  rootService: ServiceHierarchyHealth,
+  servicePath: string[],
+  serviceHealth: ServiceHierarchyHealth,
   environmentName: string,
   tenantName: string
-}> = ({ addTimestamp, closeDrawer, selectedTileId, rootService, environmentName, tenantName }) => {
-  // store rootService name
-  const rootServiceName = rootService.name ? rootService.name : "";
-  const sonarClient = createSonarClient();
+}> =
+  ({
+    addTimestamp,
+    closeDrawer,
+    selectedTileId,
+    servicePath,
+    serviceHealth,
+    environmentName,
+    tenantName
+  }) => {
+    const sonarClient = createSonarClient();
 
-  const { isLoading, isError, data, error } = useQuery<ServiceHierarchyHealthHistory, Error>(
-    ["statusHistory", environmentName, tenantName, rootServiceName],
-    () => sonarClient.getServiceHealthHistory(environmentName, tenantName, rootServiceName, calculateHistoryRange())
-      .then((res: HttpResponse<ServiceHierarchyHealthHistory, ProblemDetails | void>) => {
-        console.log(res.data);
-        return res.data;
-      })
-  );
+    const { isLoading, isError, data, error } = useQuery<ServiceHierarchyHealthHistory, Error>(
+      ['statusHistory', environmentName, tenantName, servicePath.join('/')],
+      () => sonarClient.getServiceHealthHistory(environmentName, tenantName, servicePath.join('/'), calculateHistoryRange())
+        .then((res: HttpResponse<ServiceHierarchyHealthHistory, ProblemDetails | void>) => {
+          console.log(res.data);
+          return res.data;
+        })
+    );
 
-  return (
-    <>
-      <div css={getContainerStyle()} >
-        Status History:
-      </div>
-      {isLoading ? (<Spinner />) : (
-        <div css={getContainerStyle()} >
-          {data?.aggregateStatus?.map((item, index) => (
-            <StatusHistoryTile
-              key={`${rootServiceName}-${index}`}
-              id={`${rootServiceName}-${index}`}
-              statusTimestampTuple={item}
-              addTimestamp={addTimestamp}
-              closeDrawer={closeDrawer}
-              selectedTileId={selectedTileId}
-              rootService={rootService}
-            />
-          ))}
+    return (
+      <>
+        <div css={getContainerStyle()}>
+          Status History:
         </div>
-      )}
-    </>
-
-  )
-}
+        {isLoading ? (<Spinner />) : (
+          <div css={getContainerStyle()}>
+            {data?.aggregateStatus?.map((item, index) => (
+              <StatusHistoryTile
+                key={`${serviceHealth.name}-${index}`}
+                id={`${serviceHealth.name}-${index}`}
+                statusTimestampTuple={item}
+                addTimestamp={addTimestamp}
+                closeDrawer={closeDrawer}
+                selectedTileId={selectedTileId}
+                serviceHealth={serviceHealth}
+              />
+            ))}
+          </div>
+        )}
+      </>
+    );
+  };
 
 export default StatusHistoryModule;

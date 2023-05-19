@@ -3,7 +3,7 @@ import React from 'react';
 import { Accordion } from '@cmsgov/design-system';
 
 import {
-  DateTimeHealthStatusValueTuple,
+  DateTimeHealthStatusValueTuple, ServiceConfiguration,
   ServiceHierarchyHealth,
 } from 'api/data-contracts';
 import StatusHistoryModule from './StatusHistory/StatusHistoryModule';
@@ -17,53 +17,66 @@ import {
 const RootService: React.FC<{
   environmentName: string,
   tenantName: string,
-  rootService: ServiceHierarchyHealth,
-  services: ServiceHierarchyHealth[],
+  service: ServiceConfiguration,
+  serviceHealth: ServiceHierarchyHealth,
+  serviceConfigurationLookup: { [key: string]: ServiceConfiguration },
   addTimestamp: (tupleData: DateTimeHealthStatusValueTuple, tileId: string, serviceData: ServiceHierarchyHealth) => void,
   closeDrawer: () => void,
   selectedTileId: string
 }> =
-  ({ environmentName, tenantName, rootService, services, addTimestamp, closeDrawer, selectedTileId }) => {
+  ({
+    environmentName,
+    tenantName,
+    service,
+    serviceHealth,
+    serviceConfigurationLookup,
+    addTimestamp,
+    closeDrawer,
+    selectedTileId
+  }) => {
     const theme = useTheme();
 
     return (
-      <div css={getRootServiceStyle(theme, rootService.aggregateStatus)}
-      >
+      <div css={getRootServiceStyle(theme, serviceHealth.aggregateStatus)}>
         <div css={getContainerStyle()}>
-          {rootService.name}
+          {serviceHealth.name}
         </div>
         <div>
           <StatusHistoryModule
             addTimestamp={addTimestamp}
             closeDrawer={closeDrawer}
             selectedTileId={selectedTileId}
-            rootService={rootService}
+            servicePath={[serviceHealth.name]}
+            serviceHealth={serviceHealth}
             environmentName={environmentName}
             tenantName={tenantName}
           />
         </div>
         <div>
-          {rootService.healthChecks ? (
+          {service.healthChecks ? (
             <div>
-              <HealthCheckList environmentName={environmentName}
-                               tenantName={tenantName}
-                               rootServiceName={rootService.name}
-                               healthChecks={rootService.healthChecks}/>
+              <HealthCheckList
+                environmentName={environmentName}
+                tenantName={tenantName}
+                service={service}
+                healthCheckStatuses={serviceHealth.healthChecks} />
             </div>
           ) : null}
-          {rootService.children && rootService.children.length > 0 ?
+          {service.children && service.children.length > 0 ?
             <>
-              <div className="ds-l-col" >
+              <div className="ds-l-col">
                 Services:
               </div>
               <Accordion bordered>
-                {rootService.children.map(child => (
-                  <div key={child.name}>
-                    <ChildService environmentName={environmentName}
-                                  tenantName={tenantName}
-                                  servicePath={rootService.name}
-                                  childService={child}
-                                  services={services}/>
+                {service.children.map(child => (
+                  <div key={child}>
+                    <ChildService
+                      environmentName={environmentName}
+                      tenantName={tenantName}
+                      servicePath={[service.name, child]}
+                      service={serviceConfigurationLookup[child]}
+                      serviceHealth={serviceHealth?.children && serviceHealth.children.filter(svc => svc.name === child)[0]}
+                      serviceConfigurationLookup={serviceConfigurationLookup} />
                   </div>
                 ))}
               </Accordion>

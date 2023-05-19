@@ -1,42 +1,29 @@
-import React from 'react';
+import { AccordionItem } from '@cmsgov/design-system';
+import { DateTimeDoubleValueTuple, HealthCheckModel, HealthCheckType, ServiceConfiguration } from 'api/data-contracts';
 
 import { createSonarClient } from 'helpers/ApiHelper';
-import { DateTimeDoubleValueTuple, HealthCheckModel, HealthCheckType,
-  ServiceConfiguration, ServiceHierarchyConfiguration } from 'api/data-contracts';
+import React from 'react';
+import { useQuery } from 'react-query';
 import { IHealthCheckDefinition } from 'types';
-import { AccordionItem } from '@cmsgov/design-system';
-import {
-  getChartsFlexTableStyle,
-  getChartsFlexThresholdStyle
-} from './HealthCheckListItem.Style';
-import HealthCheckListItemTimeSeriesChart from './HealthCheckListItemTimeSeriesChart'
+import { getChartsFlexTableStyle, getChartsFlexThresholdStyle } from './HealthCheckListItem.Style';
 import HealthCheckListItemTable from './HealthCheckListItemTable'
 import HealthCheckListItemThresholds from './HealthCheckListItemThresholds';
-import { useQuery } from 'react-query';
+import HealthCheckListItemTimeSeriesChart from './HealthCheckListItemTimeSeriesChart'
 
 const HealthCheckListItem: React.FC<{
   environmentName: string,
   tenantName: string,
-  rootServiceName?: string | null,
-  healthCheckName: string,
+  service: ServiceConfiguration,
+  healthCheck: HealthCheckModel,
   healthCheckStatus: string
-}> = ({ environmentName, tenantName, rootServiceName, healthCheckName, healthCheckStatus}) => {
+}> = ({ environmentName, tenantName, service, healthCheck, healthCheckStatus }) => {
   const sonarClient = createSonarClient();
 
-  const svcHierarchyCfg = useQuery<ServiceHierarchyConfiguration, Error>({
-    queryKey: ['ServiceHierarchyConfig'],
-    queryFn: () => sonarClient.getTenant(environmentName, tenantName)
-      .then((res) => res.data
-      )
-    }
-  )
   const healthCheckData = useQuery<DateTimeDoubleValueTuple[], Error>({
-    queryKey: ['HealthCheckData-'+healthCheckName],
-    queryFn: () => sonarClient.getHealthCheckData(environmentName, tenantName, rootServiceName ? rootServiceName : "", healthCheckName)
-      .then((res) => res.data.timeSeries
-      )
-    }
-  )
+    queryKey: ['HealthCheckData-' + healthCheck.name],
+    queryFn: () => sonarClient.getHealthCheckData(environmentName, tenantName, service.name, healthCheck.name)
+      .then((res) => res.data.timeSeries)
+  });
 
   const TIMESTAMP_DATA = 0;
   const HEALTHSTATUS_DATA = 1;
@@ -47,37 +34,29 @@ const HealthCheckListItem: React.FC<{
   ).reverse() as number[][];
 
   return (
-    <AccordionItem heading={`${healthCheckName}: ${healthCheckStatus}`}>
-      {(svcHierarchyCfg.data != null) && (transformedData != null) && (transformedData.length !== 0) &&
-        svcHierarchyCfg.data.services?.map((s: ServiceConfiguration) =>
-          s.healthChecks
-            ?.filter((hc: HealthCheckModel) => hc.name === healthCheckName && hc.type !== HealthCheckType.HttpRequest)
-            .map((hc: HealthCheckModel) =>
-              (
-                <div key={healthCheckName + '-tsData'}>
-                  <HealthCheckListItemTimeSeriesChart
-                    svcDefinitions={hc.definition as IHealthCheckDefinition}
-                    healthCheckName={healthCheckName}
-                    timeSeriesData={transformedData}
-                  />
+    <AccordionItem heading={`${healthCheck.name}: ${healthCheckStatus}`}>
+      {healthCheck && healthCheck.type !== HealthCheckType.HttpRequest && transformedData?.length &&
+        <div key={healthCheck.name + '-tsData'}>
+          <HealthCheckListItemTimeSeriesChart
+            svcDefinitions={healthCheck.definition as IHealthCheckDefinition}
+            healthCheckName={healthCheck.name}
+            timeSeriesData={transformedData}
+          />
 
-                  <div css={getChartsFlexTableStyle()}>
-                    <HealthCheckListItemTable
-                      healthCheckName={healthCheckName}
-                      timeSeriesData={transformedData}/>
-                  </div>
-                </div>
-              )
-            )
-        )
+          <div css={getChartsFlexTableStyle()}>
+            <HealthCheckListItemTable
+              healthCheckName={healthCheck.name}
+              timeSeriesData={transformedData} />
+          </div>
+        </div>
       }
 
       <div css={getChartsFlexThresholdStyle()}>
-        {svcHierarchyCfg.data != null &&
-          <HealthCheckListItemThresholds svcHierarchyCfg={svcHierarchyCfg.data}
-                                         rootServiceName={rootServiceName}
-                                         healthCheckName={healthCheckName}
-                                         healthCheckStatus={healthCheckStatus}
+        {
+          <HealthCheckListItemThresholds
+            service={service}
+            healthCheck={healthCheck}
+            healthCheckStatus={healthCheckStatus}
           />
         }
       </div>

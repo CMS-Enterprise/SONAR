@@ -1,42 +1,53 @@
 import React from 'react';
 import { AccordionItem } from '@cmsgov/design-system';
-import { ServiceHierarchyHealth } from 'api/data-contracts';
+import { ServiceConfiguration, ServiceHierarchyHealth } from 'api/data-contracts';
 import { getChildServiceContainerStyle } from './ChildService.Style';
 import HealthCheckList from './HealthCheckList';
 
 const ChildService: React.FC<{
   environmentName: string,
   tenantName: string,
-  servicePath?: string | null,
-  childService: ServiceHierarchyHealth,
-  services: ServiceHierarchyHealth[]
+  servicePath: string[],
+  service: ServiceConfiguration,
+  serviceHealth: ServiceHierarchyHealth | null | undefined,
+  serviceConfigurationLookup: { [key: string]: ServiceConfiguration },
 }> =
-  ({ environmentName, tenantName, servicePath, childService, services }) => {
+  ({
+    environmentName,
+    tenantName,
+    servicePath,
+    service,
+    serviceHealth,
+    serviceConfigurationLookup
+  }) => {
     return (
       <div css={getChildServiceContainerStyle()}>
-        <AccordionItem heading={childService.name}>
+        <AccordionItem heading={service.name}>
           <div>
-            {childService.healthChecks ? (
+            {service.healthChecks ? (
               <div>
-                <HealthCheckList environmentName={environmentName}
-                                 tenantName={tenantName}
-                                 rootServiceName={`${servicePath}/${childService.name}`}
-                                 healthChecks={childService.healthChecks}/>
+                <HealthCheckList
+                  environmentName={environmentName}
+                  tenantName={tenantName}
+                  service={service}
+                  healthCheckStatuses={serviceHealth?.healthChecks} />
               </div>
             ) : null}
-            {childService.children && childService.children.length > 0 ?
+            {service.children && service.children.length > 0 ?
               <>
                 <div className="ds-l-col">
                   Services:
                 </div>
                 <ul>
-                  {childService.children.map(child => (
-                    <div key={child.name}>
-                      <ChildService environmentName={environmentName}
-                                    tenantName={tenantName}
-                                    servicePath={`${servicePath}/${childService.name}`}
-                                    childService={child}
-                                    services={services}/>
+                  {service.children.map(child => (
+                    <div key={child}>
+                      <ChildService
+                        environmentName={environmentName}
+                        tenantName={tenantName}
+                        servicePath={[...servicePath, child]}
+                        service={serviceConfigurationLookup[child]}
+                        serviceHealth={serviceHealth?.children && serviceHealth.children.filter(svc => svc.name === child)[0]}
+                        serviceConfigurationLookup={serviceConfigurationLookup} />
                     </div>
                   ))}
                 </ul>
@@ -45,6 +56,6 @@ const ChildService: React.FC<{
         </AccordionItem>
       </div>
     )
-  }
+  };
 
 export default ChildService;
