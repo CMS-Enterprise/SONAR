@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Cms.BatCave.Sonar.Models;
@@ -17,9 +18,13 @@ public class AggregateServiceConfigSource : IServiceConfigSource {
   public async IAsyncEnumerable<String> GetTenantsAsync(
     [EnumeratorCancellation] CancellationToken cancellationToken) {
 
+    var seen = new HashSet<String>(StringComparer.OrdinalIgnoreCase);
     foreach (var source in this._sources) {
       await foreach (var tenant in source.GetTenantsAsync(cancellationToken)) {
-        yield return tenant;
+        // Only return each tenant once, even if multiple sources contain configuration.
+        if (seen.Add(tenant)) {
+          yield return tenant;
+        }
       }
     }
   }

@@ -192,7 +192,7 @@ public class KubernetesConfigSource : IServiceConfigSource {
     }
 
     return unsortedConfigs.OrderBy(c => c.order)
-      .Select(c => JsonServiceConfigDeserializer.Deserialize(c.data));
+      .Select(c => JsonServiceConfigSerializer.Deserialize(c.data));
   }
 
   private static Boolean IsSonarConfigMap(IDictionary<String, String> configMapLabels) {

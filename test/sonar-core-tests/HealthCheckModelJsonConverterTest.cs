@@ -1,9 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Cms.BatCave.Sonar.Enumeration;
+using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Models;
+using Cms.BatCave.Sonar.Models.Validation;
 using Xunit;
 
 namespace Cms.BatCave.Sonar.Tests;
@@ -133,35 +137,8 @@ public class HealthCheckModelJsonConverterTest {
         }
       );
 
-    Assert.Throws<JsonException>(
-      () => JsonSerializer.Deserialize<HealthCheckModel>(invalidJson, DefaultOptions)
-    );
-  }
-
-  [Fact]
-  public void Deserialize_MissingDescription_JsonException() {
-    var invalidJson =
-      JsonSerializer.Serialize(
-        new {
-          name = TestHealthCheckName,
-          // Missing Description
-          type = "PrometheusMetric",
-          definition = new {
-            duration = TestPrometheusHealthCheckDuration.ToString(),
-            expression = TestPrometheusHealthCheckExpression,
-            conditions = new[] {
-              new {
-                @operator = TestPrometheusHealthCheckOperator.ToString(),
-                threshold = TestPrometheusHealthCheckThreshold,
-                status = TestPrometheusHealthCheckStatus.ToString()
-              }
-            }
-          }
-        }
-      );
-
-    Assert.Throws<JsonException>(
-      () => JsonSerializer.Deserialize<HealthCheckModel>(invalidJson, DefaultOptions)
+    Assert.Throws<InvalidConfigurationException>(
+      () => DeserializeAndValidate<HealthCheckModel>(invalidJson, DefaultOptions)
     );
   }
 
@@ -187,8 +164,8 @@ public class HealthCheckModelJsonConverterTest {
         }
       );
 
-    Assert.Throws<JsonException>(
-      () => JsonSerializer.Deserialize<HealthCheckModel>(invalidJson, DefaultOptions)
+    Assert.Throws<InvalidConfigurationException>(
+      () => DeserializeAndValidate<HealthCheckModel>(invalidJson, DefaultOptions)
     );
   }
 
@@ -215,7 +192,7 @@ public class HealthCheckModelJsonConverterTest {
       );
 
     Assert.Throws<JsonException>(
-      () => JsonSerializer.Deserialize<HealthCheckModel>(invalidJson, DefaultOptions)
+      () => DeserializeAndValidate<HealthCheckModel>(invalidJson, DefaultOptions)
     );
   }
 
@@ -231,8 +208,8 @@ public class HealthCheckModelJsonConverterTest {
         }
       );
 
-    Assert.Throws<JsonException>(
-      () => JsonSerializer.Deserialize<HealthCheckModel>(invalidJson, DefaultOptions)
+    Assert.Throws<InvalidConfigurationException>(
+      () => DeserializeAndValidate<HealthCheckModel>(invalidJson, DefaultOptions)
     );
   }
 
@@ -258,8 +235,8 @@ public class HealthCheckModelJsonConverterTest {
         }
       );
 
-    Assert.Throws<JsonException>(
-      () => JsonSerializer.Deserialize<HealthCheckModel>(invalidJson, DefaultOptions)
+    Assert.Throws<InvalidConfigurationException>(
+      () => DeserializeAndValidate<HealthCheckModel>(invalidJson, DefaultOptions)
     );
   }
 
@@ -279,8 +256,20 @@ public class HealthCheckModelJsonConverterTest {
         }
       );
 
-    Assert.Throws<JsonException>(
-      () => JsonSerializer.Deserialize<HealthCheckModel>(invalidJson, DefaultOptions)
+    Assert.Throws<InvalidConfigurationException>(
+      () => DeserializeAndValidate<HealthCheckModel>(invalidJson, DefaultOptions)
     );
+  }
+
+  private static void DeserializeAndValidate<T>(String json, JsonSerializerOptions options) {
+    var result = JsonSerializer.Deserialize<T>(json, options)!;
+    var validator = new RecursivePropertyValidator();
+    var issues = new List<ValidationResult>();
+    if (!validator.TryValidateObjectProperties(result, issues)) {
+      throw new InvalidConfigurationException(
+        "Validation errors",
+        InvalidConfigurationErrorType.DataValidationError
+      );
+    }
   }
 }

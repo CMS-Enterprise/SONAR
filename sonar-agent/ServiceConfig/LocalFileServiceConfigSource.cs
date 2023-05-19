@@ -34,7 +34,7 @@ public class LocalFileServiceConfigSource : IServiceConfigSource {
         using var reader = new StreamReader(inputStream);
         var fileContent = await reader.ReadToEndAsync(cancellationToken);
 
-        yield return JsonServiceConfigDeserializer.Deserialize(fileContent);
+        yield return JsonServiceConfigSerializer.Deserialize(fileContent);
       }
     }
   }

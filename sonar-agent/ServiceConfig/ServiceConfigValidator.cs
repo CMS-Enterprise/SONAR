@@ -17,6 +17,7 @@ public static class ServiceConfigValidator {
     if (!isValid) {
       throw new InvalidConfigurationException(
         message: "Invalid JSON service configuration: One or more validation errors occurred.",
+        InvalidConfigurationErrorType.DataValidationError,
         new Dictionary<String, Object?> { ["errors"] = validationResults });
     }
   }

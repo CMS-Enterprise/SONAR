@@ -43,11 +43,6 @@ public class ConfigurationHelper {
       new Dictionary<String, ServiceHierarchyConfiguration>(StringComparer.OrdinalIgnoreCase);
 
     await foreach (var tenant in this._serviceConfigSource.GetTenantsAsync(cancellationToken)) {
-      if (configurationByTenant.ContainsKey(tenant)) {
-        throw new InvalidConfigurationException(
-          $"A tenant has configuration from multiple configuration sources: {tenant}"
-        );
-      }
       var layers =
         await this._serviceConfigSource.GetConfigurationLayersAsync(tenant, cancellationToken)
           .ToListAsync(cancellationToken);

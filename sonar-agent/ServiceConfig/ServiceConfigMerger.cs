@@ -61,8 +61,7 @@ public static class ServiceConfigMerger {
     // Merge Root Services
     return new ServiceHierarchyConfiguration(
       serviceResults,
-      prev.RootServices.Union(next.RootServices, StringComparer.OrdinalIgnoreCase)
-        .ToImmutableHashSet()
+      NullableSetUnion(prev.RootServices, next.RootServices) ?? ImmutableHashSet<String>.Empty
     );
   }
 
@@ -79,7 +78,7 @@ public static class ServiceConfigMerger {
       nextService.Description ?? prevService.Description,
       nextService.Url ?? prevService.Url,
       MergeHealthCheckLists(prevService.HealthChecks, nextService.HealthChecks),
-      MergeChildren(prevService.Children, nextService.Children)
+      NullableSetUnion(prevService.Children, nextService.Children)
     );
   }
 
@@ -131,7 +130,8 @@ public static class ServiceConfigMerger {
       if (incompatible) {
         throw new InvalidConfigurationException(
           $"The health check {parent.Name} was changed to type {mergedType} which is " +
-          $"incompatible with the health check definition type {prevDefinition.GetType().Name}."
+          $"incompatible with the health check definition type {prevDefinition.GetType().Name}.",
+          InvalidConfigurationErrorType.IncompatibleHealthCheckType
         );
       }
 
@@ -196,25 +196,29 @@ public static class ServiceConfigMerger {
     }
   }
 
-  private static IImmutableSet<String>? MergeChildren(
-    IImmutableSet<String>? prevServiceChildren,
-    IImmutableSet<String>? nextServiceChildren) {
+  private static IImmutableSet<String>? NullableSetUnion(
+    IImmutableSet<String>? prevSet,
+    IImmutableSet<String>? nextSet) {
 
-    if (prevServiceChildren == null) {
-      return nextServiceChildren;
-    } else if (nextServiceChildren == null) {
-      return prevServiceChildren;
+    if (prevSet == null) {
+      return nextSet;
+    } else if (nextSet == null) {
+      return prevSet;
     }
 
-    return prevServiceChildren.Union(nextServiceChildren, StringComparer.OrdinalIgnoreCase)
-      .ToImmutableHashSet();
+    return prevSet.Union(nextSet, StringComparer.OrdinalIgnoreCase).ToImmutableHashSet();
   }
 
   private static IImmutableList<T> MergeBy<T>(
     IImmutableList<T> first,
-    IImmutableList<T> second,
+    IImmutableList<T>? second,
     Func<T, T, Boolean> match,
     Func<T, T, T> merge) where T : class {
+
+
+    if (second == null) {
+      return first;
+    }
 
     var result = first;
     foreach (var next in second) {

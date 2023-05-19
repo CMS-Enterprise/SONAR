@@ -6,8 +6,8 @@ using Cms.BatCave.Sonar.Models;
 
 namespace Cms.BatCave.Sonar.Agent.ServiceConfig;
 
-public static class JsonServiceConfigDeserializer {
-  private static readonly JsonSerializerOptions ConfigSerializerOptions = new() {
+public static class JsonServiceConfigSerializer {
+  public static readonly JsonSerializerOptions ConfigSerializerOptions = new() {
     PropertyNameCaseInsensitive = true,
     Converters = { new JsonStringEnumConverter() }
   };
@@ -18,12 +18,19 @@ public static class JsonServiceConfigDeserializer {
         JsonSerializer.Deserialize<ServiceHierarchyConfiguration>(data, ConfigSerializerOptions);
 
       if (configuration == null) {
-        throw new InvalidConfigurationException("Invalid JSON service configuration: Deserialized object is null.");
+        throw new InvalidConfigurationException(
+          "Invalid JSON service configuration: Deserialized object is null.",
+          InvalidConfigurationErrorType.TopLevelNull
+        );
       }
 
       return configuration;
     } catch (Exception e) when (e is JsonException or NotSupportedException) {
-      throw new InvalidConfigurationException(message: $"Invalid JSON service configuration: {e.Message}", e);
+      throw new InvalidConfigurationException(
+        message: $"Invalid JSON service configuration: {e.Message}",
+        InvalidConfigurationErrorType.InvalidJson,
+        e
+      );
     }
   }
 }

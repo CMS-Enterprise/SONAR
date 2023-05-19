@@ -85,6 +85,9 @@ public class RecursivePropertyValidatorTests {
     await using var jsonStream = new FileStream(jsonFilePath, FileMode.Open, FileAccess.Read);
 
     return await JsonSerializer.DeserializeAsync<ServiceHierarchyConfiguration>(jsonStream, serializerOptions) ??
-      throw new InvalidConfigurationException("Invalid JSON service configuration: deserialized object is null.");
+      throw new InvalidConfigurationException(
+        "Invalid JSON service configuration: deserialized object is null.",
+        InvalidConfigurationErrorType.TopLevelNull
+      );
   }
 }

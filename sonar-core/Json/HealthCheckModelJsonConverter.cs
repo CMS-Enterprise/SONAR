@@ -1,7 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Cms.BatCave.Sonar.Enumeration;
@@ -37,109 +34,98 @@ public class HealthCheckModelJsonConverter : JsonConverter<HealthCheckModel> {
         return null;
       case JsonValueKind.Object:
         // Get the type
-        if (!element.TryGetProperty(nameof(HealthCheckModel.Type), ignoreCase: true, out var typeValue) ||
-          typeValue.IsNullOrUndefined()) {
+        var hasType = TryParseHealthCheckType(element, out var type);
 
-          throw new JsonException(
-            $"The {nameof(HealthCheckModel.Type)} property is required."
-          );
-        }
-        if (typeValue.ValueKind != JsonValueKind.String) {
-          throw new JsonException(
-            $"Unexpected JSON value {typeValue.ValueKind}. Was expecting a string for the {nameof(HealthCheckModel)}.{nameof(HealthCheckModel.Type)} property."
-          );
-        }
-        if (!Enum.TryParse<HealthCheckType>(typeValue.GetString(), ignoreCase: true, out var type)) {
-          throw new JsonException(
-            $"Invalid value for property {nameof(HealthCheckModel)}.{nameof(HealthCheckModel.Type)}: {typeValue.GetString()}."
-          );
-        }
+        String? name = null;
+        String? description = null;
+        HealthCheckDefinition? definition = null;
 
-        HealthCheckDefinition definition;
-        switch (type) {
-          case HealthCheckType.PrometheusMetric:
-            if (!element.TryGetProperty(nameof(HealthCheckModel.Definition), ignoreCase: true, out var definitionElement)) {
-              throw new JsonException($"The {nameof(HealthCheckModel.Definition)} property is required.");
-            }
+        if (hasType &&
+          element.TryGetProperty(nameof(HealthCheckModel.Definition), ignoreCase: true, out var definitionElement)) {
 
-            definition = definitionElement.Deserialize<MetricHealthCheckDefinition>(options) ??
-              throw new JsonException($"The {nameof(HealthCheckModel.Definition)} property is required.");
+          switch (type) {
+            case HealthCheckType.PrometheusMetric:
+              definition = definitionElement.Deserialize<MetricHealthCheckDefinition>(options);
 
-            var context = new ValidationContext(definition);
-            var results = new List<ValidationResult>();
-            if (!Validator.TryValidateObject(definition, context, results, validateAllProperties: true)) {
-              throw new JsonException(
-                $"Invalid health check definition: {results.First().ErrorMessage}"
-              );
-            }
-            break;
-          case HealthCheckType.LokiMetric:
-            if (!element.TryGetProperty(nameof(HealthCheckModel.Definition), ignoreCase: true, out var def)) {
-              throw new JsonException($"The {nameof(HealthCheckModel.Definition)} property is required.");
-            }
+              break;
+            case HealthCheckType.LokiMetric:
+              definition = definitionElement.Deserialize<MetricHealthCheckDefinition>(options);
 
-            definition = def.Deserialize<MetricHealthCheckDefinition>(options) ??
-                         throw new JsonException($"The {nameof(HealthCheckModel.Definition)} property is required.");
+              break;
+            case HealthCheckType.HttpRequest:
+              definition = definitionElement.Deserialize<HttpHealthCheckDefinition>(options);
 
-            var ctx = new ValidationContext(definition);
-            var res = new List<ValidationResult>();
-            if (!Validator.TryValidateObject(definition, ctx, res, validateAllProperties: true)) {
-              throw new JsonException(
-                $"Invalid health check definition: {res.First().ErrorMessage}"
-              );
-            }
-            break;
-          case HealthCheckType.HttpRequest:
-            if (!element.TryGetProperty(nameof(HealthCheckModel.Definition), ignoreCase: true, out var httpDefinitionElement)) {
-              throw new JsonException($"The {nameof(HealthCheckModel.Definition)} property is required.");
-            }
-
-            definition = httpDefinitionElement.Deserialize<HttpHealthCheckDefinition>(options) ??
-                         throw new JsonException($"The {nameof(HealthCheckModel.Definition)} property is required.");
-            var httpContext = new ValidationContext(definition);
-            var httpResults = new List<ValidationResult>();
-            if (!Validator.TryValidateObject(definition, httpContext, httpResults, validateAllProperties: true)) {
-              throw new JsonException(
-                $"Invalid health check definition: {httpResults.First().ErrorMessage}"
-              );
-            }
-            break;
-          default:
-            throw new ArgumentOutOfRangeException();
+              break;
+            default:
+              throw new ArgumentOutOfRangeException();
+          }
         }
 
-        if (!element.TryGetProperty(nameof(HealthCheckModel.Name), ignoreCase: true, out var nameElement)) {
-          throw new JsonException($"The {nameof(HealthCheckModel.Name)} property is required.");
-        }
-        if (!nameElement.IsStringOrNull()) {
-          throw new JsonException(
-            $"Unexpected JSON value {typeValue.ValueKind}. Was expecting a string for the {nameof(HealthCheckModel)}.{nameof(HealthCheckModel.Name)} property."
-          );
+        if (element.TryGetProperty(nameof(HealthCheckModel.Name), ignoreCase: true, out var nameElement)) {
+          if (!nameElement.IsStringOrNull()) {
+            throw new JsonException(
+              $"Unexpected JSON value {nameElement.ValueKind}. Was expecting a string for the {nameof(HealthCheckModel)}.{nameof(HealthCheckModel.Name)} property."
+            );
+          }
+
+          name = nameElement.GetString();
         }
 
-        if (!element.TryGetProperty(nameof(HealthCheckModel.Description), ignoreCase: true, out var descriptionElement)) {
-          throw new JsonException($"The {nameof(HealthCheckModel.Description)} property is required.");
-        }
-        if (!descriptionElement.IsStringOrNull()) {
-          throw new JsonException(
-            $"Unexpected JSON value {typeValue.ValueKind}. Was expecting a string for the {nameof(HealthCheckModel)}.{nameof(HealthCheckModel.Description)} property."
-          );
+        if (element.TryGetProperty(nameof(HealthCheckModel.Description), ignoreCase: true,
+          out var descriptionElement)) {
+          if (!descriptionElement.IsStringOrNull()) {
+            throw new JsonException(
+              $"Unexpected JSON value {descriptionElement.ValueKind}. Was expecting a string for the {nameof(HealthCheckModel)}.{nameof(HealthCheckModel.Description)} property."
+            );
+          }
+
+          description = descriptionElement.GetString();
         }
 
-        return new HealthCheckModel(
-          nameElement.GetString() ?? throw new JsonException($"The {nameof(HealthCheckModel.Name)} property is required."),
-          descriptionElement.GetString(),
+        // Intentionally disregard nullability constraints in the same way that JsonSerializer does.
+        return (HealthCheckModel)Activator.CreateInstance(
+          typeof(HealthCheckModel),
+          name,
+          description,
           type,
           definition
-        );
+        )!;
       case JsonValueKind.Array:
       case JsonValueKind.String:
       case JsonValueKind.Number:
       case JsonValueKind.True:
       case JsonValueKind.False:
       default:
-        throw new ArgumentOutOfRangeException();
+        throw new JsonException(
+          $"Expected object attempting tp parse {nameof(HealthCheckModel)} but found {element.ValueKind}"
+        );
     }
+  }
+
+  /// <summary>
+  ///   Attempts to parse the type property of a JsonElement representing a <see cref="HealthCheckModel" />.
+  /// </summary>
+  private static Boolean TryParseHealthCheckType(JsonElement element, out HealthCheckType type) {
+    if (!element.TryGetProperty(nameof(HealthCheckModel.Type), ignoreCase: true, out var typeValue) ||
+      typeValue.IsNullOrUndefined()) {
+
+      type = default;
+      return false;
+    }
+
+    if (typeValue.ValueKind != JsonValueKind.String) {
+      throw new JsonException(
+        $"Unexpected JSON value {typeValue.ValueKind}. Was expecting a string for the {nameof(HealthCheckModel)}.{nameof(HealthCheckModel.Type)} property."
+      );
+    }
+
+    if (!Enum.TryParse(typeValue.GetString(), ignoreCase: true, out type)) {
+      throw new JsonException(
+        $"Invalid value for property {nameof(HealthCheckModel)}.{nameof(HealthCheckModel.Type)}: {typeValue.GetString()}."
+      );
+    }
+
+    return true;
   }
 
   /// <summary>
@@ -158,8 +144,6 @@ public class HealthCheckModelJsonConverter : JsonConverter<HealthCheckModel> {
     writer.WritePropertyName(nameof(HealthCheckModel.Definition).ToCamelCase());
     switch (value.Type) {
       case HealthCheckType.PrometheusMetric:
-        JsonSerializer.Serialize(writer, (MetricHealthCheckDefinition)value.Definition, options);
-        break;
       case HealthCheckType.LokiMetric:
         JsonSerializer.Serialize(writer, (MetricHealthCheckDefinition)value.Definition, options);
         break;

@@ -1,9 +1,10 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 
 namespace Cms.BatCave.Sonar.Models;
 
-public record HttpHealthCheckDefinition : HealthCheckDefinition {
+public sealed record HttpHealthCheckDefinition : HealthCheckDefinition {
 
   public HttpHealthCheckDefinition(
     Uri url,
@@ -30,4 +31,22 @@ public record HttpHealthCheckDefinition : HealthCheckDefinition {
   public String? AuthorizationHeader { get; init; }
 
   public Boolean? SkipCertificateValidation { get; init; }
+
+  public Boolean Equals(HttpHealthCheckDefinition? other) {
+    return other is not null &&
+      Object.Equals(this.Url, other.Url) &&
+      String.Equals(this.FollowRedirects, other.FollowRedirects) &&
+      String.Equals(this.AuthorizationHeader, other.AuthorizationHeader) &&
+      String.Equals(this.SkipCertificateValidation, other.SkipCertificateValidation) &&
+      this.Conditions.Zip(other.Conditions, Object.Equals).All(x => x);
+  }
+
+  public override Int32 GetHashCode() {
+    return HashCode.Combine(
+      this.Url,
+      this.FollowRedirects,
+      this.AuthorizationHeader,
+      this.SkipCertificateValidation,
+      HashCodes.From(this.Conditions));
+  }
 }

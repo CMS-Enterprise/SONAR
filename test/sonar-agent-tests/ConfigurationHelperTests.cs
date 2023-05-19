@@ -81,9 +81,9 @@ public class ConfigurationHelperTests {
   /// </summary>
   [Theory]
   [InlineData("test-inputs/invalid-service-config-missing-keys-1.json",
-    "Invalid JSON service configuration: The Type property is required.")]
+    "Invalid JSON service configuration: One or more validation errors occurred.")]
   [InlineData("test-inputs/invalid-service-config-missing-keys-2.json",
-    "Invalid JSON service configuration: The Name property is required.")]
+    "Invalid JSON service configuration: One or more validation errors occurred.")]
   public async Task
     GetServiceHierarchyConfigurationFromJson_DuringSerializationValidationError_ThrowsInvalidConfigurationException(
       String testInputFilePath,

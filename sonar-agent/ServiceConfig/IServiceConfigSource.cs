@@ -10,6 +10,9 @@ public interface IServiceConfigSource {
   /// <summary>
   ///   Retrieves an unordered list of tenant names that this source has configuration for.
   /// </summary>
+  /// <remarks>
+  ///   Each tenant in the result must be unique (case insensitive).
+  /// </remarks>
   IAsyncEnumerable<String> GetTenantsAsync(CancellationToken cancellationToken);
 
   /// <summary>

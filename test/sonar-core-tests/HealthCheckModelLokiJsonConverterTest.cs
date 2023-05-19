@@ -1,10 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Cms.BatCave.Sonar.Enumeration;
+using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Loki;
 using Cms.BatCave.Sonar.Models;
+using Cms.BatCave.Sonar.Models.Validation;
 using Xunit;
 
 namespace Cms.BatCave.Sonar.Tests;
@@ -138,35 +142,8 @@ public class HealthCheckModelLokiJsonConverterTest {
         }
       );
 
-    Assert.Throws<JsonException>(
-      () => JsonSerializer.Deserialize<HealthCheckModel>(invalidJson, DefaultOptions)
-    );
-  }
-
-  [Fact]
-  public void Deserialize_MissingDescription_JsonException() {
-    var invalidJson =
-      JsonSerializer.Serialize(
-        new {
-          name = TestHealthCheckName,
-          // Missing Description
-          type = "LokiMetric",
-          definition = new {
-            expression = TestLokiHealthCheckExpression,
-            time = TestHealthCheckTime.ToString("yyyy-MM-ddTHH:mm:ss.ffffffZ"),
-            conditions = new[] {
-              new {
-                @operator = TestLokiHealthCheckOperator.ToString(),
-                threshold = TestLokiHealthCheckThreshold,
-                status = TestLokiHealthCheckStatus.ToString()
-              }
-            }
-          }
-        }
-      );
-
-    Assert.Throws<JsonException>(
-      () => JsonSerializer.Deserialize<HealthCheckModel>(invalidJson, DefaultOptions)
+    Assert.Throws<InvalidConfigurationException>(
+      () => DeserializeAndValidate<HealthCheckModel>(invalidJson, DefaultOptions)
     );
   }
 
@@ -192,8 +169,8 @@ public class HealthCheckModelLokiJsonConverterTest {
         }
       );
 
-    Assert.Throws<JsonException>(
-      () => JsonSerializer.Deserialize<HealthCheckModel>(invalidJson, DefaultOptions)
+    Assert.Throws<InvalidConfigurationException>(
+      () => DeserializeAndValidate<HealthCheckModel>(invalidJson, DefaultOptions)
     );
   }
 
@@ -236,8 +213,8 @@ public class HealthCheckModelLokiJsonConverterTest {
         }
       );
 
-    Assert.Throws<JsonException>(
-      () => JsonSerializer.Deserialize<HealthCheckModel>(invalidJson, DefaultOptions)
+    Assert.Throws<InvalidConfigurationException>(
+      () => DeserializeAndValidate<HealthCheckModel>(invalidJson, DefaultOptions)
     );
   }
 
@@ -263,8 +240,8 @@ public class HealthCheckModelLokiJsonConverterTest {
         }
       );
 
-    Assert.Throws<JsonException>(
-      () => JsonSerializer.Deserialize<HealthCheckModel>(invalidJson, DefaultOptions)
+    Assert.Throws<InvalidConfigurationException>(
+      () => DeserializeAndValidate<HealthCheckModel>(invalidJson, DefaultOptions)
     );
   }
 
@@ -284,8 +261,20 @@ public class HealthCheckModelLokiJsonConverterTest {
         }
       );
 
-    Assert.Throws<JsonException>(
-      () => JsonSerializer.Deserialize<HealthCheckModel>(invalidJson, DefaultOptions)
+    Assert.Throws<InvalidConfigurationException>(
+      () => DeserializeAndValidate<HealthCheckModel>(invalidJson, DefaultOptions)
     );
+  }
+
+  private static void DeserializeAndValidate<T>(String json, JsonSerializerOptions options) {
+    var result = JsonSerializer.Deserialize<T>(json, options)!;
+    var validator = new RecursivePropertyValidator();
+    var issues = new List<ValidationResult>();
+    if (!validator.TryValidateObjectProperties(result, issues)) {
+      throw new InvalidConfigurationException(
+        "Validation errors",
+        InvalidConfigurationErrorType.DataValidationError
+      );
+    }
   }
 }
