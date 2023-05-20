@@ -2,7 +2,9 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Models;
@@ -19,6 +21,7 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
   private readonly IKubernetes _kubeClient;
   private readonly Watcher<V1Namespace> _nsWatcher;
   private readonly Watcher<V1ConfigMap> _cmWatcher;
+  private readonly TimeSpan _retryDelay;
 
   private readonly ConcurrentDictionary<String, Watcher<V1Secret>> _secretWatchers = new();
 
@@ -26,6 +29,8 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
   // Note: populated as new namespaces with label "sonar-monitoring=enabled" are added
   private readonly ConcurrentDictionary<String, String> _knownNamespaceTenants = new();
 
+  // Mapping of processes that failed and are currently retrying
+  private readonly ConcurrentDictionary<String, WatcherEventToken> _pendingProcesses;
   public event EventHandler<SonarTenantCreatedEventArgs>? TenantCreated;
 
   public KubernetesConfigurationMonitor(
@@ -41,6 +46,8 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
 
     this._nsWatcher = this.CreateNamespaceWatcher();
     this._cmWatcher = this.CreateConfigMapWatcher();
+    this._retryDelay = TimeSpan.FromSeconds(30);
+    this._pendingProcesses = new ConcurrentDictionary<String, WatcherEventToken>();
   }
 
   private Watcher<V1Namespace> CreateNamespaceWatcher() {
@@ -79,6 +86,10 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
     this._logger.LogError("Namespace watcher - error: {ErrorMsg}", error);
   }
 
+  private record WatcherEventToken(
+    WatchEventType EventType,
+    CancellationTokenSource TokenSource);
+
   private async void OnEventNamespace(WatchEventType eventType, V1Namespace resource) {
     String namespaceName = resource.Metadata.Name;
     String tenant = KubernetesConfigSource.GetTenantFromNamespaceConfig(resource);
@@ -112,7 +123,7 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
       if (this._knownNamespaceTenants.TryGetValue(namespaceName, out var existingTenant)) {
         if (existingTenant != tenant) {
           // delete old tenant from SONAR API
-          await this._configHelper.DeleteServicesAsync(this._environment, existingTenant, token);
+          await this.DeleteServicesAsyncWrapper(existingTenant, WatchEventType.Deleted);
 
           // create new tenant in SONAR API with service configuration from previous tenant
           potentialConfigChange = WatchEventType.Added;
@@ -170,7 +181,7 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
       }
 
       // delete tenant from SONAR API
-      await this._configHelper.DeleteServicesAsync(this._environment, tenant, token);
+      await this.DeleteServicesAsyncWrapper(tenant, WatchEventType.Deleted);
     }
   }
 
@@ -218,13 +229,12 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
         );
 
         // create or update new Tenant service configuration
-        await this._configHelper.ConfigureServicesAsync(
-          this._environment,
+        await this.ConfigureServicesAsyncWrapper(
+          tenant,
+          eventType,
           new Dictionary<String, ServiceHierarchyConfiguration> {
             [tenant] = servicesHierarchy
-          },
-          token
-        );
+          });
 
         if (this._knownNamespaceTenants.TryAdd(resourceNamespace, tenant)) {
           // We weren't previously monitoring this tenant, begin the monitoring thread
@@ -242,13 +252,12 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
             String.Join(", ", servicesHierarchy.Services.Select(svc => svc.Name))
           );
           // update existing Tenant service configuration
-          await this._configHelper.ConfigureServicesAsync(
-            this._environment,
+          await this.ConfigureServicesAsyncWrapper(
+            tenant,
+            WatchEventType.Modified,
             new Dictionary<String, ServiceHierarchyConfiguration> {
               [tenant] = servicesHierarchy
-            },
-            token
-          );
+            });
         }
 
         break;
@@ -302,6 +311,96 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
       return mergedConfig;
     } else {
       return ServiceHierarchyConfiguration.Empty;
+    }
+  }
+
+  private async Task DeleteServicesAsyncWrapper(
+    String tenant,
+    WatchEventType eventType) {
+
+    await this.PerformRetryOperation(
+      tenant,
+      eventType,
+      (token) => this._configHelper.DeleteServicesAsync(this._environment, tenant, token)
+      );
+  }
+
+  private async Task ConfigureServicesAsyncWrapper(
+    String tenant,
+    WatchEventType eventType,
+    Dictionary<String, ServiceHierarchyConfiguration> servicesHierarchy) {
+
+    await this.PerformRetryOperation(
+      tenant,
+      eventType,
+      (token) => this._configHelper.ConfigureServicesAsync(this._environment, servicesHierarchy, token)
+      );
+  }
+
+  // This function takes in a function (SONAR-API async request) and will retry continuously until it succeeds.
+  // The retry loop will only fail unless a subsequent event is raised for the same tenant.
+  private async Task PerformRetryOperation(
+    String tenant,
+    WatchEventType eventType,
+    Func<CancellationToken, Task> action) {
+    if (this.AddUpdateProcessQueue(tenant, eventType, out var eventToken)) {
+      try {
+        while (true) {
+          try {
+            this._logger.LogInformation(
+              "Attempting to save configuration for tenant: {Tenant}",
+              tenant);
+            await action(eventToken.TokenSource.Token);
+            this._logger.LogInformation(
+              "Service Configuration saved for tenant: {Tenant}",
+              tenant);
+            // Remove process from dictionary (if it exists)
+            this.RemoveProcessFromQueue(tenant, eventToken);
+            break;
+          } catch (HttpRequestException ex) {
+            // Request failed, add process to dictionary
+            this._logger.LogError(ex,
+              "HTTP Request Exception Code {Code}: {Message}",
+              ex.StatusCode,
+              ex.Message);
+          }
+
+          await Task.Delay(this._retryDelay, eventToken.TokenSource.Token);
+        }
+      } catch (TaskCanceledException e) {
+        this._logger.LogError(e,
+          "Process cancelled.");
+        this.RemoveProcessFromQueue(tenant, this._pendingProcesses[tenant]);
+      }
+    }
+  }
+
+  // Evaluate new request against current pending requests (if any), add to dictionary if needed.
+  private Boolean AddUpdateProcessQueue(
+    String tenant,
+    WatchEventType newRequestType,
+    [NotNullWhen(true)]
+    out WatcherEventToken? eventToken) {
+    if (this._pendingProcesses.TryGetValue(tenant, out var currentProcess)) {
+      // if both current and previous processes are of type Deleted, leave previous.
+      if ((currentProcess.EventType == WatchEventType.Deleted) && (newRequestType == WatchEventType.Deleted)) {
+        eventToken = null;
+        return false;
+      }
+      // previous process exists, cancel
+      currentProcess.TokenSource.Cancel();
+      this._logger.LogInformation("Cancelled previous process...");
+    }
+    // add/update entry in dictionary
+    this._pendingProcesses[tenant] = eventToken = new WatcherEventToken(newRequestType, new CancellationTokenSource());
+    this._logger.LogInformation("Updated entry in process queue");
+    return true;
+  }
+
+  // Remove pending process from concurrent dictionary
+  private void RemoveProcessFromQueue(String tenant, WatcherEventToken value) {
+    if (!this._pendingProcesses.TryRemove(new KeyValuePair<String, WatcherEventToken>(tenant, value))) {
+      this._logger.LogWarning("Unable to remove entry from dictionary.");
     }
   }
 

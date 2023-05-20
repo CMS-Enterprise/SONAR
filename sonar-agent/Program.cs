@@ -21,6 +21,7 @@ using CommandLine;
 using k8s;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using KubernetesConfigurationMonitor = Cms.BatCave.Sonar.Agent.ServiceConfig.KubernetesConfigurationMonitor;
 
 namespace Cms.BatCave.Sonar.Agent;
 
@@ -169,7 +170,30 @@ internal class Program {
 
     // Configure service hierarchy
     logger.LogInformation("Configuring services....");
-    await configurationHelper.ConfigureServicesAsync(apiConfig.Value.Environment, servicesHierarchy, token);
+
+    Int32 threshold = 10;
+    Boolean isSuccess = false;
+    TimeSpan retryDelay = TimeSpan.FromSeconds(30);
+    for (Int32 attempts = 0; attempts <= threshold; attempts++) {
+      logger.LogInformation($"Saving configuration, attempt {attempts}.");
+      try {
+        await configurationHelper.ConfigureServicesAsync(apiConfig.Value.Environment, servicesHierarchy, token);
+        isSuccess = true;
+        break;
+      } catch (HttpRequestException ex) {
+        logger.LogError(ex,
+          "HTTP Request Exception Code {Code}: {Message}",
+          ex.StatusCode,
+          ex.Message);
+      }
+
+      await Task.Delay(retryDelay, token);
+    }
+
+    if (!isSuccess) {
+      logger.LogError("Maximum number of attempts reached for configuration saving.");
+      return 1;
+    }
 
     logger.LogInformation("Initializing SONAR Agent...");
 

@@ -572,7 +572,7 @@ public class ConfigurationController : ControllerBase {
   }
 
   [HttpDelete("{environment}/tenants/{tenant}", Name = "DeleteTenant")]
-  [ProducesResponseType(typeof(ServiceHierarchyConfiguration), statusCode: 200)]
+  [ProducesResponseType(statusCode: 204)]
   public async Task<ActionResult> DeleteConfiguration(
     [FromRoute] String environment,
     [FromRoute] String tenant,
@@ -602,7 +602,7 @@ public class ConfigurationController : ControllerBase {
       throw;
     }
 
-    return this.StatusCode((Int32)HttpStatusCode.OK);
+    return this.StatusCode((Int32)HttpStatusCode.NoContent);
   }
 
   //Converts to Model
