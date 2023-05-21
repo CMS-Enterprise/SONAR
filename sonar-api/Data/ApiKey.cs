@@ -10,6 +10,8 @@ namespace Cms.BatCave.Sonar.Data;
 [Index(nameof(Key))]
 public class ApiKey {
   [Key]
+  public Guid Id { get; init; }
+
   [StringLength(44)] // Base64 encoded String for 32 bytes
   public String Key { get; init; }
   public ApiKeyType Type { get; set; }
@@ -17,11 +19,13 @@ public class ApiKey {
   public Guid? TenantId { get; set; }
 
   public ApiKey(
+    Guid id,
     String key,
     ApiKeyType type,
     Guid? environmentId,
     Guid? tenantId) {
 
+    this.Id = id;
     this.Key = key;
     this.Type = type;
     this.EnvironmentId = environmentId;
@@ -29,9 +33,10 @@ public class ApiKey {
   }
 
   public static ApiKey New(
+    Guid id,
     String key,
     ApiKeyType type,
     Guid? environmentId,
     Guid? tenantId) =>
-    new ApiKey(key, type, environmentId, tenantId);
+    new ApiKey(id,  key, type, environmentId, tenantId);
 }

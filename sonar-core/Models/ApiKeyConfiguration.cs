@@ -7,16 +7,19 @@ namespace Cms.BatCave.Sonar.Models;
 public record ApiKeyConfiguration {
 
   public ApiKeyConfiguration(
+    Guid Id,
     String apiKey,
     ApiKeyType apiKeyType,
     String? environment = null,
     String? tenant = null) {
 
+    this.Id = Id;
     this.ApiKey = apiKey;
     this.ApiKeyType = apiKeyType;
     this.Environment = environment;
     this.Tenant = tenant;
   }
+  public Guid Id { get; set; }
 
   [StringLength(44)] // Base64 encoded String for 32 bytes
   [Required]

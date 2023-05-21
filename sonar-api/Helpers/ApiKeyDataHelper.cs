@@ -108,6 +108,7 @@ public class ApiKeyDataHelper {
     var defaultApiKey = this._configuration.GetValue<String>("ApiKey");
     if (!String.IsNullOrEmpty(defaultApiKey) && String.Equals(defaultApiKey, headerApiKey, StringComparison.Ordinal)) {
       return new ApiKey(
+        Guid.Empty,
         defaultApiKey,
         ApiKeyType.Admin,
         environmentId: null,
