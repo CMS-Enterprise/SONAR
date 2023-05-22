@@ -5,9 +5,7 @@ import DarkIcon from 'components/Icons/DarkIcon';
 import LightIcon from 'components/Icons/LightIcon';
 
 import 'react-toggle/style.css';
-import { ToggleIconStyle } from './Header.Style';
-
-import classes from './Header.module.css';
+import * as styles from './Header.Style';
 
 export type HeaderProps = {
   enableDarkTheme: boolean,
@@ -21,18 +19,18 @@ const Header = (props: HeaderProps) => {
 
   return (
     <header>
-      <nav className={classes.navBar}>
-        <a href="/" className={classes.siteTitle}>SONAR</a>
-        <div className={classes.navBarRightSide}>
-          <a href="/" className={classes.navLink}>HOME</a>
+      <nav css={styles.NavBarStyle}>
+        <Link to="/" css={styles.SiteTitleStyle}>SONAR</Link>
+        <div css={styles.NavBarRightSideStyle}>
+          <Link to="/" css={styles.NavLinkStyle}>HOME</Link>
           <label>
             <Toggle
               defaultChecked={props.enableDarkTheme}
-              className={classes.themeToggle}
+              css={styles.ThemeToggleStyle}
               aria-label="Enable the Dark Theme"
               icons={{
-                checked: <LightIcon style={ToggleIconStyle} />,
-                unchecked: <DarkIcon style={ToggleIconStyle} />
+                checked: <LightIcon style={styles.ToggleIconStyle} />,
+                unchecked: <DarkIcon style={styles.ToggleIconStyle} />
               }}
               onChange={handleThemeChange} />
           </label>

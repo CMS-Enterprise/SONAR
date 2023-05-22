@@ -10,7 +10,7 @@ const HealthStatusBadge: React.FC<{
 }> =
   ({ theme, status}) => {
     return (
-      < Badge
+      <Badge
         children={HealthStatus}
         size="big"
         css={badgeStyle(theme, status)}
