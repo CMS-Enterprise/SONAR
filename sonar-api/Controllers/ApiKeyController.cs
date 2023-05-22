@@ -156,7 +156,7 @@ public class ApiKeyController : ControllerBase {
 
     var task = dbRepository.Delete(new Guid(keyid));
     var result = await task;
-    return this.StatusCode((Int32)HttpStatusCode.Created,result);
+    return this.StatusCode((Int32)HttpStatusCode.NoContent,result);
   }
 
   private static void ValidateEnvAndTenant(
