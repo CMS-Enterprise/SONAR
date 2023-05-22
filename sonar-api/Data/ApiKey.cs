@@ -38,5 +38,5 @@ public class ApiKey {
     ApiKeyType type,
     Guid? environmentId,
     Guid? tenantId) =>
-    new ApiKey(id,  key, type, environmentId, tenantId);
+    new ApiKey(id, key, type, environmentId, tenantId);
 }

@@ -79,7 +79,7 @@ public class ApiKeyController : ControllerBase {
     ValidateEnvAndTenant(apiKeyDetails.Environment, apiKeyDetails.Tenant);
 
     DBRepository dbRepository = new DBRepository(this._dbContext, this._apiKeysTable, this._envDataHelper,
-      this._tenantDataHelper, this._environmentsTable, this._tenantsTable,  cancellationToken);
+      this._tenantDataHelper, this._environmentsTable, this._tenantsTable, cancellationToken);
 
     var task = dbRepository.Add(apiKeyDetails);
     var createdApiKey = await task;
@@ -117,11 +117,11 @@ public class ApiKeyController : ControllerBase {
     }
 
     DBRepository dbRepository = new DBRepository(this._dbContext, this._apiKeysTable, this._envDataHelper,
-      this._tenantDataHelper, this._environmentsTable, this._tenantsTable,  cancellationToken);
+      this._tenantDataHelper, this._environmentsTable, this._tenantsTable, cancellationToken);
 
     var task = dbRepository.GetKeys();
     var result = await task;
-    return this.StatusCode((Int32)HttpStatusCode.Created,result);
+    return this.StatusCode((Int32)HttpStatusCode.Created, result);
   }
 
   /// <summary>
@@ -133,7 +133,7 @@ public class ApiKeyController : ControllerBase {
   /// <response code="400">The API key configuration is not valid.</response>
   /// <response code="401">The API key in the header is not authorized for deleting an API key.</response>
   /// <response code="404">The specified API key, environment, or tenant was not found.</response>
-  [HttpDelete( "{keyid}", Name = "DeleteApiKey")]
+  [HttpDelete("{keyid}", Name = "DeleteApiKey")]
   [Consumes(contentType: "application/json")]
   [ProducesResponseType(statusCode: 204)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 400)]
@@ -152,11 +152,11 @@ public class ApiKeyController : ControllerBase {
     }
 
     DBRepository dbRepository = new DBRepository(this._dbContext, this._apiKeysTable, this._envDataHelper,
-      this._tenantDataHelper, this._environmentsTable, this._tenantsTable,  cancellationToken);
+      this._tenantDataHelper, this._environmentsTable, this._tenantsTable, cancellationToken);
 
     var task = dbRepository.Delete(new Guid(keyid));
     var result = await task;
-    return this.StatusCode((Int32)HttpStatusCode.NoContent,result);
+    return this.StatusCode((Int32)HttpStatusCode.NoContent, result);
   }
 
   private static void ValidateEnvAndTenant(
