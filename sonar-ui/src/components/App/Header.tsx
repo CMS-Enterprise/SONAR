@@ -5,6 +5,7 @@ import DarkIcon from 'components/Icons/DarkIcon';
 import LightIcon from 'components/Icons/LightIcon';
 
 import 'react-toggle/style.css';
+import { staticTextFontStyle } from '../../App.Style'
 import * as styles from './Header.Style';
 
 export type HeaderProps = {
@@ -20,9 +21,9 @@ const Header = (props: HeaderProps) => {
   return (
     <header>
       <nav css={styles.NavBarStyle}>
-        <Link to="/" css={styles.SiteTitleStyle}>SONAR</Link>
+        <Link to="/" css={[staticTextFontStyle,styles.SiteTitleStyle]}>SONAR</Link>
         <div css={styles.NavBarRightSideStyle}>
-          <Link to="/" css={styles.NavLinkStyle}>HOME</Link>
+          <Link to="/" css={[staticTextFontStyle,styles.NavLinkStyle]}>HOME</Link>
           <label>
             <Toggle
               defaultChecked={props.enableDarkTheme}

@@ -1,4 +1,4 @@
-import { css, Theme } from '@emotion/react';
+import { css, CSSObject, Theme } from '@emotion/react';
 
 export function mainStyle(theme: Theme) {
   return css({
@@ -16,9 +16,19 @@ export function mainStyle(theme: Theme) {
     '--link__color': theme.textColor,
     '--link__color--active': theme.textColor,
     '--link__color--hover': theme.accentColor,
-    '--link__color--visited': theme.textColor,
-    '.accordionContainerStyles': {
-      border: '1px #a6a6a6',
-      borderRadius: '40px'}
+    '--link__color--visited': theme.textColor
   });
+}
+
+export const staticTextFontStyle: CSSObject = {
+  fontFamily: 'Helvetica Neue, Helvetica, Arial, sans-serif'
+};
+
+export const dynamicTextFontStyle: CSSObject = {
+  fontFamily: 'Verdana, Geneva, sans-serif'
+};
+
+export const accordionContainerStyle: CSSObject = {
+  border: '1px #a6a6a6',
+  borderRadius: '40px'
 }
