@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "d2cfbb1f-e48f-40c4-8729-2aca79ac1c33",
+		"_postman_id": "7aa22636-b06a-4f37-8fe5-cbf8979a360c",
 		"name": "SONAR",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "26427260"
@@ -555,72 +555,72 @@
 			},
 			"response": []
 		},
-    {
-      "name": "Get Service Health Check Data (no start and end specified)",
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Accept",
-            "value": "application/json",
-            "type": "text"
-          }
-        ],
-        "url": {
-          "raw": "{{SONAR_BASE_URL}}/api/v2/health-check-data/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE}}/health-check/{{TEST_HEALTH_CHECK}}",
-          "host": [
-            "{{SONAR_BASE_URL}}"
-          ],
-          "path": [
-            "api",
-            "v2",
-            "health-check-data",
-            "{{TEST_ENVIRONMENT}}",
-            "tenants",
-            "{{TEST_TENANT}}",
-            "services",
-            "{{TEST_SERVICE}}",
-            "health-check",
-            "{{TEST_HEALTH_CHECK}}"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "Get Service Health Check Data (start and end specified)",
-      "request": {
-        "method": "GET",
-        "header": [
-          {
-            "key": "Accept",
-            "value": "application/json",
-            "type": "text"
-          }
-        ],
-        "url": {
-          "raw": "{{SONAR_BASE_URL}}/api/v2/health-check-data/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE}}/health-check/{{TEST_HEALTH_CHECK}}/yyyy-MM-ddTHH:mm:ssZ/yyyy-MM-ddTHH:mm:ssZ",
-          "host": [
-            "{{SONAR_BASE_URL}}"
-          ],
-          "path": [
-            "api",
-            "v2",
-            "health-check-data",
-            "{{TEST_ENVIRONMENT}}",
-            "tenants",
-            "{{TEST_TENANT}}",
-            "services",
-            "{{TEST_SERVICE}}",
-            "health-check",
-            "{{TEST_HEALTH_CHECK}}",
-            "yyyy-MM-ddTHH:mm:ssZ",
-            "yyyy-MM-ddTHH:mm:ssZ"
-          ]
-        }
-      },
-      "response": []
-    },
+		{
+			"name": "Get Service Health Check Data (no start and end specified)",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{SONAR_BASE_URL}}/api/v2/health-check-data/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE}}/health-check/{{TEST_HEALTH_CHECK}}",
+					"host": [
+						"{{SONAR_BASE_URL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"health-check-data",
+						"{{TEST_ENVIRONMENT}}",
+						"tenants",
+						"{{TEST_TENANT}}",
+						"services",
+						"{{TEST_SERVICE}}",
+						"health-check",
+						"{{TEST_HEALTH_CHECK}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Service Health Check Data (start and end specified)",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{SONAR_BASE_URL}}/api/v2/health-check-data/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE}}/health-check/{{TEST_HEALTH_CHECK}}/yyyy-MM-ddTHH:mm:ssZ/yyyy-MM-ddTHH:mm:ssZ",
+					"host": [
+						"{{SONAR_BASE_URL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"health-check-data",
+						"{{TEST_ENVIRONMENT}}",
+						"tenants",
+						"{{TEST_TENANT}}",
+						"services",
+						"{{TEST_SERVICE}}",
+						"health-check",
+						"{{TEST_HEALTH_CHECK}}",
+						"yyyy-MM-ddTHH:mm:ssZ",
+						"yyyy-MM-ddTHH:mm:ssZ"
+					]
+				}
+			},
+			"response": []
+		},
 		{
 			"name": "Create Admin Api Key",
 			"request": {
@@ -690,19 +690,27 @@
 			"response": []
 		},
 		{
-			"name": "Update API Key",
+			"name": "API Keys",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
 			"request": {
-				"method": "PUT",
+				"method": "GET",
 				"header": [
 					{
 						"key": "Accept",
 						"value": "application/json",
 						"type": "text"
+					},
+					{
+						"key": "ApiKey",
+						"value": "test+api+key+do+not+use+in+production+xxxxx=",
+						"type": "text"
 					}
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"apiKey\": \"<existing API key>\",\n    \"apiKeyType\": \"Admin\",\n    \"environment\": \"{{TEST_ENVIRONMENT}}\",\n    \"tenant\": \"{{TEST_TENANT}}\"\n}",
+					"raw": "",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -710,10 +718,12 @@
 					}
 				},
 				"url": {
-					"raw": "{{SONAR_BASE_URL}}/api/v2/keys",
+					"raw": "http://localhost:8081/api/v2/keys",
+					"protocol": "http",
 					"host": [
-						"{{SONAR_BASE_URL}}"
+						"localhost"
 					],
+					"port": "8081",
 					"path": [
 						"api",
 						"v2",
@@ -736,7 +746,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"apiKey\": \"<existing API key>\"\n}",
+					"raw": "",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -744,14 +754,15 @@
 					}
 				},
 				"url": {
-					"raw": "{{SONAR_BASE_URL}}/api/v2/keys",
+					"raw": "{{SONAR_BASE_URL}}/api/v2/keys/ad8713ea-e21a-40c9-80c2-31352146f155",
 					"host": [
 						"{{SONAR_BASE_URL}}"
 					],
 					"path": [
 						"api",
 						"v2",
-						"keys"
+						"keys",
+						"ad8713ea-e21a-40c9-80c2-31352146f155"
 					]
 				}
 			},
