@@ -63,30 +63,27 @@ public class DBRepository : IApiKeyRepository {
     });
   }
 
-  public async Task<IEnumerable<ApiKeyConfiguration>> GetKeysAsync() {
-    return await Task.Run(() => {
-        var apiKeyConfigurations =
-          this._apiKeysTable
-            .Join(
-              this._environmentsTable,
-              api => api.EnvironmentId,
-              env => env.Id,
-              (key, env) => new { key, env })
-            .Join(
-              this._tenantsTable,
-              mm => mm.key.TenantId,
-              tenant => tenant.Id,
-              (KeyEnv, tenant) => new { KeyEnv, tenant })
-            .Select(
-              result => new ApiKeyConfiguration(
-                result.KeyEnv.key.Id,
-                result.KeyEnv.key.Key,
-                result.KeyEnv.key.Type,
-                result.KeyEnv.env.Name,
-                result.tenant.Name))
-            .ToList();
-        return apiKeyConfigurations;
-    });
+  public async Task<List<ApiKeyConfiguration>> GetKeysAsync() {
+      return
+        await this._apiKeysTable
+          .Join(
+            this._environmentsTable,
+            api => api.EnvironmentId,
+            env => env.Id,
+            (key, env) => new { key, env })
+          .Join(
+            this._tenantsTable,
+            mm => mm.key.TenantId,
+            tenant => tenant.Id,
+            (KeyEnv, tenant) => new { KeyEnv, tenant })
+          .Select(
+            result => new ApiKeyConfiguration(
+              result.KeyEnv.key.Id,
+              result.KeyEnv.key.Key,
+              result.KeyEnv.key.Type,
+              result.KeyEnv.env.Name,
+              result.tenant.Name))
+          .ToListAsync(cancellationToken: this._cancellationToken);
   }
 
   public async Task<Guid> DeleteAsync(Guid id) {
