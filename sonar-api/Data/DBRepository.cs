@@ -65,29 +65,27 @@ public class DBRepository : IApiKeyRepository {
 
   public async Task<IEnumerable<ApiKeyConfiguration>> GetKeysAsync() {
     return await Task.Run(() => {
-      var apiKeyConfigurations = new List<ApiKeyConfiguration>();
-      try {
-        apiKeyConfigurations = this._apiKeysTable.Select(a => a)
-          .Join(this._environmentsTable.Select(e => e),
-            api => api.EnvironmentId,
-            env => env.Id,
-            (key, env) => new { key, env })
-            .Join(this._tenantsTable.Select(t => t),
-            mm => mm.key.TenantId,
-            tenant => tenant.Id,
-            (KeyEnv, tenant) => new { KeyEnv, tenant })
-            .Select(result => new ApiKeyConfiguration(
-                    result.KeyEnv.key.Id,
-                    result.KeyEnv.key.Key,
-                    result.KeyEnv.key.Type,
-                    result.KeyEnv.env.Name,
-                    result.tenant.Name) { }
-              ).ToList();
-      } catch {
-        //await tx.RollbackAsync(this._cancellationToken);
-        throw;
-      }
-      return apiKeyConfigurations;
+        var apiKeyConfigurations =
+          this._apiKeysTable
+            .Join(
+              this._environmentsTable,
+              api => api.EnvironmentId,
+              env => env.Id,
+              (key, env) => new { key, env })
+            .Join(
+              this._tenantsTable,
+              mm => mm.key.TenantId,
+              tenant => tenant.Id,
+              (KeyEnv, tenant) => new { KeyEnv, tenant })
+            .Select(
+              result => new ApiKeyConfiguration(
+                result.KeyEnv.key.Id,
+                result.KeyEnv.key.Key,
+                result.KeyEnv.key.Type,
+                result.KeyEnv.env.Name,
+                result.tenant.Name))
+            .ToList();
+        return apiKeyConfigurations;
     });
   }
 
