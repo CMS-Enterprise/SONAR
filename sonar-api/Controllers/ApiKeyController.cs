@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net;
@@ -86,8 +87,7 @@ public class ApiKeyController : ControllerBase {
     DBRepository dbRepository = new DBRepository(this._dbContext, this._apiKeysTable, this._envDataHelper,
       this._tenantDataHelper, this._environmentsTable, this._tenantsTable, cancellationToken);
 
-    var task = dbRepository.Add(apiKeyDetails);
-    var createdApiKey = await task;
+    var createdApiKey = await dbRepository.AddAsync(apiKeyDetails);
     return this.StatusCode((Int32)HttpStatusCode.Created, createdApiKey);
   }
 
@@ -99,14 +99,12 @@ public class ApiKeyController : ControllerBase {
   /// <response code="400">The API key details are not valid.</response>
   /// <response code="401">The API key in the header is not authorized for creating an API key.</response>
   [HttpGet]
-  [Consumes(contentType: "application/json")]
-  [ProducesResponseType(typeof(ApiKeyConfiguration), statusCode: 200)]
+  [ProducesResponseType(typeof(IEnumerable<ApiKeyConfiguration>), statusCode: 200)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 400)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 401)]
   public async Task<ActionResult> GetApiKeys(
     CancellationToken cancellationToken = default) {
 
-    //ActionResult response;
     const String adminActivity = "Get list of API keys";
 
     // Validate
@@ -124,8 +122,7 @@ public class ApiKeyController : ControllerBase {
     DBRepository dbRepository = new DBRepository(this._dbContext, this._apiKeysTable, this._envDataHelper,
       this._tenantDataHelper, this._environmentsTable, this._tenantsTable, cancellationToken);
 
-    var task = dbRepository.GetKeys();
-    var result = await task;
+    var result  = await dbRepository.GetKeysAsync();
     return this.StatusCode((Int32)HttpStatusCode.Created, result);
   }
 
@@ -159,13 +156,14 @@ public class ApiKeyController : ControllerBase {
     DBRepository dbRepository = new DBRepository(this._dbContext, this._apiKeysTable, this._envDataHelper,
       this._tenantDataHelper, this._environmentsTable, this._tenantsTable, cancellationToken);
 
-    var task = dbRepository.Delete(new Guid(keyid));
-    var result = await task;
-    return this.StatusCode((Int32)HttpStatusCode.NoContent, result);
+    await dbRepository.DeleteAsync(new Guid(keyid));
+    return this.StatusCode((Int32)HttpStatusCode.NoContent);
   }
 
   private static void ValidateEnvAndTenant(
-    [NotNull] String? environment, String? tenant) {
+    [NotNull]
+    String? environment,
+    String? tenant) {
     // Check if environment and tenant are detailed
     if (environment == null) {
       if (tenant != null) {

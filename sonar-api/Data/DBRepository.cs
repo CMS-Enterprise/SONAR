@@ -14,7 +14,7 @@ using Environment = Cms.BatCave.Sonar.Data.Environment;
 
 namespace Cms.BatCave.Sonar.Controllers;
 
-public class DBRepository : ISonarKeyRepository {
+public class DBRepository : IApiKeyRepository {
 
   private readonly DataContext _dbContext;
   private readonly DbSet<ApiKey> _apiKeysTable;
@@ -38,7 +38,7 @@ public class DBRepository : ISonarKeyRepository {
     this._tenantsTable = tenantsTable;
   }
 
-  public async Task<ApiKeyConfiguration> Add(ApiKeyDetails apiKeyDetails) {
+  public async Task<ApiKeyConfiguration> AddAsync(ApiKeyDetails apiKeyDetails) {
     return await Task.Run(async () => {
       ApiKeyConfiguration? apiKeyConfiguration = null;
       await using var tx =
@@ -63,7 +63,7 @@ public class DBRepository : ISonarKeyRepository {
     });
   }
 
-  public async Task<IEnumerable<ApiKeyConfiguration>> GetKeys() {
+  public async Task<IEnumerable<ApiKeyConfiguration>> GetKeysAsync() {
     return await Task.Run(() => {
       var apiKeyConfigurations = new List<ApiKeyConfiguration>();
       try {
@@ -91,16 +91,7 @@ public class DBRepository : ISonarKeyRepository {
     });
   }
 
-
-  public ApiKeyConfiguration GetKey(Guid id) {
-    throw new System.NotImplementedException();
-  }
-
-  public ApiKey Update(ApiKeyDetails apiKey) {
-    throw new System.NotImplementedException();
-  }
-
-  public async Task<Guid> Delete(Guid id) {
+  public async Task<Guid> DeleteAsync(Guid id) {
     return await Task.Run(async () => {
 
       await using var tx =
