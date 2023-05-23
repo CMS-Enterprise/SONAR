@@ -37,7 +37,9 @@ public class ApiKeyController : ControllerBase {
     DbSet<ApiKey> apiKeysTable,
     EnvironmentDataHelper envDataHelper,
     TenantDataHelper tenantDataHelper,
-    ApiKeyDataHelper apiKeyDataHelper, DbSet<Environment> environmentsTable, DbSet<Tenant> tenantsTable) {
+    ApiKeyDataHelper apiKeyDataHelper,
+    DbSet<Environment> environmentsTable,
+    DbSet<Tenant> tenantsTable) {
 
     this._dbContext = dbContext;
     this._apiKeysTable = apiKeysTable;
@@ -70,7 +72,10 @@ public class ApiKeyController : ControllerBase {
     // Validate
     var isAdmin = await this._apiKeyDataHelper.ValidateAdminPermission(
       this.Request.Headers["ApiKey"].SingleOrDefault(),
-      global: true, adminActivity, cancellationToken);
+      global: true,
+      adminActivity,
+      cancellationToken
+    );
     if (!isAdmin) {
       throw new ForbiddenException(
         $"The authentication credential provided is not authorized to {adminActivity}.");

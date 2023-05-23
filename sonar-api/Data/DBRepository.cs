@@ -51,12 +51,12 @@ public class DBRepository : ISonarKeyRepository {
         var newKey = new ApiKey(Guid.Empty, GenerateApiKeyValue(), apiKeyDetails.ApiKeyType, environment.Id, tenant.Id);
 
         // Record new API key
-        var createdApiKey = await this._apiKeysTable.AddAsync(newKey, _cancellationToken);
-        await this._dbContext.SaveChangesAsync(_cancellationToken);
-        await tx.CommitAsync(_cancellationToken);
+        var createdApiKey = await this._apiKeysTable.AddAsync(newKey, this._cancellationToken);
+        await this._dbContext.SaveChangesAsync(this._cancellationToken);
+        await tx.CommitAsync(this._cancellationToken);
         apiKeyConfiguration = ToApiKeyConfig(environment, tenant, createdApiKey.Entity);
       } catch {
-        await tx.RollbackAsync(_cancellationToken);
+        await tx.RollbackAsync(this._cancellationToken);
         throw;
       }
       return apiKeyConfiguration;
@@ -65,7 +65,7 @@ public class DBRepository : ISonarKeyRepository {
 
   public async Task<IEnumerable<ApiKeyConfiguration>> GetKeys() {
     return await Task.Run(() => {
-      List<ApiKeyConfiguration> apiKeyConfigurations = new List<ApiKeyConfiguration>();
+      var apiKeyConfigurations = new List<ApiKeyConfiguration>();
       try {
         apiKeyConfigurations = this._apiKeysTable.Select(a => a)
           .Join(this._environmentsTable.Select(e => e),
@@ -84,7 +84,7 @@ public class DBRepository : ISonarKeyRepository {
                     result.tenant.Name) { }
               ).ToList();
       } catch {
-        //await tx.RollbackAsync(_cancellationToken);
+        //await tx.RollbackAsync(this._cancellationToken);
         throw;
       }
       return apiKeyConfigurations;
@@ -109,7 +109,7 @@ public class DBRepository : ISonarKeyRepository {
         // Get API key
         var existingApiKey = await this._apiKeysTable
               .Where(k => k.Id == id)
-              .SingleOrDefaultAsync(_cancellationToken);
+              .SingleOrDefaultAsync(this._cancellationToken);
 
         if (existingApiKey == null) {
           throw new ResourceNotFoundException(nameof(ApiKey), id);
@@ -118,10 +118,10 @@ public class DBRepository : ISonarKeyRepository {
         // Delete
         this._apiKeysTable.Remove(existingApiKey);
         // Save
-        await this._dbContext.SaveChangesAsync(_cancellationToken);
-        await tx.CommitAsync(_cancellationToken);
+        await this._dbContext.SaveChangesAsync(this._cancellationToken);
+        await tx.CommitAsync(this._cancellationToken);
       } catch {
-        await tx.RollbackAsync(_cancellationToken);
+        await tx.RollbackAsync(this._cancellationToken);
         throw;
       }
       return id;
