@@ -1,5 +1,5 @@
 import { Badge } from '@cmsgov/design-system';
-import { css, Theme } from '@emotion/react';
+import { Theme } from '@emotion/react';
 import React from 'react';
 import { HealthStatus } from '../../api/data-contracts';
 import { badgeStyle } from './HealthStatusBadge.Style';
@@ -11,7 +11,7 @@ const HealthStatusBadge: React.FC<{
   ({ theme, status}) => {
     return (
       <Badge
-        children={HealthStatus}
+        children={HealthStatus[status ? status : HealthStatus.Unknown]}
         size="big"
         css={badgeStyle(theme, status)}
       />

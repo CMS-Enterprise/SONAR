@@ -1,11 +1,10 @@
 import { useTheme } from '@emotion/react';
 import React from 'react';
-import { AlertCircleIcon, WarningIcon, CheckCircleIcon} from '@cmsgov/design-system';
-import { TenantHealth, HealthStatus } from 'api/data-contracts';
+import { TenantHealth } from 'api/data-contracts';
+import HealthStatusBadge from '../../Badges/HealthStatusBadge';
 import {
-  getIconStyle,
-  TenantItemSpanStyle,
-  TenantItemStyle
+  getTenantItemSpanStyle,
+  getTenantItemStyle,
 } from './TenantItem.Style';
 
 const TenantItem: React.FC<{
@@ -13,33 +12,15 @@ const TenantItem: React.FC<{
 }> =
   ({tenant}) => {
     const theme = useTheme();
-    const renderIconSelection = (aggregateStatus: HealthStatus | undefined) => {
-      switch (aggregateStatus) {
-        case HealthStatus.Online:
-          return <CheckCircleIcon css={getIconStyle(aggregateStatus, theme)} />;
-          break;
-        case HealthStatus.AtRisk:
-          return <AlertCircleIcon css={getIconStyle(aggregateStatus, theme)} /> ;
-          break;
-        case HealthStatus.Degraded:
-          return <AlertCircleIcon css={getIconStyle(aggregateStatus, theme)} /> ;
-          break;
-        case HealthStatus.Offline:
-          return <WarningIcon css={getIconStyle(aggregateStatus, theme)} /> ;
-          break;
-        case HealthStatus.Unknown:
-        default:
-          return <WarningIcon css={getIconStyle(aggregateStatus, theme)} /> ;
-          break;
-      }
-    }
 
     return (
       <div>
         {tenant.rootServices?.map(rs =>
-          <div css={TenantItemStyle} key={rs.name}>
-            <span>{renderIconSelection(rs.aggregateStatus)}</span>
-            <span css={TenantItemSpanStyle}>
+          <div css={getTenantItemStyle(theme)} key={rs.name}>
+            <span>
+              <HealthStatusBadge theme={theme} status={rs.aggregateStatus} />
+            </span>
+            <span css={getTenantItemSpanStyle(theme)}>
               {tenant.tenantName}: {rs.displayName}
             </span>
           </div>

@@ -25,6 +25,7 @@ export function badgeStyle(theme: Theme, status: HealthStatus | undefined) {
     color: getBadgeTextColor(status),
     textAlign: 'center',
     width: '70px',
+    fontSize: "14px",
     "--badge__background-color": getStatusColors(theme, status)
   });
 }
