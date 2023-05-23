@@ -45,10 +45,14 @@ public class DBRepository : IApiKeyRepository {
          await this._dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, this._cancellationToken);
       try {
         var environmentName = apiKeyDetails.Environment ?? String.Empty;
-        var tenantName = apiKeyDetails.Tenant ?? String.Empty;
         var environment = await this._envDataHelper.FetchExistingEnvAsync(environmentName, this._cancellationToken);
-        var tenant = await this._tenantDataHelper.FetchExistingTenantAsync(environmentName, tenantName, this._cancellationToken);
-        var newKey = new ApiKey(Guid.Empty, GenerateApiKeyValue(), apiKeyDetails.ApiKeyType, environment.Id, tenant.Id);
+
+        Tenant? tenant = null;
+        if (apiKeyDetails.Tenant != null) {
+          tenant = await this._tenantDataHelper.FetchExistingTenantAsync(environmentName, apiKeyDetails.Tenant, this._cancellationToken);
+        }
+
+        var newKey = new ApiKey(Guid.Empty, GenerateApiKeyValue(), apiKeyDetails.ApiKeyType, environment.Id, tenant?.Id);
 
         // Record new API key
         var createdApiKey = await this._apiKeysTable.AddAsync(newKey, this._cancellationToken);
