@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Models;
 using k8s;
 using k8s.Models;
@@ -213,11 +214,22 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
       this._kubeClient.CoreV1.ReadNamespaceAsync(resourceNamespace, cancellationToken: token);
     var tenant = KubernetesConfigSource.GetTenantFromNamespaceConfig(namespaceConfig.Result);
 
-    var servicesHierarchy = this.GetTenantServicesHierarchy(
-      resourceNamespace,
-      tenant,
-      KubernetesConfigSource.SecretsEnabled(namespaceConfig.Result.Metadata.Labels)
-    );
+    ServiceHierarchyConfiguration servicesHierarchy;
+
+    try {
+      servicesHierarchy = this.GetTenantServicesHierarchy(
+        resourceNamespace,
+        tenant,
+        KubernetesConfigSource.SecretsEnabled(namespaceConfig.Result.Metadata.Labels)
+      );
+    } catch (InvalidConfigurationException e) {
+      this._logger.LogError(
+        e,
+        message: "Tenant service configuration is invalid, ignoring {eventType} event: {tenant}.",
+        eventType,
+        tenant);
+      return;
+    }
 
     switch (eventType) {
       case WatchEventType.Added:

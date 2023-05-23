@@ -50,9 +50,14 @@ public class ConfigurationHelper {
       if (layers.Count > 0) {
         var mergedConfiguration = layers.Aggregate(ServiceConfigMerger.MergeConfigurations);
 
-        ServiceConfigValidator.ValidateServiceConfig(mergedConfiguration);
-
-        configurationByTenant.Add(tenant, mergedConfiguration);
+        try {
+          ServiceConfigValidator.ValidateServiceConfig(mergedConfiguration);
+          configurationByTenant.Add(tenant, mergedConfiguration);
+        } catch (InvalidConfigurationException e) {
+          this._logger.LogError(e,
+            message: "Tenant service configuration is invalid, skipping initial load: {tenant}.",
+            tenant);
+        }
       } else {
         configurationByTenant.Add(tenant, ServiceHierarchyConfiguration.Empty);
       }

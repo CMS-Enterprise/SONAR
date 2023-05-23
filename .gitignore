@@ -12,3 +12,6 @@ test/**/test-results/
 
 # node modules
 node_modules
+
+# k8s kustomizations
+k8s/**/.env
