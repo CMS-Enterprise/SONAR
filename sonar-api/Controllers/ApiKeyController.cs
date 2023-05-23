@@ -141,7 +141,7 @@ public class ApiKeyController : ControllerBase {
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 400)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
   public async Task<ActionResult> DeleteApiKey(
-    [FromRoute] String keyid,
+    [FromRoute] Guid keyid,
     CancellationToken cancellationToken = default) {
 
     const String adminActivity = "delete an API key";
@@ -156,7 +156,7 @@ public class ApiKeyController : ControllerBase {
     DBRepository dbRepository = new DBRepository(this._dbContext, this._apiKeysTable, this._envDataHelper,
       this._tenantDataHelper, this._environmentsTable, this._tenantsTable, cancellationToken);
 
-    await dbRepository.DeleteAsync(new Guid(keyid));
+    await dbRepository.DeleteAsync(keyid);
     return this.StatusCode((Int32)HttpStatusCode.NoContent);
   }
 
