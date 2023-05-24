@@ -3,17 +3,13 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net;
-using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using Asp.Versioning;
-using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Environment = Cms.BatCave.Sonar.Data.Environment;
 using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
 
 namespace Cms.BatCave.Sonar.Controllers;
@@ -24,31 +20,15 @@ namespace Cms.BatCave.Sonar.Controllers;
 public class ApiKeyController : ControllerBase {
   private const Int32 ApiKeyByteLength = 32;
 
-  private readonly DataContext _dbContext;
-  private readonly DbSet<ApiKey> _apiKeysTable;
-  private readonly EnvironmentDataHelper _envDataHelper;
-  private readonly TenantDataHelper _tenantDataHelper;
   private readonly ApiKeyDataHelper _apiKeyDataHelper;
-  private readonly DbSet<Environment> _environmentsTable;
-  private readonly DbSet<Tenant> _tenantsTable;
-
+  private readonly IApiKeyRepository _apiKeys;
 
   public ApiKeyController(
-    DataContext dbContext,
-    DbSet<ApiKey> apiKeysTable,
-    EnvironmentDataHelper envDataHelper,
-    TenantDataHelper tenantDataHelper,
     ApiKeyDataHelper apiKeyDataHelper,
-    DbSet<Environment> environmentsTable,
-    DbSet<Tenant> tenantsTable) {
+    IApiKeyRepository apiKeys) {
 
-    this._dbContext = dbContext;
-    this._apiKeysTable = apiKeysTable;
-    this._envDataHelper = envDataHelper;
-    this._tenantDataHelper = tenantDataHelper;
     this._apiKeyDataHelper = apiKeyDataHelper;
-    this._environmentsTable = environmentsTable;
-    this._tenantsTable = tenantsTable;
+    this._apiKeys = apiKeys;
   }
 
   /// <summary>
@@ -84,10 +64,7 @@ public class ApiKeyController : ControllerBase {
 
     ValidateEnvAndTenant(apiKeyDetails.Environment, apiKeyDetails.Tenant);
 
-    DBRepository dbRepository = new DBRepository(this._dbContext, this._apiKeysTable, this._envDataHelper,
-      this._tenantDataHelper, this._environmentsTable, this._tenantsTable, cancellationToken);
-
-    var createdApiKey = await dbRepository.AddAsync(apiKeyDetails);
+    var createdApiKey = await this._apiKeys.AddAsync(apiKeyDetails, cancellationToken);
     return this.StatusCode((Int32)HttpStatusCode.Created, createdApiKey);
   }
 
@@ -119,11 +96,8 @@ public class ApiKeyController : ControllerBase {
         $"The authentication credential provided is not authorized to {adminActivity}.");
     }
 
-    DBRepository dbRepository = new DBRepository(this._dbContext, this._apiKeysTable, this._envDataHelper,
-      this._tenantDataHelper, this._environmentsTable, this._tenantsTable, cancellationToken);
-
-    var result  = await dbRepository.GetKeysAsync();
-    return this.StatusCode((Int32)HttpStatusCode.Created, result);
+    var result = await this._apiKeys.GetKeysAsync(cancellationToken);
+    return this.StatusCode((Int32)HttpStatusCode.OK, result);
   }
 
   /// <summary>
@@ -153,10 +127,7 @@ public class ApiKeyController : ControllerBase {
       throw new ForbiddenException($"The authentication credential provided is not authorized to {adminActivity}.");
     }
 
-    DBRepository dbRepository = new DBRepository(this._dbContext, this._apiKeysTable, this._envDataHelper,
-      this._tenantDataHelper, this._environmentsTable, this._tenantsTable, cancellationToken);
-
-    await dbRepository.DeleteAsync(keyid);
+    await this._apiKeys.DeleteAsync(keyid, cancellationToken);
     return this.StatusCode((Int32)HttpStatusCode.NoContent);
   }
 

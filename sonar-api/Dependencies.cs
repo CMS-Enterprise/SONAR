@@ -1,12 +1,15 @@
 using System;
 using System.Net.Http;
 using Cms.BatCave.Sonar.Configuration;
+using Cms.BatCave.Sonar.Controllers;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Prometheus;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Environment = Cms.BatCave.Sonar.Data.Environment;
 
 namespace Cms.BatCave.Sonar;
 
@@ -28,6 +31,16 @@ public class Dependencies {
     builder.Services.AddScoped<ApiKeyDataHelper>();
     builder.Services.AddScoped<HealthDataHelper>();
     builder.Services.AddScoped<CacheHelper>();
+    builder.Services.AddScoped<IApiKeyRepository, DBRepository>(serviceProvider =>
+      new DBRepository(
+        serviceProvider.GetRequiredService<DataContext>(),
+        serviceProvider.GetRequiredService<DbSet<ApiKey>>(),
+        serviceProvider.GetRequiredService<EnvironmentDataHelper>(),
+        serviceProvider.GetRequiredService<TenantDataHelper>(),
+        serviceProvider.GetRequiredService<DbSet<Environment>>(),
+        serviceProvider.GetRequiredService<DbSet<Tenant>>()
+      ));
+
     builder.Services.AddHttpClient<IPrometheusRemoteProtocolClient, PrometheusRemoteProtocolClient>((provider, client) => {
       var config = provider.GetRequiredService<IOptions<PrometheusConfiguration>>().Value;
       client.BaseAddress = new Uri($"{config.Protocol}://{config.Host}:{config.Port}");
