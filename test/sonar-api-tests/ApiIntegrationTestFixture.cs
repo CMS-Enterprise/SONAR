@@ -1,8 +1,13 @@
 using System;
+using System.Collections.Immutable;
 using System.Linq;
+using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Cms.BatCave.Sonar.Controllers;
 using Cms.BatCave.Sonar.Data;
+using Cms.BatCave.Sonar.Enumeration;
+using Cms.BatCave.Sonar.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
@@ -105,6 +110,55 @@ public class ApiIntegrationTestFixture : IDisposable, ILoggerProvider {
       .And(req => {
         req.Headers.Add("ApiKey", apiKey);
       });
+  }
+
+  public RequestBuilder CreateAuthenticatedRequest(
+    String url,
+    ApiKeyType type,
+    String? environment = null,
+    String? tenant = null) {
+
+    var apiKey = this.CreateApiKey(type, environment, tenant);
+
+    return this.CreateAuthenticatedRequest(url, apiKey.ApiKey);
+  }
+
+  public ApiKeyConfiguration CreateApiKey(
+    ApiKeyType type,
+    String? environment = null,
+    String? tenant = null) {
+
+    if (this._app == null) {
+      throw new InvalidOperationException("This test fixture has not yet been initialized.");
+    }
+
+    using var scope = this._app.Services.CreateScope();
+    var repository = scope.ServiceProvider.GetRequiredService<IApiKeyRepository>();
+
+    return repository.AddAsync(new ApiKeyDetails(type, environment, tenant), CancellationToken.None).Result;
+  }
+
+  public async Task<(String, String)> CreateEmptyTestConfiguration() {
+    // Create Service Configuration
+    var testEnvironment = Guid.NewGuid().ToString();
+    var testTenant = Guid.NewGuid().ToString();
+
+    var createConfigResponse = await
+      this.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+        .And(req => {
+          req.Content = JsonContent.Create(new ServiceHierarchyConfiguration(
+            ImmutableArray<ServiceConfiguration>.Empty,
+            ImmutableHashSet<String>.Empty
+          ));
+        })
+        .PostAsync();
+
+    // This should always succeed, This isn't what is being tested.
+    AssertHelper.Precondition(
+      createConfigResponse.IsSuccessStatusCode,
+      message: "Failed to create test configuration."
+    );
+    return (testEnvironment, testTenant);
   }
 
   private class TestLogger : ILogger {

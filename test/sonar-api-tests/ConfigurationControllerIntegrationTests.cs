@@ -305,7 +305,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
         ImmutableHashSet<String>.Empty));
 
     var getResponse = await
-      this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      this.Fixture.Server.CreateRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .AddHeader(name: "Accept", value: "application/json")
         .GetAsync();
 
@@ -496,7 +496,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
   [Fact]
   public async Task CreateConfiguration_TenantAlreadyExistsReturnsConflict() {
     var (testEnvironment, testTenant) =
-      await this.CreateEmptyTestConfiguration();
+      await this.Fixture.CreateEmptyTestConfiguration();
 
     // Attempt to create configuration with services for existing Tenant
     var createConfigResponse = await
@@ -581,7 +581,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
   [Fact]
   public async Task UpdateConfiguration_NoRootServiceMatchReturnsBadRequest() {
     var (testEnvironment, testTenant) =
-      await this.CreateEmptyTestConfiguration();
+      await this.Fixture.CreateEmptyTestConfiguration();
 
     var updateConfigResponse = await
       this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
@@ -609,7 +609,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
   [Fact]
   public async Task UpdateConfiguration_NoChildServiceMatchReturnsBadRequest() {
     var (testEnvironment, testTenant) =
-      await this.CreateEmptyTestConfiguration();
+      await this.Fixture.CreateEmptyTestConfiguration();
 
     var updateConfigResponse = await
       this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
@@ -637,7 +637,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
   [Fact]
   public async Task UpdateConfiguration_ServiceNameLengthExceededReturnsBadRequest() {
     var (existingEnvironment, existingTenant) =
-      await this.CreateEmptyTestConfiguration();
+      await this.Fixture.CreateEmptyTestConfiguration();
 
     var updateConfigResponse = await
       this.Fixture.CreateAdminRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}")
@@ -670,7 +670,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
   [Fact]
   public async Task UpdateConfiguration_ServiceNameNotUrlSafeReturnsBadRequest() {
     var (existingEnvironment, existingTenant) =
-      await this.CreateEmptyTestConfiguration();
+      await this.Fixture.CreateEmptyTestConfiguration();
 
     var updateConfigResponse = await
       this.Fixture.CreateAdminRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}")
@@ -688,7 +688,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
   [Fact]
   public async Task UpdateConfiguration_MissingEnvironmentReturnsNotFound() {
     var (existingEnvironment, existingTenant) =
-      await this.CreateEmptyTestConfiguration();
+      await this.Fixture.CreateEmptyTestConfiguration();
 
     var missingEnvironmentName = Guid.NewGuid().ToString();
     var updateConfigResponse = await
@@ -725,7 +725,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
   [Fact]
   public async Task UpdateConfiguration_MissingTenantReturnsNotFound() {
     var (existingEnvironment, existingTenant) =
-      await this.CreateEmptyTestConfiguration();
+      await this.Fixture.CreateEmptyTestConfiguration();
 
     var missingTenantName = Guid.NewGuid().ToString();
     var updateConfigResponse = await
@@ -762,7 +762,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
   [Fact]
   public async Task UpdateConfiguration_RootServiceCasingMismatchReturnsOk() {
     var (testEnvironment, testTenant) =
-      await this.CreateEmptyTestConfiguration();
+      await this.Fixture.CreateEmptyTestConfiguration();
 
     var updateConfigResponse = await
       this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
@@ -780,7 +780,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
   [Fact]
   public async Task UpdateConfiguration_SuccessfulUpdateReturnsOk() {
     var (existingEnvironment, existingTenant) =
-      await this.CreateEmptyTestConfiguration();
+      await this.Fixture.CreateEmptyTestConfiguration();
 
     var getResponse = await
       this.Fixture.CreateAdminRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}")
@@ -890,56 +890,404 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
     );
   }
 
-  private async Task<(String, String)> CreateEmptyTestConfiguration() {
-    // Create Service Configuration
+  #region Authentication and Authorization Tests
+
+  //****************************************************************************
+  //
+  //                     Authentication and Authorization
+  //
+  //****************************************************************************
+
+  [Fact]
+  public async Task CreateConfiguration_GlobalAdmin_Success() {
     var testEnvironment = Guid.NewGuid().ToString();
     var testTenant = Guid.NewGuid().ToString();
 
     var createConfigResponse = await
-      this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      this.Fixture
+        .CreateAuthenticatedRequest(
+          $"/api/v2/config/{testEnvironment}/tenants/{testTenant}",
+          ApiKeyType.Admin)
         .And(req => {
-          req.Content = JsonContent.Create(new ServiceHierarchyConfiguration(
-            ImmutableArray<ServiceConfiguration>.Empty,
-            ImmutableHashSet<String>.Empty
-          ));
+          req.Content = JsonContent.Create(TestRootChildConfiguration);
         })
         .PostAsync();
 
-    // This should always succeed, This isn't what is being tested.
-    AssertHelper.Precondition(
-      createConfigResponse.IsSuccessStatusCode,
-      message: "Failed to create test configuration."
-    );
-    return (testEnvironment, testTenant);
+    Assert.Equal(
+      expected: HttpStatusCode.Created,
+      actual: createConfigResponse.StatusCode);
   }
 
-  private async Task RecordServiceHealth(
-    String testEnvironment,
-    String testTenant,
-    String serviceName,
-    String healthCheckName,
-    DateTime timestamp,
-    HealthStatus status) {
+  [Fact]
+  public async Task CreateConfiguration_EnvironmentAdmin_Success() {
+    var testEnvironment = Guid.NewGuid().ToString();
 
-    // Record health status
-    var response = await
-      this.Fixture.Server
-        .CreateRequest(
-          $"/api/v2/config/{testEnvironment}/tenants/{testTenant}/services/{serviceName}")
+    var createEnvResponse = await
+      this.Fixture.CreateAdminRequest("/api/v2/environments")
         .And(req => {
-          req.Content = JsonContent.Create(new ServiceHealth(
-            timestamp,
-            status,
-            ImmutableDictionary<String, HealthStatus>.Empty.Add(healthCheckName, status)
-          ));
+          req.Content = JsonContent.Create(new { name = testEnvironment });
         })
         .PostAsync();
 
-    AssertHelper.Precondition(
-      response.IsSuccessStatusCode,
-      message: "Failed to record service health"
-    );
+    AssertHelper.Precondition(createEnvResponse.IsSuccessStatusCode, "Error creating environment");
+
+    var testTenant = Guid.NewGuid().ToString();
+
+    var createConfigResponse = await
+      this.Fixture
+        .CreateAuthenticatedRequest(
+          $"/api/v2/config/{testEnvironment}/tenants/{testTenant}",
+          ApiKeyType.Admin,
+          testEnvironment)
+        .And(req => {
+          req.Content = JsonContent.Create(TestRootChildConfiguration);
+        })
+        .PostAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.Created,
+      actual: createConfigResponse.StatusCode);
   }
+
+  [Fact]
+  public async Task CreateConfiguration_Anonymous_Unauthorized() {
+    var testEnvironment = Guid.NewGuid().ToString();
+    var testTenant = Guid.NewGuid().ToString();
+
+    var createConfigResponse = await
+      this.Fixture.Server.CreateRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+        .And(req => {
+          req.Content = JsonContent.Create(TestRootChildConfiguration);
+        })
+        .PostAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.Unauthorized,
+      actual: createConfigResponse.StatusCode);
+  }
+
+  [Fact]
+  public async Task CreateConfiguration_EnvironmentStandard_Forbidden() {
+    var testEnvironment = Guid.NewGuid().ToString();
+
+    var createEnvResponse = await
+      this.Fixture.CreateAdminRequest("/api/v2/environments")
+        .And(req => {
+          req.Content = JsonContent.Create(new { name = testEnvironment });
+        })
+        .PostAsync();
+
+    AssertHelper.Precondition(createEnvResponse.IsSuccessStatusCode, "Error creating environment");
+
+    var testTenant = Guid.NewGuid().ToString();
+
+    var createConfigResponse = await
+      this.Fixture
+        .CreateAuthenticatedRequest(
+          $"/api/v2/config/{testEnvironment}/tenants/{testTenant}",
+          ApiKeyType.Standard,
+          testEnvironment)
+        .And(req => {
+          req.Content = JsonContent.Create(TestRootChildConfiguration);
+        })
+        .PostAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.Forbidden,
+      actual: createConfigResponse.StatusCode);
+  }
+
+  [Fact]
+  public async Task CreateConfiguration_OtherEnvironmentAdmin_Forbidden() {
+    var (otherEnvironment, _) = await this.Fixture.CreateEmptyTestConfiguration();
+    var testEnvironment = Guid.NewGuid().ToString();
+
+    var createEnvResponse = await
+      this.Fixture.CreateAdminRequest("/api/v2/environments")
+        .And(req => {
+          req.Content = JsonContent.Create(new { name = testEnvironment });
+        })
+        .PostAsync();
+
+    AssertHelper.Precondition(createEnvResponse.IsSuccessStatusCode, "Error creating environment");
+
+    var testTenant = Guid.NewGuid().ToString();
+
+    var createConfigResponse = await
+      this.Fixture
+        .CreateAuthenticatedRequest(
+          $"/api/v2/config/{testEnvironment}/tenants/{testTenant}",
+          ApiKeyType.Admin,
+          otherEnvironment)
+        .And(req => {
+          req.Content = JsonContent.Create(TestRootChildConfiguration);
+        })
+        .PostAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.Forbidden,
+      actual: createConfigResponse.StatusCode);
+  }
+
+  [Fact]
+  public async Task UpdateConfiguration_Auth_BuiltInAdmin_Success() {
+    var (existingEnvironment, existingTenant) =
+      await this.Fixture.CreateEmptyTestConfiguration();
+
+    var updateConfigResponse = await
+      this.Fixture.CreateAdminRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}")
+        .And(req => {
+          req.Content = JsonContent.Create(
+            TestRootChildConfiguration);
+        })
+        .SendAsync("PUT");
+
+    Assert.Equal(
+      expected: HttpStatusCode.OK,
+      actual: updateConfigResponse.StatusCode);
+  }
+
+  [Fact]
+  public async Task UpdateConfiguration_Auth_GlobalAdmin_Success() {
+    var (existingEnvironment, existingTenant) =
+      await this.Fixture.CreateEmptyTestConfiguration();
+
+    var updateConfigResponse = await
+      this.Fixture.CreateAuthenticatedRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}", ApiKeyType.Admin)
+        .And(req => {
+          req.Content = JsonContent.Create(
+            TestRootChildConfiguration);
+        })
+        .SendAsync("PUT");
+
+    Assert.Equal(
+      expected: HttpStatusCode.OK,
+      actual: updateConfigResponse.StatusCode);
+  }
+
+  [Fact]
+  public async Task UpdateConfiguration_Auth_EnvironmentAdmin_Success() {
+    var (existingEnvironment, existingTenant) =
+      await this.Fixture.CreateEmptyTestConfiguration();
+
+    var updateConfigResponse = await
+      this.Fixture.CreateAuthenticatedRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}", ApiKeyType.Admin, existingEnvironment)
+        .And(req => {
+          req.Content = JsonContent.Create(
+            TestRootChildConfiguration);
+        })
+        .SendAsync("PUT");
+
+    Assert.Equal(
+      expected: HttpStatusCode.OK,
+      actual: updateConfigResponse.StatusCode);
+  }
+
+  [Fact]
+  public async Task UpdateConfiguration_Auth_EnvironmentStandard_Forbidden() {
+    var (existingEnvironment, existingTenant) =
+      await this.Fixture.CreateEmptyTestConfiguration();
+
+    var updateConfigResponse = await
+      this.Fixture.CreateAuthenticatedRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}", ApiKeyType.Standard, existingEnvironment)
+        .And(req => {
+          req.Content = JsonContent.Create(
+            TestRootChildConfiguration);
+        })
+        .SendAsync("PUT");
+
+    Assert.Equal(
+      expected: HttpStatusCode.Forbidden,
+      actual: updateConfigResponse.StatusCode);
+  }
+
+  [Fact]
+  public async Task UpdateConfiguration_Auth_OtherEnvironmentAdmin_Forbidden() {
+    var (existingEnvironment, existingTenant) =
+      await this.Fixture.CreateEmptyTestConfiguration();
+    var (otherEnvironment, _) = await this.Fixture.CreateEmptyTestConfiguration();
+
+    var updateConfigResponse = await
+      this.Fixture.CreateAuthenticatedRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}", ApiKeyType.Admin, otherEnvironment)
+        .And(req => {
+          req.Content = JsonContent.Create(
+            TestRootChildConfiguration);
+        })
+        .SendAsync("PUT");
+
+    Assert.Equal(
+      expected: HttpStatusCode.Forbidden,
+      actual: updateConfigResponse.StatusCode);
+  }
+
+  [Fact]
+  public async Task UpdateConfiguration_Auth_Anonymous_Unauthorized() {
+    var (existingEnvironment, existingTenant) =
+      await this.Fixture.CreateEmptyTestConfiguration();
+
+    var updateConfigResponse = await
+      this.Fixture.Server.CreateRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}")
+        .And(req => {
+          req.Content = JsonContent.Create(
+            TestRootChildConfiguration);
+        })
+        .SendAsync("PUT");
+
+    Assert.Equal(
+      expected: HttpStatusCode.Unauthorized,
+      actual: updateConfigResponse.StatusCode);
+  }
+
+  [Fact]
+  public async Task DeleteConfiguration_Auth_BuiltInAdmin_Success() {
+    var (existingEnvironment, existingTenant) =
+      await this.Fixture.CreateEmptyTestConfiguration();
+
+    var updateConfigResponse = await
+      this.Fixture.CreateAdminRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}")
+        .And(req => {
+          req.Content = JsonContent.Create(
+            TestRootChildConfiguration);
+        })
+        .SendAsync("DELETE");
+
+    Assert.Equal(
+      expected: HttpStatusCode.NoContent,
+      actual: updateConfigResponse.StatusCode);
+  }
+
+  [Fact]
+  public async Task DeleteConfiguration_Auth_GlobalAdmin_Success() {
+    var (existingEnvironment, existingTenant) =
+      await this.Fixture.CreateEmptyTestConfiguration();
+
+    var updateConfigResponse = await
+      this.Fixture.CreateAuthenticatedRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}", ApiKeyType.Admin)
+        .And(req => {
+          req.Content = JsonContent.Create(
+            TestRootChildConfiguration);
+        })
+        .SendAsync("DELETE");
+
+    Assert.Equal(
+      expected: HttpStatusCode.NoContent,
+      actual: updateConfigResponse.StatusCode);
+  }
+
+  [Fact]
+  public async Task DeleteConfiguration_Auth_EnvironmentAdmin_Success() {
+    var (existingEnvironment, existingTenant) =
+      await this.Fixture.CreateEmptyTestConfiguration();
+
+    var updateConfigResponse = await
+      this.Fixture.CreateAuthenticatedRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}", ApiKeyType.Admin, existingEnvironment)
+        .And(req => {
+          req.Content = JsonContent.Create(
+            TestRootChildConfiguration);
+        })
+        .SendAsync("DELETE");
+
+    Assert.Equal(
+      expected: HttpStatusCode.NoContent,
+      actual: updateConfigResponse.StatusCode);
+  }
+
+  [Fact]
+  public async Task DeleteConfiguration_Auth_EnvironmentStandard_Forbidden() {
+    var (existingEnvironment, existingTenant) =
+      await this.Fixture.CreateEmptyTestConfiguration();
+
+    var updateConfigResponse = await
+      this.Fixture.CreateAuthenticatedRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}", ApiKeyType.Standard, existingEnvironment)
+        .And(req => {
+          req.Content = JsonContent.Create(
+            TestRootChildConfiguration);
+        })
+        .SendAsync("DELETE");
+
+    Assert.Equal(
+      expected: HttpStatusCode.Forbidden,
+      actual: updateConfigResponse.StatusCode);
+  }
+
+  [Fact]
+  public async Task DeleteConfiguration_Auth_OtherEnvironmentAdmin_Forbidden() {
+    var (existingEnvironment, existingTenant) =
+      await this.Fixture.CreateEmptyTestConfiguration();
+    var (otherEnvironment, _) = await this.Fixture.CreateEmptyTestConfiguration();
+
+    var updateConfigResponse = await
+      this.Fixture.CreateAuthenticatedRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}", ApiKeyType.Admin, otherEnvironment)
+        .And(req => {
+          req.Content = JsonContent.Create(
+            TestRootChildConfiguration);
+        })
+        .SendAsync("DELETE");
+
+    Assert.Equal(
+      expected: HttpStatusCode.Forbidden,
+      actual: updateConfigResponse.StatusCode);
+  }
+
+  [Fact]
+  public async Task DeleteConfiguration_Auth_Anonymous_Unauthorized() {
+    var (existingEnvironment, existingTenant) =
+      await this.Fixture.CreateEmptyTestConfiguration();
+
+    var updateConfigResponse = await
+      this.Fixture.Server.CreateRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}")
+        .And(req => {
+          req.Content = JsonContent.Create(
+            TestRootChildConfiguration);
+        })
+        .SendAsync("Delete");
+
+    Assert.Equal(
+      expected: HttpStatusCode.Unauthorized,
+      actual: updateConfigResponse.StatusCode);
+  }
+
+  [Fact]
+  public async Task GetConfiguration_Auth_EnvironmentStandard_Success() {
+    // Create Tenant Configuration
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestRootChildConfiguration);
+
+    var getResponse = await
+      this.Fixture.CreateAuthenticatedRequest(
+          $"/api/v2/config/{testEnvironment}/tenants/{testTenant}",
+          ApiKeyType.Standard,
+          testEnvironment)
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.OK,
+      actual: getResponse.StatusCode);
+  }
+
+  [Fact(Skip = "BATAPI-: GetConfiguration should enforce ApiKey scope")]
+  public async Task GetConfiguration_Auth_OtherEnvironmentStandard_Forbidden() {
+    // Create Tenant Configuration
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestRootChildConfiguration);
+    var (otherEnvironment, _) =
+      await this.Fixture.CreateEmptyTestConfiguration();
+
+    var getResponse = await
+      this.Fixture.CreateAuthenticatedRequest(
+          $"/api/v2/config/{testEnvironment}/tenants/{testTenant}",
+          ApiKeyType.Standard,
+          otherEnvironment)
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.Forbidden,
+      actual: getResponse.StatusCode);
+  }
+
+  #endregion
 
   private static T? GetExtensionValue<T>(Object? extensionValue) {
     return extensionValue switch {

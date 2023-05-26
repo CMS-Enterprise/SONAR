@@ -702,6 +702,302 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
     Assert.Equal(expected: (expectedTimestamp, rootStatus), actual: rootHealthCheck.Value);
   }
 
+
+  #region Authentication and Authorization Tests
+
+  //****************************************************************************
+  //
+  //                     Authentication and Authorization
+  //
+  //****************************************************************************
+
+  [Fact]
+  public async Task RecordServiceHealth_Auth_GlobalAdmin_Success() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestRootOnlyConfiguration);
+
+    var timestamp = DateTime.UtcNow;
+
+    // Record health status
+    var response = await
+      this.Fixture.CreateAdminRequest(
+          $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{TestRootServiceName}")
+        .And(req => {
+          req.Content = JsonContent.Create(new ServiceHealth(
+            timestamp,
+            HealthStatus.Online,
+            ImmutableDictionary<String, HealthStatus>.Empty
+              .Add(TestHealthCheckName, HealthStatus.Online)
+          ));
+        })
+        .PostAsync();
+
+    // 200, 201, 204 would all be ok
+    Assert.True(
+      response.IsSuccessStatusCode,
+      userMessage: $"Expected a success response code (2xx). Actual: {(Int32)response.StatusCode}"
+    );
+  }
+
+  [Fact]
+  public async Task RecordServiceHealth_Auth_EnvironmentAdmin_Success() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestRootOnlyConfiguration);
+
+    var timestamp = DateTime.UtcNow;
+
+    // Record health status
+    var response = await
+      this.Fixture.CreateAuthenticatedRequest(
+          $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{TestRootServiceName}",
+          ApiKeyType.Admin,
+          testEnvironment)
+        .And(req => {
+          req.Content = JsonContent.Create(new ServiceHealth(
+            timestamp,
+            HealthStatus.Online,
+            ImmutableDictionary<String, HealthStatus>.Empty
+              .Add(TestHealthCheckName, HealthStatus.Online)
+          ));
+        })
+        .PostAsync();
+
+    // 200, 201, 204 would all be ok
+    Assert.True(
+      response.IsSuccessStatusCode,
+      userMessage: $"Expected a success response code (2xx). Actual: {(Int32)response.StatusCode}"
+    );
+  }
+
+  [Fact]
+  public async Task RecordServiceHealth_Auth_TenantAdmin_Success() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestRootOnlyConfiguration);
+
+    var timestamp = DateTime.UtcNow;
+
+    // Record health status
+    var response = await
+      this.Fixture.CreateAuthenticatedRequest(
+          $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{TestRootServiceName}",
+          ApiKeyType.Admin,
+          testEnvironment,
+          testTenant)
+        .And(req => {
+          req.Content = JsonContent.Create(new ServiceHealth(
+            timestamp,
+            HealthStatus.Online,
+            ImmutableDictionary<String, HealthStatus>.Empty
+              .Add(TestHealthCheckName, HealthStatus.Online)
+          ));
+        })
+        .PostAsync();
+
+    // 200, 201, 204 would all be ok
+    Assert.True(
+      response.IsSuccessStatusCode,
+      userMessage: $"Expected a success response code (2xx). Actual: {(Int32)response.StatusCode}"
+    );
+  }
+
+  [Fact]
+  public async Task RecordServiceHealth_Auth_Anonymous_Unauthorized() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestRootOnlyConfiguration);
+
+    var timestamp = DateTime.UtcNow;
+
+    // Record health status
+    var response = await
+      this.Fixture.Server.CreateRequest(
+          $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{TestRootServiceName}")
+        .And(req => {
+          req.Content = JsonContent.Create(new ServiceHealth(
+            timestamp,
+            HealthStatus.Online,
+            ImmutableDictionary<String, HealthStatus>.Empty
+              .Add(TestHealthCheckName, HealthStatus.Online)
+          ));
+        })
+        .PostAsync();
+
+    Assert.Equal(
+      HttpStatusCode.Unauthorized,
+      response.StatusCode
+    );
+  }
+
+  [Fact]
+  public async Task RecordServiceHealth_Auth_TenantStandard_Forbidden() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestRootOnlyConfiguration);
+
+    var timestamp = DateTime.UtcNow;
+
+    // Record health status
+    var response = await
+      this.Fixture.CreateAuthenticatedRequest(
+          $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{TestRootServiceName}",
+          ApiKeyType.Standard,
+          testEnvironment,
+          testTenant)
+        .And(req => {
+          req.Content = JsonContent.Create(new ServiceHealth(
+            timestamp,
+            HealthStatus.Online,
+            ImmutableDictionary<String, HealthStatus>.Empty
+              .Add(TestHealthCheckName, HealthStatus.Online)
+          ));
+        })
+        .PostAsync();
+
+    Assert.Equal(
+      HttpStatusCode.Forbidden,
+      response.StatusCode
+    );
+  }
+
+  [Fact]
+  public async Task RecordServiceHealth_Auth_OtherTenantAdmin_Forbidden() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestRootOnlyConfiguration);
+    var otherTenant = Guid.NewGuid().ToString();
+    await this.CreateTestConfiguration(testEnvironment, otherTenant, TestRootOnlyConfiguration);
+
+    var timestamp = DateTime.UtcNow;
+
+    // Record health status
+    var response = await
+      this.Fixture.CreateAuthenticatedRequest(
+          $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{TestRootServiceName}",
+          ApiKeyType.Standard,
+          testEnvironment,
+          otherTenant)
+        .And(req => {
+          req.Content = JsonContent.Create(new ServiceHealth(
+            timestamp,
+            HealthStatus.Online,
+            ImmutableDictionary<String, HealthStatus>.Empty
+              .Add(TestHealthCheckName, HealthStatus.Online)
+          ));
+        })
+        .PostAsync();
+
+    Assert.Equal(
+      HttpStatusCode.Forbidden,
+      response.StatusCode
+    );
+  }
+
+  [Fact]
+  public async Task GetServiceHierarchyHealth_Auth_Anonymous_Success() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestRootOnlyConfiguration);
+
+    var getResponse = await
+      this.Fixture.Server.CreateRequest($"/api/v2/health/{testEnvironment}/tenants/{testTenant}")
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.OK,
+      actual: getResponse.StatusCode);
+  }
+
+  [Fact]
+  public async Task GetServiceHierarchyHealth_Auth_EnvironmentStandard_Success() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestRootOnlyConfiguration);
+
+    var getResponse = await
+      this.Fixture.CreateAuthenticatedRequest(
+          $"/api/v2/health/{testEnvironment}/tenants/{testTenant}",
+          ApiKeyType.Standard,
+          testEnvironment)
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.OK,
+      actual: getResponse.StatusCode);
+  }
+
+  [Fact(Skip = "BATAPI-: GetServiceHierarchyHealth should enforce ApiKey scope")]
+  public async Task GetServiceHierarchyHealth_Auth_OtherEnvironmentStandard_Forbidden() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestRootOnlyConfiguration);
+    var (otherEnvironment, _) =
+      await this.Fixture.CreateEmptyTestConfiguration();
+
+    var getResponse = await
+      this.Fixture.CreateAuthenticatedRequest(
+          $"/api/v2/health/{testEnvironment}/tenants/{testTenant}",
+          ApiKeyType.Standard,
+          otherEnvironment)
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.Forbidden,
+      actual: getResponse.StatusCode);
+  }
+
+  [Fact]
+  public async Task GetSpecificServiceHierarchyHealth_Auth_Anonymous_Success() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestRootOnlyConfiguration);
+
+    var getResponse = await
+      this.Fixture.Server.CreateRequest(
+          $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{TestRootServiceName}")
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.OK,
+      actual: getResponse.StatusCode);
+  }
+
+  [Fact]
+  public async Task GetSpecificServiceHierarchyHealth_Auth_EnvironmentStandard_Success() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestRootOnlyConfiguration);
+
+    var getResponse = await
+      this.Fixture.CreateAuthenticatedRequest(
+          $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{TestRootServiceName}",
+          ApiKeyType.Standard,
+          testEnvironment)
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.OK,
+      actual: getResponse.StatusCode);
+  }
+
+  [Fact(Skip = "BATAPI-: GetServiceHierarchyHealth should enforce ApiKey scope")]
+  public async Task GetSpecificServiceHierarchyHealth_Auth_OtherEnvironmentStandard_Forbidden() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestRootOnlyConfiguration);
+    var (otherEnvironment, _) =
+      await this.Fixture.CreateEmptyTestConfiguration();
+
+    var getResponse = await
+      this.Fixture.CreateAuthenticatedRequest(
+          $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{TestRootServiceName}",
+          ApiKeyType.Standard,
+          otherEnvironment)
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.Forbidden,
+      actual: getResponse.StatusCode);
+  }
+
+  #endregion
+
   private async Task RecordServiceHealth(
     String testEnvironment,
     String testTenant,

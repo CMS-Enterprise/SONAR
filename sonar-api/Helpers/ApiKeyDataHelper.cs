@@ -58,19 +58,24 @@ public class ApiKeyDataHelper {
     // Check if API key is associated with the specified Environment
     var existingApiKey = await this.TryMatchApiKeyAsync(headerApiKey, cancellationToken);
 
-    Environment? specifiedEnv =
+    if (existingApiKey == null) {
+      return false;
+    } else if (existingApiKey.EnvironmentId == null) {
+      // This is a global API key
+      return true;
+    }
+
+    var specifiedEnv =
       await this._environmentsTable
         .Where(e => e.Name == environmentName)
         .SingleOrDefaultAsync(cancellationToken);
 
-    if ((specifiedEnv == null) || (existingApiKey?.EnvironmentId != specifiedEnv.Id)) {
-      return false;
-    }
-    return true;
+    return (specifiedEnv != null) && (existingApiKey.EnvironmentId == specifiedEnv.Id);
   }
 
   public async Task ValidateTenantPermission(
     String? headerApiKey,
+    Boolean requireAdmin,
     String environment,
     String tenant,
     String activity,
@@ -89,8 +94,10 @@ public class ApiKeyDataHelper {
     }
 
     var tenantEntity = await this._tenantDataHelper.FetchExistingTenantAsync(environment, tenant, cancellationToken);
-    if ((existingApiKey.Type != ApiKeyType.Admin) &&
-        (existingApiKey.TenantId != tenantEntity.Id)) {
+
+    if ((requireAdmin && (existingApiKey.Type != ApiKeyType.Admin)) ||
+        (existingApiKey.TenantId.HasValue && (existingApiKey.TenantId != tenantEntity.Id)) ||
+        (existingApiKey.EnvironmentId.HasValue && (existingApiKey.EnvironmentId != tenantEntity.EnvironmentId))) {
       throw new ForbiddenException(
         $"The authentication credential provided is not authorized to {activity}."
       );

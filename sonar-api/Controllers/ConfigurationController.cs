@@ -81,12 +81,10 @@ public class ConfigurationController : ControllerBase {
 
     try {
       // Validation
-      await this._apiKeyDataHelper.ValidateAdminPermission(
-        headerApiKey, global: false, activity, cancellationToken);
       await this._apiKeyDataHelper.ValidateTenantPermission(
-        headerApiKey, environment, tenant, activity, cancellationToken);
+        headerApiKey, true, environment, tenant, activity, cancellationToken);
       isAuthorized = true;
-    } catch {
+    } catch (Exception ex) when (ex is UnauthorizedException or ForbiddenException) {
       isAuthorized = false;
     }
 
@@ -147,7 +145,7 @@ public class ConfigurationController : ControllerBase {
     var envMatches = await this._apiKeyDataHelper.ValidateEnvPermission(
       headerApiKey, environment, cancellationToken);
 
-    if (!isAdmin && !envMatches) {
+    if (!isAdmin || !envMatches) {
       throw new ForbiddenException($"The authentication credential provided is not authorized to {activity}.");
     }
 
@@ -309,7 +307,8 @@ public class ConfigurationController : ControllerBase {
 
     // Validate
     await this._apiKeyDataHelper.ValidateTenantPermission(
-      Request.Headers["ApiKey"].SingleOrDefault(),
+      this.Request.Headers["ApiKey"].SingleOrDefault(),
+      requireAdmin: true,
       environment,
       tenant,
       "update configuration",
@@ -581,6 +580,7 @@ public class ConfigurationController : ControllerBase {
     // Validate
     await this._apiKeyDataHelper.ValidateTenantPermission(
       Request.Headers["ApiKey"].SingleOrDefault(),
+      requireAdmin: true,
       environment,
       tenant,
       "delete configuration",

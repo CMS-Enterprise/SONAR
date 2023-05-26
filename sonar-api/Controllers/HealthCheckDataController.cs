@@ -69,6 +69,7 @@ public class HealthCheckDataController : ControllerBase {
     // TODO (cont): approach for authorizing endpoints.
     await this._apiKeyDataHelper.ValidateTenantPermission(
       this.Request.Headers["ApiKey"].SingleOrDefault(),
+      requireAdmin: true,
       environment,
       tenant,
       activity: "record health check data",

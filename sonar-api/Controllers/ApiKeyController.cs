@@ -110,7 +110,7 @@ public class ApiKeyController : ControllerBase {
 
     var encKey = this.Request.Headers[ApiKeyHeader].SingleOrDefault();
     if (encKey == null) {
-      throw new ForbiddenException($"No authentication credential provided not authorized to {activity}.");
+      throw new UnauthorizedException($"Authentication is required to {activity}.");
     }
 
     if (this.MatchDefaultApiKey(encKey) != null) {

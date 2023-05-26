@@ -305,6 +305,109 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
     }
   }
 
+  #region Authentication and Authorization Tests
+
+  //****************************************************************************
+  //
+  //                     Authentication and Authorization
+  //
+  //****************************************************************************
+
+  [Fact]
+  public async Task GetHealthHistory_Auth_GlobalAdmin_Success() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestRootOnlyConfiguration);
+
+    var timestamp = DateTime.UtcNow.AddMinutes(-10);
+    var start = timestamp;
+    var end = timestamp.AddMinutes(10);
+    for (var i = 0; i < NumberRecordings; i++) {
+      await this.RecordServiceHealth(
+        testEnvironment,
+        testTenant,
+        RootServiceName,
+        HealthCheckName,
+        timestamp,
+        HealthStatus.Online);
+      timestamp = timestamp.AddSeconds(TimeInSecondsBetweenRecordings);
+    }
+
+    var getResponse = await
+      this.Fixture.CreateAdminRequest(
+          $"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?start={start}&end={end}&step={Step}")
+        .GetAsync();
+
+    Assert.True(
+      getResponse.IsSuccessStatusCode,
+      $"GetHealthHistory returned non-success status code: {getResponse.StatusCode}"
+    );
+  }
+
+  [Fact]
+  public async Task GetHealthHistory_Auth_TenantUser_Success() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestRootOnlyConfiguration);
+
+    var timestamp = DateTime.UtcNow.AddMinutes(-10);
+    var start = timestamp;
+    var end = timestamp.AddMinutes(10);
+    for (var i = 0; i < NumberRecordings; i++) {
+      await this.RecordServiceHealth(
+        testEnvironment,
+        testTenant,
+        RootServiceName,
+        HealthCheckName,
+        timestamp,
+        HealthStatus.Online);
+      timestamp = timestamp.AddSeconds(TimeInSecondsBetweenRecordings);
+    }
+
+    var getResponse = await
+      this.Fixture.CreateAuthenticatedRequest(
+          $"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?start={start}&end={end}&step={Step}",
+          ApiKeyType.Standard,
+          testEnvironment,
+          testTenant)
+        .GetAsync();
+
+    Assert.True(
+      getResponse.IsSuccessStatusCode,
+      $"GetHealthHistory returned non-success status code: {getResponse.StatusCode}"
+    );
+  }
+
+  [Fact]
+  public async Task GetHealthHistory_Auth_Anonymous_Success() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestRootOnlyConfiguration);
+
+    var timestamp = DateTime.UtcNow.AddMinutes(-10);
+    var start = timestamp;
+    var end = timestamp.AddMinutes(10);
+    for (var i = 0; i < NumberRecordings; i++) {
+      await this.RecordServiceHealth(
+        testEnvironment,
+        testTenant,
+        RootServiceName,
+        HealthCheckName,
+        timestamp,
+        HealthStatus.Online);
+      timestamp = timestamp.AddSeconds(TimeInSecondsBetweenRecordings);
+    }
+
+    var getResponse = await
+      this.Fixture.Server.CreateRequest(
+          $"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?start={start}&end={end}&step={Step}")
+        .GetAsync();
+
+    Assert.True(
+      getResponse.IsSuccessStatusCode,
+      $"GetHealthHistory returned non-success status code: {getResponse.StatusCode}"
+    );
+  }
+
+  #endregion
+
   public static IEnumerable<Object[]> HealthStatusData() {
     yield return new Object[] {
       new HealthStatus[] { HealthStatus.Online, HealthStatus.AtRisk, HealthStatus.Degraded },
