@@ -2,20 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Asp.Versioning;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
-using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
-using Google.Protobuf.WellKnownTypes;
-using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
-using Environment = System.Environment;
 using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
 
 namespace Cms.BatCave.Sonar.Controllers;
@@ -24,19 +19,15 @@ namespace Cms.BatCave.Sonar.Controllers;
 [ApiVersion(2)]
 [Route("api/v{version:apiVersion}/keys")]
 public class ApiKeyController : ControllerBase {
-  private const Int32 ApiKeyByteLength = 32;
   private const String ApiKeyHeader = "ApiKey";
 
-  private readonly ApiKeyDataHelper _apiKeyDataHelper;
   private readonly IApiKeyRepository _apiKeys;
   private readonly IConfiguration _configuration;
 
   public ApiKeyController(
-    ApiKeyDataHelper apiKeyDataHelper,
     IConfiguration  configuration,
     IApiKeyRepository apiKeys) {
 
-    this._apiKeyDataHelper = apiKeyDataHelper;
     this._configuration = configuration;
     this._apiKeys = apiKeys;
   }
@@ -237,98 +228,6 @@ public class ApiKeyController : ControllerBase {
     return true;
   }
 
-  private async Task<Boolean> HasPermission2(String encKey, ApiKeyDetails requestDetails, String activity, CancellationToken cancellationToken) {
-    //Get the client requesting Api Key - Its permissions to do something.
-    var apiKey = await this._apiKeys.GetApiKeyAsync(encKey, cancellationToken);
-
-    //Check the request against the API key to see if permission is good.
-    //Switch on what Api Key you are trying to create
-    switch (requestDetails.ApiKeyType) {
-      case ApiKeyType.Admin:
-        if (apiKey.Type != ApiKeyType.Admin) {
-          throw new ForbiddenException($"Api Key not authorized to {activity}.");
-        }
-        break;
-      case ApiKeyType.EnvAdmin:
-        if (apiKey.EnvironmentId != requestDetails.EnvironmentId) {
-          throw new ForbiddenException($"Api Key not authorized to {activity}.");
-        }
-        break;
-      case ApiKeyType.TenantAdmin:
-        //make sure it is the request is the same tenant
-        if ((apiKey.TenantId != requestDetails.TenantId) || (apiKey.EnvironmentId != requestDetails.EnvironmentId)){
-          throw new ForbiddenException($"Api Key not authorized to {activity}.");
-        }
-        break;
-    }
-    return true;
-  }
-
-   private async Task<ApiKeyDetails?> ValidateKeyRequestAsync2(String encKey, ApiKeyDetails requestDetails, String activity, CancellationToken cancellationToken){
-
-    switch (requestDetails.ApiKeyType) {
-      case ApiKeyType.Admin:
-        if (requestDetails.ApiKeyType == ApiKeyType.Admin) {
-          if ((requestDetails.Environment != null) || (requestDetails.Tenant != null)) {
-            throw new BadRequestException($"For this type of key, {requestDetails.ApiKeyType}, there cannot be an Environment or Tenant in the request.");
-          }
-        }
-        break;
-      case ApiKeyType.EnvAdmin:
-        if (requestDetails.ApiKeyType == ApiKeyType.EnvAdmin) {
-          if ((requestDetails.Environment == null) || (requestDetails.Tenant != null)) {
-            throw new BadRequestException($"For this type of key, {requestDetails.ApiKeyType}, you must specify only the Environment name in the request.");
-          }
-        }
-        break;
-      case ApiKeyType.TenantAdmin:
-        if (requestDetails.ApiKeyType == ApiKeyType.TenantAdmin) {
-          if ((requestDetails.Environment == null) || (requestDetails.Tenant == null)) {
-            throw new BadRequestException($"For this type of key, {requestDetails.ApiKeyType}, there must be an Environment and Tenant name in the request.");
-          }
-        }
-        break;
-      default:
-        throw new BadRequestException($"For this type of key, {requestDetails.ApiKeyType}, there must be an Environment and Tenant name in the request.");
-    }
-
-    //Get the Api Key
-    ApiKey? clientApiKey = null;
-    //if encKey matches key from configuration - admin privileges
-    if (this.MatchDefaultApiKey(encKey) != null) {
-      clientApiKey = new ApiKey(Guid.Empty, encKey, ApiKeyType.Admin, requestDetails.EnvironmentId,requestDetails.TenantId);
-    } else {
-      clientApiKey = await this._apiKeys.GetApiKeyAsync(encKey, cancellationToken);
-    }
-    var updatedRequestDetails = this._apiKeys.GetKeyDetails(requestDetails.ApiKeyType, requestDetails.Environment, requestDetails.Tenant);
-
-    //Check the request and determine if the client API key has permission.
-    //Switch on the requested Key trying to create, delete, or list
-    switch (requestDetails.ApiKeyType) {
-      case ApiKeyType.Admin:
-        if (clientApiKey.Type != ApiKeyType.Admin) {
-          throw new ForbiddenException($"Api Key not authorized to {activity}.");
-        }
-        break;
-      case ApiKeyType.EnvAdmin:
-        //make sure it is the request has the same environment Id
-        if (clientApiKey.EnvironmentId != updatedRequestDetails.EnvironmentId) {
-          throw new ForbiddenException($"Api Key not authorized to {activity}.");
-        }
-
-        break;
-      case ApiKeyType.TenantAdmin:
-        if ((clientApiKey.TenantId != updatedRequestDetails.TenantId) && (clientApiKey.EnvironmentId != updatedRequestDetails.EnvironmentId)){
-          throw new ForbiddenException($"Api Key not authorized to {activity}.");
-        }
-        break;
-      default:
-        throw new BadRequestException($"For this type of key, {requestDetails.ApiKeyType}, there must be an Environment and Tenant name in the request.");
-    }
-
-    return updatedRequestDetails;
-  }
-
   private ApiKey? MatchDefaultApiKey(String? headerApiKey) {
     if (headerApiKey == null)
       return null;
@@ -345,5 +244,4 @@ public class ApiKeyController : ControllerBase {
       return null;
     }
   }
-
 }

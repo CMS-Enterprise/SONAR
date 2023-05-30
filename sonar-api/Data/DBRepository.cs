@@ -117,8 +117,7 @@ public class DbRepository : IApiKeyRepository {
             result.tenant != null ? result.tenant.Name : null))
         .ToListAsync(cancellationToken: cancelToken);
   }
-
- public async Task<List<ApiKeyConfiguration>> GetTenantKeysAsync(ApiKey encKey, CancellationToken cancelToken) {
+  public async Task<List<ApiKeyConfiguration>> GetTenantKeysAsync(ApiKey encKey, CancellationToken cancelToken) {
 
    return
      await this._apiKeysTable
@@ -145,29 +144,6 @@ public class DbRepository : IApiKeyRepository {
          result.bb.key.Type,
          result.cc.Name,
          (result.bb.tenant != null) ? result.bb.tenant.Name : null)).ToListAsync();
- }
-
- public async Task<List<ApiKeyConfiguration>> GetTenantKeysAsync2(ApiKey encKey, CancellationToken cancelToken) {
-   return
-     await this._apiKeysTable
-       .LeftJoin(
-         this._tenantsTable,
-         api => api.TenantId,
-         tenant => tenant.Id,
-         (key, tenant) => new
-         {
-           key,
-           tenant
-         })
-       .Where(mm => (mm.tenant != null) && (mm.tenant.Id == encKey.TenantId))
-       .Select(
-         result => new ApiKeyConfiguration(
-           result.key.Id,
-           result.key.Key,
-           result.key.Type,
-           null,
-           (result.tenant != null) ? result.tenant.Name : null))
-       .ToListAsync(cancellationToken: cancelToken);
  }
 
   public async Task<Guid> DeleteAsync(Guid id, CancellationToken cancelToken) {
@@ -197,8 +173,7 @@ public class DbRepository : IApiKeyRepository {
       return id;
     });
   }
-  public async Task<ApiKey> GetApiKeyAsync(
-    String encKey, CancellationToken cancellationToken) {
+  public async Task<ApiKey> GetApiKeyAsync(String encKey, CancellationToken cancellationToken) {
 
     var result =
       await this._apiKeysTable
@@ -211,8 +186,7 @@ public class DbRepository : IApiKeyRepository {
     return result;
   }
 
-  public async Task<ApiKey> GetApiKeyAsync(
-    Guid keyId, CancellationToken cancellationToken) {
+  public async Task<ApiKey> GetApiKeyAsync(Guid keyId, CancellationToken cancellationToken) {
 
     var result =
       await this._apiKeysTable
@@ -226,10 +200,7 @@ public class DbRepository : IApiKeyRepository {
     return result;
   }
 
-  public ApiKeyDetails GetKeyDetails(
-    ApiKeyType apiKeyType,
-    String? environmentName,
-    String? tenantName) {
+  public ApiKeyDetails GetKeyDetails(ApiKeyType apiKeyType, String? environmentName, String? tenantName) {
 
     ApiKeyDetails? result = null;
 
@@ -256,10 +227,7 @@ public class DbRepository : IApiKeyRepository {
     return result;
   }
 
-  public ApiKeyDetails GetKeyDetails(
-    ApiKeyType apiKeyType,
-    Guid? environmentId,
-    Guid? tenantId) {
+  public ApiKeyDetails GetKeyDetails(ApiKeyType apiKeyType, Guid? environmentId, Guid? tenantId) {
 
     ApiKeyDetails? result = null;
 
@@ -286,10 +254,7 @@ public class DbRepository : IApiKeyRepository {
     return result;
   }
 
-
-  public async Task<Tenant> GetTenantAsync(
-    String tenantName,
-    CancellationToken cancellationToken) {
+  public async Task<Tenant> GetTenantAsync(String tenantName, CancellationToken cancellationToken) {
 
     // Check if the tenant exist
     var result =
@@ -303,9 +268,7 @@ public class DbRepository : IApiKeyRepository {
     return result;
   }
 
-  public async Task<Environment> GetEnvAsync(
-    String environmentName,
-    CancellationToken cancellationToken) {
+  public async Task<Environment> GetEnvAsync(String environmentName, CancellationToken cancellationToken) {
 
     // Check if the tenant exist
     var result =
@@ -318,7 +281,6 @@ public class DbRepository : IApiKeyRepository {
     }
     return result;
   }
-
 
  private static String GenerateApiKeyValue() {
     var apiKey = new Byte[ApiKeyByteLength];
@@ -335,9 +297,7 @@ public class DbRepository : IApiKeyRepository {
   }
 
   private static ApiKeyConfiguration ToApiKeyConfig(
-    Data.Environment? environment,
-    Tenant? tenant,
-    ApiKey entity) {
+    Data.Environment? environment, Tenant? tenant, ApiKey entity) {
     return new ApiKeyConfiguration(
       entity.Id,
       entity.Key,
