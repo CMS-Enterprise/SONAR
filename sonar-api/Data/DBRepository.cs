@@ -62,39 +62,6 @@ public class DbRepository : IApiKeyRepository {
 
   }
 
-  public async Task<ApiKeyConfiguration> AddAsync2(ApiKeyDetails apiKeyDetails, CancellationToken cancelToken) {
-    return await Task.Run(async () => {
-      ApiKeyConfiguration? apiKeyConfiguration = null;
-      await using var tx =
-        await this._dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancelToken);
-      try {
-
-        var newKey = new ApiKey(Guid.Empty, GenerateApiKeyValue(), apiKeyDetails.ApiKeyType,
-          apiKeyDetails.EnvironmentId, apiKeyDetails.TenantId);
-
-        // Record new API key
-        var createdApiKey = await this._apiKeysTable.AddAsync(newKey, cancelToken);
-        await this._dbContext.SaveChangesAsync(cancelToken);
-        await tx.CommitAsync(cancelToken);
-
-        //Build and return data to client.
-        var environmentName = apiKeyDetails.Environment ?? String.Empty;
-        var envId = apiKeyDetails.EnvironmentId ?? Guid.Empty;
-        var environment = new Environment(envId, environmentName);
-
-        var tenantName = apiKeyDetails.Tenant ?? String.Empty;
-        var tid = apiKeyDetails.TenantId ?? Guid.Empty;
-        var tenant = new Tenant(tid, envId, tenantName);
-
-        apiKeyConfiguration = ToApiKeyConfig(environment, tenant, createdApiKey.Entity);
-      } catch {
-        await tx.RollbackAsync(cancelToken);
-        throw;
-      }
-      return apiKeyConfiguration;
-    });
-  }
-
   public async Task<List<ApiKeyConfiguration>> GetKeysAsync(CancellationToken cancelToken) {
     return
       await this._apiKeysTable
