@@ -2,5 +2,9 @@ namespace Cms.BatCave.Sonar.Enumeration;
 
 public enum ApiKeyType {
   Admin = 0,
-  Standard
+  Standard,
+  EnvAdmin,
+  EnvStandard,
+  TenantAdmin,
+  TenantStandard
 }
