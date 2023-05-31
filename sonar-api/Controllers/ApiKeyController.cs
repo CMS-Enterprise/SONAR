@@ -25,7 +25,7 @@ public class ApiKeyController : ControllerBase {
   private readonly IConfiguration _configuration;
 
   public ApiKeyController(
-    IConfiguration  configuration,
+    IConfiguration configuration,
     IApiKeyRepository apiKeys) {
 
     this._configuration = configuration;
@@ -56,65 +56,24 @@ public class ApiKeyController : ControllerBase {
       throw new BadRequestException("missing ApiKey header");
     }
 
-    //Make sure the parameters to create a key are are correct.
-    this.ValidateParametersToCreateKeyAsync(apiKeyDetails);
-    var updatedRequestDetails = this._apiKeys.GetKeyDetails(apiKeyDetails.ApiKeyType, apiKeyDetails.Environment, apiKeyDetails.Tenant);
+    //Make sure the parameters to create a key are correct.
+    this.ValidateParametersToCreateKey(apiKeyDetails);
+    var requestDetails = this._apiKeys.GetKeyDetails(apiKeyDetails.ApiKeyType, apiKeyDetails.Environment, apiKeyDetails.Tenant);
 
     //if encKey matches key from configuration - admin privileges - create key.
     if (this.MatchDefaultApiKey(encKey) != null) {
-      var createdApiKey = await this._apiKeys.AddAsync(updatedRequestDetails, cancellationToken);
+      var createdApiKey = await this._apiKeys.AddAsync(requestDetails, cancellationToken);
       return this.StatusCode((Int32)HttpStatusCode.Created, createdApiKey);
     }
 
-    Boolean hasPermission = await HasPermission(encKey, updatedRequestDetails, activity, cancellationToken);
+    //If permissions are good create the key
+    var hasPermission = await HasPermission(encKey, requestDetails, activity, cancellationToken);
     if (hasPermission) {
-      var createdApiKey = await this._apiKeys.AddAsync(updatedRequestDetails, cancellationToken);
+      var createdApiKey = await this._apiKeys.AddAsync(requestDetails, cancellationToken);
       return this.StatusCode((Int32)HttpStatusCode.Created, createdApiKey);
     }
 
     return this.StatusCode((Int32)HttpStatusCode.BadRequest);
-  }
-
-  /// <summary>
-  ///   Get API keys.
-  /// </summary>
-  /// <param name="cancellationToken"></param>
-  /// <response code="200">The key resources have been fetched and transmitted in the message body.</response>
-  /// <response code="400">The API key details are not valid.</response>
-  /// <response code="401">The API key in the header is not authorized for creating an API key.</response>
-  [HttpGet]
-  [ProducesResponseType(typeof(IEnumerable<ApiKeyConfiguration>), statusCode: 200)]
-  [ProducesResponseType(typeof(ProblemDetails), statusCode: 400)]
-  [ProducesResponseType(typeof(ProblemDetails), statusCode: 401)]
-  public async Task<ActionResult> GetApiKeys(
-    CancellationToken cancellationToken = default) {
-
-    const String activity = "Get list of API keys";
-    var encKey = this.Request.Headers[ApiKeyHeader].SingleOrDefault();
-    if (encKey == null) {
-      throw new BadRequestException("No ApiKey in header");
-    }
-
-    if (this.MatchDefaultApiKey(encKey) != null) {
-      var result = await this._apiKeys.GetKeysAsync(cancellationToken);
-      return this.StatusCode((Int32)HttpStatusCode.OK, result);
-    }
-
-    var permKey = await this._apiKeys.GetApiKeyAsync(encKey, cancellationToken);
-
-    switch (permKey.Type) {
-      case ApiKeyType.Admin:
-        var result = await this._apiKeys.GetKeysAsync(cancellationToken);
-        return this.StatusCode((Int32)HttpStatusCode.OK, result);
-      case ApiKeyType.EnvAdmin:
-        var result2 = await this._apiKeys.GetEnvKeysAsync(permKey, cancellationToken);
-        return this.StatusCode((Int32)HttpStatusCode.OK, result2);
-      case ApiKeyType.TenantAdmin:
-        var result3 = await this._apiKeys.GetTenantKeysAsync(permKey, cancellationToken);
-        return this.StatusCode((Int32)HttpStatusCode.OK, result3);
-    }
-
-    throw new ForbiddenException($"Api Key is not authorized to {activity}.");
   }
 
   /// <summary>
@@ -147,14 +106,9 @@ public class ApiKeyController : ControllerBase {
       return this.StatusCode((Int32)HttpStatusCode.NoContent);
     }
 
-    var  apiKeyToDelete = await this._apiKeys.GetApiKeyAsync(keyid, cancellationToken);
+    var requestDetails = await this._apiKeys.GetKeyDetailsFromKeyIdAsync(keyid, cancellationToken);
 
-    var apiKeyDetails = new ApiKeyDetails(apiKeyToDelete.Type, null, null, apiKeyToDelete.EnvironmentId,
-      apiKeyToDelete.TenantId);
-
-    var updatedRequestDetails = this._apiKeys.GetKeyDetails(apiKeyDetails.ApiKeyType, apiKeyDetails.EnvironmentId, apiKeyDetails.TenantId);
-
-    Boolean hasPermission = await HasPermission(encKey, updatedRequestDetails, activity, cancellationToken);
+    var hasPermission = await HasPermission(encKey, requestDetails, activity, cancellationToken);
     if (hasPermission) {
       await this._apiKeys.DeleteAsync(keyid, cancellationToken);
       return this.StatusCode((Int32)HttpStatusCode.NoContent);
@@ -162,7 +116,52 @@ public class ApiKeyController : ControllerBase {
     throw new ForbiddenException($"Api Key is not authorized to {activity}.");
   }
 
-  private void ValidateParametersToCreateKeyAsync(ApiKeyDetails apiKeyDetails){
+
+  /// <summary>
+  ///   Get API keys.
+  /// </summary>
+  /// <param name="cancellationToken"></param>
+  /// <response code="200">The key resources have been fetched and transmitted in the message body.</response>
+  /// <response code="400">The API key details are not valid.</response>
+  /// <response code="401">The API key in the header is not authorized for creating an API key.</response>
+  [HttpGet]
+  [ProducesResponseType(typeof(IEnumerable<ApiKeyConfiguration>), statusCode: 200)]
+  [ProducesResponseType(typeof(ProblemDetails), statusCode: 400)]
+  [ProducesResponseType(typeof(ProblemDetails), statusCode: 401)]
+  public async Task<ActionResult> GetApiKeys(
+    CancellationToken cancellationToken = default) {
+
+    const String activity = "Get list of API keys";
+    var encKey = this.Request.Headers[ApiKeyHeader].SingleOrDefault();
+    if (encKey == null) {
+      throw new BadRequestException("No ApiKey in header");
+    }
+
+    if (this.MatchDefaultApiKey(encKey) != null) {
+      var result = await this._apiKeys.GetKeysAsync(cancellationToken);
+      return this.StatusCode((Int32)HttpStatusCode.OK, result);
+    }
+
+    var permKey = await this._apiKeys.GetApiKeyFromEncKeyAsync(encKey, cancellationToken);
+
+    List<ApiKeyConfiguration>? results = null;
+    switch (permKey.Type) {
+      case ApiKeyType.Admin:
+        results = await this._apiKeys.GetKeysAsync(cancellationToken);
+        break;
+      case ApiKeyType.EnvAdmin:
+        results = await this._apiKeys.GetEnvKeysAsync(permKey, cancellationToken);
+        break;
+      case ApiKeyType.TenantAdmin:
+        results = await this._apiKeys.GetTenantKeysAsync(permKey, cancellationToken);
+        break;
+      default:
+        throw new ForbiddenException($"Api Key is not authorized to {activity}.");
+    }
+    return this.StatusCode((Int32)HttpStatusCode.OK, results);
+  }
+
+  private void ValidateParametersToCreateKey(ApiKeyDetails apiKeyDetails) {
 
     if (apiKeyDetails.ApiKeyType == ApiKeyType.Admin) {
       if ((apiKeyDetails.Environment != null) || (apiKeyDetails.Tenant != null)) {
@@ -183,7 +182,7 @@ public class ApiKeyController : ControllerBase {
 
   private async Task<Boolean> HasPermission(String encKey, ApiKeyDetails requestDetails, String activity, CancellationToken cancellationToken) {
     //Get the client Api Key - Make sure the keys permissions allow it to perform an action.
-    var apiKey = await this._apiKeys.GetApiKeyAsync(encKey, cancellationToken);
+    var apiKey = await this._apiKeys.GetApiKeyFromEncKeyAsync(encKey, cancellationToken);
 
     //Check the request against the client Api key to see if permission is good.
     //Switch on what Api Key you are trying to create - this is the request to make a key.
@@ -208,7 +207,7 @@ public class ApiKeyController : ControllerBase {
 
         break;
       case ApiKeyType.TenantAdmin:
-        if ((apiKey.Type != ApiKeyType.Admin) && (apiKey.Type != ApiKeyType.EnvAdmin)  && (apiKey.Type != ApiKeyType.TenantAdmin)) {
+        if ((apiKey.Type != ApiKeyType.Admin) && (apiKey.Type != ApiKeyType.EnvAdmin) && (apiKey.Type != ApiKeyType.TenantAdmin)) {
           throw new ForbiddenException($"Api Key not authorized to {activity}.");
         }
         //If the client key is EnvAdmin, make sure the environment Ids are the same.

@@ -31,37 +31,63 @@ public class DbRepository : IApiKeyRepository {
 
   public async Task<ApiKeyConfiguration> AddAsync(ApiKeyDetails apiKeyDetails, CancellationToken cancelToken) {
 
-      ApiKeyConfiguration? apiKeyConfiguration = null;
+    ApiKeyConfiguration? apiKeyConfiguration = null;
+    await using var tx =
+       await this._dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancelToken);
+    try {
+
+      var newKey = new ApiKey(Guid.Empty, GenerateApiKeyValue(), apiKeyDetails.ApiKeyType,
+        apiKeyDetails.EnvironmentId, apiKeyDetails.TenantId);
+
+      // Record new API key
+      var createdApiKey = await this._apiKeysTable.AddAsync(newKey, cancelToken);
+      await this._dbContext.SaveChangesAsync(cancelToken);
+      await tx.CommitAsync(cancelToken);
+
+      //Build and return data to client.
+      var environmentName = apiKeyDetails.Environment ?? String.Empty;
+      var envId = apiKeyDetails.EnvironmentId ?? Guid.Empty;
+      var environment = new Environment(envId, environmentName);
+
+      var tenantName = apiKeyDetails.Tenant ?? String.Empty;
+      var tenantId = apiKeyDetails.TenantId ?? Guid.Empty;
+      var tenant = new Tenant(tenantId, envId, tenantName);
+
+      apiKeyConfiguration = ToApiKeyConfig(environment, tenant, createdApiKey.Entity);
+    } catch {
+      await tx.RollbackAsync(cancelToken);
+      throw;
+    }
+    return apiKeyConfiguration;
+
+  }
+  public async Task<Guid> DeleteAsync(Guid id, CancellationToken cancelToken) {
+    return await Task.Run(async () => {
+
       await using var tx =
-         await this._dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancelToken);
+        await this._dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancelToken);
       try {
+        // Get API key
+        var existingApiKey = await this._apiKeysTable
+          .Where(k => k.Id == id)
+          .SingleOrDefaultAsync(cancelToken);
 
-        var newKey = new ApiKey(Guid.Empty, GenerateApiKeyValue(), apiKeyDetails.ApiKeyType,
-          apiKeyDetails.EnvironmentId, apiKeyDetails.TenantId);
+        if (existingApiKey == null) {
+          throw new ResourceNotFoundException(nameof(ApiKey), id);
+        }
 
-        // Record new API key
-        var createdApiKey = await this._apiKeysTable.AddAsync(newKey, cancelToken);
+        // Delete
+        this._apiKeysTable.Remove(existingApiKey);
+        // Save
         await this._dbContext.SaveChangesAsync(cancelToken);
         await tx.CommitAsync(cancelToken);
-
-        //Build and return data to client.
-        var environmentName = apiKeyDetails.Environment ?? String.Empty;
-        var envId = apiKeyDetails.EnvironmentId ?? Guid.Empty;
-        var environment = new Environment(envId, environmentName);
-
-        var tenantName = apiKeyDetails.Tenant ?? String.Empty;
-        var tenantId = apiKeyDetails.TenantId ?? Guid.Empty;
-        var tenant = new Tenant(tenantId, envId, tenantName);
-
-        apiKeyConfiguration = ToApiKeyConfig(environment, tenant, createdApiKey.Entity);
       } catch {
         await tx.RollbackAsync(cancelToken);
         throw;
       }
-      return apiKeyConfiguration;
-
+      return id;
+    });
   }
-
   public async Task<List<ApiKeyConfiguration>> GetKeysAsync(CancellationToken cancelToken) {
     return
       await this._apiKeysTable
@@ -69,8 +95,7 @@ public class DbRepository : IApiKeyRepository {
           this._environmentsTable,
           api => api.EnvironmentId,
           env => env.Id,
-          (key, env) => new
-          {
+          (key, env) => new {
             key,
             env
           })
@@ -87,7 +112,7 @@ public class DbRepository : IApiKeyRepository {
             result.KeyEnv.key.Id,
             result.KeyEnv.key.Key,
             result.KeyEnv.key.Type,
-            ( result.KeyEnv.env != null) ? result.KeyEnv.env.Name : null,
+            (result.KeyEnv.env != null) ? result.KeyEnv.env.Name : null,
             result.tenant != null ? result.tenant.Name : null))
         .ToListAsync(cancellationToken: cancelToken);
   }
@@ -119,61 +144,34 @@ public class DbRepository : IApiKeyRepository {
   }
   public async Task<List<ApiKeyConfiguration>> GetTenantKeysAsync(ApiKey encKey, CancellationToken cancelToken) {
 
-   return
-     await this._apiKeysTable
-     .LeftJoin(
-       this._tenantsTable,
-       api => api.TenantId,
-       tenant => tenant.Id,
-       (key, tenant) => new {
-         key,
-         tenant
-       })
-     .Where(mm => (mm.tenant != null) && (mm.tenant.Id == encKey.TenantId))
-     .Join(this._environmentsTable,
-       a => a.tenant!.EnvironmentId,
-       b => b.Id,
-       (ma, mb) => new {
-         bb = ma,
-         cc = mb
-       })
-     .Select(
-       result => new ApiKeyConfiguration(
-         result.bb.key.Id,
-         result.bb.key.Key,
-         result.bb.key.Type,
-         result.cc.Name,
-         (result.bb.tenant != null) ? result.bb.tenant.Name : null)).ToListAsync();
- }
-
-  public async Task<Guid> DeleteAsync(Guid id, CancellationToken cancelToken) {
-    return await Task.Run(async () => {
-
-      await using var tx =
-        await this._dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancelToken);
-      try {
-        // Get API key
-        var existingApiKey = await this._apiKeysTable
-              .Where(k => k.Id == id)
-              .SingleOrDefaultAsync(cancelToken);
-
-        if (existingApiKey == null) {
-          throw new ResourceNotFoundException(nameof(ApiKey), id);
-        }
-
-        // Delete
-        this._apiKeysTable.Remove(existingApiKey);
-        // Save
-        await this._dbContext.SaveChangesAsync(cancelToken);
-        await tx.CommitAsync(cancelToken);
-      } catch {
-        await tx.RollbackAsync(cancelToken);
-        throw;
-      }
-      return id;
-    });
+    return
+      await this._apiKeysTable
+      .LeftJoin(
+        this._tenantsTable,
+        api => api.TenantId,
+        tenant => tenant.Id,
+        (key, tenant) => new {
+          key,
+          tenant
+        })
+      .Where(mm => (mm.tenant != null) && (mm.tenant.Id == encKey.TenantId))
+      .Join(this._environmentsTable,
+        a => a.tenant!.EnvironmentId,
+        b => b.Id,
+        (ma, mb) => new {
+          bb = ma,
+          cc = mb
+        })
+      .Select(
+        result => new ApiKeyConfiguration(
+          result.bb.key.Id,
+          result.bb.key.Key,
+          result.bb.key.Type,
+          result.cc.Name,
+          (result.bb.tenant != null) ? result.bb.tenant.Name : null)).ToListAsync();
   }
-  public async Task<ApiKey> GetApiKeyAsync(String encKey, CancellationToken cancellationToken) {
+
+  public async Task<ApiKey> GetApiKeyFromEncKeyAsync(String encKey, CancellationToken cancellationToken) {
 
     var result =
       await this._apiKeysTable
@@ -185,8 +183,7 @@ public class DbRepository : IApiKeyRepository {
     }
     return result;
   }
-
-  public async Task<ApiKey> GetApiKeyAsync(Guid keyId, CancellationToken cancellationToken) {
+  public async Task<ApiKey> GetApiKeyFromApiKeyIdAsync(Guid keyId, CancellationToken cancellationToken) {
 
     var result =
       await this._apiKeysTable
@@ -199,7 +196,6 @@ public class DbRepository : IApiKeyRepository {
 
     return result;
   }
-
   public ApiKeyDetails GetKeyDetails(ApiKeyType apiKeyType, String? environmentName, String? tenantName) {
 
     ApiKeyDetails? result = null;
@@ -215,7 +211,7 @@ public class DbRepository : IApiKeyRepository {
       }
       envId = env.Id;
     }
-    if (tenantName != null){
+    if (tenantName != null) {
       var tenant = this._tenantsTable.FirstOrDefault(tenant => ((tenant.Name == tenantName) && (tenant.EnvironmentId == envId)));
       if (tenant == null) {
         throw new BadRequestException($"Tenant does not exist {tenantName}");
@@ -226,63 +222,30 @@ public class DbRepository : IApiKeyRepository {
     result = new ApiKeyDetails(apiKeyType, environmentName, tenantName, envId, tenantId);
     return result;
   }
+  public async Task<ApiKeyDetails> GetKeyDetailsFromKeyIdAsync(Guid keyId, CancellationToken cancelToken) {
 
-  public ApiKeyDetails GetKeyDetails(ApiKeyType apiKeyType, Guid? environmentId, Guid? tenantId) {
-
-    ApiKeyDetails? result = null;
+    var apiKey = await this.GetApiKeyFromApiKeyIdAsync(keyId, cancelToken);
 
     String? envName = null;
     String? tenantName = null;
 
-    //See if the key details is requesting environment and tenant names.
-    if (environmentId != null) {
-      var env = this._environmentsTable.FirstOrDefault(env => env.Id == environmentId);
+    if (apiKey.EnvironmentId != null) {
+      var env = this._environmentsTable.FirstOrDefault(env => env.Id == apiKey.EnvironmentId);
       if (env == null) {
-        throw new BadRequestException($"Environment does not exist {environmentId}");
+        throw new BadRequestException($"Environment does not exist {env}");
       }
       envName = env.Name;
     }
-    if (tenantId != null){
-      var tenant = this._tenantsTable.FirstOrDefault(tenant => ((tenant.Id == tenantId) && (tenant.EnvironmentId == environmentId)));
+    if (apiKey.TenantId != null) {
+      var tenant = this._tenantsTable.FirstOrDefault(tenant => (tenant.Id == apiKey.TenantId) && (tenant.EnvironmentId == apiKey.EnvironmentId));
       if (tenant == null) {
-        throw new BadRequestException($"Tenant does not exist {tenantName}");
+        throw new BadRequestException($"Tenant does not exist {tenant}");
       }
       tenantName = tenant.Name;
     }
-
-    result = new ApiKeyDetails(apiKeyType, envName, tenantName, environmentId, tenantId);
-    return result;
+    return new ApiKeyDetails(apiKey.Type, envName, tenantName, apiKey.EnvironmentId, apiKey.TenantId);
   }
-
-  public async Task<Tenant> GetTenantAsync(String tenantName, CancellationToken cancellationToken) {
-
-    // Check if the tenant exist
-    var result =
-      await this._tenantsTable
-        .Where(e => e.Name == tenantName)
-        .SingleOrDefaultAsync(cancellationToken);
-
-    if (result == null) {
-      throw new ResourceNotFoundException(nameof(tenantName), tenantName);
-    }
-    return result;
-  }
-
-  public async Task<Environment> GetEnvAsync(String environmentName, CancellationToken cancellationToken) {
-
-    // Check if the tenant exist
-    var result =
-      await this._environmentsTable
-        .Where(e => e.Name == environmentName)
-        .SingleOrDefaultAsync(cancellationToken);
-
-    if (result == null) {
-      throw new ResourceNotFoundException(nameof(environmentName), environmentName);
-    }
-    return result;
-  }
-
- private static String GenerateApiKeyValue() {
+  private static String GenerateApiKeyValue() {
     var apiKey = new Byte[ApiKeyByteLength];
     String encodedApiKey = "";
 
@@ -295,7 +258,6 @@ public class DbRepository : IApiKeyRepository {
     }
     return encodedApiKey;
   }
-
   private static ApiKeyConfiguration ToApiKeyConfig(
     Data.Environment? environment, Tenant? tenant, ApiKey entity) {
     return new ApiKeyConfiguration(
@@ -306,5 +268,4 @@ public class DbRepository : IApiKeyRepository {
       tenant?.Name
     );
   }
-
 }
