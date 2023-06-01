@@ -31,8 +31,8 @@ public class Dependencies {
     builder.Services.AddScoped<ApiKeyDataHelper>();
     builder.Services.AddScoped<HealthDataHelper>();
     builder.Services.AddScoped<CacheHelper>();
-    builder.Services.AddScoped<IApiKeyRepository, DbRepository>(serviceProvider =>
-      new DbRepository(
+    builder.Services.AddScoped<IApiKeyRepository, DbApiKeyRepository>(serviceProvider =>
+      new DbApiKeyRepository(
         serviceProvider.GetRequiredService<DataContext>(),
         serviceProvider.GetRequiredService<DbSet<ApiKey>>(),
         serviceProvider.GetRequiredService<DbSet<Environment>>(),
