@@ -57,7 +57,7 @@ public class DbApiKeyRepository : IApiKeyRepository {
       }
 
 
-      var newKey = new ApiKey(Guid.Empty, GenerateApiKeyValue(), apiKeyDetails.ApiKeyType,
+      var newKey = new ApiKey(Guid.Empty,  KeyHash.GenerateKey(), apiKeyDetails.ApiKeyType,
         environment?.Id, tenant?.Id);
 
       // Record new API key
@@ -215,21 +215,6 @@ public class DbApiKeyRepository : IApiKeyRepository {
     }
 
     return result;
-  }
-
-  private static String GenerateApiKeyValue() {
-    var apiKey = new Byte[ApiKeyByteLength];
-    String encodedApiKey = "";
-
-    using (var rng = RandomNumberGenerator.Create()) {
-      // Generate API key
-      rng.GetBytes(apiKey);
-
-      // Encode API key
-      encodedApiKey = Convert.ToBase64String(apiKey);
-    }
-
-    return encodedApiKey;
   }
 
   private static ApiKeyConfiguration ToApiKeyConfig(

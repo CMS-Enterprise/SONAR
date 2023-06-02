@@ -12,7 +12,7 @@ public class ApiKey {
   [Key]
   public Guid Id { get; init; }
 
-  [StringLength(44)] // Base64 encoded String for 32 bytes
+  [StringLength(74)] // BCrypt - Base64 encoded String for 32 bytes
   public String Key { get; init; }
   public ApiKeyType Type { get; set; }
   public Guid? EnvironmentId { get; set; }
