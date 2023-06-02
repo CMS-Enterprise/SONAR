@@ -91,6 +91,19 @@ services:
     networks:
       - "shared"
 
+  sonar-ui:
+    build:
+      context: ./
+      dockerfile: Dockerfile.ui
+    depends_on:
+      - "sonar-api"
+    restart: unless-stopped
+    ports: ["8080:80"]
+    environment:
+      ENVIRONMENT: "DockerCompose"
+    networks:
+      - "shared"
+
 volumes:
   dataVolume: {}
   tsdbVolume: {}

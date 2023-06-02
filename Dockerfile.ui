@@ -1,0 +1,18 @@
+FROM artifactory.cloud.cms.gov/docker/node:18-alpine AS builder
+WORKDIR /sonar/sonar-ui
+COPY sonar-ui/package.json .
+COPY sonar-ui/package-lock.json .
+RUN npm ci
+COPY sonar-ui .
+RUN npm run build
+
+CMD ["npm", "start"]
+
+FROM artifactory.cloud.cms.gov/docker/nginx:1.23-alpine
+WORKDIR /usr/share/nginx/html
+RUN rm -rf ./*
+COPY --from=builder /sonar/sonar-ui/build .
+COPY --from=builder /sonar/sonar-ui/default.conf /etc/nginx/conf.d/
+
+EXPOSE 80
+ENTRYPOINT ["nginx", "-g", "daemon off;"]
