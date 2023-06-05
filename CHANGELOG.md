@@ -13,22 +13,6 @@ Closes BATAPI-251
 
 * Update Environments page to align with mockups, implement expand/close all functionality.
 
-## Security Impact Analysis Questionnaire
-
-### Submitter Checklist
--  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
--  [ ] Is there an impact on Authentication procedures or capabilities?
--  [ ] Is there an impact on Authorization procedures or capabilities?
--  [ ] Is there an impact on Communication Security procedures or capabilities?
--  [ ] Is there an impact on Cryptography procedures or capabilities?
--  [ ] Is there an impact on Sensitive Data procedures or capabilities?
--  [ ] Is there an impact on any other security-related procedures or capabilities?
--  [x] No security impacts identified.
-
-## Security Risks Identified:
-
-<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
-
 Closes #251
 ```
 
@@ -144,22 +128,6 @@ Closes BATAPI-198
 
 Add retry logic for config saving errors (locally and in-cluster).
 
-## Security Impact Analysis Questionnaire
-
-### Submitter Checklist
--  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
--  [ ] Is there an impact on Authentication procedures or capabilities?
--  [ ] Is there an impact on Authorization procedures or capabilities?
--  [ ] Is there an impact on Communication Security procedures or capabilities?
--  [ ] Is there an impact on Cryptography procedures or capabilities?
--  [ ] Is there an impact on Sensitive Data procedures or capabilities?
--  [ ] Is there an impact on any other security-related procedures or capabilities?
--  [x] No security impacts identified.
-
-## Security Risks Identified:
-
-<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
-
 Closes #198
 ```
 
@@ -240,20 +208,6 @@ Closes BATAPI-229
 
 * fix build error in TenantDataHelper
 
-## Security Impact Analysis Questionnaire
-
-### Submitter Checklist
--  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
--  [ ] Is there an impact on Authentication procedures or capabilities?
--  [ ] Is there an impact on Authorization procedures or capabilities?
--  [ ] Is there an impact on Communication Security procedures or capabilities?
--  [ ] Is there an impact on Cryptography procedures or capabilities?
--  [ ] Is there an impact on Sensitive Data procedures or capabilities?
--  [ ] Is there an impact on any other security-related procedures or capabilities?
--  [x] No security impacts identified.
-
-## Security Risks Identified:
-
 <!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
 ```
 
@@ -271,22 +225,6 @@ Closes BATAPI-212
 * sonar agent errors
 
 * resolve warnings for sonar-api
-
-## Security Impact Analysis Questionnaire
-
-### Submitter Checklist
--  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
--  [ ] Is there an impact on Authentication procedures or capabilities?
--  [ ] Is there an impact on Authorization procedures or capabilities?
--  [ ] Is there an impact on Communication Security procedures or capabilities?
--  [ ] Is there an impact on Cryptography procedures or capabilities?
--  [ ] Is there an impact on Sensitive Data procedures or capabilities?
--  [ ] Is there an impact on any other security-related procedures or capabilities?
--  [x] No security impacts identified.
-
-## Security Risks Identified:
-
-<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
 
 Closes #212
 ```
@@ -369,22 +307,6 @@ Closes BATAPI-243
 
 Refactor current components to use Emotion styling.
 
-## Security Impact Analysis Questionnaire
-
-### Submitter Checklist
--  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
--  [ ] Is there an impact on Authentication procedures or capabilities?
--  [ ] Is there an impact on Authorization procedures or capabilities?
--  [ ] Is there an impact on Communication Security procedures or capabilities?
--  [ ] Is there an impact on Cryptography procedures or capabilities?
--  [ ] Is there an impact on Sensitive Data procedures or capabilities?
--  [ ] Is there an impact on any other security-related procedures or capabilities?
--  [x] No security impacts identified.
-
-## Security Risks Identified:
-
-<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
-
 Closes #243
 ```
 
@@ -411,22 +333,6 @@ Closes BATAPI-240
 
 * Install and set up Emotion, add standards to README
 * Implement Emotion styling for EnvironmentItem component
-
-## Security Impact Analysis Questionnaire
-
-### Submitter Checklist
--  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
--  [ ] Is there an impact on Authentication procedures or capabilities?
--  [ ] Is there an impact on Authorization procedures or capabilities?
--  [ ] Is there an impact on Communication Security procedures or capabilities?
--  [ ] Is there an impact on Cryptography procedures or capabilities?
--  [ ] Is there an impact on Sensitive Data procedures or capabilities?
--  [ ] Is there an impact on any other security-related procedures or capabilities?
--  [x] No security impacts identified.
-
-## Security Risks Identified:
-
-<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
 
 Closes #240
 ```
@@ -556,22 +462,6 @@ Closes BATAPI-193
 ## Description:
 
 * implement react query for async data fetching, fix error with DateTimeHealthStatusValueTuple
-
-## Security Impact Analysis Questionnaire
-
-### Submitter Checklist
--  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
--  [ ] Is there an impact on Authentication procedures or capabilities?
--  [ ] Is there an impact on Authorization procedures or capabilities?
--  [ ] Is there an impact on Communication Security procedures or capabilities?
--  [ ] Is there an impact on Cryptography procedures or capabilities?
--  [ ] Is there an impact on Sensitive Data procedures or capabilities?
--  [ ] Is there an impact on any other security-related procedures or capabilities?
--  [x] No security impacts identified.
-
-## Security Risks Identified:
-
-<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
 
 Closes #193
 ```
@@ -766,22 +656,6 @@ Closes BATAPI-220
 ## Description:
 
 Implemented health history controller to return the historical health status of services, or the service hierarchy for a tenant.
-
-## Security Impact Analysis Questionnaire
-
-### Submitter Checklist
--  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
--  [ ] Is there an impact on Authentication procedures or capabilities?
--  [ ] Is there an impact on Authorization procedures or capabilities?
--  [ ] Is there an impact on Communication Security procedures or capabilities?
--  [ ] Is there an impact on Cryptography procedures or capabilities?
--  [ ] Is there an impact on Sensitive Data procedures or capabilities?
--  [ ] Is there an impact on any other security-related procedures or capabilities?
--  [X] No security impacts identified.
-
-## Security Risks Identified:
-
-<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
 ```
 
 ### Feature 196 fetch health check metric data endpoint
@@ -796,20 +670,6 @@ Closes BATAPI-196
 ## Description:
 
 Fetch a single metric time series for a specific health check. The caller should optionally be able to specify a start and end date. The default end date should be the current time in UTC and the default start date should be ten minutes ago in UTC.
-
-## Security Impact Analysis Questionnaire
-
-### Submitter Checklist
--  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
--  [ ] Is there an impact on Authentication procedures or capabilities?
--  [ ] Is there an impact on Authorization procedures or capabilities?
--  [ ] Is there an impact on Communication Security procedures or capabilities?
--  [ ] Is there an impact on Cryptography procedures or capabilities?
--  [ ] Is there an impact on Sensitive Data procedures or capabilities?
--  [ ] Is there an impact on any other security-related procedures or capabilities?
--  [x] No security impacts identified.
-
-## Security Risks Identified:
 
 <!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
 ```
@@ -892,18 +752,6 @@ Closes BATAPI-214
 ## Description:
 * Adds PrometheusRemoteProtocolClient tests
 * Adds PrometheusService tests
-
-## Security Impact Analysis Questionnaire
-
-### Submitter Checklist
--  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
--  [ ] Is there an impact on Authentication procedures or capabilities?
--  [ ] Is there an impact on Authorization procedures or capabilities?
--  [ ] Is there an impact on Communication Security procedures or capabilities?
--  [ ] Is there an impact on Cryptography procedures or capabilities?
--  [ ] Is there an impact on Sensitive Data procedures or capabilities?
--  [ ] Is there an impact on any other security-related procedures or capabilities?
--  [x] No security impacts identified.
 ```
 
 ### Added support for multiple version to our OpenAPI specs.
@@ -967,20 +815,6 @@ Closes BATAPI-66
 * Display list of health status conditions configured for a service. List of health checks and health check conditions shows up as expandable control within each service in the ServiceView page.
 * In the service list view, when the user clicks on a specific health check they should see a list of conditions in a human readable format.
 * For metric health checks the details should also include the metric query used.
-
-## Security Impact Analysis Questionnaire
-
-### Submitter Checklist
--  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
--  [ ] Is there an impact on Authentication procedures or capabilities?
--  [ ] Is there an impact on Authorization procedures or capabilities?
--  [ ] Is there an impact on Communication Security procedures or capabilities?
--  [ ] Is there an impact on Cryptography procedures or capabilities?
--  [ ] Is there an impact on Sensitive Data procedures or capabilities?
--  [ ] Is there an impact on any other security-related procedures or capabilities?
--  [x] No security impacts identified.
-
-## Security Risks Identified:
 
 <!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
 ```
