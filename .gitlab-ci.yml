@@ -1,0 +1,25 @@
+stages:
+  - old-pipeline
+  - build
+  - test
+
+existing-pipeline:
+  stage: old-pipeline
+  trigger:
+    strategy: depend
+    include:
+      - project: 'devops-pipelines/application-pipelines'
+        ref: main
+        file: 'sonar/sonar.yaml'
+
+build:
+  image: artifactory.cloud.cms.gov/docker/alpine:latest
+  stage: build
+  script:
+    - echo "building..."
+
+test:
+  image: artifactory.cloud.cms.gov/docker/alpine:latest
+  stage: test
+  script:
+    - echo "testing..."
