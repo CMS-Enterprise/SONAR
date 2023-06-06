@@ -15,12 +15,12 @@ public class KeyHash {
     return BCrypt.Net.BCrypt.HashPassword(password, GetRandomSalt());
   }
 
-  public static String GenerateKey()
+  public static (String key, String hashKey) GenerateKey()
   {
-    String password = GenerateApiKeyValue();
-    return BCrypt.Net.BCrypt.HashPassword(password, GetRandomSalt());
+    String key = GenerateApiKeyValue();
+    String hashKey = BCrypt.Net.BCrypt.HashPassword(key, GetRandomSalt());
+    return (key, hashKey);
   }
-
 
   public static Boolean ValidatePassword(String password, String correctHash)
   {

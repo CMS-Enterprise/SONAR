@@ -21,7 +21,7 @@ namespace Cms.BatCave.Sonar.Controllers;
 [ApiVersion(2)]
 [Route("api/v{version:apiVersion}/keys")]
 public class ApiKeyController : ControllerBase {
-  private const String ApiKeyHeader = "ApiKey";
+  private const String ApiKeyHeader = "ApiKey2";
 
   private readonly IConfiguration _configuration;
   private readonly IApiKeyRepository _apiKeys;
@@ -118,7 +118,7 @@ public class ApiKeyController : ControllerBase {
       return this.StatusCode((Int32)HttpStatusCode.NoContent);
     }
 
-    var targetApiKey = await this._apiKeys.GetApiKeyFromApiKeyIdAsync(keyId, cancellationToken);
+    var targetApiKey = await this._apiKeys.FindAsync(keyId, cancellationToken);
 
     await this.ValidatePermission(
       encKey,
@@ -157,7 +157,11 @@ public class ApiKeyController : ControllerBase {
       return this.StatusCode((Int32)HttpStatusCode.OK, result);
     }
 
-    var permKey = await this._apiKeys.GetApiKeyFromEncKeyAsync(encKey, cancellationToken);
+    //var permKey = await this._apiKeys.GetApiKeyFromEncKeyAsync(encKey, cancellationToken);
+    var permKey = await this._apiKeys.FindAsync(encKey, cancellationToken);
+    if (permKey == null) {
+      throw new ForbiddenException($"Api Key is not authorized to {activity}.");
+    }
 
     List<ApiKeyConfiguration> results;
     switch (permKey.Type) {
@@ -193,11 +197,19 @@ public class ApiKeyController : ControllerBase {
     String activity,
     CancellationToken cancellationToken) {
 
+    var authenticationKey = await this._apiKeys.FindAsync(encKey, cancellationToken);
     //Get the client Api Key - Make sure the keys permissions allow it to perform an action.
-    var authenticationKey = await this._apiKeys.GetApiKeyFromEncKeyAsync(encKey, cancellationToken);
 
-    if (authenticationKey.Type != ApiKeyType.Admin) {
+    if (authenticationKey is not { Type: ApiKeyType.Admin }) {
       throw new ForbiddenException($"The authentication credential provided is not authorized to {activity}.");
+    }
+
+    //If scope of work requires global admin, make sure authenticated key has global admin scope.
+    if ((environmentScope == null) && (tenantScope == null)) {
+      if((authenticationKey.EnvironmentId != null) || (authenticationKey.TenantId != null)) {
+        throw new ForbiddenException(
+          $"Api Key not authorized to {activity}, must have global Admin scope.");
+      }
     }
 
     // Make sure that the Api Key being created is within the scope that the API client is restricted to
@@ -205,12 +217,12 @@ public class ApiKeyController : ControllerBase {
       if (authenticationKey.TenantId.HasValue) {
         if (authenticationKey.TenantId != tenantScope) {
           throw new ForbiddenException(
-            $"Api Key not authorized to {activity} on the specified Api Key because it has a different Tenant scope."
+            $"Api Key not authorized to {activity}, because it has a different Tenant scope."
           );
         }
       } else if (authenticationKey.EnvironmentId != environmentScope) {
         throw new ForbiddenException(
-          $"Api Key not authorized to {activity} on the specified Api Key because it has a different Tenant scope."
+          $"Api Key not authorized to {activity} because it has a different Environment scope."
         );
       }
     }

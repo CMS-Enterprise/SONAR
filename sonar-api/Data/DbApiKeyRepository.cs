@@ -57,7 +57,8 @@ public class DbApiKeyRepository : IApiKeyRepository {
       }
 
 
-      var newKey = new ApiKey(Guid.Empty,  KeyHash.GenerateKey(), apiKeyDetails.ApiKeyType,
+      var apiKey = KeyHash.GenerateKey();
+      var newKey = new ApiKey(Guid.Empty,  apiKey.hashKey, apiKeyDetails.ApiKeyType,
         environment?.Id, tenant?.Id);
 
       // Record new API key
@@ -65,8 +66,11 @@ public class DbApiKeyRepository : IApiKeyRepository {
       await this._dbContext.SaveChangesAsync(cancelToken);
       await tx.CommitAsync(cancelToken);
 
+      var clientResults = new ApiKey(createdApiKey.Entity.Id, apiKey.key, createdApiKey.Entity.Type,
+        createdApiKey.Entity.EnvironmentId, createdApiKey.Entity.TenantId);
+
       //Build and return data to client.
-      apiKeyConfiguration = ToApiKeyConfig(environment, tenant, createdApiKey.Entity);
+      apiKeyConfiguration = ToApiKeyConfig(environment, tenant, clientResults);
     } catch {
       await tx.RollbackAsync(cancelToken);
       throw;
@@ -123,7 +127,7 @@ public class DbApiKeyRepository : IApiKeyRepository {
         .Select(
           result => new ApiKeyConfiguration(
             result.KeyEnv.key.Id,
-            result.KeyEnv.key.Key,
+            string.Empty,
             result.KeyEnv.key.Type,
             (result.KeyEnv.env != null) ? result.KeyEnv.env.Name : null,
             result.tenant != null ? result.tenant.Name : null))
@@ -190,20 +194,7 @@ public class DbApiKeyRepository : IApiKeyRepository {
         .ToListAsync(cancelToken);
   }
 
-  public async Task<ApiKey> GetApiKeyFromEncKeyAsync(String encKey, CancellationToken cancellationToken) {
-    var result =
-      await this._apiKeysTable
-        .Where(e => e.Key == encKey)
-        .SingleOrDefaultAsync(cancellationToken);
-
-    if (result == null) {
-      throw new ForbiddenException($"The API key provided doest not exist.");
-    }
-
-    return result;
-  }
-
-  public async Task<ApiKey> GetApiKeyFromApiKeyIdAsync(Guid keyId, CancellationToken cancellationToken) {
+  public async Task<ApiKey> FindAsync(Guid keyId, CancellationToken cancellationToken) {
 
     var result =
       await this._apiKeysTable
@@ -216,6 +207,26 @@ public class DbApiKeyRepository : IApiKeyRepository {
 
     return result;
   }
+
+ public async Task<ApiKey?> FindAsync(String encKey, CancellationToken cancellationToken) {
+
+    var keys = await this._apiKeysTable.ToListAsync(cancellationToken);
+
+    if (keys == null) {
+      throw new ResourceNotFoundException($"The API key provided does not exist.");
+    }
+
+    ApiKey? keyFound = null;
+    foreach (var apiKey in keys) {
+      if (KeyHash.ValidatePassword(encKey, apiKey.Key)) {
+        keyFound = apiKey;
+        break;
+      }
+    }
+
+    return keyFound;
+  }
+
 
   private static ApiKeyConfiguration ToApiKeyConfig(
     Environment? environment,
