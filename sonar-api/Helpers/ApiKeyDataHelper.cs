@@ -17,17 +17,20 @@ public class ApiKeyDataHelper {
   private readonly TenantDataHelper _tenantDataHelper;
   private readonly DbSet<ApiKey> _apiKeysTable;
   private readonly DbSet<Environment> _environmentsTable;
+  private readonly IApiKeyRepository _apiKeyRepository;
 
   public ApiKeyDataHelper(
     IConfiguration configuration,
     TenantDataHelper tenantDataHelper,
     DbSet<ApiKey> apiKeysTable,
-    DbSet<Environment> environmentsTable) {
+    DbSet<Environment> environmentsTable,
+    IApiKeyRepository apiKeyRepository) {
 
     this._configuration = configuration;
     this._tenantDataHelper = tenantDataHelper;
     this._apiKeysTable = apiKeysTable;
     this._environmentsTable = environmentsTable;
+    this._apiKeyRepository = apiKeyRepository;
   }
 
   public async Task<Boolean> ValidateAdminPermission(
@@ -106,9 +109,7 @@ public class ApiKeyDataHelper {
 
   public async Task<ApiKey?> TryMatchApiKeyAsync(String headerApiKey, CancellationToken cancellationToken) {
     return this.MatchDefaultApiKey(headerApiKey) ??
-      await this._apiKeysTable
-        .Where(k => k.Key == headerApiKey)
-        .SingleOrDefaultAsync(cancellationToken);
+      await this._apiKeyRepository.FindAsync(headerApiKey, cancellationToken);
   }
 
   private ApiKey? MatchDefaultApiKey(String headerApiKey) {
