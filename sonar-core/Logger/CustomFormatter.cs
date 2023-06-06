@@ -6,7 +6,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging.Console;
 using Microsoft.Extensions.Options;
 
-//namespace Cms.BatCave.Sonar.Agent.Logger;
 namespace Cms.BatCave.Sonar.Logger;
 
 public sealed class CustomFormatter : ConsoleFormatter, IDisposable {
