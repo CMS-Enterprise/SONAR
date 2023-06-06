@@ -10,7 +10,7 @@ using Cms.BatCave.Sonar.Agent.Configuration;
 using Cms.BatCave.Sonar.Agent.HealthChecks;
 using Cms.BatCave.Sonar.Agent.HealthChecks.Metrics;
 using Cms.BatCave.Sonar.Agent.Options;
-using Cms.BatCave.Sonar.Agent.Logger;
+using Cms.BatCave.Sonar.Logger;
 using Cms.BatCave.Sonar.Agent.ServiceConfig;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Exceptions;

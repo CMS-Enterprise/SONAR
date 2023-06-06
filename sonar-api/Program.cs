@@ -8,6 +8,7 @@ using Asp.Versioning;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Json;
+using Cms.BatCave.Sonar.Logger;
 using Cms.BatCave.Sonar.Middlewares;
 using Cms.BatCave.Sonar.OpenApi;
 using Cms.BatCave.Sonar.Options;
@@ -93,8 +94,9 @@ public class Program {
     builder.Services.AddLogging(logging => {
       logging
         .AddConsole(consoleOptions => {
+          consoleOptions.FormatterName = "Sonar";
           consoleOptions.LogToStandardErrorThreshold = LogLevel.Error;
-        });
+        }).AddConsoleFormatter<CustomFormatter, LoggingCustomOptions>();
     });
 
     dependencies.RegisterDependencies(builder);

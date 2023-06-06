@@ -6,7 +6,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging.Console;
 using Microsoft.Extensions.Options;
 
-namespace Cms.BatCave.Sonar.Agent.Logger;
+//namespace Cms.BatCave.Sonar.Agent.Logger;
+namespace Cms.BatCave.Sonar.Logger;
 
 public sealed class CustomFormatter : ConsoleFormatter, IDisposable {
 
@@ -16,7 +17,7 @@ public sealed class CustomFormatter : ConsoleFormatter, IDisposable {
 
   public CustomFormatter(IOptionsMonitor<LoggingCustomOptions> options) :
     base(nameof(CustomFormatter)) {
-    this._optionsReloadToken = options.OnChange(ReloadLoggerOptions);
+    this._optionsReloadToken = options.OnChange(this.ReloadLoggerOptions);
     this._formatterOptions = options.CurrentValue;
     this._defaultConsoleColor = "\x1b[0m";
   }

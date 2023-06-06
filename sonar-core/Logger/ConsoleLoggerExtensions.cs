@@ -1,7 +1,9 @@
 using System;
 using Microsoft.Extensions.Logging;
+//using Cms.BatCave.Sonar.Agent.Logger;
 
-namespace Cms.BatCave.Sonar.Agent.Logger;
+//namespace Cms.BatCave.Sonar.Agent.Logger;
+namespace Cms.BatCave.Sonar.Logger;
 
 public static class ConsoleLoggerExtensions {
   public static ILoggingBuilder AddCustomFormatter(
