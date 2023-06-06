@@ -206,7 +206,7 @@ public class ApiKeyController : ControllerBase {
 
     //If scope of work requires global admin, make sure authenticated key has global admin scope.
     if ((environmentScope == null) && (tenantScope == null)) {
-      if((authenticationKey.EnvironmentId != null) || (authenticationKey.TenantId != null)) {
+      if ((authenticationKey.EnvironmentId != null) || (authenticationKey.TenantId != null)) {
         throw new ForbiddenException(
           $"Api Key not authorized to {activity}, must have global Admin scope.");
       }

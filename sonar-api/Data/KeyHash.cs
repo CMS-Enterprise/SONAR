@@ -5,25 +5,21 @@ namespace Cms.BatCave.Sonar.Data;
 
 public class KeyHash {
   private const Int32 ApiKeyByteLength = 32;
-  private static String GetRandomSalt()
-  {
+  private static String GetRandomSalt() {
     return BCrypt.Net.BCrypt.GenerateSalt(12);
   }
 
-  public static String HashPassword(String password)
-  {
+  public static String HashPassword(String password) {
     return BCrypt.Net.BCrypt.HashPassword(password, GetRandomSalt());
   }
 
-  public static (String key, String hashKey) GenerateKey()
-  {
+  public static (String key, String hashKey) GenerateKey() {
     String key = GenerateApiKeyValue();
     String hashKey = BCrypt.Net.BCrypt.HashPassword(key, GetRandomSalt());
     return (key, hashKey);
   }
 
-  public static Boolean ValidatePassword(String password, String correctHash)
-  {
+  public static Boolean ValidatePassword(String password, String correctHash) {
     return BCrypt.Net.BCrypt.Verify(password, correctHash);
   }
 

@@ -58,7 +58,7 @@ public class DbApiKeyRepository : IApiKeyRepository {
 
 
       var apiKey = KeyHash.GenerateKey();
-      var newKey = new ApiKey(Guid.Empty,  apiKey.hashKey, apiKeyDetails.ApiKeyType,
+      var newKey = new ApiKey(Guid.Empty, apiKey.hashKey, apiKeyDetails.ApiKeyType,
         environment?.Id, tenant?.Id);
 
       // Record new API key
@@ -208,7 +208,7 @@ public class DbApiKeyRepository : IApiKeyRepository {
     return result;
   }
 
- public async Task<ApiKey?> FindAsync(String encKey, CancellationToken cancellationToken) {
+  public async Task<ApiKey?> FindAsync(String encKey, CancellationToken cancellationToken) {
 
     var keys = await this._apiKeysTable.ToListAsync(cancellationToken);
 
