@@ -7,7 +7,7 @@ import { mainStyle } from './App.Style';
 
 import Header from './components/App/Header';
 import Environments from './pages/Environments';
-import Services from './pages/Services';
+import Service from './pages/Service';
 import { QueryClient, QueryClientProvider } from 'react-query';
 
 import { LightTheme, DarkTheme } from './themes';
@@ -25,7 +25,7 @@ function App() {
           <div>
             <Routes>
               <Route path="/" element={<Environments />} />
-              <Route path="/services" element={<Services />} />
+              <Route path="/:environment/tenants/:tenant/services/*" element={<Service />} />
             </Routes>
           </div>
         </main>

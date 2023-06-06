@@ -23,11 +23,3 @@ export function getTenantItemStyle(theme: Theme) {
   });
 }
 
-export function getTenantItemSpanStyle(theme: Theme) {
-  return css({
-    verticalAlign:'middle',
-    paddingLeft:'15px',
-    color: theme.textColor
-  })
-}
-

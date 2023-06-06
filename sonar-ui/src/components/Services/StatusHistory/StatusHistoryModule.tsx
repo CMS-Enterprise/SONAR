@@ -10,8 +10,10 @@ import {
 import { HttpResponse } from 'api/http-client';
 import { createSonarClient } from 'helpers/ApiHelper';
 import { calculateHistoryRange } from 'helpers/StatusHistoryHelper';
-import { getContainerStyle } from '../RootService.Style';
+import { StaticTextFontStyle } from '../../../App.Style';
+import { ServiceOverviewHeaderStyle } from '../ServiceOverview.Style';
 import StatusHistoryTile from './StatusHistoryTile';
+import { StatusHistoryTileContainerStyle } from './StatusHistory.Style';
 
 const StatusHistoryModule: React.FC<{
   addTimestamp: (tupleData: DateTimeHealthStatusValueTuple, tileId: string, serviceData: ServiceHierarchyHealth) => void,
@@ -37,18 +39,17 @@ const StatusHistoryModule: React.FC<{
       ['statusHistory', environmentName, tenantName, servicePath.join('/')],
       () => sonarClient.getServiceHealthHistory(environmentName, tenantName, servicePath.join('/'), calculateHistoryRange())
         .then((res: HttpResponse<ServiceHierarchyHealthHistory, ProblemDetails | void>) => {
-          console.log(res.data);
           return res.data;
         })
     );
 
     return (
       <>
-        <div css={getContainerStyle()}>
-          Status History:
+        <div css={[ServiceOverviewHeaderStyle, StaticTextFontStyle]}>
+          Status History
         </div>
         {isLoading ? (<Spinner />) : (
-          <div css={getContainerStyle()}>
+          <div css={StatusHistoryTileContainerStyle}>
             {data?.aggregateStatus?.map((item, index) => (
               <StatusHistoryTile
                 key={`${serviceHealth.name}-${index}`}

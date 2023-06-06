@@ -29,3 +29,11 @@ export function badgeStyle(theme: Theme, status: HealthStatus | undefined) {
     "--badge__background-color": getStatusColors(theme, status)
   });
 }
+
+export function getBadgeSpanStyle(theme: Theme) {
+  return css({
+    verticalAlign:'middle',
+    paddingLeft:'15px',
+    color: theme.textColor
+  })
+}

@@ -20,15 +20,10 @@ export function mainStyle(theme: Theme) {
   });
 }
 
-export const staticTextFontStyle: CSSObject = {
+export const StaticTextFontStyle: CSSObject = {
   fontFamily: 'Helvetica Neue, Helvetica, Arial, sans-serif'
 };
 
-export const dynamicTextFontStyle: CSSObject = {
+export const DynamicTextFontStyle: CSSObject = {
   fontFamily: 'Verdana, Geneva, sans-serif'
 };
-
-export const accordionContainerStyle: CSSObject = {
-  border: '1px #a6a6a6',
-  borderRadius: '40px'
-}

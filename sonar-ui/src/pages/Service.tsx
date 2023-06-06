@@ -1,42 +1,33 @@
-import React, { useEffect, useState } from 'react';
 import {
   DateTimeHealthStatusValueTuple,
-  ProblemDetails, ServiceConfiguration,
+  ServiceConfiguration,
   ServiceHierarchyConfiguration,
   ServiceHierarchyHealth
 } from 'api/data-contracts';
-import RootService from 'components/Services/RootService';
+import ServiceOverview from 'components/Services/ServiceOverview';
 import { createSonarClient } from 'helpers/ApiHelper';
-import { HttpResponse } from 'api/http-client';
 import { StatusHistoryView } from 'interfaces/global_interfaces';
+import React, { useEffect, useState } from 'react';
 import { useQuery } from 'react-query';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import StatusHistoryDrawer from '../components/Services/StatusHistory/StatusHistoryDrawer';
 
-const Services = () => {
+const Service = () => {
   const sonarClient = createSonarClient();
+  const params = useParams();
+  const environmentName = params.environment as string;
+  const tenantName = params.tenant as string;
 
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  // TODO(BATAPI-253): eliminate this test values once the Environments list
-  //  properly links to the Services view
-  const environmentName = searchParams.get('environment') ?? 'foo';
-  const tenantName = searchParams.get('tenant') ?? 'baz';
+  const location = useLocation();
+  const servicePath = location.pathname.split('services/')[1];
+  const serviceList = servicePath.split('/');
+  const currentServiceIsRoot = (serviceList.length === 1) ? true : false;
+  const serviceName : string = currentServiceIsRoot ?
+    servicePath.split('/')[0] : servicePath.split('/').pop()!;
 
   const [showDrawer, setShowDrawer] = useState(false);
   const [selectedTileId, setSelectedTileId] = useState<string>('');
   const [statusHistoryViewData, setStatusHistoryViewData] = useState<StatusHistoryView | null>(null);
-
-  const hierarchyHealthQuery = useQuery<ServiceHierarchyHealth[], Error>(
-    ['services'],
-    () => sonarClient.getServiceHierarchyHealth(environmentName, tenantName).then((res) => res.data)
-  );
-
-  const hierarchyConfigQuery = useQuery<ServiceHierarchyConfiguration, Error>({
-      queryKey: ['ServiceHierarchyConfig'],
-      queryFn: () => sonarClient.getTenant(environmentName, tenantName).then((res) => res.data)
-    }
-  );
 
   useEffect(() => {
     if (statusHistoryViewData) {
@@ -62,12 +53,37 @@ const Services = () => {
     setSelectedTileId('');
   }
 
+  const hierarchyHealthQuery = useQuery<ServiceHierarchyHealth[], Error>(
+    ['services'],
+    () => sonarClient.getServiceHierarchyHealth(environmentName, tenantName).then((res) => res.data)
+  );
+
+  const hierarchyConfigQuery = useQuery<ServiceHierarchyConfiguration, Error>({
+      queryKey: ['ServiceHierarchyConfig'],
+      queryFn: () => sonarClient.getTenant(environmentName, tenantName).then((res) => res.data)
+    }
+  );
+
   if (hierarchyConfigQuery.data && hierarchyHealthQuery.data) {
     const serviceConfigLookup =
       hierarchyConfigQuery.data.services.reduce(
         (lookup, svc) => { lookup[svc.name] = svc; return lookup },
         {} as { [key: string]: ServiceConfiguration }
       );
+
+    let currentServiceHealth = hierarchyHealthQuery.data.filter(svc => svc.name === serviceList[0])[0];
+    if (!currentServiceIsRoot) {
+      // ignore the root service to iterate through child services
+      serviceList.splice(0,1);
+
+      // get current service's health hierarchy
+      serviceList.forEach(childService => {
+        currentServiceHealth = (
+          currentServiceHealth?.children &&
+          currentServiceHealth.children.filter(svc => svc.name === childService)[0]
+        ) as ServiceHierarchyHealth;
+      });
+    }
 
     return (
       <section className="ds-l-container">
@@ -80,19 +96,16 @@ const Services = () => {
           />
         )}
         <div>
-          {hierarchyConfigQuery.data.rootServices.map(rootService => (
-            <div key={rootService}>
-              <RootService
-                environmentName={environmentName}
-                tenantName={tenantName}
-                service={serviceConfigLookup[rootService]}
-                serviceHealth={hierarchyHealthQuery.data.filter(svc => svc.name === rootService)[0]}
-                serviceConfigurationLookup={serviceConfigLookup}
-                addTimestamp={addTimestamp}
-                closeDrawer={closeDrawer}
-                selectedTileId={selectedTileId}
-              />
-            </div>))}
+          <ServiceOverview
+            environmentName={environmentName}
+            tenantName={tenantName}
+            serviceConfig={serviceConfigLookup[serviceName]}
+            serviceHealth={currentServiceHealth}
+            serviceConfigurationLookup={serviceConfigLookup}
+            addTimestamp={addTimestamp}
+            closeDrawer={closeDrawer}
+            selectedTileId={selectedTileId}
+          />
         </div>
       </section>
     );
@@ -108,4 +121,4 @@ const Services = () => {
   }
 }
 
-export default Services;
+export default Service;

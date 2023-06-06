@@ -1,11 +1,10 @@
 import { useTheme } from '@emotion/react';
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { TenantHealth } from 'api/data-contracts';
 import HealthStatusBadge from '../../Badges/HealthStatusBadge';
-import {
-  getTenantItemSpanStyle,
-  getTenantItemStyle,
-} from './TenantItem.Style';
+import { getBadgeSpanStyle } from '../../Badges/HealthStatusBadge.Style';
+import { getTenantItemStyle } from './TenantItem.Style';
 
 const TenantItem: React.FC<{
   tenant: TenantHealth,
@@ -20,8 +19,12 @@ const TenantItem: React.FC<{
             <span>
               <HealthStatusBadge theme={theme} status={rs.aggregateStatus} />
             </span>
-            <span css={getTenantItemSpanStyle(theme)}>
-              {tenant.tenantName}: {rs.displayName}
+            <span css={getBadgeSpanStyle(theme)}>
+              <Link to={ "/" + tenant.environmentName +
+                         "/tenants/" + tenant.tenantName +
+                         "/services/" + rs.name }>
+                {tenant.tenantName}: {rs.displayName}
+              </Link>
             </span>
           </div>
         )}
