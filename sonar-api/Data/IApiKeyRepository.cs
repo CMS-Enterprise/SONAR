@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Models;
 
 namespace Cms.BatCave.Sonar.Data;
