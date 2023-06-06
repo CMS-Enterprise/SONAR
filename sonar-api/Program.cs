@@ -94,7 +94,7 @@ public class Program {
     builder.Services.AddLogging(logging => {
       logging
         .AddConsole(consoleOptions => {
-          consoleOptions.FormatterName = "Sonar";
+          consoleOptions.FormatterName = nameof(CustomFormatter);
           consoleOptions.LogToStandardErrorThreshold = LogLevel.Error;
         }).AddConsoleFormatter<CustomFormatter, LoggingCustomOptions>();
     });
