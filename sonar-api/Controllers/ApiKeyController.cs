@@ -21,7 +21,7 @@ namespace Cms.BatCave.Sonar.Controllers;
 [ApiVersion(2)]
 [Route("api/v{version:apiVersion}/keys")]
 public class ApiKeyController : ControllerBase {
-  private const String ApiKeyHeader = "ApiKey2";
+  private const String ApiKeyHeader = "ApiKey";
 
   private readonly IConfiguration _configuration;
   private readonly IApiKeyRepository _apiKeys;

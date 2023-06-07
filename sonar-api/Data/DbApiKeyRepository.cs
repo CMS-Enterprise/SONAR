@@ -65,8 +65,13 @@ public class DbApiKeyRepository : IApiKeyRepository {
       await this._dbContext.SaveChangesAsync(cancelToken);
       await tx.CommitAsync(cancelToken);
 
-      var clientResults = new ApiKey(createdApiKey.Entity.Id, apiKey.key, createdApiKey.Entity.Type,
-        createdApiKey.Entity.EnvironmentId, createdApiKey.Entity.TenantId);
+      var clientResults = new ApiKey(
+        createdApiKey.Entity.Id,
+        apiKey.key,
+        createdApiKey.Entity.Type,
+        createdApiKey.Entity.EnvironmentId,
+        createdApiKey.Entity.TenantId
+      );
 
       //Build and return data to client.
       apiKeyConfiguration = ToApiKeyConfig(environment, tenant, clientResults);
