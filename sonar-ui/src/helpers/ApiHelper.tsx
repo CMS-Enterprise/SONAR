@@ -2,6 +2,6 @@ import { Api as SonarApi } from 'api/sonar-api.generated';
 
 export function createSonarClient() {
   return new SonarApi({
-    baseUrl: 'http://localhost:8081'
+    baseUrl: (window as any).API_URL
   });
 }

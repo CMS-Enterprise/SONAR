@@ -143,6 +143,10 @@ function dockerBuild() {
     docker build ./test/http-metric-test-app/ -t http-metric-test-app:latest
     docker tag http-metric-test-app:latest sonar-registry:${PORT_NUMBER}/http-metric-test-app:${TAG}
     docker push sonar-registry:${PORT_NUMBER}/http-metric-test-app:${TAG}
+
+    docker build . -f Dockerfile.ui -t sonar-ui:latest
+    docker tag sonar-ui:latest sonar-registry:${PORT_NUMBER}/sonar-ui:${TAG}
+    docker push sonar-registry:${PORT_NUMBER}/sonar-ui:${TAG}
   fi
 }
 
@@ -151,6 +155,7 @@ function installApiAndDependencies() {
     # this is used by kustomize to configure the image for the sonar-api Deployment
     echo "SONAR_API_IMAGE=sonar-registry:${PORT_NUMBER}/sonar-api:${TAG}" > ./k8s/.env
     ./k8s/create-namespace-and-secret.sh
+    echo "SONAR_UI_IMAGE=sonar-registry:${PORT_NUMBER}/sonar-ui:${TAG}" >> ./k8s/.env
     kubectl apply -k ./k8s
 
     echo "TEST_METRIC_APP_IMAGE=sonar-registry:${PORT_NUMBER}/test-metric-app:${TAG}" > ./k8s/test-apps/.env
