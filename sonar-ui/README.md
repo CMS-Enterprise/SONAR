@@ -50,6 +50,10 @@ generated sources can be found in the [`src/api`](./src/api) folder. Will requir
 
 Delete the `node_modules` directory and the `package-lock.json` file, then run `npm i` to regenerate both.
 
+## Custom URL within Docker
+The URL in which the UI determines the API endpoint can be configured within the public/config/settings.js. \
+During deployment the settings.js will be configured based on the environment in use.
+
 ## CSS/Style Standards and Best Practices
 ### Emotion Guidelines
 - Emotion is a CSS/JS library that allows for type-safe style composition.
@@ -80,6 +84,7 @@ Delete the `node_modules` directory and the `package-lock.json` file, then run `
 
 ### When To Use CMS Design Classes
 - [CMS Design](https://design.cms.gov/v/6.0.1/components/overview/?theme=core) classes should primarily be used for layout and typography.
+###
 
 ## About Create React App
 

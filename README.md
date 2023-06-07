@@ -100,6 +100,7 @@ dotnet run -- -f ./service-config.json
 ```
 
 ## Dependencies & Docker Compose
+DockerCompose will require the artifactory login as images are pulled from CMS's Artifactory. To do so, login using the `docker login artifactory.cloud.cms.gov` command. Credentials should be your CMS info.
 
 The SONAR API and Agent have two critical dependencies (PostgreSQL and Prometheus) and one optional dependency (Loki). All of these can be run via Docker Compose using the `docker-compose.yml` file in the root of the repo:
 
@@ -113,6 +114,7 @@ There is also an example application that generates Prometheus metrics that can 
 docker-compose up -d test-metric-app
 ```
 
+
 To build Docker images via Docker Compose, run the following command:
 
 ```
@@ -122,7 +124,7 @@ docker-compose build
 To selectively run SONAR services via Docker Compose, run the following command:
 
 ```
-docker-compose up sonar-api sonar-agent
+docker-compose up sonar-api sonar-agent sonar-ui
 ```
 
 ## Running in Kubernetes

@@ -4,7 +4,7 @@ metadata:
   name: api-url-env
 data:
   settings.js: |
-    window.API_URL = http://sonar.sonar.svc.cluster.local:8081
+    window.API_URL = 'http://localhost:8081'
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -27,7 +27,7 @@ spec:
           imagePullPolicy: Always
           workingDir: /usr/share/nginx/html/
           ports:
-            - containerPort: 8080
+            - containerPort: 80
           securityContext:
             allowPrivilegeEscalation: false
           volumeMounts:
@@ -51,4 +51,5 @@ spec:
     - protocol: TCP
       port: 8080
       name: http
+      targetPort: 80
 
