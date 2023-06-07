@@ -45,19 +45,34 @@ Options:
 
 When run with the `-a` flag, this script use the kustomization and kubernetes resources defined in the [k8s](../k8s) folder to install the SONAR API and the test-metric and http-metric-test apps to enable end-to-end testing.
 
-### 1. Create K3D Cluster
+### Accessing Services
+
+Once your k3d cluster is up and running you can access services running within k3d via port `8088`. Because services running in k3d are all exposed via a single port, routing is done based on path prefix:
+
+| Path | Service |
+|------|---------|
+| [/api/*](http://localhost:8088/api/ready) | sonar-api |
+| [/metrics](http://localhost:8088/metrics) | test-metric-app |
+| [/test/*](http://localhost:8088/test/ready) | http-metric-test-app |
+| [/prometheus/*](http://localhost:8088/prometheus/graph) | prometheus |
+
+### Manual Steps
+
+These steps are automated by the  [k3d-deploy.sh](../scripts/k3d-deploy.sh) script, but if you are really curious, here are the manual steps that you can use to set up a k3d cluster.
+
+#### 1. Create K3D Cluster
 
 ```shell
-k3d cluster create sonar-test --registry-create sonar-registry
+k3d cluster create sonar-test --registry-create sonar-registry  -p "8088:80@loadbalancer"
 ```
 
-### 2. Get the TCP port for your Registry
+#### 2. Get the TCP port for your Registry
 
 ```shell
 docker ps -f name=sonar-registry
 ```
 
-### 3. Add sonar-registry to your `/etc/hosts` file
+#### 3. Add sonar-registry to your `/etc/hosts` file
 
 In order to access the k3d docker registry via the host name `sonar-registry` we need to make that host name resolve to localhost (127.0.0.1). To do so add the following to your `/etc/hosts` file (note: you will need to launch your text editor with admin privileges using `sudo`)
 
@@ -66,7 +81,7 @@ In order to access the k3d docker registry via the host name `sonar-registry` we
 127.0.0.1 sonar-registry
 ```
 
-### 4. Build, Tag, and Push your sonar-agent Container
+#### 4. Build, Tag, and Push your sonar-agent Container
 
 From the root of the repository
 
@@ -76,9 +91,8 @@ docker tag sonar-agent:testing sonar-registry:{PORT_NUMBER_FROM_STEP_2}/sonar-ag
 docker push sonar-registry:{PORT_NUMBER_FROM_STEP_2}/sonar-agent:testing
 ```
 
-### 5. Install the Helm Chart Using the local image
+#### 5. Install the Helm Chart Using the local image
 
 ```shell
 helm install my-sonar-agent ./charts/sonar-agent -f ./charts/sonar-agent/examples/values.example-service-config.yaml --set image.repository=sonar-registry:{PORT_NUMBER_FROM_STEP_2}/sonar-agent --set image.tag=testing
 ```
-

@@ -7,6 +7,7 @@ resources:
   - prometheus-svc.yaml
   - loki.yaml
   - sonar-api.yaml
+  - ingress.yaml
 
 configMapGenerator:
   - name: environment-config

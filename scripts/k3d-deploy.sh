@@ -109,7 +109,7 @@ function createCluster() {
   if [ $EXISTS != true ]; then
     # Cluster does not exist, create cluster
     echo Creating Cluster: $CLUSTER_NAME
-    k3d cluster create $CLUSTER_NAME --registry-create $SONAR_REGISTRY_NAME
+    k3d cluster create $CLUSTER_NAME --registry-create $SONAR_REGISTRY_NAME -p "8088:80@loadbalancer"
   fi
 }
 

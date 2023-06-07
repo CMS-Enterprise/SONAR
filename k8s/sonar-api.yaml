@@ -57,11 +57,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: sonar
+  name: sonar-api
 spec:
   selector:
     app.kubernetes.io/name: sonar-api
   ports:
     - protocol: TCP
       port: 8081
+      targetPort: 8081
       name: http

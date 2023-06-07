@@ -40,6 +40,34 @@ spec:
       port: 9090
       name: http
 ---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: prometheus
+  annotations:
+    ingress.kubernetes.io/ssl-redirect: "false"
+    traefik.ingress.kubernetes.io/router.middlewares: sonar-strip-prometheus-prefix@kubernetescrd
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /prometheus
+            pathType: Prefix
+            backend:
+              service:
+                name: prometheus
+                port:
+                  number: 9090
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: strip-prometheus-prefix
+spec:
+  stripPrefix:
+    prefixes:
+      - /prometheus
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:

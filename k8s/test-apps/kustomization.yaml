@@ -6,6 +6,7 @@ resources:
   - namespace.yaml
   - test-metric-app.yaml
   - http-metric-test-app.yaml
+  - ingress.yaml
 
 configMapGenerator:
   - name: environment-config

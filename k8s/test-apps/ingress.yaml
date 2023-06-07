@@ -1,0 +1,34 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: test-app-services
+  annotations:
+    ingress.kubernetes.io/ssl-redirect: "false"
+    traefik.ingress.kubernetes.io/router.middlewares: test-apps-rewrite-test-prefix@kubernetescrd
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /metrics
+            pathType: Prefix
+            backend:
+              service:
+                name: test-metric-app
+                port:
+                  number: 2020
+          - path: /test
+            pathType: Prefix
+            backend:
+              service:
+                name: http-metric-test-app
+                port:
+                  number: 8082
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: rewrite-test-prefix
+spec:
+  replacePathRegex:
+    regex: ^/test/(.*)
+    replacement: /api/$1
