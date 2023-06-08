@@ -4,6 +4,6 @@ import App from './App';
 
 test('Renders Home', () => {
   render(<App/>);
-  const homeTitleElement = screen.getByTestId('home-title');
-  expect(homeTitleElement).toBeInTheDocument();
+  expect(screen.getByRole("navigation")).toHaveTextContent(/SONAR/);
+
 });

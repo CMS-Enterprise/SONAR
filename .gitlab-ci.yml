@@ -2,24 +2,116 @@ stages:
   - old-pipeline
   - build
   - test
+  - pipeline-triggers
 
-existing-pipeline:
-  stage: old-pipeline
+variables:
+  TEMPLATE_VERSION: "v1"
+  APP_NAME_UI: "sonar-ui"
+
+#Runs existing pipeline for API and Agent
+#existing-pipeline:
+#  stage: old-pipeline
+#  trigger:
+#    strategy: depend
+#    include:
+#      - project: 'devops-pipelines/application-pipelines'
+#        ref: main
+#        file: 'sonar/sonar.yaml'
+
+#Jobs correlating to building of the UI
+.with-npm:
+  image: artifactory.cloud.cms.gov/docker/node:18-alpine
+  variables:
+    ARTIFACT_FOLDER: ".artifacts/${APP_NAME_UI}"
+    TARGET_DIR: ${APP_NAME_UI}
+  cache:
+    key: ${CI_COMMIT_REF_SLUG} #Predefined
+    paths:
+      - ${TARGET_DIR}/.npm
+      - ${TARGET_DIR}/node_modules
+
+build-ui:
+  stage: build
+  needs: []
+  extends: .with-npm
+  script:
+    - echo "BEGIN build node modules, about to execute 'npm ci' and 'npm run build'."
+    - cd ${TARGET_DIR}
+    - npm ci
+    - npm run build #also runs lint
+    - echo "END build node modules"
+
+unit-tests:
+  stage: test
+  needs: [build-ui]
+  extends: .with-npm
+  script:
+    - echo "Perform 'npm run test'"
+    - cd ${TARGET_DIR}
+    - npm run test
+
+lint:
+  stage: test
+  needs: [build-ui]
+  extends: .with-npm
+  allow_failure: true #TODO Modify to false when testing is done
+  script:
+    - echo "Perform 'npm run lint'"
+    - cd ${TARGET_DIR}
+    - npm run lint
+
+sast-pipeline:
+  stage: pipeline-triggers
+  needs: []
+  variables:
+    SCAN_GITLEAKS: "true"
+    SCAN_SEMGREP: "true"
+    TARGET_DIRECTORY: ${APP_NAME}
+    SEMGREP_RULES_ADD: "p/javascript"
+    APP_IMAGE_SRC: "${BC_IMAGE_REPO}/ado-repositories/oit/waynetech/${APP_NAME_UI}"
   trigger:
     strategy: depend
     include:
-      - project: 'devops-pipelines/application-pipelines'
-        ref: main
-        file: 'sonar/sonar.yaml'
+      - project: "devops-pipelines/pipeline-triggers"
+        ref: ${TEMPLATE_VERSION}
+        file: "sast.yaml"
 
-build:
-  image: artifactory.cloud.cms.gov/docker/alpine:latest
-  stage: build
-  script:
-    - echo "building..."
 
-test:
-  image: artifactory.cloud.cms.gov/docker/alpine:latest
-  stage: test
-  script:
-    - echo "testing..."
+delivery-pipeline:
+  stage: pipeline-triggers
+  needs: [sast-pipeline]
+  variables:
+    FETCH_SAST_ARTIFACTS: "true"
+    PUSH_LATEST: "true"
+    TARGET_DOCKERFILE: Dockerfile.ui
+    APP_IMAGE_SRC: "${BC_IMAGE_REPO}/ado-repositories/oit/waynetech/${APP_NAME_UI}"
+  trigger:
+    strategy: depend
+    include:
+      - project: "devops-pipelines/pipeline-triggers"
+        ref: ${TEMPLATE_VERSION}
+        file: "delivery.yaml"
+
+
+# .deployment-pipeline:
+#   stage: deploy
+#   variables:
+#     FETCH_SAST_ARTIFACTS: "true"
+#     PUSH_LATEST: "true"
+#     TARGET_ENVIRONMENT: "impl"
+#   trigger:
+#     strategy: depend
+#     include:
+#       - project: "devops-pipelines/pipeline-triggers"
+#         ref: ${TEMPLATE_VERSION}
+#         file: "deployment.yaml"
+
+# deploy-sonar-ui:
+#   needs: ["delivery-pipeline", "existing-pipeline"]
+#   extends: .deployment-pipeline
+#   variables:
+#     APP_NAME: "sonar-ui"
+#     TARGET_DOCKERFILE: ${APP_NAME}/Dockerfile
+#     TARGET_SERVICE: ${APP_NAME}
+#     APP_IMAGE_SRC: ${BC_IMAGE_REPO}/${CI_PROJECT_PATH}/${APP_NAME}
+

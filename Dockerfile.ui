@@ -12,6 +12,7 @@ FROM artifactory.cloud.cms.gov/docker/nginx:1.23-alpine
 WORKDIR /usr/share/nginx/html
 RUN rm -rf ./*
 COPY --from=builder /sonar/sonar-ui/build .
+COPY --from=builder /sonar/sonar-ui/default.conf /etc/nginx/conf.d/
 
-EXPOSE 80
+EXPOSE 8080
 ENTRYPOINT ["nginx", "-g", "daemon off;"]
