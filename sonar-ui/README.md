@@ -84,7 +84,6 @@ During deployment the settings.js will be configured based on the environment in
 
 ### When To Use CMS Design Classes
 - [CMS Design](https://design.cms.gov/v/6.0.1/components/overview/?theme=core) classes should primarily be used for layout and typography.
-###
 
 ## About Create React App
 
