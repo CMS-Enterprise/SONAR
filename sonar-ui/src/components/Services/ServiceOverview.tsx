@@ -1,7 +1,6 @@
 import { useTheme } from '@emotion/react';
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-
 import {
   DateTimeHealthStatusValueTuple,
   ServiceConfiguration,
@@ -10,7 +9,7 @@ import {
 import { DynamicTextFontStyle, StaticTextFontStyle } from '../../App.Style';
 import Breadcrumbs from './Breadcrumbs/Breadcrumbs';
 import StatusHistoryModule from './StatusHistory/StatusHistoryModule';
-import HealthCheckList from './HealthCheckList';
+import HealthCheckList from './HealthStatus/HealthCheckList';
 import {
   getServiceOverviewStyle,
   getSubContainerStyle,
@@ -23,7 +22,6 @@ const ServiceOverview: React.FC<{
   tenantName: string,
   serviceConfig: ServiceConfiguration,
   serviceHealth: ServiceHierarchyHealth,
-  serviceConfigurationLookup: { [key: string]: ServiceConfiguration },
   addTimestamp: (tupleData: DateTimeHealthStatusValueTuple, tileId: string, serviceData: ServiceHierarchyHealth) => void,
   closeDrawer: () => void,
   selectedTileId: string
@@ -33,7 +31,6 @@ const ServiceOverview: React.FC<{
     tenantName,
     serviceConfig,
     serviceHealth,
-    serviceConfigurationLookup,
     addTimestamp,
     closeDrawer,
     selectedTileId
@@ -59,14 +56,12 @@ const ServiceOverview: React.FC<{
           />
         </div>
         <div>
-          {serviceConfig.healthChecks ? (
+          { serviceConfig.healthChecks && (
             <HealthCheckList
-              environmentName={environmentName}
-              tenantName={tenantName}
               serviceConfig={serviceConfig}
               healthCheckStatuses={serviceHealth.healthChecks}
             />
-          ) : null}
+          )}
         </div>
         {serviceConfig.children && serviceConfig.children.length > 0 ?
           <>

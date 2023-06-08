@@ -3,5 +3,8 @@
   "parser": "@typescript-eslint/parser",
   "plugins": ["@typescript-eslint"],
   "root": true,
-  "ignorePatterns": ["config-overrides.js"]
+  "ignorePatterns": ["config-overrides.js"],
+  "rules": {
+    "@typescript-eslint/no-non-null-assertion": "off"
+  }
 }

@@ -34,6 +34,10 @@ export function getBadgeSpanStyle(theme: Theme) {
   return css({
     verticalAlign:'middle',
     paddingLeft:'15px',
-    color: theme.textColor
+    color: theme.textColor,
+    "&:hover": {
+      color: theme.accentColor,
+      cursor: 'pointer'
+    }
   })
 }

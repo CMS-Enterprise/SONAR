@@ -1,9 +1,9 @@
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableRow } from '@cmsgov/design-system';
-import { getChartsTablePropertiesStyle } from './HealthCheckListItem.Style';
+import { TextAlignCenter, getChartsTablePropertiesStyle } from './HealthStatus.Style';
+import { DynamicTextFontStyle } from 'App.Style';
 
-
-const HealthCheckListItemTimeSeriesChart: React.FC<{
+const HealthStatusDataTable: React.FC<{
   healthCheckName: string
   timeSeriesData: number[][]
 }> = ({ healthCheckName, timeSeriesData }) => {
@@ -11,18 +11,18 @@ const HealthCheckListItemTimeSeriesChart: React.FC<{
   const HEALTHSTATUS_DATA = 1;
 
   return (
-    <Table css={getChartsTablePropertiesStyle()}>
+    <Table css={getChartsTablePropertiesStyle}>
       <TableHead>
         <TableRow >
           <TableCell>Timestamp</TableCell>
-          <TableCell>HealthStatus</TableCell>
+          <TableCell css={TextAlignCenter}>HealthStatus</TableCell>
         </TableRow>
       </TableHead>
-      <TableBody>
+      <TableBody css={DynamicTextFontStyle}>
         {timeSeriesData?.map((data, index:number) =>
           <TableRow key={healthCheckName+'-row-'+index}>
             <TableCell>{new Date(data[TIMESTAMP_DATA]).toISOString()}</TableCell>
-            <TableCell>{data[HEALTHSTATUS_DATA]}</TableCell>
+            <TableCell css={TextAlignCenter}>{data[HEALTHSTATUS_DATA]}</TableCell>
           </TableRow>
         )}
       </TableBody>
@@ -30,4 +30,4 @@ const HealthCheckListItemTimeSeriesChart: React.FC<{
   );
 };
 
-export default HealthCheckListItemTimeSeriesChart;
+export default HealthStatusDataTable;

@@ -1,5 +1,4 @@
 import React from 'react';
-
 import {
   HealthCheckModel,
   HealthCheckType,
@@ -7,8 +6,9 @@ import {
 } from 'api/data-contracts';
 import { getOperatorPunctuation } from 'helpers/ServiceHierarchyHelper';
 import { IHealthCheckCondition, IHealthCheckDefinition, IHealthCheckHttpCondition } from 'types';
+import { DynamicTextFontStyle } from 'App.Style'
 
-const TimeSeriesThresholds: React.FC<{
+const HealthMetricThresholds: React.FC<{
   service: ServiceConfiguration,
   healthCheck: HealthCheckModel,
   healthCheckStatus: string
@@ -19,7 +19,6 @@ const TimeSeriesThresholds: React.FC<{
       case HealthCheckType.HttpRequest:
         return (
           <div>
-            <b>Http Request</b>
             {definition?.conditions.map((c: IHealthCheckHttpCondition, index: number) =>
               <div key={healthCheck.name + '-httpCondition-' + index}>
                 {c.type === 'HttpStatusCode' &&
@@ -36,11 +35,11 @@ const TimeSeriesThresholds: React.FC<{
       case HealthCheckType.PrometheusMetric:
         return (
           <div>
-            <b>{(metricType === HealthCheckType.LokiMetric) ? 'Loki Query' : ' Prometheus Query'}</b>: {service.name}/{healthCheck.name}<br />
-            <b>Expression</b>: {definition?.expression} <br /><br />
+            <b>{(metricType === HealthCheckType.LokiMetric) ? 'Loki Query' : ' Prometheus Query'}</b>: <span css={DynamicTextFontStyle}>{service.name}/{healthCheck.name}</span><br />
+            <b>Expression</b>: <span css={DynamicTextFontStyle}>{definition?.expression}</span> <br /><br />
             {definition?.conditions.map((c: IHealthCheckCondition, index: number) => (
               <div key={healthCheck.name + '-queryCondition-' + index}>
-                <span><b>{c.status}</b>: Value {getOperatorPunctuation(c.operator)} {c.threshold} </span>
+                <span><b>{c.status}</b>: <span css={DynamicTextFontStyle}>Value {getOperatorPunctuation(c.operator)} {c.threshold}</span> </span>
               </div>)
             )}
           </div>
@@ -63,5 +62,4 @@ const TimeSeriesThresholds: React.FC<{
   )
 }
 
-export default TimeSeriesThresholds;
-
+export default HealthMetricThresholds;

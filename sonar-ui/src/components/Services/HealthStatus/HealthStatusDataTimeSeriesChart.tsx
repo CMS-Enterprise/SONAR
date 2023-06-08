@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-
 import Chart from 'react-apexcharts';
 import { ApexOptions } from "apexcharts";
 import { IHealthCheckCondition, IHealthCheckDefinition } from 'types';
 
-const TimeSeriesChart: React.FC<{
+const HealthStatusDataTimeSeriesChart: React.FC<{
   svcDefinitions: IHealthCheckDefinition | null,
   healthCheckName: string,
   timeSeriesData: number[][]
@@ -154,6 +153,4 @@ const TimeSeriesChart: React.FC<{
     </div>
   )
 }
-export default TimeSeriesChart;
-
-
+export default HealthStatusDataTimeSeriesChart;

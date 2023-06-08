@@ -1,5 +1,6 @@
 import {
   DateTimeHealthStatusValueTuple,
+  HealthCheckModel,
   ServiceConfiguration,
   ServiceHierarchyConfiguration,
   ServiceHierarchyHealth
@@ -7,10 +8,12 @@ import {
 import ServiceOverview from 'components/Services/ServiceOverview';
 import { createSonarClient } from 'helpers/ApiHelper';
 import { StatusHistoryView } from 'interfaces/global_interfaces';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from 'react-query';
 import { useLocation, useParams } from 'react-router-dom';
 import StatusHistoryDrawer from '../components/Services/StatusHistory/StatusHistoryDrawer';
+import { ServiceOverviewContext } from 'components/Services/ServiceOverviewContext';
+import HealthStatusDrawer from 'components/Services/HealthStatus/HealthStatusDrawer';
 
 const Service = () => {
   const sonarClient = createSonarClient();
@@ -31,6 +34,7 @@ const Service = () => {
 
   useEffect(() => {
     if (statusHistoryViewData) {
+      setSelectedHealthCheck(null);
       setShowDrawer(true);
     } else {
       setShowDrawer(false);
@@ -38,7 +42,6 @@ const Service = () => {
   }, [statusHistoryViewData]);
 
   const addTimestamp = (tupleData: DateTimeHealthStatusValueTuple, tileId: string, serviceData: ServiceHierarchyHealth) => {
-    console.log(tupleData[1]);
     setSelectedTileId(tileId);
     const viewData: StatusHistoryView = {
       serviceData: serviceData,
@@ -53,16 +56,19 @@ const Service = () => {
     setSelectedTileId('');
   }
 
+  const [selectedHealthCheck, setSelectedHealthCheck] = useState<HealthCheckModel | null>();
+
+  useEffect(() => { selectedHealthCheck && closeDrawer() }, [selectedHealthCheck])
+
   const hierarchyHealthQuery = useQuery<ServiceHierarchyHealth[], Error>(
     ['services'],
     () => sonarClient.getServiceHierarchyHealth(environmentName, tenantName).then((res) => res.data)
   );
 
   const hierarchyConfigQuery = useQuery<ServiceHierarchyConfiguration, Error>({
-      queryKey: ['ServiceHierarchyConfig'],
-      queryFn: () => sonarClient.getTenant(environmentName, tenantName).then((res) => res.data)
-    }
-  );
+    queryKey: ['ServiceHierarchyConfig'],
+    queryFn: () => sonarClient.getTenant(environmentName, tenantName).then((res) => res.data)
+  });
 
   if (hierarchyConfigQuery.data && hierarchyHealthQuery.data) {
     const serviceConfigLookup =
@@ -86,28 +92,42 @@ const Service = () => {
     }
 
     return (
-      <section className="ds-l-container">
-        {showDrawer && (
-          <StatusHistoryDrawer
-            statusHistoryViewData={statusHistoryViewData}
-            closeDrawer={closeDrawer}
-            environment={environmentName}
-            tenant={tenantName}
-          />
-        )}
-        <div>
-          <ServiceOverview
-            environmentName={environmentName}
-            tenantName={tenantName}
-            serviceConfig={serviceConfigLookup[serviceName]}
-            serviceHealth={currentServiceHealth}
-            serviceConfigurationLookup={serviceConfigLookup}
-            addTimestamp={addTimestamp}
-            closeDrawer={closeDrawer}
-            selectedTileId={selectedTileId}
-          />
-        </div>
-      </section>
+      <ServiceOverviewContext.Provider value={{
+        environmentName: environmentName,
+        tenantName: tenantName,
+        serviceConfiguration: serviceConfigLookup[serviceName],
+        serviceHierarchyHealth: currentServiceHealth,
+        selectedHealthCheck,
+        setSelectedHealthCheck
+      }}>
+        <section className="ds-l-container">
+          {showDrawer && (
+            <StatusHistoryDrawer
+              statusHistoryViewData={statusHistoryViewData}
+              closeDrawer={closeDrawer}
+              environment={environmentName}
+              tenant={tenantName}
+            />
+          )}
+
+          { selectedHealthCheck && (
+            <HealthStatusDrawer onCloseClick={() => setSelectedHealthCheck(null)} />
+          )}
+
+          <div>
+            <ServiceOverview
+              environmentName={environmentName}
+              tenantName={tenantName}
+              serviceConfig={serviceConfigLookup[serviceName]}
+              serviceHealth={currentServiceHealth}
+              addTimestamp={addTimestamp}
+              closeDrawer={closeDrawer}
+              selectedTileId={selectedTileId}
+            />
+          </div>
+        </section>
+      </ServiceOverviewContext.Provider>
+
     );
   } else if (hierarchyHealthQuery.error || hierarchyConfigQuery.error) {
     return (
