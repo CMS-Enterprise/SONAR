@@ -49,12 +49,13 @@ When run with the `-a` flag, this script use the kustomization and kubernetes re
 
 Once your k3d cluster is up and running you can access services running within k3d via port `8088`. Because services running in k3d are all exposed via a single port, routing is done based on path prefix:
 
-| Path | Service |
-|------|---------|
-| [/api/*](http://localhost:8088/api/ready) | sonar-api |
-| [/metrics](http://localhost:8088/metrics) | test-metric-app |
+| Path | Service              |
+|------|----------------------|
+| [/](http://localhost:8088/api/ready) | sonar-ui             |
+| [/api/*](http://localhost:8088/api/ready) | sonar-api            |
+| [/metrics](http://localhost:8088/metrics) | test-metric-app      |
 | [/test/*](http://localhost:8088/test/ready) | http-metric-test-app |
-| [/prometheus/*](http://localhost:8088/prometheus/graph) | prometheus |
+| [/prometheus/*](http://localhost:8088/prometheus/graph) | prometheus           |
 
 ### Manual Steps
 
