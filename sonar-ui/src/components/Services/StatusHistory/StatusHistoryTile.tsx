@@ -33,7 +33,7 @@ const StatusHistoryTile: React.FC<{
 
   const status: HealthStatus = HealthStatus[statusTimestampTuple[1] as keyof typeof HealthStatus]
   const convertedTimestamp = convertUtcTimestampToLocal(statusTimestampTuple[0], showDate);
-  const tooltipText = `${convertedTimestamp} - ${statusTimestampTuple[1]}`;
+  const tooltipText = `${convertedTimestamp}\n${statusTimestampTuple[1]}`;
 
   return (
     <span css={getTileSpanStyle(theme)} data-tooltip={tooltipText}>

@@ -25,6 +25,7 @@ export function getTileSpanStyle(theme: Theme) {
     "&:before": {
       "--translate-y": "calc(-100% - var(--arrow-size))",
 
+      whiteSpace: "pre-line",
       content: "attr(data-tooltip)",
       color: theme.foregroundColor,
       padding: "0.5rem",
@@ -42,7 +43,7 @@ export function getTileSpanStyle(theme: Theme) {
       border: "var(--arrow-size) solid transparent",
       borderTopColor: theme.accentColor,
       transformOrigin: "top center"
-    }
+    },
   })
 }
 
