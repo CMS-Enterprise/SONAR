@@ -4,7 +4,7 @@ import {
   DateTimeHealthStatusValueTuple,
   HealthStatus,
   ServiceConfiguration } from 'api/data-contracts';
-import { StaticTextFontStyle, DynamicTextFontStyle } from '../../../App.Style';
+import { DynamicTextFontStyle } from '../../../App.Style';
 import HealthStatusBadge from '../../Badges/HealthStatusBadge';
 import { getBadgeSpanStyle } from '../../Badges/HealthStatusBadge.Style';
 import {
@@ -25,7 +25,7 @@ const HealthCheckList: React.FC<{
     if (serviceConfig.healthChecks?.length) {
       return (
         <>
-          <div css={[ServiceOverviewHeaderStyle, StaticTextFontStyle]}>
+          <div css={ServiceOverviewHeaderStyle}>
             Health Checks
           </div>
           {serviceConfig.healthChecks.map((healthCheck, i) => {

@@ -12,7 +12,7 @@ export function getBreadcrumbsStyle(theme: Theme) {
 
 export const crumbStyle = css({
   fontSize: 18,
-  fontWeight: 700,
+  fontWeight: 600,
   ":after": {
     content: '"/"',
     marginLeft: 5,

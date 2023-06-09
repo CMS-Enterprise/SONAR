@@ -6,7 +6,7 @@ import {
   ServiceConfiguration,
   ServiceHierarchyHealth,
 } from 'api/data-contracts';
-import { DynamicTextFontStyle, StaticTextFontStyle } from '../../App.Style';
+import { DynamicTextFontStyle } from '../../App.Style';
 import Breadcrumbs from './Breadcrumbs/Breadcrumbs';
 import StatusHistoryModule from './StatusHistory/StatusHistoryModule';
 import HealthCheckList from './HealthStatus/HealthCheckList';
@@ -68,7 +68,7 @@ const ServiceOverview: React.FC<{
         </div>
         {serviceConfig.children && serviceConfig.children.length > 0 ?
           <>
-            <div css={[ServiceOverviewHeaderStyle, StaticTextFontStyle]}>
+            <div css={ServiceOverviewHeaderStyle}>
               Services
             </div>
             {serviceConfig.children.map(child => (

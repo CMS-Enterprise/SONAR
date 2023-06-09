@@ -74,11 +74,6 @@ export const StatusHistoryTileContainerStyle: CSSObject = {
   padding: "0px 10px 0px 10px"
 };
 
-export const StatusHistoryDrawerSectionStyle: CSSObject = {
-  padding: 10,
-  fontSize: 18
-};
-
 export const StatusHistoryDrawerSubsectionStyle: CSSObject = {
   padding: "10px 15px 10px 15px",
   fontSize: 16

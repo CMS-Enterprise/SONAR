@@ -13,12 +13,12 @@ export const NavBarStyle: CSSObject = {
   margin: '15px 50px',
   display: 'flex',
   justifyContent: 'space-between',
-  alignItems: 'center'
+  alignItems: 'center',
+  fontFamily: "'Zen Tokyo Zoo', cursive"
 }
 
 export const SiteTitleStyle: CSSObject = {
-  fontSize: '2rem',
-  fontWeight: '700'
+  fontSize: '3rem'
 }
 
 export const NavBarRightSideStyle: CSSObject = {
@@ -28,6 +28,7 @@ export const NavBarRightSideStyle: CSSObject = {
 }
 
 export const NavLinkStyle: CSSObject = {
+  fontSize: '1.5rem',
   marginRight: '40px'
 };
 

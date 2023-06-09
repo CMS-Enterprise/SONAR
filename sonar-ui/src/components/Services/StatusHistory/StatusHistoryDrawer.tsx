@@ -3,10 +3,7 @@ import { Drawer } from '@cmsgov/design-system';
 import React from 'react';
 import { StatusHistoryView } from 'interfaces/global_interfaces';
 import StatusHistoryHealthCheckList from './StatusHistoryHealthCheckList';
-import {
-  StatusHistoryDrawerSectionStyle,
-  StatusHistoryDrawerSubsectionStyle
-} from './StatusHistory.Style';
+import { StatusHistoryDrawerSubsectionStyle } from './StatusHistory.Style';
 import HealthStatusBadge from '../../Badges/HealthStatusBadge';
 import { getBadgeSpanNoLinkStyle } from '../../Badges/HealthStatusBadge.Style';
 import { HealthStatus } from '../../../api/data-contracts';
@@ -32,7 +29,7 @@ const StatusHistoryDrawer: React.FC<{
       {statusHistoryViewData && (
         <>
           <div css={DynamicTextFontStyle}>
-            <b css={StatusHistoryDrawerSectionStyle}>{statusHistoryViewData.serviceData.name}</b>
+            <b>{statusHistoryViewData.serviceData.name}</b>
           </div>
           <div css={StatusHistoryDrawerSubsectionStyle}>
             <span>

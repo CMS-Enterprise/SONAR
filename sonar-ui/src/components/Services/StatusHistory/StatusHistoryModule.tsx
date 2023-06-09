@@ -10,7 +10,6 @@ import {
 import { HttpResponse } from 'api/http-client';
 import { createSonarClient } from 'helpers/ApiHelper';
 import { calculateHistoryRange } from 'helpers/StatusHistoryHelper';
-import { StaticTextFontStyle } from '../../../App.Style';
 import { ServiceOverviewHeaderStyle } from '../ServiceOverview.Style';
 import StatusHistoryTile from './StatusHistoryTile';
 import { StatusHistoryTileContainerStyle } from './StatusHistory.Style';
@@ -47,7 +46,7 @@ const StatusHistoryModule: React.FC<{
 
     return (
       <>
-        <div css={[ServiceOverviewHeaderStyle, StaticTextFontStyle]}>
+        <div css={ServiceOverviewHeaderStyle}>
           Status History
         </div>
         {isLoading ? (<Spinner />) : (

@@ -7,9 +7,9 @@ import {
 import { validateHealthCheckObj } from 'helpers/HealthCheckHelper';
 import {
   StatusHistoryChecklistStyle,
-  StatusHistoryDrawerSectionStyle,
   StatusHistoryDrawerSubsectionStyle
 } from './StatusHistory.Style';
+import { getDrawerSectionHeaderStyle } from '../Drawer.Style';
 import HealthStatusBadge from '../../Badges/HealthStatusBadge';
 import { getBadgeSpanStyle } from '../../Badges/HealthStatusBadge.Style';
 import { DynamicTextFontStyle } from '../../../App.Style';
@@ -21,7 +21,7 @@ const StatusHistoryHealthCheckList: React.FC<{
 
   return (
     <div css={StatusHistoryChecklistStyle}>
-      <b css={StatusHistoryDrawerSectionStyle}>Health Checks</b>
+      <h4 css={getDrawerSectionHeaderStyle}>Health Checks</h4>
       {Object.keys(healthChecks).map((key, i) => {
         const healthCheckObj: DateTimeHealthStatusValueTuple = healthChecks[key];
         const displayComponent = (

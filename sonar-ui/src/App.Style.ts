@@ -20,10 +20,6 @@ export function mainStyle(theme: Theme) {
   });
 }
 
-export const StaticTextFontStyle: CSSObject = {
-  fontFamily: 'Helvetica Neue, Helvetica, Arial, sans-serif'
-};
-
 export const DynamicTextFontStyle: CSSObject = {
   fontFamily: 'Verdana, Geneva, sans-serif'
 };
