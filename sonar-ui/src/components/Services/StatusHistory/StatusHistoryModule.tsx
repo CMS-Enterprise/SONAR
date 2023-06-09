@@ -22,7 +22,8 @@ const StatusHistoryModule: React.FC<{
   servicePath: string[],
   serviceHealth: ServiceHierarchyHealth,
   environmentName: string,
-  tenantName: string
+  tenantName: string,
+  showDate: boolean
 }> =
   ({
     addTimestamp,
@@ -31,7 +32,8 @@ const StatusHistoryModule: React.FC<{
     servicePath,
     serviceHealth,
     environmentName,
-    tenantName
+    tenantName,
+    showDate
   }) => {
     const sonarClient = createSonarClient();
 
@@ -59,6 +61,7 @@ const StatusHistoryModule: React.FC<{
                 closeDrawer={closeDrawer}
                 selectedTileId={selectedTileId}
                 serviceHealth={serviceHealth}
+                showDate={showDate}
               />
             ))}
           </div>

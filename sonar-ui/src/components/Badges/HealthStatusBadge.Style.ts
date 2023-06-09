@@ -41,3 +41,11 @@ export function getBadgeSpanStyle(theme: Theme) {
     }
   })
 }
+
+export function getBadgeSpanNoLinkStyle(theme: Theme) {
+  return css({
+    verticalAlign:'middle',
+    paddingLeft:'15px',
+    color: theme.textColor
+  })
+}

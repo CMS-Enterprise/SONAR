@@ -31,3 +31,11 @@ export const calculateHistoryRange = () => {
 
   return { start, end, step: stepSeconds };
 }
+
+export const convertUtcTimestampToLocal = (utcTimestamp: string, showDate: boolean) => {
+  const localTimestamp = new Date(utcTimestamp);
+  const localDateTimestamp = localTimestamp.toLocaleString();
+  const localTimestampTime = localTimestamp.toLocaleTimeString();
+
+  return showDate ? localDateTimestamp : localTimestampTime;
+}

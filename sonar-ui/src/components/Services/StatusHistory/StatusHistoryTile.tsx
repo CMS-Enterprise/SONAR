@@ -1,9 +1,16 @@
 import { Button } from '@cmsgov/design-system';
 import { useTheme } from '@emotion/react';
 import React from 'react';
-import { DateTimeHealthStatusValueTuple, HealthStatus, ServiceHierarchyHealth } from '../../../api/data-contracts';
-import { renderStatusIcon } from '../../../helpers/StatusHistoryHelper';
-import { getStatusHistoryTileStyle, TileSpanStyle } from './StatusHistory.Style';
+import {
+  DateTimeHealthStatusValueTuple,
+  HealthStatus,
+  ServiceHierarchyHealth
+} from '../../../api/data-contracts';
+import {
+  renderStatusIcon,
+  convertUtcTimestampToLocal
+} from '../../../helpers/StatusHistoryHelper';
+import { getStatusHistoryTileStyle, getTileSpanStyle } from './StatusHistory.Style';
 
 const StatusHistoryTile: React.FC<{
   id: string,
@@ -11,8 +18,9 @@ const StatusHistoryTile: React.FC<{
   addTimestamp: (tupleData: DateTimeHealthStatusValueTuple, tileId: string, serviceData: ServiceHierarchyHealth) => void,
   closeDrawer: () => void,
   selectedTileId: string,
-  serviceHealth: ServiceHierarchyHealth
-}> = ({ id, statusTimestampTuple, addTimestamp, closeDrawer, selectedTileId, serviceHealth }) => {
+  serviceHealth: ServiceHierarchyHealth,
+  showDate: boolean
+}> = ({ id, statusTimestampTuple, addTimestamp, closeDrawer, selectedTileId, serviceHealth, showDate }) => {
   const theme = useTheme();
   const handleSelect = () => {
     if (selectedTileId !== id) {
@@ -24,9 +32,11 @@ const StatusHistoryTile: React.FC<{
   }
 
   const status: HealthStatus = HealthStatus[statusTimestampTuple[1] as keyof typeof HealthStatus]
+  const convertedTimestamp = convertUtcTimestampToLocal(statusTimestampTuple[0], showDate);
+  const tooltipText = `${convertedTimestamp} - ${statusTimestampTuple[1]}`;
 
   return (
-    <span css={TileSpanStyle}>
+    <span css={getTileSpanStyle(theme)} data-tooltip={tooltipText}>
       <Button
         variation="solid"
         onClick={handleSelect}
