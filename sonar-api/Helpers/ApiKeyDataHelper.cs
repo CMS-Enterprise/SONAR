@@ -1,22 +1,24 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Enumeration;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace Cms.BatCave.Sonar.Helpers;
 
 public class ApiKeyDataHelper {
-  private readonly IConfiguration _configuration;
   private readonly IApiKeyRepository _apiKeyRepository;
+  private readonly IOptions<SecurityConfiguration> _configuration;
 
   public ApiKeyDataHelper(
-    IConfiguration configuration,
+    IOptions<SecurityConfiguration> configuration,
     IApiKeyRepository apiKeyRepository) {
 
-    this._configuration = configuration;
     this._apiKeyRepository = apiKeyRepository;
+    this._configuration = configuration;
   }
 
   public async Task<ApiKey?> TryMatchApiKeyAsync(String headerApiKey, CancellationToken cancellationToken) {
@@ -25,7 +27,7 @@ public class ApiKeyDataHelper {
   }
 
   private ApiKey? MatchDefaultApiKey(String headerApiKey) {
-    var defaultApiKey = this._configuration.GetValue<String>("ApiKey");
+    var defaultApiKey = this._configuration.Value.DefaultApiKey;
     if (!String.IsNullOrEmpty(defaultApiKey) && String.Equals(defaultApiKey, headerApiKey, StringComparison.Ordinal)) {
       return new ApiKey(
         Guid.Empty,

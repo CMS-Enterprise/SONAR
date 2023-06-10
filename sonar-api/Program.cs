@@ -238,17 +238,6 @@ public class Program {
   }
 
   private static async Task<Int32> RunServe(WebApplication app, ServeOptions options) {
-    using (var initScope = app.Services.CreateScope()) {
-      var logger = initScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-      var config = initScope.ServiceProvider.GetRequiredService<IConfiguration>();
-      if (!config.GetSection("ApiKey").Exists()) {
-        logger.LogWarning("Default ApiKey not set in configuration");
-      } else {
-        // Validate API key
-        Program.ValidateApiKey(logger, config.GetValue<String>("ApiKey") ?? String.Empty);
-      }
-    }
-
     // Configure the HTTP request pipeline.
     app.UseSwagger(swaggerOptions => {
       swaggerOptions.RouteTemplate = "api/doc/{documentName}/open-api.{json|yaml}";
@@ -286,28 +275,5 @@ public class Program {
     }
 
     return 0;
-  }
-
-  private const Int32 ApiKeyByteLength = 32;
-
-  private static Boolean ValidateApiKey(
-    ILogger logger,
-    String configApiKey) {
-    Boolean apiKeyIsValid = false;
-
-    // Check if configured API key is Base64 and of correct length
-    try {
-      var decodedBytes = Convert.FromBase64String(configApiKey);
-
-      if (decodedBytes.Length != ApiKeyByteLength) {
-        logger.LogError("Default ApiKey Validation: Invalid length for API key");
-      }
-
-      apiKeyIsValid = true;
-    } catch {
-      logger.LogError("Default ApiKey Validation: API key is not Base64 encoded");
-    }
-
-    return apiKeyIsValid;
   }
 }

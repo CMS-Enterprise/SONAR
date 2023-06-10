@@ -1,21 +1,26 @@
 using System;
 using System.Security.Cryptography;
+using Cms.BatCave.Sonar.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace Cms.BatCave.Sonar.Data;
 
-public class KeyHash {
+public class KeyHashHelper {
   private const Int32 ApiKeyByteLength = 32;
-  private static String GetRandomSalt() {
-    return BCrypt.Net.BCrypt.GenerateSalt(12);
+
+  private readonly IOptions<SecurityConfiguration> _configuration;
+
+  public KeyHashHelper(IOptions<SecurityConfiguration> configuration) {
+    this._configuration = configuration;
   }
 
-  public static String HashPassword(String password) {
-    return BCrypt.Net.BCrypt.HashPassword(password, GetRandomSalt());
+  private String GetRandomSalt() {
+    return BCrypt.Net.BCrypt.GenerateSalt(this._configuration.Value.ApiKeyWorkFactor);
   }
 
-  public static (String key, String hashKey) GenerateKey() {
-    String key = GenerateApiKeyValue();
-    String hashKey = BCrypt.Net.BCrypt.HashPassword(key, GetRandomSalt());
+  public (String key, String hashKey) GenerateKey() {
+    var key = GenerateApiKeyValue();
+    var hashKey = BCrypt.Net.BCrypt.HashPassword(key, this.GetRandomSalt());
     return (key, hashKey);
   }
 

@@ -16,5 +16,6 @@ public class ConfigurationDependencyRegistration {
     services.ConfigureRecord<SonarHealthCheckConfiguration>(this._configuration.GetSection("SonarHealthCheck"));
     services.ConfigureRecord<WebHostConfiguration>(this._configuration.GetSection("WebHost"));
     services.ConfigureRecord<LegacyEndpointConfiguration>(this._configuration.GetSection("LegacyEndpoint"));
+    services.ConfigureRecord<SecurityConfiguration>(this._configuration.GetSection("Security"));
   }
 }

@@ -31,13 +31,8 @@ public class Dependencies {
     builder.Services.AddScoped<ApiKeyDataHelper>();
     builder.Services.AddScoped<HealthDataHelper>();
     builder.Services.AddScoped<CacheHelper>();
-    builder.Services.AddScoped<IApiKeyRepository, DbApiKeyRepository>(serviceProvider =>
-      new DbApiKeyRepository(
-        serviceProvider.GetRequiredService<DataContext>(),
-        serviceProvider.GetRequiredService<DbSet<ApiKey>>(),
-        serviceProvider.GetRequiredService<DbSet<Environment>>(),
-        serviceProvider.GetRequiredService<DbSet<Tenant>>()
-      ));
+    builder.Services.AddScoped<IApiKeyRepository, DbApiKeyRepository>();
+    builder.Services.AddScoped<KeyHashHelper>();
 
     builder.Services.AddHttpClient<IPrometheusRemoteProtocolClient, PrometheusRemoteProtocolClient>((provider, client) => {
       var config = provider.GetRequiredService<IOptions<PrometheusConfiguration>>().Value;

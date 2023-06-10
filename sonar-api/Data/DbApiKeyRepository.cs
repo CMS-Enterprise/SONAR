@@ -17,19 +17,20 @@ public class DbApiKeyRepository : IApiKeyRepository {
   private readonly DbSet<ApiKey> _apiKeysTable;
   private readonly DbSet<Environment> _environmentsTable;
   private readonly DbSet<Tenant> _tenantsTable;
-
-  private const Int32 ApiKeyByteLength = 32;
+  private readonly KeyHashHelper _keyHashHelper;
 
   public DbApiKeyRepository(
     DataContext context,
     DbSet<ApiKey> apiKeysTable,
     DbSet<Environment> environmentsTable,
-    DbSet<Tenant> tenantsTable) {
+    DbSet<Tenant> tenantsTable,
+    KeyHashHelper keyHashHelper) {
 
     this._dbContext = context;
     this._apiKeysTable = apiKeysTable;
     this._environmentsTable = environmentsTable;
     this._tenantsTable = tenantsTable;
+    this._keyHashHelper = keyHashHelper;
   }
 
   public async Task<ApiKeyConfiguration> AddAsync(ApiKeyDetails apiKeyDetails, CancellationToken cancelToken) {
@@ -56,7 +57,7 @@ public class DbApiKeyRepository : IApiKeyRepository {
       }
 
 
-      var apiKey = KeyHash.GenerateKey();
+      var apiKey = this._keyHashHelper.GenerateKey();
       var newKey = new ApiKey(Guid.Empty, apiKey.hashKey, apiKeyDetails.ApiKeyType,
         environment?.Id, tenant?.Id);
 
@@ -167,7 +168,11 @@ public class DbApiKeyRepository : IApiKeyRepository {
         .ToListAsync(cancellationToken: cancelToken);
   }
 
-  public async Task<List<ApiKeyConfiguration>> GetTenantKeysAsync(ApiKey encKey, CancellationToken cancelToken) {
+  public async Task<List<ApiKeyConfiguration>> GetTenantKeysAsync(
+    Guid environmentId,
+    Guid tenantId,
+    CancellationToken cancelToken) {
+
     return
       await this._apiKeysTable
         .Join(
@@ -178,7 +183,7 @@ public class DbApiKeyRepository : IApiKeyRepository {
             key,
             tenant
           })
-        .Where(keyTenant => keyTenant.tenant.Id == encKey.TenantId)
+        .Where(keyTenant => keyTenant.tenant.Id == tenantId)
         .Join(this._environmentsTable,
           keyTenant => keyTenant.key.EnvironmentId,
           environment => environment.Id,
@@ -222,7 +227,7 @@ public class DbApiKeyRepository : IApiKeyRepository {
 
     ApiKey? keyFound = null;
     foreach (var apiKey in keys) {
-      if (KeyHash.ValidatePassword(encKey, apiKey.Key)) {
+      if (KeyHashHelper.ValidatePassword(encKey, apiKey.Key)) {
         keyFound = apiKey;
         break;
       }
