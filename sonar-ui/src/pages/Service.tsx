@@ -49,7 +49,7 @@ const Service = () => {
     if ((firstTimestampDate !== '') && (firstTimestampDate !== utcTimestampDate)) {
       setDataHasDifferentDates(true);
     }
-  }, [utcTimestampDate]);
+  }, [firstTimestampDate, utcTimestampDate]);
 
   const addTimestamp = (tupleData: DateTimeHealthStatusValueTuple, tileId: string, serviceData: ServiceHierarchyHealth) => {
     setSelectedTileId(tileId);
