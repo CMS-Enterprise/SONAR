@@ -11,7 +11,7 @@ import {
 } from './StatusHistory.Style';
 import { getDrawerSectionHeaderStyle } from '../Drawer.Style';
 import HealthStatusBadge from '../../Badges/HealthStatusBadge';
-import { getBadgeSpanStyle } from '../../Badges/HealthStatusBadge.Style';
+import { getBadgeSpanNoLinkStyle } from '../../Badges/HealthStatusBadge.Style';
 import { DynamicTextFontStyle } from '../../../App.Style';
 
 const StatusHistoryHealthCheckList: React.FC<{
@@ -29,7 +29,7 @@ const StatusHistoryHealthCheckList: React.FC<{
             <span>
               <HealthStatusBadge theme={theme} status={healthChecks[key][1] as HealthStatus} />
             </span>
-            <span css={[getBadgeSpanStyle(theme), DynamicTextFontStyle]}>{key}</span>
+            <span css={[getBadgeSpanNoLinkStyle(theme), DynamicTextFontStyle]}>{key}</span>
           </div>
         );
 
