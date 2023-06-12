@@ -36,7 +36,7 @@ const StatusHistoryModule: React.FC<{
   }) => {
     const sonarClient = createSonarClient();
 
-    const { isLoading, isError, data, error } = useQuery<ServiceHierarchyHealthHistory, Error>(
+    const { isLoading, data } = useQuery<ServiceHierarchyHealthHistory, Error>(
       ['statusHistory', environmentName, tenantName, servicePath.join('/')],
       () => sonarClient.getServiceHealthHistory(environmentName, tenantName, servicePath.join('/'), calculateHistoryRange())
         .then((res: HttpResponse<ServiceHierarchyHealthHistory, ProblemDetails | void>) => {

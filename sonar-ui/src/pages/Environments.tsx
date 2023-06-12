@@ -3,7 +3,7 @@ import { EnvironmentHealth } from 'api/data-contracts';
 import EnvironmentItem from 'components/Environments/EnvironmentItem';
 import { createSonarClient } from 'helpers/ApiHelper';
 import * as React from 'react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useQuery } from 'react-query';
 import AccordionToggleAllButton from 'components/Environments/AccordionToggleAllButton';
 
@@ -11,7 +11,7 @@ const Environments = () => {
   const sonarClient = createSonarClient();
   const [allPanelsOpen, setAllPanelsOpen] = useState<boolean>(true);
   const [openPanels, setOpenPanels] = useState<string[]>([]);
-  const { isLoading, isError, data, error } = useQuery<EnvironmentHealth[], Error>(
+  const { isLoading, data } = useQuery<EnvironmentHealth[], Error>(
     ["environments"],
     () =>  sonarClient.getEnvironments()
       .then((res) => {
@@ -19,9 +19,12 @@ const Environments = () => {
       })
   );
 
-  // update open panels when data is refreshed.
-  useEffect(() => {
-    updateOpenPanels();
+  const updateOpenPanels = useCallback(() => {
+    if (data) {
+      setOpenPanels(data.map(e => e.environmentName));
+    } else {
+      setOpenPanels([]);
+    }
   }, [data]);
 
   // evaluate if all panels are open/closed when openPanels changes.
@@ -31,15 +34,7 @@ const Environments = () => {
     } else if (openPanels.length === data?.length) {
       setAllPanelsOpen(true);
     }
-  }, [openPanels]);
-
-  const updateOpenPanels = () => {
-    if (data) {
-      setOpenPanels(data.map(e => e.environmentName));
-    } else {
-      setOpenPanels([]);
-    }
-  }
+  }, [data, openPanels]);
 
   const handleToggleAll = () => {
     if (allPanelsOpen) {

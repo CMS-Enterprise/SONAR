@@ -19,7 +19,7 @@ const EnvironmentItem: React.FC<{
     const sonarClient = createSonarClient();
     const theme = useTheme();
     const [expanded, setExpanded] =  useState<boolean>(true);
-    const { isLoading, isError, data, error } = useQuery<TenantHealth[], Error>({
+    const { isLoading, data } = useQuery<TenantHealth[], Error>({
       queryKey: ["tenantHealth"],
       enabled: expanded,
       queryFn: () => sonarClient.getTenants()
