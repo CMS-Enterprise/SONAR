@@ -99,7 +99,6 @@ delivery-pipeline:
   variables:
     FETCH_SAST_ARTIFACTS: "true"
     PUSH_LATEST: "true"
-    TARGET_ENVIRONMENT: "dev"
   trigger:
     strategy: depend
     include:
@@ -107,11 +106,32 @@ delivery-pipeline:
         ref: ${TEMPLATE_VERSION}
         file: "deployment.yaml"
 
-deploy-sonar-ui:
-  needs: ["delivery-pipeline"]
+deploy-sonar-ui-dev:
+  needs: [ "delivery-pipeline" ]
   extends: .deployment-pipeline
   variables:
     TARGET_DOCKERFILE: Dockerfile.ui
     TARGET_SERVICE: ${APP_NAME_UI}
+    TARGET_ENVIRONMENT: "dev"
+    APP_IMAGE_SRC: "${BC_IMAGE_REPO}/${CUSTOM_CI_PROJECT_PATH}/${APP_NAME_UI}"
+    ARTIFACT_FOLDER: ".artifacts/sonar/${APP_NAME_UI}"
+
+deploy-sonar-ui-k3d:
+  needs: ["deploy-sonar-ui-dev"]
+  extends: .deployment-pipeline
+  variables:
+    TARGET_DOCKERFILE: Dockerfile.ui
+    TARGET_SERVICE: ${APP_NAME_UI}
+    TARGET_ENVIRONMENT: "k3d"
+    APP_IMAGE_SRC: "${BC_IMAGE_REPO}/${CUSTOM_CI_PROJECT_PATH}/${APP_NAME_UI}"
+    ARTIFACT_FOLDER: ".artifacts/sonar/${APP_NAME_UI}"
+
+deploy-sonar-ui-test:
+  needs: ["deploy-sonar-ui-k3d"]
+  extends: .deployment-pipeline
+  variables:
+    TARGET_DOCKERFILE: Dockerfile.ui
+    TARGET_SERVICE: ${APP_NAME_UI}
+    TARGET_ENVIRONMENT: "impl"
     APP_IMAGE_SRC: "${BC_IMAGE_REPO}/${CUSTOM_CI_PROJECT_PATH}/${APP_NAME_UI}"
     ARTIFACT_FOLDER: ".artifacts/sonar/${APP_NAME_UI}"
