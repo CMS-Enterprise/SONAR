@@ -10,15 +10,15 @@ variables:
   APP_NAME_UI: "sonar-ui"
   CUSTOM_CI_PROJECT_PATH: "ado-repositories/oit/waynetech"
 
-#Runs existing pipeline for API and Agent
-#existing-pipeline:
-#  stage: old-pipeline
-#  trigger:
-#    strategy: depend
-#    include:
-#      - project: 'devops-pipelines/application-pipelines'
-#        ref: main
-#        file: 'sonar/sonar.yaml'
+# Runs existing pipeline for API and Agent using existing pipeline templates/pipeline application repos
+existing-pipeline:
+  stage: old-pipeline
+  trigger:
+    strategy: depend
+    include:
+      - project: 'devops-pipelines/application-pipelines'
+        ref: main
+        file: 'sonar/sonar.yaml'
 
 #Jobs correlating to building of the UI
 .with-npm:

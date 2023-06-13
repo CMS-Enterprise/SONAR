@@ -27,6 +27,10 @@ const Environments = () => {
     }
   }, [data]);
 
+  useEffect(() => {
+    updateOpenPanels();
+  }, [updateOpenPanels]);
+
   // evaluate if all panels are open/closed when openPanels changes.
   useEffect(() => {
     if (openPanels.length === 0) {
