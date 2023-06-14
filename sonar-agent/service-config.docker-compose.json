@@ -1,11 +1,41 @@
 {
   "services": [
     {
+      "name": "test-metric-app-child",
+      "displayName": "Test Application Child",
+      "description": "A test application that generates arbitrary metrics for testing purpose",
+      "url": "http://test-metric-app:2020/metrics",
+      "children": null,
+      "healthChecks": [
+        {
+          "name": "example-child",
+          "description": "Degraded and Offline periodically based on an example metric.",
+          "definition": {
+            "duration": "0.00:00:10",
+            "expression": "example_saw_wave",
+            "conditions": [
+              {
+                "operator": "GreaterThan",
+                "threshold": 60,
+                "status": "Offline"
+              },
+              {
+                "operator": "GreaterThan",
+                "threshold": 20,
+                "status": "Degraded"
+              }
+            ]
+          },
+          "type": "prometheusMetric"
+        }
+      ]
+    },
+    {
       "name": "test-metric-app",
       "displayName": "Test Application",
       "description": "A test application that generates arbitrary metrics for testing purpose",
       "url": "http://test-metric-app:2020/metrics",
-      "children": null,
+      "children": ["test-metric-app-child"],
       "healthChecks": [
         {
           "name": "example",

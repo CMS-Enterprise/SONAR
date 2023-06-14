@@ -135,6 +135,7 @@ const Service = () => {
               tenantName={tenantName}
               serviceConfig={serviceConfigLookup[serviceName]}
               serviceHealth={currentServiceHealth}
+              servicePath={servicePath}
               addTimestamp={addTimestamp}
               closeDrawer={closeDrawer}
               selectedTileId={selectedTileId}

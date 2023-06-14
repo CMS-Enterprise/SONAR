@@ -22,6 +22,7 @@ const ServiceOverview: React.FC<{
   tenantName: string,
   serviceConfig: ServiceConfiguration,
   serviceHealth: ServiceHierarchyHealth,
+  servicePath: string,
   addTimestamp: (tupleData: DateTimeHealthStatusValueTuple, tileId: string, serviceData: ServiceHierarchyHealth) => void,
   closeDrawer: () => void,
   selectedTileId: string,
@@ -32,6 +33,7 @@ const ServiceOverview: React.FC<{
     tenantName,
     serviceConfig,
     serviceHealth,
+    servicePath,
     addTimestamp,
     closeDrawer,
     selectedTileId,
@@ -51,7 +53,7 @@ const ServiceOverview: React.FC<{
             addTimestamp={addTimestamp}
             closeDrawer={closeDrawer}
             selectedTileId={selectedTileId}
-            servicePath={[serviceHealth.name]}
+            servicePath={servicePath}
             serviceHealth={serviceHealth}
             environmentName={environmentName}
             tenantName={tenantName}

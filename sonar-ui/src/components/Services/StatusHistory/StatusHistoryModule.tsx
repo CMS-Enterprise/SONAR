@@ -18,7 +18,7 @@ const StatusHistoryModule: React.FC<{
   addTimestamp: (tupleData: DateTimeHealthStatusValueTuple, tileId: string, serviceData: ServiceHierarchyHealth) => void,
   closeDrawer: () => void,
   selectedTileId: string,
-  servicePath: string[],
+  servicePath: string,
   serviceHealth: ServiceHierarchyHealth,
   environmentName: string,
   tenantName: string,
@@ -37,8 +37,8 @@ const StatusHistoryModule: React.FC<{
     const sonarClient = createSonarClient();
 
     const { isLoading, data } = useQuery<ServiceHierarchyHealthHistory, Error>(
-      ['statusHistory', environmentName, tenantName, servicePath.join('/')],
-      () => sonarClient.getServiceHealthHistory(environmentName, tenantName, servicePath.join('/'), calculateHistoryRange())
+      ['statusHistory', environmentName, tenantName, servicePath],
+      () => sonarClient.getServiceHealthHistory(environmentName, tenantName, servicePath, calculateHistoryRange())
         .then((res: HttpResponse<ServiceHierarchyHealthHistory, ProblemDetails | void>) => {
           return res.data;
         })
