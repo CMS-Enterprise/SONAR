@@ -107,6 +107,8 @@ delivery-pipeline:
       - project: "devops-pipelines/pipeline-triggers"
         ref: ${TEMPLATE_VERSION}
         file: "deployment.yaml"
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
 
 deploy-sonar-ui-dev:
   needs: [ "delivery-pipeline" ]
