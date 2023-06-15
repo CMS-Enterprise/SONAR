@@ -61,14 +61,14 @@ const ServiceOverview: React.FC<{
           />
         </div>
         <div>
-          { serviceConfig.healthChecks && (
+          { serviceConfig && serviceConfig.healthChecks && (
             <HealthCheckList
               serviceConfig={serviceConfig}
               healthCheckStatuses={serviceHealth.healthChecks}
             />
           )}
         </div>
-        {serviceConfig.children && serviceConfig.children.length > 0 ?
+        { serviceConfig && serviceConfig.children && serviceConfig.children.length > 0 ?
           <>
             <div css={ServiceOverviewHeaderStyle}>
               Services
