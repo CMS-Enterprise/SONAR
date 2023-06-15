@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Asp.Versioning;
@@ -233,6 +234,18 @@ public class HealthController : ControllerBase {
         e.Message
       );
       sonarDbTestResult = HealthStatus.Offline;
+    } catch (SocketException e) {
+      // Socket connection issue
+      this._logger.LogError(
+        message: "Unexpected socket exception: {Message}",
+        e.Message
+      );
+    } catch (OperationCanceledException e) {
+      // Operation cancelled
+      this._logger.LogError(
+        message: "Unexpected operation cancelled exception: {Message}",
+        e.Message
+      );
     }
 
     healthChecks.Add("connection-test", (DateTime.UtcNow, connectionTestResult));
