@@ -2,26 +2,25 @@
 const rootOnlyConfig = require('../fixtures/testRootConfig')
 const environmentName = 'foo'
 const tenantName = 'bar'
-const statusCodeCreated = 201
+const configRequestUrl = 'localhost:8081/api/v2/config/' + environmentName + '/tenants/' + tenantName
+const headerWithApiKey = {
+  'Accept' : 'application/json',
+  'ApiKey' : 'test+api+key+do+not+use+in+production+xxxxx='
+}
 
 describe('Create Tenant configuration with only root service', () => {
-   /// TODO - reset database
-
   it('Tenant configuration created', () => {
     /// send Tenant configuration
     cy.request({
       method : 'POST',
-      url: 'localhost:8081/api/v2/config/' + environmentName + '/tenants/' + tenantName,
-      headers: {
-        'Accept' : 'application/json',
-        'ApiKey' : 'test+api+key+do+not+use+in+production+xxxxx='
-      },
+      url : configRequestUrl,
+      headers : headerWithApiKey,
       body: {
         "services" : rootOnlyConfig.services,
         "rootServices" : rootOnlyConfig.rootServices
       }
     }).then((res) => {
-      expect(res.status).to.eq(statusCodeCreated)
+      expect(res.status).to.eq(201)
     })
 
     /// Environments view
@@ -47,5 +46,16 @@ describe('Create Tenant configuration with only root service', () => {
     cy.contains("Health Checks")
     cy.get('[data-test="health-check-name"]')
       .contains(rootOnlyConfig.services[0].healthChecks[0].name)
+
+    /// cleanup - delete created tenant configuration, navigate back home
+    cy.request({
+      method: 'DELETE',
+      url: configRequestUrl,
+      headers : headerWithApiKey
+    }).then((res) => {
+      expect(res.status).to.eq(204)
+      cy.get('[data-test="navbar-home-link"]').click()
+      cy.location('pathname').should('eq', '/')
+    })
   })
 })
