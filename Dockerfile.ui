@@ -8,7 +8,7 @@ RUN npm run build
 
 CMD ["npm", "start"]
 
-FROM artifactory.cloud.cms.gov/docker/nginx:1.23-alpine
+FROM artifactory.cloud.cms.gov/docker/nginx:1.25-alpine-slim
 WORKDIR /usr/share/nginx/html
 RUN rm -rf ./*
 COPY --from=builder /sonar/sonar-ui/build .
