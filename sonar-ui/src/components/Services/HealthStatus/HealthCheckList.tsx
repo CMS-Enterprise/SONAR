@@ -41,7 +41,10 @@ const HealthCheckList: React.FC<{
                   <span>
                     <HealthStatusBadge theme={theme} status={healthCheckStatusData[1] as HealthStatus} />
                   </span>
-                  <span css={getBadgeSpanStyle}>{healthCheck.name}</span>
+                  <span
+                    css={getBadgeSpanStyle}
+                    data-test="health-check-name"
+                  >{healthCheck.name}</span>
                 </div>
               </div>
             );

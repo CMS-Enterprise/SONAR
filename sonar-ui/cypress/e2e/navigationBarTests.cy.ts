@@ -1,16 +1,16 @@
-describe('Test navigation bar', () => {
+describe('Test Navigation Bar', () => {
 
   beforeEach(() => {
     cy.visit('localhost:3000')
   })
 
-  it('Check if navigation bar components exist', () => {
+  it('Navigation Bar components exist', () => {
     cy.get('[data-test="navbar-sonar-link"]').should("be.visible")
     cy.get('[data-test="navbar-home-link"]').should("be.visible")
     cy.get('[data-test="navbar-toggle-section"]').should("be.visible")
   })
 
-  it('Check navigation bar links', () => {
+  it('Navigation Bar links are valid', () => {
     cy.get('[data-test="navbar-sonar-link"]').click()
     cy.location('pathname').should('eq', '/')
 
@@ -18,7 +18,7 @@ describe('Test navigation bar', () => {
     cy.location('pathname').should('eq', '/')
   })
 
-  it('Check light mode colors', () => {
+  it('Clicking on light-dark toggle changes colors', () => {
     /// toggle default - light mode
     cy.get('[data-test="app-main"]')
       .should('have.css', 'background-color')

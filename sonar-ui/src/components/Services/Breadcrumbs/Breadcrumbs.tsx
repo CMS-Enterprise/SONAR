@@ -45,7 +45,10 @@ const Breadcrumbs: React.FC<{
       })
 
     return (
-      <div css={[getBreadcrumbsStyle, DynamicTextFontStyle]}>
+      <div
+        css={[getBreadcrumbsStyle, DynamicTextFontStyle]}
+        data-test="breadcrumbs"
+      >
         {serviceCrumbs}
       </div>
     )

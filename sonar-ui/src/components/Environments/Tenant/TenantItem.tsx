@@ -19,7 +19,10 @@ const TenantItem: React.FC<{
             <span>
               <HealthStatusBadge theme={theme} status={rs.aggregateStatus} />
             </span>
-            <span css={getBadgeSpanStyle(theme)}>
+            <span
+              css={getBadgeSpanStyle(theme)}
+              data-test="env-view-tenant"
+            >
               <Link to={ "/" + tenant.environmentName +
                          "/tenants/" + tenant.tenantName +
                          "/services/" + rs.name }>

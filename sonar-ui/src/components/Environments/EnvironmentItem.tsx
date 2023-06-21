@@ -53,7 +53,11 @@ const EnvironmentItem: React.FC<{
       [theme]);
 
     return (
-      <div className="ds-l-sm-col--10 ds-u-margin-left--auto ds-u-margin-right--auto" css={EnvironmentItemContainerStyle}>
+      <div
+        className="ds-l-sm-col--10 ds-u-margin-left--auto ds-u-margin-right--auto"
+        css={EnvironmentItemContainerStyle}
+        data-test="env-view-accordion"
+      >
         <Accordion bordered css={memoizedStyle}>
           <AccordionItem heading={environment.environmentName}
                          isControlledOpen={expanded}
