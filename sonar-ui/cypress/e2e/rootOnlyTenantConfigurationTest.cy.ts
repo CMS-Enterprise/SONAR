@@ -16,8 +16,8 @@ describe('Create Tenant configuration with only root service', () => {
       url : configRequestUrl,
       headers : headerWithApiKey,
       body: {
-        "services" : rootOnlyConfig.services,
-        "rootServices" : rootOnlyConfig.rootServices
+        'services' : rootOnlyConfig.services,
+        'rootServices' : rootOnlyConfig.rootServices
       }
     }).then((res) => {
       expect(res.status).to.eq(201)
@@ -41,11 +41,13 @@ describe('Create Tenant configuration with only root service', () => {
     cy.get('[data-test="breadcrumbs"]').contains(tenantName)
     cy.get('[data-test="breadcrumbs"]').contains(rootServiceName)
 
-    cy.contains("Status History")
+    cy.contains('Status History')
 
-    cy.contains("Health Checks")
+    cy.contains('Health Checks')
     cy.get('[data-test="health-check-name"]')
       .contains(rootOnlyConfig.services[0].healthChecks[0].name)
+
+    cy.contains('Services').should('not.exist')
 
     /// cleanup - delete created tenant configuration, navigate back home
     cy.request({
