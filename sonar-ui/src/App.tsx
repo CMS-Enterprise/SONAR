@@ -20,7 +20,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={enableDarkTheme ? DarkTheme : LightTheme}>
       <Router>
-        <main css={mainStyle}>
+        <main css={mainStyle} data-test="app-main">
           <Header enableDarkTheme={enableDarkTheme} setEnableDarkTheme={setEnableDarkTheme} />
           <div>
             <Routes>

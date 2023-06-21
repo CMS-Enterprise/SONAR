@@ -20,10 +20,22 @@ const Header = (props: HeaderProps) => {
   return (
     <header>
       <nav css={styles.NavBarStyle}>
-        <Link to="/" css={styles.SiteTitleStyle}>SONAR</Link>
+        <Link
+          to="/"
+          css={styles.SiteTitleStyle}
+          data-test="navbar-sonar-link"
+        >
+          SONAR
+        </Link>
         <div css={styles.NavBarRightSideStyle}>
-          <Link to="/" css={styles.NavLinkStyle}>HOME</Link>
-          <label>
+          <Link
+            to="/"
+            css={styles.NavLinkStyle}
+            data-test="navbar-home-link"
+          >
+            HOME
+          </Link>
+          <label data-test="navbar-toggle-section">
             <Toggle
               defaultChecked={props.enableDarkTheme}
               css={styles.ThemeToggleStyle}
@@ -32,7 +44,8 @@ const Header = (props: HeaderProps) => {
                 checked: <LightIcon style={styles.ToggleIconStyle} />,
                 unchecked: <DarkIcon style={styles.ToggleIconStyle} />
               }}
-              onChange={handleThemeChange} />
+              onChange={handleThemeChange}
+            />
           </label>
         </div>
       </nav>
