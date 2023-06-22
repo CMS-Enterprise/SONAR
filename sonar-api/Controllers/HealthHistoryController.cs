@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Asp.Versioning;
+using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
@@ -14,6 +15,7 @@ using Cms.BatCave.Sonar.Models;
 using Cms.BatCave.Sonar.Prometheus;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Enum = System.Enum;
 using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
 
@@ -24,20 +26,22 @@ namespace Cms.BatCave.Sonar.Controllers;
 [AllowAnonymous]
 [Route("api/v{version:apiVersion}/health-history")]
 public class HealthHistoryController : ControllerBase {
-
   private static readonly TimeSpan QueryRangeMaximumNumberDays = TimeSpan.FromDays(7);
   private readonly IPrometheusClient _prometheusClient;
   private readonly ServiceDataHelper _serviceDataHelper;
   private readonly HealthDataHelper _healthDataHelper;
+  private readonly String _sonarEnvironment;
 
   public HealthHistoryController(
     ServiceDataHelper serviceDataHelper,
     IPrometheusClient prometheusClient,
-    HealthDataHelper healthDataHelper) {
+    HealthDataHelper healthDataHelper,
+    IOptions<SonarHealthCheckConfiguration> sonarHealthConfig) {
 
     this._serviceDataHelper = serviceDataHelper;
     this._prometheusClient = prometheusClient;
     this._healthDataHelper = healthDataHelper;
+    this._sonarEnvironment = sonarHealthConfig.Value.SonarEnvironment;
   }
 
   /// <summary>
@@ -131,9 +135,10 @@ public class HealthHistoryController : ControllerBase {
 
     (DateTime startTime, DateTime endTime, Int32 stepIncrement) = ValidateParameters(start, end, step);
 
-
-    if (tenant == "Sonar") {
-
+    // Checks if polling for Sonar Health
+    if ((environment == this._sonarEnvironment) && (tenant == "sonar")) {
+      var sonarHealth = this.GetSonarHealthHierarchy(servicePath, cancellationToken);
+      return this.Ok(sonarHealth);
     }
 
     var (_, _, services) =
@@ -159,6 +164,37 @@ public class HealthHistoryController : ControllerBase {
         serviceChildIdsLookup,
         healthChecksByService)
     );
+  }
+
+  private ServiceHierarchyHealthHistory GetSonarHealthHierarchy(
+    String servicePath,
+    CancellationToken cancellationToken) {
+
+    var sonarConfiguration = this._serviceDataHelper.FetchSonarConfiguration();
+    var sonarHealth = this._healthDataHelper.CheckSonarHealth(cancellationToken);
+
+    var sonarConfig = sonarConfiguration.Services
+      .Where(svc => svc.Name == servicePath)
+      .Select(svc => (svc.Name, svc.DisplayName, svc.Description, svc.Url)).SingleOrDefault();
+
+    var serviceHealth = sonarHealth.Result
+      .Where(svc => svc.Name == servicePath)
+      .Select(svc => (svc.Timestamp!.Value, svc.AggregateStatus!.Value)).SingleOrDefault();
+
+    var serviceHealthInstance = new List<(DateTime Timestamp, HealthStatus AggregateStatus)> {
+      (serviceHealth.Item1, serviceHealth.Item2)
+    };
+
+    var serviceHierarchyHealthHistory = new ServiceHierarchyHealthHistory(
+      sonarConfig.Name,
+      sonarConfig.DisplayName,
+      sonarConfig.Description,
+      sonarConfig.Url,
+      serviceHealthInstance.ToImmutableList(),
+      null
+    );
+
+    return serviceHierarchyHealthHistory;
   }
 
   private async Task<Dictionary<String, List<(DateTime Timestamp, HealthStatus Status)>>>

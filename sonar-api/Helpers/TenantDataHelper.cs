@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Extensions;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Environment = Cms.BatCave.Sonar.Data.Environment;
 
 namespace Cms.BatCave.Sonar.Helpers;
@@ -18,16 +20,19 @@ public class TenantDataHelper {
   private readonly DbSet<Tenant> _tenantsTable;
   private readonly HealthDataHelper _healthDataHelper;
   private readonly ServiceDataHelper _serviceDataHelper;
+  private readonly String _sonarEnvironment;
 
   public TenantDataHelper(
     DbSet<Environment> environmentsTable,
     DbSet<Tenant> tenantsTable,
     HealthDataHelper healthDataHelper,
-    ServiceDataHelper serviceDataHelper) {
+    ServiceDataHelper serviceDataHelper,
+    IOptions<SonarHealthCheckConfiguration> sonarHealthConfig) {
     this._environmentsTable = environmentsTable;
     this._tenantsTable = tenantsTable;
     this._healthDataHelper = healthDataHelper;
     this._serviceDataHelper = serviceDataHelper;
+    this._sonarEnvironment = sonarHealthConfig.Value.SonarEnvironment;
   }
 
   public async Task<Tenant> FetchExistingTenantAsync(
@@ -84,12 +89,14 @@ public class TenantDataHelper {
       tenantList.Add(this.ToTenantHealth(tenant.Name, environment.Name, rootServiceHealth));
     }
 
-    // TODO SONAR itself is a tenant of the environment its in. Thus we can hardcode which environment.
-    // TODO May need to test in multi env situations
-    tenantList.Add(this.ToTenantHealth("Sonar", environment.Name,
-       this._healthDataHelper.CheckSonarHealth(environment.Name, cancellationToken).Result.ToArray()));
+    if (res == null) {
+      throw new ResourceNotFoundException(nameof(Environment), environment.Name);
+    }
 
-
+    if (environment.Name == this._sonarEnvironment) {
+      tenantList.Add(this.ToTenantHealth("sonar", environment.Name,
+        this._healthDataHelper.CheckSonarHealth(cancellationToken).Result.ToArray()));
+    }
 
     return tenantList;
   }

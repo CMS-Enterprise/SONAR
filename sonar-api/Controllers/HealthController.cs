@@ -3,11 +3,8 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
-using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Schema;
 using Asp.Versioning;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
@@ -17,10 +14,8 @@ using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Npgsql;
 using Prometheus;
 using Enum = System.Enum;
 using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
@@ -38,24 +33,22 @@ public class HealthController : ControllerBase {
   private readonly ApiKeyDataHelper _apiKeyDataHelper;
   private readonly HealthDataHelper _healthDataHelper;
   private readonly CacheHelper _cacheHelper;
-
-
-
-
+  private readonly String _sonarEnvironment;
 
   public HealthController(
-
     ServiceDataHelper serviceDataHelper,
     ApiKeyDataHelper apiKeyDataHelper,
     HealthDataHelper healthDataHelper,
     CacheHelper cacheHelper,
     PrometheusRemoteWriteClient remoteWriteClient,
+    IOptions<SonarHealthCheckConfiguration> sonarHealthConfig,
     ILogger<HealthController> logger) {
     this._serviceDataHelper = serviceDataHelper;
     this._apiKeyDataHelper = apiKeyDataHelper;
     this._healthDataHelper = healthDataHelper;
     this._cacheHelper = cacheHelper;
     this._remoteWriteClient = remoteWriteClient;
+    this._sonarEnvironment = sonarHealthConfig.Value.SonarEnvironment;
     this._logger = logger;
   }
 
@@ -187,16 +180,14 @@ public class HealthController : ControllerBase {
   public async Task<IActionResult> GetSonarHealth(
     [FromRoute] String environment,
     CancellationToken cancellationToken) {
-
     // Check if environment provided matches value in config.
-    /*
     if (environment != this._sonarEnvironment) {
       return this.NotFound(new {
         Message = "Sonar environment not found."
       });
     }
-    */
-    return this.Ok(await this._healthDataHelper.CheckSonarHealth(environment, cancellationToken));
+
+    return this.Ok(await this._healthDataHelper.CheckSonarHealth(cancellationToken));
   }
 
 
@@ -209,6 +200,10 @@ public class HealthController : ControllerBase {
     [FromRoute] String environment,
     [FromRoute] String tenant,
     CancellationToken cancellationToken) {
+
+    if ((environment == this._sonarEnvironment) && (tenant == "sonar")) {
+      return this.Ok(GetSonarHealth(environment, cancellationToken));
+    }
 
     var (_, _, services) =
       await this._serviceDataHelper.FetchExistingConfiguration(environment, tenant, cancellationToken);

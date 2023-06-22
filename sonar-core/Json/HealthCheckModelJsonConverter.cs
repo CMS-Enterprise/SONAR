@@ -56,6 +56,11 @@ public class HealthCheckModelJsonConverter : JsonConverter<HealthCheckModel> {
               definition = definitionElement.Deserialize<HttpHealthCheckDefinition>(options);
 
               break;
+
+            case HealthCheckType.Internal:
+              definition = definitionElement.Deserialize<HttpHealthCheckDefinition>(options);
+
+              break;
             default:
               throw new ArgumentOutOfRangeException();
           }
@@ -149,6 +154,9 @@ public class HealthCheckModelJsonConverter : JsonConverter<HealthCheckModel> {
         break;
       case HealthCheckType.HttpRequest:
         JsonSerializer.Serialize(writer, (HttpHealthCheckDefinition)value.Definition, options);
+        break;
+      case HealthCheckType.Internal:
+        JsonSerializer.Serialize(writer, (InternalHealthCheckDefinition)value.Definition, options);
         break;
       default:
         throw new NotSupportedException(

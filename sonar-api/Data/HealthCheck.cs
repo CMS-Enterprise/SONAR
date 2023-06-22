@@ -47,6 +47,9 @@ public class HealthCheck {
       HealthCheckType.HttpRequest =>
         JsonSerializer.Deserialize<HttpHealthCheckDefinition>(this.Definition, DefinitionSerializerOptions) ??
         throw new InvalidOperationException("Definition deserialized to null."),
+      HealthCheckType.Internal =>
+        JsonSerializer.Deserialize<HttpHealthCheckDefinition>(this.Definition, DefinitionSerializerOptions) ??
+        throw new InvalidOperationException("Definition deserialized to null."),
 
       _ => throw new NotSupportedException(
         $"Unable to deserialize definition. Unsupported health check type: {this.Type}")
@@ -58,6 +61,7 @@ public class HealthCheck {
       HealthCheckType.PrometheusMetric => JsonSerializer.Serialize((MetricHealthCheckDefinition)def, DefinitionSerializerOptions),
       HealthCheckType.LokiMetric => JsonSerializer.Serialize((MetricHealthCheckDefinition)def, DefinitionSerializerOptions),
       HealthCheckType.HttpRequest => JsonSerializer.Serialize((HttpHealthCheckDefinition)def, DefinitionSerializerOptions),
+      HealthCheckType.Internal => JsonSerializer.Serialize((HttpHealthCheckDefinition)def, DefinitionSerializerOptions),
 
       _ => throw new ArgumentOutOfRangeException(nameof(type), type, $"Invalid value for {nameof(HealthCheckType)}")
     };

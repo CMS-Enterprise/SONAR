@@ -8,14 +8,15 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Asp.Versioning;
+using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
-using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Extensions;
 using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Environment = Cms.BatCave.Sonar.Data.Environment;
 using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
 
@@ -35,6 +36,7 @@ public class ConfigurationController : ControllerBase {
   private readonly ServiceDataHelper _serviceDataHelper;
   private readonly ApiKeyDataHelper _apiKeyDataHelper;
   private readonly TenantDataHelper _tenantDataHelper;
+  private readonly String _sonarEnvironment;
 
   public ConfigurationController(
     DataContext dbContext,
@@ -45,7 +47,8 @@ public class ConfigurationController : ControllerBase {
     DbSet<HealthCheck> healthsTable,
     ServiceDataHelper serviceDataHelper,
     ApiKeyDataHelper apiKeyDataHelper,
-    TenantDataHelper tenantDataHelper) {
+    TenantDataHelper tenantDataHelper,
+    IOptions<SonarHealthCheckConfiguration> sonarHealthConfig) {
 
     this._dbContext = dbContext;
     this._environmentsTable = environmentsTable;
@@ -56,6 +59,7 @@ public class ConfigurationController : ControllerBase {
     this._serviceDataHelper = serviceDataHelper;
     this._apiKeyDataHelper = apiKeyDataHelper;
     this._tenantDataHelper = tenantDataHelper;
+    this._sonarEnvironment = sonarHealthConfig.Value.SonarEnvironment;
   }
 
   /// <summary>
@@ -75,12 +79,12 @@ public class ConfigurationController : ControllerBase {
     [FromRoute] String tenant,
     CancellationToken cancellationToken = default) {
 
-    var isAuthorized = this.User.IsInRole("Admin");
-
-    if (tenant == "Sonar") {
+    if ((environment == this._sonarEnvironment) && (tenant == "sonar")) {
       var sonarConfiguration = this._serviceDataHelper.FetchSonarConfiguration();
       return this.Ok(sonarConfiguration);
     }
+
+    var isAuthorized = this.User.IsInRole("Admin");
 
     var (_, _, serviceMap) = await this._serviceDataHelper.FetchExistingConfiguration(environment, tenant, cancellationToken);
 
@@ -93,7 +97,6 @@ public class ConfigurationController : ControllerBase {
       .ToLookup(hc => hc.ServiceId);
 
     var serviceHierarchy = CreateServiceHierarchy(serviceMap, healthCheckByService, serviceRelationshipsByParent);
-
 
     if (!isAuthorized) {
       serviceHierarchy = ServiceDataHelper.Redact(serviceHierarchy);

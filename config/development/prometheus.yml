@@ -9,7 +9,3 @@ scrape_configs:
     - test-metric-app
     type: A
     port: 2020
-- job_name: prometheus
-  static_configs:
-    - targets:
-        - localhost:9090 # prometheus endpoint address

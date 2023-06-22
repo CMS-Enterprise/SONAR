@@ -17,7 +17,6 @@ namespace Cms.BatCave.Sonar.Controllers;
 public class TenantController : ControllerBase {
   private readonly TenantDataHelper _tenantDataHelper;
   private readonly EnvironmentDataHelper _environmentDataHelper;
-
   public TenantController(
     TenantDataHelper tenantDataHelper,
     EnvironmentDataHelper environmentDataHelper) {

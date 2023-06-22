@@ -10,9 +10,9 @@
  */
 
 import {
-  ApiKeyConfiguration,
   ApiKeyDetails,
   EnvironmentHealth,
+  EnvironmentModel,
   MetricDataCollection,
   ProblemDetails,
   ServiceHealth,
@@ -46,16 +46,14 @@ export class Api<SecurityDataType = unknown> extends HttpClient<SecurityDataType
    * No description
    *
    * @tags ApiKey
-   * @name V2KeysUpdate
-   * @summary Updates configuration for existing API key.
-   * @request PUT:/api/v2/keys
+   * @name V2KeysList
+   * @summary Get API keys.
+   * @request GET:/api/v2/keys
    */
-  v2KeysUpdate = (data: ApiKeyConfiguration, params: RequestParams = {}) =>
-    this.request<ApiKeyDetails, ProblemDetails | void>({
+  v2KeysList = (params: RequestParams = {}) =>
+    this.request<ApiKeyDetails[], ProblemDetails>({
       path: `/api/v2/keys`,
-      method: "PUT",
-      body: data,
-      type: ContentType.Json,
+      method: "GET",
       format: "json",
       ...params,
     });
@@ -63,16 +61,14 @@ export class Api<SecurityDataType = unknown> extends HttpClient<SecurityDataType
    * No description
    *
    * @tags ApiKey
-   * @name V2KeysDelete
+   * @name DeleteApiKey
    * @summary Deletes existing API key.
-   * @request DELETE:/api/v2/keys
+   * @request DELETE:/api/v2/keys/{keyId}
    */
-  v2KeysDelete = (data: ApiKeyConfiguration, params: RequestParams = {}) =>
+  deleteApiKey = (keyId: string, params: RequestParams = {}) =>
     this.request<void, ProblemDetails | void>({
-      path: `/api/v2/keys`,
+      path: `/api/v2/keys/${keyId}`,
       method: "DELETE",
-      body: data,
-      type: ContentType.Json,
       ...params,
     });
   /**
@@ -142,9 +138,24 @@ export class Api<SecurityDataType = unknown> extends HttpClient<SecurityDataType
    * @request DELETE:/api/v2/config/{environment}/tenants/{tenant}
    */
   deleteTenant = (environment: string, tenant: string, params: RequestParams = {}) =>
-    this.request<ServiceHierarchyConfiguration, any>({
+    this.request<void, any>({
       path: `/api/v2/config/${environment}/tenants/${tenant}`,
       method: "DELETE",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags Environment
+   * @name CreateEnvironment
+   * @request POST:/api/v2/environments
+   */
+  createEnvironment = (data: EnvironmentModel, params: RequestParams = {}) =>
+    this.request<EnvironmentModel, ProblemDetails>({
+      path: `/api/v2/environments`,
+      method: "POST",
+      body: data,
+      type: ContentType.Json,
       format: "json",
       ...params,
     });
@@ -158,6 +169,20 @@ export class Api<SecurityDataType = unknown> extends HttpClient<SecurityDataType
   getEnvironments = (params: RequestParams = {}) =>
     this.request<EnvironmentHealth[], ProblemDetails>({
       path: `/api/v2/environments`,
+      method: "GET",
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags Environment
+   * @name GetEnvironment
+   * @request GET:/api/v2/environments/{environment}
+   */
+  getEnvironment = (environment: string, params: RequestParams = {}) =>
+    this.request<EnvironmentHealth, ProblemDetails>({
+      path: `/api/v2/environments/${environment}`,
       method: "GET",
       format: "json",
       ...params,
@@ -189,11 +214,11 @@ export class Api<SecurityDataType = unknown> extends HttpClient<SecurityDataType
    *
    * @tags Health
    * @name GetSonarHealth
-   * @request GET:/api/v2/health/{environment}/tenants/sonar
+   * @request GET:/api/v2/health/{environment}/tenants/Sonar
    */
   getSonarHealth = (environment: string, params: RequestParams = {}) =>
     this.request<ServiceHierarchyHealth[], ProblemDetails>({
-      path: `/api/v2/health/${environment}/tenants/sonar`,
+      path: `/api/v2/health/${environment}/tenants/Sonar`,
       method: "GET",
       format: "json",
       ...params,

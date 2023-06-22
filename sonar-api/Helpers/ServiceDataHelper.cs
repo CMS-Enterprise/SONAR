@@ -4,12 +4,14 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Extensions;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Environment = Cms.BatCave.Sonar.Data.Environment;
 
 namespace Cms.BatCave.Sonar.Helpers;
@@ -20,19 +22,27 @@ public class ServiceDataHelper {
   private readonly DbSet<Service> _servicesTable;
   private readonly DbSet<ServiceRelationship> _relationshipsTable;
   private readonly DbSet<HealthCheck> _healthChecksTable;
+  private readonly Uri _prometheusUrl;
+  private readonly IOptions<DatabaseConfiguration> _dbConfig;
 
   public ServiceDataHelper(
     DbSet<Environment> environmentsTable,
     DbSet<Tenant> tenantsTable,
     DbSet<Service> servicesTable,
     DbSet<ServiceRelationship> relationshipsTable,
-    DbSet<HealthCheck> healthChecksTable) {
+    DbSet<HealthCheck> healthChecksTable,
+    IOptions<PrometheusConfiguration> prometheusConfig,
+    IOptions<DatabaseConfiguration> dbConfig) {
 
     this._environmentsTable = environmentsTable;
     this._tenantsTable = tenantsTable;
     this._servicesTable = servicesTable;
     this._relationshipsTable = relationshipsTable;
     this._healthChecksTable = healthChecksTable;
+    this._prometheusUrl = new Uri(
+      $"{prometheusConfig.Value.Protocol}://{prometheusConfig.Value.Host}:{prometheusConfig.Value.Port}/"
+    );
+    this._dbConfig = dbConfig;
   }
 
   public async Task<(Environment, Tenant, ImmutableDictionary<Guid, Service>)> FetchExistingConfiguration(
@@ -133,53 +143,67 @@ public class ServiceDataHelper {
         .ToListAsync(cancellationToken);
   }
 
-  /* TODO Update URL INFO based on env */
   public ServiceHierarchyConfiguration FetchSonarConfiguration() {
-    var postgresHealthCheckModel = new HealthCheckModel(
-      "Postgresql",
-      description: "Http Health Check Description",
-      HealthCheckType.HttpRequest,
-      new HttpHealthCheckDefinition(
-        url: new Uri("http://httpHealthCheck"),
-        Array.Empty<HttpHealthCheckCondition>(),
-        followRedirects: false,
-        authorizationHeader: "Authorization Header Value",
-        skipCertificateValidation: null)
-    );
+    // Postgresql Checks
+    var postgresDbConnectionTest = new HealthCheckModel(
+      name: "connection-test",
+      description: "Sonar Database Connection",
+      HealthCheckType.Internal,
+      new InternalHealthCheckDefinition(
+        description: "Checks for an Invalid Operation Exception",
+        expression: null)
+      );
+
+    var postgresDbTest = new HealthCheckModel(
+      name: "sonar-database-test",
+      description: "Database Error",
+      HealthCheckType.Internal,
+      new InternalHealthCheckDefinition(
+        description: "Checks for an Postgresql Exception",
+        expression: null)
+      );
 
     var postgresqlServiceConfig = new ServiceConfiguration(
-      "Postgresql",
-      displayName: "Display Name",
-      description: null,
-      url: null,
-      ImmutableList.Create(postgresHealthCheckModel),
-      children: null);
+      name: "postgresql",
+      displayName: "Postgresql",
+      description: "Postgres Database",
+      url: new Uri(
+        $"postgresql://{_dbConfig.Value.Host}:{_dbConfig.Value.Port}/{_dbConfig.Value.Database}"),
+      ImmutableList.Create(postgresDbConnectionTest, postgresDbTest),
+      children: null
+      );
 
-    var prometheusHealthCheckModel = new HealthCheckModel(
-      "Prometheus",
-      description: "Http Health Check Description",
-      HealthCheckType.HttpRequest,
-      new HttpHealthCheckDefinition(
-        url: new Uri("http://httpHealthCheck"),
-        Array.Empty<HttpHealthCheckCondition>(),
-        followRedirects: false,
-        authorizationHeader: "Authorization Header Value",
-        skipCertificateValidation: null
-      )
+    // Prometheus Checks
+    var prometheusTestQuery = new HealthCheckModel(
+      name: "test-query",
+      description: "Prometheus Test Query",
+      HealthCheckType.Internal,
+      new InternalHealthCheckDefinition(
+        description: "Prometheus Exception upon querying",
+        expression: null)
+    );
+
+    var prometheusReadiness = new HealthCheckModel(
+      name: "readiness-probe",
+      description: "Prometheus Readiness Endpoint",
+      HealthCheckType.Internal,
+      new InternalHealthCheckDefinition(
+        description: "Prometheus Readiness Endpoint and checks for Http Request Exception",
+        expression: null)
     );
 
     var prometheusServiceConfig =
       new ServiceConfiguration(
-        "Prometheus",
-        displayName: "Display Name",
-        description: null,
-        url: null,
-        ImmutableList.Create(prometheusHealthCheckModel),
+        name: "prometheus",
+        displayName: "Prometheus",
+        description: "Prometheus Database",
+        url: this._prometheusUrl,
+        ImmutableList.Create(prometheusTestQuery, prometheusReadiness),
         children: null
       );
 
-    var sonarRootServices = ImmutableHashSet<String>.Empty.Add("Prometheus");
-    sonarRootServices = sonarRootServices.Add("Postgresql");
+    var sonarRootServices = ImmutableHashSet<String>.Empty.Add("postgresql");
+    sonarRootServices = sonarRootServices.Add("prometheus");
 
     ServiceHierarchyConfiguration sonarConfiguration = new ServiceHierarchyConfiguration(
       ImmutableList.Create(

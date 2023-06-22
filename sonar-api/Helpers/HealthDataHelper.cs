@@ -37,8 +37,6 @@ public class HealthDataHelper {
   private readonly DataContext _dbContext;
   private readonly IOptions<DatabaseConfiguration> _dbConfig;
   private readonly ILogger<HealthDataHelper> _logger;
-  private readonly String _sonarEnvironment;
-
 
   public HealthDataHelper(
     DataContext dbContext,
@@ -47,7 +45,6 @@ public class HealthDataHelper {
     IPrometheusClient prometheusClient,
     IOptions<PrometheusConfiguration> prometheusConfig,
     IOptions<DatabaseConfiguration> dbConfig,
-    IOptions<SonarHealthCheckConfiguration> sonarHealthConfig,
     ILogger<HealthDataHelper> logger) {
 
     this._cacheHelper = cacheHelper;
@@ -58,7 +55,6 @@ public class HealthDataHelper {
     );
     this._dbContext = dbContext;
     this._dbConfig = dbConfig;
-    this._sonarEnvironment = sonarHealthConfig.Value.SonarEnvironment;
     this._logger = logger;
   }
 
@@ -389,24 +385,13 @@ public class HealthDataHelper {
   }
 
   public async Task<List<ServiceHierarchyHealth>> CheckSonarHealth(
-    String environment,
     CancellationToken cancellationToken) {
-
-    // Check if environment provided matches value in config.
-    /*
-    if (environment != this._sonarEnvironment) {
-      return this.NotFound(new {
-        Message = "Sonar environment not found."
-      });
-    }
-    */
-
-
     var postgresCheck = await this.RunPostgresHealthCheck(cancellationToken);
     var prometheusCheck = await this.RunPrometheusSelfCheck(cancellationToken);
     var result = new List<ServiceHierarchyHealth>() { postgresCheck, prometheusCheck };
     return result;
   }
+
   private async Task<ServiceHierarchyHealth> RunPostgresHealthCheck(CancellationToken cancellationToken) {
     var aggStatus = HealthStatus.Online;
     var healthChecks =

@@ -44,6 +44,13 @@ const HealthMetricThresholds: React.FC<{
             )}
           </div>
         )
+      case HealthCheckType.Internal:
+        return (
+          <div>
+            <b>Description</b>: <span css={DynamicTextFontStyle}>{healthCheck.description}</span> <br /><br />
+            <b>Uri</b>: <span css={DynamicTextFontStyle}>{service.url}</span> <br /><br />
+          </div>
+        )
       default:
         console.error('Unexpected metric type.');
         break;

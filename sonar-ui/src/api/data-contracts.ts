@@ -10,6 +10,8 @@
  */
 
 export interface ApiKeyConfiguration {
+  /** @format uuid */
+  id?: string;
   /**
    * @minLength 0
    * @maxLength 44
@@ -51,6 +53,15 @@ export interface EnvironmentHealth {
   aggregateStatus?: HealthStatus;
 }
 
+export interface EnvironmentModel {
+  /**
+   * @minLength 0
+   * @maxLength 100
+   * @pattern ^[0-9a-zA-Z_-]+$
+   */
+  name: string;
+}
+
 export type HealthCheckDefinition = object;
 
 export interface HealthCheckModel {
@@ -69,6 +80,7 @@ export enum HealthCheckType {
   PrometheusMetric = "PrometheusMetric",
   LokiMetric = "LokiMetric",
   HttpRequest = "HttpRequest",
+  Internal = "Internal",
 }
 
 export enum HealthStatus {

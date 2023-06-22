@@ -28,7 +28,7 @@ namespace Cms.BatCave.Sonar.Agent
         /// <param name="body">The API key type and, if they exist, environment and tenant.</param>
         /// <returns>The API key details led to a successful API key creation.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task KeysPOSTAsync(ApiKeyDetails body);
+        System.Threading.Tasks.Task KeysAsync(ApiKeyDetails body);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <summary>
@@ -37,41 +37,39 @@ namespace Cms.BatCave.Sonar.Agent
         /// <param name="body">The API key type and, if they exist, environment and tenant.</param>
         /// <returns>The API key details led to a successful API key creation.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task KeysPOSTAsync(ApiKeyDetails body, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task KeysAsync(ApiKeyDetails body, System.Threading.CancellationToken cancellationToken);
 
         /// <summary>
-        /// Updates configuration for existing API key.
+        /// Get API keys.
         /// </summary>
-        /// <param name="body">The API key ,type and, if they exist, environment and tenant.</param>
-        /// <returns>The API key configuration led to a successful update.</returns>
+        /// <returns>The key resources have been fetched and transmitted in the message body.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiKeyDetails> KeysPUTAsync(ApiKeyConfiguration body);
+        System.Threading.Tasks.Task<System.Collections.Generic.ICollection<ApiKeyDetails>> KeysAllAsync();
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <summary>
-        /// Updates configuration for existing API key.
+        /// Get API keys.
         /// </summary>
-        /// <param name="body">The API key ,type and, if they exist, environment and tenant.</param>
-        /// <returns>The API key configuration led to a successful update.</returns>
+        /// <returns>The key resources have been fetched and transmitted in the message body.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ApiKeyDetails> KeysPUTAsync(ApiKeyConfiguration body, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task<System.Collections.Generic.ICollection<ApiKeyDetails>> KeysAllAsync(System.Threading.CancellationToken cancellationToken);
 
         /// <summary>
         /// Deletes existing API key.
         /// </summary>
-        /// <param name="body">The API key ,type and, if they exist, environment and tenant.</param>
+        /// <param name="keyId">ID of the key to delete</param>
         /// <returns>The API key configuration led to a successful deletion.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task KeysDELETEAsync(ApiKeyConfiguration body);
+        System.Threading.Tasks.Task DeleteApiKeyAsync(System.Guid keyId);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <summary>
         /// Deletes existing API key.
         /// </summary>
-        /// <param name="body">The API key ,type and, if they exist, environment and tenant.</param>
+        /// <param name="keyId">ID of the key to delete</param>
         /// <returns>The API key configuration led to a successful deletion.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task KeysDELETEAsync(ApiKeyConfiguration body, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task DeleteApiKeyAsync(System.Guid keyId, System.Threading.CancellationToken cancellationToken);
 
         /// <summary>
         /// Retrieves the configuration for the specified environment and tenant.
@@ -134,14 +132,23 @@ namespace Cms.BatCave.Sonar.Agent
         /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task<ServiceHierarchyConfiguration> UpdateTenantAsync(string environment, string tenant, ServiceHierarchyConfiguration body, System.Threading.CancellationToken cancellationToken);
 
-        /// <returns>Success</returns>
+        /// <returns>No Content</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ServiceHierarchyConfiguration> DeleteTenantAsync(string environment, string tenant);
+        System.Threading.Tasks.Task DeleteTenantAsync(string environment, string tenant);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <returns>Success</returns>
+        /// <returns>No Content</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ServiceHierarchyConfiguration> DeleteTenantAsync(string environment, string tenant, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task DeleteTenantAsync(string environment, string tenant, System.Threading.CancellationToken cancellationToken);
+
+        /// <returns>Created</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<EnvironmentModel> CreateEnvironmentAsync(EnvironmentModel body);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>Created</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<EnvironmentModel> CreateEnvironmentAsync(EnvironmentModel body, System.Threading.CancellationToken cancellationToken);
 
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
@@ -151,6 +158,15 @@ namespace Cms.BatCave.Sonar.Agent
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task<System.Collections.Generic.ICollection<EnvironmentHealth>> GetEnvironmentsAsync(System.Threading.CancellationToken cancellationToken);
+
+        /// <returns>Success</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<EnvironmentHealth> GetEnvironmentAsync(string environment);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>Success</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task<EnvironmentHealth> GetEnvironmentAsync(string environment, System.Threading.CancellationToken cancellationToken);
 
         /// <summary>
         /// Records a single health status for the specified service.
@@ -379,9 +395,9 @@ namespace Cms.BatCave.Sonar.Agent
         /// <param name="body">The API key type and, if they exist, environment and tenant.</param>
         /// <returns>The API key details led to a successful API key creation.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task KeysPOSTAsync(ApiKeyDetails body)
+        public virtual System.Threading.Tasks.Task KeysAsync(ApiKeyDetails body)
         {
-            return KeysPOSTAsync(body, System.Threading.CancellationToken.None);
+            return KeysAsync(body, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
@@ -391,7 +407,7 @@ namespace Cms.BatCave.Sonar.Agent
         /// <param name="body">The API key type and, if they exist, environment and tenant.</param>
         /// <returns>The API key details led to a successful API key creation.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task KeysPOSTAsync(ApiKeyDetails body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task KeysAsync(ApiKeyDetails body, System.Threading.CancellationToken cancellationToken)
         {
             var urlBuilder_ = new System.Text.StringBuilder();
             urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/api/v2/keys");
@@ -484,24 +500,22 @@ namespace Cms.BatCave.Sonar.Agent
         }
 
         /// <summary>
-        /// Updates configuration for existing API key.
+        /// Get API keys.
         /// </summary>
-        /// <param name="body">The API key ,type and, if they exist, environment and tenant.</param>
-        /// <returns>The API key configuration led to a successful update.</returns>
+        /// <returns>The key resources have been fetched and transmitted in the message body.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<ApiKeyDetails> KeysPUTAsync(ApiKeyConfiguration body)
+        public virtual System.Threading.Tasks.Task<System.Collections.Generic.ICollection<ApiKeyDetails>> KeysAllAsync()
         {
-            return KeysPUTAsync(body, System.Threading.CancellationToken.None);
+            return KeysAllAsync(System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <summary>
-        /// Updates configuration for existing API key.
+        /// Get API keys.
         /// </summary>
-        /// <param name="body">The API key ,type and, if they exist, environment and tenant.</param>
-        /// <returns>The API key configuration led to a successful update.</returns>
+        /// <returns>The key resources have been fetched and transmitted in the message body.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ApiKeyDetails> KeysPUTAsync(ApiKeyConfiguration body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<ApiKeyDetails>> KeysAllAsync(System.Threading.CancellationToken cancellationToken)
         {
             var urlBuilder_ = new System.Text.StringBuilder();
             urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/api/v2/keys");
@@ -512,11 +526,7 @@ namespace Cms.BatCave.Sonar.Agent
             {
                 using (var request_ = new System.Net.Http.HttpRequestMessage())
                 {
-                    var json_ = System.Text.Json.JsonSerializer.Serialize(body, _settings.Value);
-                    var content_ = new System.Net.Http.StringContent(json_);
-                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
-                    request_.Content = content_;
-                    request_.Method = new System.Net.Http.HttpMethod("PUT");
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     PrepareRequest(client_, request_, urlBuilder_);
@@ -542,7 +552,7 @@ namespace Cms.BatCave.Sonar.Agent
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<ApiKeyDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<ApiKeyDetails>>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -557,23 +567,17 @@ namespace Cms.BatCave.Sonar.Agent
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
-                            throw new ApiException<ProblemDetails>("The API key configuration is not valid.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            throw new ApiException<ProblemDetails>("The API key details are not valid.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
-                        if (status_ == 404)
+                        if (status_ == 401)
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
-                            throw new ApiException<ProblemDetails>("The specified API key, environment, or tenant was not found.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
-                        }
-                        else
-                        if (status_ == 401)
-                        {
-                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
-                            throw new ApiException("The API key in the header is not authorized for updating an API key.", status_, responseText_, headers_, null);
+                            throw new ApiException<ProblemDetails>("The API key in the header is not authorized for creating an API key.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         {
@@ -598,25 +602,29 @@ namespace Cms.BatCave.Sonar.Agent
         /// <summary>
         /// Deletes existing API key.
         /// </summary>
-        /// <param name="body">The API key ,type and, if they exist, environment and tenant.</param>
+        /// <param name="keyId">ID of the key to delete</param>
         /// <returns>The API key configuration led to a successful deletion.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task KeysDELETEAsync(ApiKeyConfiguration body)
+        public virtual System.Threading.Tasks.Task DeleteApiKeyAsync(System.Guid keyId)
         {
-            return KeysDELETEAsync(body, System.Threading.CancellationToken.None);
+            return DeleteApiKeyAsync(keyId, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <summary>
         /// Deletes existing API key.
         /// </summary>
-        /// <param name="body">The API key ,type and, if they exist, environment and tenant.</param>
+        /// <param name="keyId">ID of the key to delete</param>
         /// <returns>The API key configuration led to a successful deletion.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task KeysDELETEAsync(ApiKeyConfiguration body, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task DeleteApiKeyAsync(System.Guid keyId, System.Threading.CancellationToken cancellationToken)
         {
+            if (keyId == null)
+                throw new System.ArgumentNullException("keyId");
+
             var urlBuilder_ = new System.Text.StringBuilder();
-            urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/api/v2/keys");
+            urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/api/v2/keys/{keyId}");
+            urlBuilder_.Replace("{keyId}", System.Uri.EscapeDataString(ConvertToString(keyId, System.Globalization.CultureInfo.InvariantCulture)));
 
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -624,10 +632,6 @@ namespace Cms.BatCave.Sonar.Agent
             {
                 using (var request_ = new System.Net.Http.HttpRequestMessage())
                 {
-                    var json_ = System.Text.Json.JsonSerializer.Serialize(body, _settings.Value);
-                    var content_ = new System.Net.Http.StringContent(json_);
-                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
-                    request_.Content = content_;
                     request_.Method = new System.Net.Http.HttpMethod("DELETE");
 
                     PrepareRequest(client_, request_, urlBuilder_);
@@ -1051,17 +1055,17 @@ namespace Cms.BatCave.Sonar.Agent
             }
         }
 
-        /// <returns>Success</returns>
+        /// <returns>No Content</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<ServiceHierarchyConfiguration> DeleteTenantAsync(string environment, string tenant)
+        public virtual System.Threading.Tasks.Task DeleteTenantAsync(string environment, string tenant)
         {
             return DeleteTenantAsync(environment, tenant, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <returns>Success</returns>
+        /// <returns>No Content</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ServiceHierarchyConfiguration> DeleteTenantAsync(string environment, string tenant, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task DeleteTenantAsync(string environment, string tenant, System.Threading.CancellationToken cancellationToken)
         {
             if (environment == null)
                 throw new System.ArgumentNullException("environment");
@@ -1081,6 +1085,78 @@ namespace Cms.BatCave.Sonar.Agent
                 using (var request_ = new System.Net.Http.HttpRequestMessage())
                 {
                     request_.Method = new System.Net.Http.HttpMethod("DELETE");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 204)
+                        {
+                            return;
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <returns>Created</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<EnvironmentModel> CreateEnvironmentAsync(EnvironmentModel body)
+        {
+            return CreateEnvironmentAsync(body, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>Created</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<EnvironmentModel> CreateEnvironmentAsync(EnvironmentModel body, System.Threading.CancellationToken cancellationToken)
+        {
+            var urlBuilder_ = new System.Text.StringBuilder();
+            urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/api/v2/environments");
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    var json_ = System.Text.Json.JsonSerializer.Serialize(body, _settings.Value);
+                    var content_ = new System.Net.Http.StringContent(json_);
+                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
+                    request_.Content = content_;
+                    request_.Method = new System.Net.Http.HttpMethod("POST");
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     PrepareRequest(client_, request_, urlBuilder_);
@@ -1104,14 +1180,24 @@ namespace Cms.BatCave.Sonar.Agent
                         ProcessResponse(client_, response_);
 
                         var status_ = (int)response_.StatusCode;
-                        if (status_ == 200)
+                        if (status_ == 201)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<ServiceHierarchyConfiguration>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<EnvironmentModel>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 409)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Conflict", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         {
@@ -1181,6 +1267,94 @@ namespace Cms.BatCave.Sonar.Agent
                         if (status_ == 200)
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<EnvironmentHealth>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 404)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("Not Found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <returns>Success</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task<EnvironmentHealth> GetEnvironmentAsync(string environment)
+        {
+            return GetEnvironmentAsync(environment, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <returns>Success</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<EnvironmentHealth> GetEnvironmentAsync(string environment, System.Threading.CancellationToken cancellationToken)
+        {
+            if (environment == null)
+                throw new System.ArgumentNullException("environment");
+
+            var urlBuilder_ = new System.Text.StringBuilder();
+            urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/api/v2/environments/{environment}");
+            urlBuilder_.Replace("{environment}", System.Uri.EscapeDataString(ConvertToString(environment, System.Globalization.CultureInfo.InvariantCulture)));
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<EnvironmentHealth>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -1371,7 +1545,7 @@ namespace Cms.BatCave.Sonar.Agent
                 throw new System.ArgumentNullException("environment");
 
             var urlBuilder_ = new System.Text.StringBuilder();
-            urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/api/v2/health/{environment}/tenants/sonar");
+            urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/api/v2/health/{environment}/tenants/Sonar");
             urlBuilder_.Replace("{environment}", System.Uri.EscapeDataString(ConvertToString(environment, System.Globalization.CultureInfo.InvariantCulture)));
 
             var client_ = _httpClient;
