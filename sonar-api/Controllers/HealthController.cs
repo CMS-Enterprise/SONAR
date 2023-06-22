@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Schema;
 using Asp.Versioning;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
@@ -37,34 +38,24 @@ public class HealthController : ControllerBase {
   private readonly ApiKeyDataHelper _apiKeyDataHelper;
   private readonly HealthDataHelper _healthDataHelper;
   private readonly CacheHelper _cacheHelper;
-  private readonly String _sonarEnvironment;
-  private readonly DataContext _dbContext;
-  private readonly IOptions<DatabaseConfiguration> _dbConfig;
-  private readonly Uri _prometheusUrl;
+
+
+
+
 
   public HealthController(
-    DataContext dbContext,
+
     ServiceDataHelper serviceDataHelper,
     ApiKeyDataHelper apiKeyDataHelper,
     HealthDataHelper healthDataHelper,
     CacheHelper cacheHelper,
     PrometheusRemoteWriteClient remoteWriteClient,
-    IOptions<SonarHealthCheckConfiguration> sonarHealthConfig,
-    IOptions<DatabaseConfiguration> dbConfig,
-    IOptions<PrometheusConfiguration> prometheusConfig,
     ILogger<HealthController> logger) {
-
-    this._dbContext = dbContext;
     this._serviceDataHelper = serviceDataHelper;
     this._apiKeyDataHelper = apiKeyDataHelper;
     this._healthDataHelper = healthDataHelper;
     this._cacheHelper = cacheHelper;
     this._remoteWriteClient = remoteWriteClient;
-    this._sonarEnvironment = sonarHealthConfig.Value.SonarEnvironment;
-    this._dbConfig = dbConfig;
-    this._prometheusUrl = new Uri(
-      $"{prometheusConfig.Value.Protocol}://{prometheusConfig.Value.Host}:{prometheusConfig.Value.Port}/"
-    );
     this._logger = logger;
   }
 
@@ -198,122 +189,16 @@ public class HealthController : ControllerBase {
     CancellationToken cancellationToken) {
 
     // Check if environment provided matches value in config.
+    /*
     if (environment != this._sonarEnvironment) {
       return this.NotFound(new {
         Message = "Sonar environment not found."
       });
     }
-
-    var postgresCheck = await this.RunPostgresHealthCheck(cancellationToken);
-    var prometheusCheck = await this.RunPrometheusSelfCheck(cancellationToken);
-    var result = new List<ServiceHierarchyHealth>() { postgresCheck, prometheusCheck };
-    return this.Ok(result);
+    */
+    return this.Ok(await this._healthDataHelper.CheckSonarHealth(environment, cancellationToken));
   }
 
-  private async Task<ServiceHierarchyHealth> RunPostgresHealthCheck(CancellationToken cancellationToken) {
-    var aggStatus = HealthStatus.Online;
-    var healthChecks =
-      new Dictionary<String, (DateTime Timestamp, HealthStatus Status)?>();
-    var connectionTestResult = HealthStatus.Online;
-    var sonarDbTestResult = HealthStatus.Online;
-
-    try {
-      await _dbContext.Database.OpenConnectionAsync(cancellationToken: cancellationToken);
-    } catch (InvalidOperationException e) {
-      // Db connection issue
-      this._logger.LogError(
-        message: "Unexpected DB error: {Message}",
-        e.Message
-      );
-      connectionTestResult = HealthStatus.Offline;
-      sonarDbTestResult = HealthStatus.Unknown;
-    } catch (PostgresException e) {
-      // Sonar db issue
-      this._logger.LogError(
-        message: "Unexpected DB error: {Message}",
-        e.Message
-      );
-      sonarDbTestResult = HealthStatus.Offline;
-    } catch (SocketException e) {
-      // Socket connection issue
-      this._logger.LogError(
-        message: "Unexpected socket exception: {Message}",
-        e.Message
-      );
-    } catch (OperationCanceledException e) {
-      // Operation cancelled
-      this._logger.LogError(
-        message: "Unexpected operation cancelled exception: {Message}",
-        e.Message
-      );
-    }
-
-    healthChecks.Add("connection-test", (DateTime.UtcNow, connectionTestResult));
-    healthChecks.Add("sonar-database-test", (DateTime.UtcNow, sonarDbTestResult));
-
-    // calculate aggStatus
-    aggStatus = new[] { connectionTestResult, sonarDbTestResult }.Max();
-
-    return new ServiceHierarchyHealth(
-      "postgresql",
-      "Postgresql",
-      "The Postgresql instance that the SONAR API uses to persist service health information.",
-      new Uri(
-        $"postgresql://{_dbConfig.Value.Host}:{_dbConfig.Value.Port}/{_dbConfig.Value.Database}"),
-      DateTime.UtcNow,
-      aggStatus,
-      healthChecks.ToImmutableDictionary(),
-      null
-    );
-  }
-
-  private async Task<ServiceHierarchyHealth> RunPrometheusSelfCheck(CancellationToken cancellationToken) {
-    var httpClient = new HttpClient();
-    httpClient.BaseAddress = this._prometheusUrl;
-    var healthChecks =
-      new Dictionary<String, (DateTime Timestamp, HealthStatus Status)?>();
-    var readinessTest = HealthStatus.Online;
-    var queryTest = HealthStatus.Online;
-
-    try {
-      await httpClient.GetAsync(
-        "-/ready",
-        cancellationToken);
-    } catch (HttpRequestException e) {
-      // Failed readiness probe
-      this._logger.LogError(
-        message: "Unexpected HTTP error: {Message}",
-        e.Message
-      );
-      readinessTest = HealthStatus.Offline;
-      queryTest = HealthStatus.Unknown;
-    } catch (Exception e) {
-      // Unknown exception
-      this._logger.LogError(
-        message: "Unexpected HTTP error: {Message}",
-        e.Message
-      );
-      readinessTest = HealthStatus.Unknown;
-      queryTest = HealthStatus.Unknown;
-    }
-
-    healthChecks.Add("readiness-probe", (DateTime.UtcNow, readinessTest));
-    healthChecks.Add("test-query", (DateTime.UtcNow, queryTest));
-
-    // calculate aggStatus
-    var aggStatus = new[] { readinessTest, queryTest }.Max();
-
-    return new ServiceHierarchyHealth(
-      "prometheus",
-      "Prometheus",
-      "The Prometheus instance that the SONAR API uses to persist service health information.",
-      this._prometheusUrl,
-      DateTime.UtcNow,
-      aggStatus,
-      healthChecks.ToImmutableDictionary(),
-      children: null
-    );
-  }
 
   [HttpGet("{environment}/tenants/{tenant}", Name = "GetServiceHierarchyHealth")]
   [ProducesResponseType(typeof(ServiceHierarchyHealth[]), statusCode: 200)]

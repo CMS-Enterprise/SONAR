@@ -81,15 +81,22 @@ public class TenantDataHelper {
           svc, services, serviceStatuses, serviceChildIdsLookup, healthChecksByService, healthCheckStatus)
         ).ToArray();
 
-      tenantList.Add(this.ToTenantHealth(tenant, environment, rootServiceHealth));
+      tenantList.Add(this.ToTenantHealth(tenant.Name, environment.Name, rootServiceHealth));
     }
+
+    // TODO SONAR itself is a tenant of the environment its in. Thus we can hardcode which environment.
+    // TODO May need to test in multi env situations
+    tenantList.Add(this.ToTenantHealth("Sonar", environment.Name,
+       this._healthDataHelper.CheckSonarHealth(environment.Name, cancellationToken).Result.ToArray()));
+
+
 
     return tenantList;
   }
 
   private TenantHealth ToTenantHealth(
-    Tenant tenant,
-    Environment environment,
+    String tenantName,
+    String environmentName,
     ServiceHierarchyHealth?[] rootServiceHealth
   ) {
     HealthStatus? aggregateStatus = HealthStatus.Unknown;
@@ -128,6 +135,6 @@ public class TenantDataHelper {
       }
     }
 
-    return new TenantHealth(environment.Name, tenant.Name, statusTimestamp, aggregateStatus, rootServiceHealth);
+    return new TenantHealth(environmentName, tenantName, statusTimestamp, aggregateStatus, rootServiceHealth);
   }
 }

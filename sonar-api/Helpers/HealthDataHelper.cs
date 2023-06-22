@@ -2,15 +2,21 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Models;
 using Cms.BatCave.Sonar.Prometheus;
 using Cms.BatCave.Sonar.Query;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Npgsql;
 
 namespace Cms.BatCave.Sonar.Helpers;
 
@@ -27,17 +33,32 @@ public class HealthDataHelper {
   private readonly CacheHelper _cacheHelper;
   private readonly ServiceDataHelper _serviceDataHelper;
   private readonly IPrometheusClient _prometheusClient;
+  private readonly Uri _prometheusUrl;
+  private readonly DataContext _dbContext;
+  private readonly IOptions<DatabaseConfiguration> _dbConfig;
   private readonly ILogger<HealthDataHelper> _logger;
+  private readonly String _sonarEnvironment;
+
 
   public HealthDataHelper(
+    DataContext dbContext,
     CacheHelper cacheHelper,
     ServiceDataHelper serviceDataHelper,
     IPrometheusClient prometheusClient,
+    IOptions<PrometheusConfiguration> prometheusConfig,
+    IOptions<DatabaseConfiguration> dbConfig,
+    IOptions<SonarHealthCheckConfiguration> sonarHealthConfig,
     ILogger<HealthDataHelper> logger) {
 
     this._cacheHelper = cacheHelper;
     this._serviceDataHelper = serviceDataHelper;
     this._prometheusClient = prometheusClient;
+    this._prometheusUrl = new Uri(
+      $"{prometheusConfig.Value.Protocol}://{prometheusConfig.Value.Host}:{prometheusConfig.Value.Port}/"
+    );
+    this._dbContext = dbContext;
+    this._dbConfig = dbConfig;
+    this._sonarEnvironment = sonarHealthConfig.Value.SonarEnvironment;
     this._logger = logger;
   }
 
@@ -365,6 +386,130 @@ public class HealthDataHelper {
     return current.HasValue ?
       (DateTime.UnixEpoch.AddMilliseconds((Int64)(current.Value.Timestamp * 1000)), current.Value.Status) :
       null;
+  }
+
+  public async Task<List<ServiceHierarchyHealth>> CheckSonarHealth(
+    String environment,
+    CancellationToken cancellationToken) {
+
+    // Check if environment provided matches value in config.
+    /*
+    if (environment != this._sonarEnvironment) {
+      return this.NotFound(new {
+        Message = "Sonar environment not found."
+      });
+    }
+    */
+
+
+    var postgresCheck = await this.RunPostgresHealthCheck(cancellationToken);
+    var prometheusCheck = await this.RunPrometheusSelfCheck(cancellationToken);
+    var result = new List<ServiceHierarchyHealth>() { postgresCheck, prometheusCheck };
+    return result;
+  }
+  private async Task<ServiceHierarchyHealth> RunPostgresHealthCheck(CancellationToken cancellationToken) {
+    var aggStatus = HealthStatus.Online;
+    var healthChecks =
+      new Dictionary<String, (DateTime Timestamp, HealthStatus Status)?>();
+    var connectionTestResult = HealthStatus.Online;
+    var sonarDbTestResult = HealthStatus.Online;
+
+    try {
+      await _dbContext.Database.OpenConnectionAsync(cancellationToken: cancellationToken);
+    } catch (InvalidOperationException e) {
+      // Db connection issue
+      this._logger.LogError(
+        message: "Unexpected DB error: {Message}",
+        e.Message
+      );
+      connectionTestResult = HealthStatus.Offline;
+      sonarDbTestResult = HealthStatus.Unknown;
+    } catch (PostgresException e) {
+      // Sonar db issue
+      this._logger.LogError(
+        message: "Unexpected DB error: {Message}",
+        e.Message
+      );
+      sonarDbTestResult = HealthStatus.Offline;
+    } catch (SocketException e) {
+      // Socket connection issue
+      this._logger.LogError(
+        message: "Unexpected socket exception: {Message}",
+        e.Message
+      );
+    } catch (OperationCanceledException e) {
+      // Operation cancelled
+      this._logger.LogError(
+        message: "Unexpected operation cancelled exception: {Message}",
+        e.Message
+      );
+    }
+
+    healthChecks.Add("connection-test", (DateTime.UtcNow, connectionTestResult));
+    healthChecks.Add("sonar-database-test", (DateTime.UtcNow, sonarDbTestResult));
+
+    // calculate aggStatus
+    aggStatus = new[] { connectionTestResult, sonarDbTestResult }.Max();
+
+    return new ServiceHierarchyHealth(
+      "postgresql",
+      "Postgresql",
+      "The Postgresql instance that the SONAR API uses to persist service health information.",
+      new Uri(
+        $"postgresql://{_dbConfig.Value.Host}:{_dbConfig.Value.Port}/{_dbConfig.Value.Database}"),
+      DateTime.UtcNow,
+      aggStatus,
+      healthChecks.ToImmutableDictionary(),
+      null
+    );
+  }
+
+  private async Task<ServiceHierarchyHealth> RunPrometheusSelfCheck(CancellationToken cancellationToken) {
+    var httpClient = new HttpClient();
+    httpClient.BaseAddress = this._prometheusUrl;
+    var healthChecks =
+      new Dictionary<String, (DateTime Timestamp, HealthStatus Status)?>();
+    var readinessTest = HealthStatus.Online;
+    var queryTest = HealthStatus.Online;
+
+    try {
+      await httpClient.GetAsync(
+        "-/ready",
+        cancellationToken);
+    } catch (HttpRequestException e) {
+      // Failed readiness probe
+      this._logger.LogError(
+        message: "Unexpected HTTP error: {Message}",
+        e.Message
+      );
+      readinessTest = HealthStatus.Offline;
+      queryTest = HealthStatus.Unknown;
+    } catch (Exception e) {
+      // Unknown exception
+      this._logger.LogError(
+        message: "Unexpected HTTP error: {Message}",
+        e.Message
+      );
+      readinessTest = HealthStatus.Unknown;
+      queryTest = HealthStatus.Unknown;
+    }
+
+    healthChecks.Add("readiness-probe", (DateTime.UtcNow, readinessTest));
+    healthChecks.Add("test-query", (DateTime.UtcNow, queryTest));
+
+    // calculate aggStatus
+    var aggStatus = new[] { readinessTest, queryTest }.Max();
+
+    return new ServiceHierarchyHealth(
+      "prometheus",
+      "Prometheus",
+      "The Prometheus instance that the SONAR API uses to persist service health information.",
+      this._prometheusUrl,
+      DateTime.UtcNow,
+      aggStatus,
+      healthChecks.ToImmutableDictionary(),
+      children: null
+    );
   }
 
   public class MetricLabelKeys {

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Data;
+using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Extensions;
 using Cms.BatCave.Sonar.Models;
@@ -130,6 +131,65 @@ public class ServiceDataHelper {
       await this._healthChecksTable
         .Where(hc => serviceIds.Contains(hc.ServiceId))
         .ToListAsync(cancellationToken);
+  }
+
+  /* TODO Update URL INFO based on env */
+  public ServiceHierarchyConfiguration FetchSonarConfiguration() {
+    var postgresHealthCheckModel = new HealthCheckModel(
+      "Postgresql",
+      description: "Http Health Check Description",
+      HealthCheckType.HttpRequest,
+      new HttpHealthCheckDefinition(
+        url: new Uri("http://httpHealthCheck"),
+        Array.Empty<HttpHealthCheckCondition>(),
+        followRedirects: false,
+        authorizationHeader: "Authorization Header Value",
+        skipCertificateValidation: null)
+    );
+
+    var postgresqlServiceConfig = new ServiceConfiguration(
+      "Postgresql",
+      displayName: "Display Name",
+      description: null,
+      url: null,
+      ImmutableList.Create(postgresHealthCheckModel),
+      children: null);
+
+    var prometheusHealthCheckModel = new HealthCheckModel(
+      "Prometheus",
+      description: "Http Health Check Description",
+      HealthCheckType.HttpRequest,
+      new HttpHealthCheckDefinition(
+        url: new Uri("http://httpHealthCheck"),
+        Array.Empty<HttpHealthCheckCondition>(),
+        followRedirects: false,
+        authorizationHeader: "Authorization Header Value",
+        skipCertificateValidation: null
+      )
+    );
+
+    var prometheusServiceConfig =
+      new ServiceConfiguration(
+        "Prometheus",
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        ImmutableList.Create(prometheusHealthCheckModel),
+        children: null
+      );
+
+    var sonarRootServices = ImmutableHashSet<String>.Empty.Add("Prometheus");
+    sonarRootServices = sonarRootServices.Add("Postgresql");
+
+    ServiceHierarchyConfiguration sonarConfiguration = new ServiceHierarchyConfiguration(
+      ImmutableList.Create(
+        postgresqlServiceConfig,
+        prometheusServiceConfig
+      ),
+      sonarRootServices
+    );
+
+    return sonarConfiguration;
   }
 
   public async Task<ILookup<Guid, Guid>> GetServiceChildIdsLookup(

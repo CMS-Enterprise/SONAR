@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Asp.Versioning;
 using Cms.BatCave.Sonar.Data;
+using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Extensions;
 using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
@@ -76,6 +77,11 @@ public class ConfigurationController : ControllerBase {
 
     var isAuthorized = this.User.IsInRole("Admin");
 
+    if (tenant == "Sonar") {
+      var sonarConfiguration = this._serviceDataHelper.FetchSonarConfiguration();
+      return this.Ok(sonarConfiguration);
+    }
+
     var (_, _, serviceMap) = await this._serviceDataHelper.FetchExistingConfiguration(environment, tenant, cancellationToken);
 
     var serviceRelationshipsByParent =
@@ -87,6 +93,7 @@ public class ConfigurationController : ControllerBase {
       .ToLookup(hc => hc.ServiceId);
 
     var serviceHierarchy = CreateServiceHierarchy(serviceMap, healthCheckByService, serviceRelationshipsByParent);
+
 
     if (!isAuthorized) {
       serviceHierarchy = ServiceDataHelper.Redact(serviceHierarchy);

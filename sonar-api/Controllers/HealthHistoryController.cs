@@ -131,6 +131,11 @@ public class HealthHistoryController : ControllerBase {
 
     (DateTime startTime, DateTime endTime, Int32 stepIncrement) = ValidateParameters(start, end, step);
 
+
+    if (tenant == "Sonar") {
+
+    }
+
     var (_, _, services) =
       await this._serviceDataHelper.FetchExistingConfiguration(environment, tenant, cancellationToken);
     var serviceChildIdsLookup = await this._serviceDataHelper.GetServiceChildIdsLookup(services, cancellationToken);
