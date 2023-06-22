@@ -1,3 +1,6 @@
+// import for the global cy declaration
+import {} from 'cypress'
+
 describe('Test Navigation Bar', () => {
 
   beforeEach(() => {

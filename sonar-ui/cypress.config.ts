@@ -5,5 +5,7 @@ export default defineConfig({
     setupNodeEvents(on, config) {
       // implement node event listeners here
     },
+    // remove this if helper functions are added to cypress/support/e2e.ts
+    supportFile: false,
   },
 });
