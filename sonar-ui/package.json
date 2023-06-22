@@ -43,7 +43,8 @@
     "test": "react-app-rewired test",
     "lint": "eslint .",
     "generate-api-client": "swagger-typescript-api -p http://localhost:8081/api/doc/v2/open-api.json -o ./src/api --modular && mv ./src/api/Api.ts ./src/api/sonar-api.generated.ts",
-    "cypress": "cypress open"
+    "cypress": "cypress open",
+    "e2e": "cypress run"
   },
   "eslintConfig": {
     "extends": [

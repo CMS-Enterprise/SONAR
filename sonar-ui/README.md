@@ -53,6 +53,11 @@ Before running any e2e test, ensure that:
 1. sonar-api is running locally
 2. you have executed `npm start` so that the UI is viewable at [http://localhost:3000](http://localhost:3000)
 
+### `npm run e2e`
+
+Runs End-to-end tests using Cypress in headless mode. Similar to running e2e tests in the Cypress app, you will need to
+have `sonar-api` and the `sonar-ui` already running and listening on ports 8081 and 3000 respectively.
+
 ## Regenerate `node_modules` and `package-lock.json`
 
 Delete the `node_modules` directory and the `package-lock.json` file, then run `npm i` to regenerate both.
