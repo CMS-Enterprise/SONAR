@@ -1,141 +1,26 @@
+include: .gitlab-ci/shared-pipeline-variables.yml
+
 stages:
-  - old-pipeline
-  - build
-  - test
-  - pipeline-triggers
+  - build-and-test
   - deploy
 
-variables:
-  TEMPLATE_VERSION: "v1"
-  APP_NAME_UI: "sonar-ui"
-  CUSTOM_CI_PROJECT_PATH: "ado-repositories/oit/waynetech"
-
-# Runs existing pipeline for API and Agent using existing pipeline templates/pipeline application repos
-existing-pipeline:
-  stage: old-pipeline
+frontend-build-pipeline:
+  stage: build-and-test
   trigger:
+    include: .gitlab-ci/frontend-build-pipeline.yml
     strategy: depend
-    include:
-      - project: 'devops-pipelines/application-pipelines'
-        ref: main
-        file: 'sonar/sonar.yaml'
 
-#Jobs correlating to building of the UI
-.with-npm:
-  image: artifactory.cloud.cms.gov/docker/node:18-alpine
-  variables:
-    ARTIFACT_FOLDER: ".artifacts/${APP_NAME_UI}"
-    TARGET_DIR: ${APP_NAME_UI}
-  cache:
-    key: ${CI_COMMIT_REF_SLUG}
-    paths:
-      - ${TARGET_DIR}/.npm
-      - ${TARGET_DIR}/node_modules
-
-build-ui:
-  stage: build
-  needs: []
-  extends: .with-npm
-  script:
-    - echo "BEGIN build node modules, about to execute 'npm ci' and 'npm run build'."
-    - cd ${TARGET_DIR}
-    - npm ci
-    - npm run build
-    - echo "END build node modules"
-
-unit-tests:
-  stage: test
-  needs: [build-ui]
-  extends: .with-npm
-  script:
-    - echo "Perform 'npm run test'"
-    - cd ${TARGET_DIR}
-    - npm run test
-
-lint:
-  stage: test
-  needs: [build-ui]
-  extends: .with-npm
-  script:
-    - echo "Perform 'npm run lint'"
-    - cd ${TARGET_DIR}
-    - npm run lint
-
-sast-pipeline:
-  stage: pipeline-triggers
-  needs: []
-  variables:
-    SCAN_GITLEAKS: "true"
-    SCAN_SEMGREP: "true"
-    TARGET_DIRECTORY: ${APP_NAME_UI}
-    SEMGREP_RULES_ADD: "p/javascript"
-    APP_IMAGE_SRC: "${BC_IMAGE_REPO}/${CUSTOM_CI_PROJECT_PATH}/${APP_NAME_UI}"
-    ARTIFACT_FOLDER: ".artifacts/sonar/${APP_NAME_UI}"
+backend-build-pipeline:
+  stage: build-and-test
   trigger:
+    include: .gitlab-ci/backend-build-pipeline.yml
     strategy: depend
-    include:
-      - project: "devops-pipelines/pipeline-triggers"
-        ref: ${TEMPLATE_VERSION}
-        file: "sast.yaml"
 
-delivery-pipeline:
-  stage: pipeline-triggers
-  needs: [sast-pipeline]
-  variables:
-    FETCH_SAST_ARTIFACTS: "true"
-    PUSH_LATEST: "true"
-    TARGET_DOCKERFILE: Dockerfile.ui
-    APP_IMAGE_SRC: "${BC_IMAGE_REPO}/${CUSTOM_CI_PROJECT_PATH}/${APP_NAME_UI}"
-    ARTIFACT_FOLDER: ".artifacts/sonar/${APP_NAME_UI}"
-  trigger:
-    strategy: depend
-    include:
-      - project: "devops-pipelines/pipeline-triggers"
-        ref: ${TEMPLATE_VERSION}
-        file: "delivery.yaml"
-  rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-
-.deployment-pipeline:
+deployment-pipeline:
   stage: deploy
-  variables:
-    FETCH_SAST_ARTIFACTS: "true"
-    PUSH_LATEST: "true"
-  trigger:
-    strategy: depend
-    include:
-      - project: "devops-pipelines/pipeline-triggers"
-        ref: ${TEMPLATE_VERSION}
-        file: "deployment.yaml"
   rules:
-    - if: $CI_COMMIT_BRANCH == "main"
-
-deploy-sonar-ui-dev:
-  needs: [ "delivery-pipeline" ]
-  extends: .deployment-pipeline
-  variables:
-    TARGET_DOCKERFILE: Dockerfile.ui
-    TARGET_SERVICE: ${APP_NAME_UI}
-    TARGET_ENVIRONMENT: "dev"
-    APP_IMAGE_SRC: "${BC_IMAGE_REPO}/${CUSTOM_CI_PROJECT_PATH}/${APP_NAME_UI}"
-    ARTIFACT_FOLDER: ".artifacts/sonar/${APP_NAME_UI}"
-
-deploy-sonar-ui-k3d:
-  needs: ["deploy-sonar-ui-dev"]
-  extends: .deployment-pipeline
-  variables:
-    TARGET_DOCKERFILE: Dockerfile.ui
-    TARGET_SERVICE: ${APP_NAME_UI}
-    TARGET_ENVIRONMENT: "k3d"
-    APP_IMAGE_SRC: "${BC_IMAGE_REPO}/${CUSTOM_CI_PROJECT_PATH}/${APP_NAME_UI}"
-    ARTIFACT_FOLDER: ".artifacts/sonar/${APP_NAME_UI}"
-
-deploy-sonar-ui-test:
-  needs: ["deploy-sonar-ui-k3d"]
-  extends: .deployment-pipeline
-  variables:
-    TARGET_DOCKERFILE: Dockerfile.ui
-    TARGET_SERVICE: ${APP_NAME_UI}
-    TARGET_ENVIRONMENT: "impl"
-    APP_IMAGE_SRC: "${BC_IMAGE_REPO}/${CUSTOM_CI_PROJECT_PATH}/${APP_NAME_UI}"
-    ARTIFACT_FOLDER: ".artifacts/sonar/${APP_NAME_UI}"
+    - if: $CI_COMMIT_BRANCH == $MAIN_BRANCH_NAME && $CI_COMMIT_TAG == null
+    - if: $CI_COMMIT_TAG =~ $VERSION_TAG_REGEX
+  trigger:
+    include: .gitlab-ci/deployment-pipeline.yml
+    strategy: depend

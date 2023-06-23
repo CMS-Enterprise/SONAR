@@ -1,0 +1,112 @@
+include: .gitlab-ci/shared-pipeline-variables.yml
+
+stages:
+  - build
+  - test
+  - sast
+  - deliver
+
+.with-dotnet-sdk:
+  image: artifactory.cloud.cms.gov/docker/bitnami/dotnet-sdk:7.0.202
+
+build:
+  stage: build
+  extends: .with-dotnet-sdk
+  script:
+    - dotnet build
+  artifacts:
+    # Save build outputs as artifacts for use in the test stage; instead of specifying individual
+    # artifact paths, we just include all Git-untracked files that were generated during the build.
+    untracked: true
+    expire_in: 6 hours
+
+test:
+  stage: test
+  extends: .with-dotnet-sdk
+  dependencies: [ build ]
+  variables:
+    Database__Host: postgres
+    Database__Username: postgres
+    Prometheus__Host: prometheus
+  services:
+    - name: postgres:14-alpine
+      variables:
+        POSTGRES_PASSWORD: password
+    - name: prom/prometheus:v2.38.0
+      alias: prometheus
+      command:
+        - --enable-feature=remote-write-receiver
+        - --config.file=/etc/prometheus/prometheus.yml
+  before_script:
+    - apt-get update && apt-get install -y libsnappy1v5 libsnappy-dev
+  script:
+    - dotnet test
+
+lint:
+  stage: test
+  extends: .with-dotnet-sdk
+  dependencies: []
+  script:
+    dotnet format --verify-no-changes
+
+.sast:
+  stage: sast
+  variables:
+    SEMGREP_RULES_ADD: p/csharp
+    APP_IMAGE_TAG: $CI_COMMIT_SHORT_SHA
+  parallel:
+    matrix:
+      - TARGET_DIRECTORY: $API_PROJECT_NAME
+        APP_IMAGE_SRC: $API_APP_IMAGE_SRC
+      - TARGET_DIRECTORY: $AGENT_PROJECT_NAME
+        APP_IMAGE_SRC: $AGENT_APP_IMAGE_SRC
+  trigger:
+    include:
+      - project: devops-pipelines/pipeline-triggers
+        ref: $PIPELINE_TRIGGERS_VERSION
+        file: sast.yaml
+    strategy: depend
+
+sast-dev:
+  extends: .sast
+  rules:
+    - if: $CI_COMMIT_BRANCH == $MAIN_BRANCH_NAME && $CI_COMMIT_TAG == null
+
+sast-release:
+  extends: .sast
+  rules:
+    - if: $CI_COMMIT_TAG =~ $VERSION_TAG_REGEX
+  variables:
+    APP_IMAGE_TAG: $CI_COMMIT_TAG
+
+.deliver:
+  stage: deliver
+  variables:
+    FETCH_SAST_ARTIFACTS: 'true'
+    APP_IMAGE_TAG: $CI_COMMIT_SHORT_SHA
+  parallel:
+    matrix:
+      - TARGET_DOCKERFILE: Dockerfile.api
+        APP_IMAGE_SRC: $API_APP_IMAGE_SRC
+        GATECHECK_DD_PRODUCT: $API_PROJECT_NAME
+      - TARGET_DOCKERFILE: Dockerfile.agent
+        APP_IMAGE_SRC: $AGENT_APP_IMAGE_SRC
+        GATECHECK_DD_PRODUCT: $AGENT_PROJECT_NAME
+  trigger:
+    include:
+      - project: devops-pipelines/pipeline-triggers
+        ref: $PIPELINE_TRIGGERS_VERSION
+        file: delivery.yaml
+    strategy: depend
+
+deliver-dev-image:
+  extends: .deliver
+  rules:
+    - if: $CI_COMMIT_BRANCH == $MAIN_BRANCH_NAME && $CI_COMMIT_TAG == null
+
+deliver-release-image:
+  extends: .deliver
+  rules:
+    - if: $CI_COMMIT_TAG =~ $VERSION_TAG_REGEX
+  variables:
+    APP_IMAGE_TAG: $CI_COMMIT_TAG

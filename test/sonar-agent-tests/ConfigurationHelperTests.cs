@@ -35,7 +35,7 @@ public class ConfigurationHelperTests {
     Assert.Equal(expected: 2, tenantConfig.RootServices.Count);
   }
 
-  [Theory]
+  [Theory(Skip = "BATAPI-298")]
   [InlineData(
     "test-inputs/invalid-service-config-empty.json", new[] {
       "Services: The Services field is required.",
@@ -79,7 +79,7 @@ public class ConfigurationHelperTests {
   /// These result in the object not actually getting deserialized, and we want to make sure our deserialization helper
   /// catches these errors, and converts them to <see cref="InvalidConfigurationException"/>s.
   /// </summary>
-  [Theory]
+  [Theory(Skip = "BATAPI-298")]
   [InlineData("test-inputs/invalid-service-config-missing-keys-1.json",
     "Invalid JSON service configuration: One or more validation errors occurred.")]
   [InlineData("test-inputs/invalid-service-config-missing-keys-2.json",

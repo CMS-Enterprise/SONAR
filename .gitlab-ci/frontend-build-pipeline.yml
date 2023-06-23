@@ -1,0 +1,99 @@
+include: .gitlab-ci/shared-pipeline-variables.yml
+
+stages:
+  - build
+  - test
+  - sast
+  - deliver
+
+.with-npm:
+  image: artifactory.cloud.cms.gov/docker/node:18-alpine
+  variables:
+    TARGET_DIR: ${UI_PROJECT_NAME}
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - ${TARGET_DIR}/.npm
+      - ${TARGET_DIR}/node_modules
+
+build-ui:
+  stage: build
+  needs: []
+  extends: .with-npm
+  script:
+    - echo "BEGIN build node modules, about to execute 'npm ci' and 'npm run build'."
+    - cd ${TARGET_DIR}
+    - npm ci
+    - npm run build
+    - echo "END build node modules"
+
+unit-tests:
+  stage: test
+  needs: [build-ui]
+  extends: .with-npm
+  script:
+    - echo "Perform 'npm run test'"
+    - cd ${TARGET_DIR}
+    - npm run test
+
+lint:
+  stage: test
+  needs: [build-ui]
+  extends: .with-npm
+  script:
+    - echo "Perform 'npm run lint'"
+    - cd ${TARGET_DIR}
+    - npm run lint
+
+.sast:
+  stage: sast
+  variables:
+    SEMGREP_RULES_ADD: p/javascript
+    APP_IMAGE_TAG: $CI_COMMIT_SHORT_SHA
+    TARGET_DIRECTORY: $UI_PROJECT_NAME
+    APP_IMAGE_SRC: $UI_APP_IMAGE_SRC
+  trigger:
+    include:
+      - project: devops-pipelines/pipeline-triggers
+        ref: $PIPELINE_TRIGGERS_VERSION
+        file: sast.yaml
+    strategy: depend
+
+sast-dev:
+  extends: .sast
+  rules:
+    - if: $CI_COMMIT_BRANCH == $MAIN_BRANCH_NAME && $CI_COMMIT_TAG == null
+
+sast-release:
+  extends: .sast
+  rules:
+    - if: $CI_COMMIT_TAG =~ $VERSION_TAG_REGEX
+  variables:
+    APP_IMAGE_TAG: $CI_COMMIT_TAG
+
+.deliver:
+  stage: deliver
+  variables:
+    FETCH_SAST_ARTIFACTS: 'true'
+    APP_IMAGE_TAG: $CI_COMMIT_SHORT_SHA
+    TARGET_DOCKERFILE: Dockerfile.ui
+    APP_IMAGE_SRC: $UI_APP_IMAGE_SRC
+    GATECHECK_DD_PRODUCT: $UI_PROJECT_NAME
+  trigger:
+    include:
+      - project: devops-pipelines/pipeline-triggers
+        ref: $PIPELINE_TRIGGERS_VERSION
+        file: delivery.yaml
+    strategy: depend
+
+deliver-dev-image:
+  extends: .deliver
+  rules:
+    - if: $CI_COMMIT_BRANCH == $MAIN_BRANCH_NAME && $CI_COMMIT_TAG == null
+
+deliver-release-image:
+  extends: .deliver
+  rules:
+    - if: $CI_COMMIT_TAG =~ $VERSION_TAG_REGEX
+  variables:
+    APP_IMAGE_TAG: $CI_COMMIT_TAG
