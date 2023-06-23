@@ -31,7 +31,6 @@
     "cypress": "^12.14.0",
     "eslint": "^8.36.0",
     "eslint-config-react-app": "^7.0.1",
-    "pg": "^8.11.0",
     "react-app-rewired": "^2.2.1",
     "react-scripts": "5.0.1",
     "swagger-typescript-api": "^12.0.4"

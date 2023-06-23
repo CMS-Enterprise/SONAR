@@ -51,7 +51,7 @@ generated sources can be found in the [`src/api`](./src/api) folder. Will requir
 Opens the Cypress app, whereby you will see the Launchpad. Choose the "E2E Testing" option.
 Before running any e2e test, ensure that:
 1. sonar-api is running locally
-2. you have run `npm run` so that the app is viewable at [http://localhost:3000](http://localhost:3000)
+2. you have executed `npm start` so that the UI is viewable at [http://localhost:3000](http://localhost:3000)
 
 ## Regenerate `node_modules` and `package-lock.json`
 

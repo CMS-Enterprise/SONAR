@@ -4,17 +4,17 @@ const environmentName = 'foo'
 const tenantName = 'bar'
 const configRequestUrl = 'localhost:8081/api/v2/config/' + environmentName + '/tenants/' + tenantName
 const headerWithApiKey = {
-  'Accept' : 'application/json',
-  'ApiKey' : 'test+api+key+do+not+use+in+production+xxxxx='
+  'Accept': 'application/json',
+  'ApiKey': 'test+api+key+do+not+use+in+production+xxxxx='
 }
 
 describe('Create Tenant configuration with only root service', () => {
   it('Tenant configuration created', () => {
     /// send Tenant configuration
     cy.request({
-      method : 'POST',
-      url : configRequestUrl,
-      headers : headerWithApiKey,
+      method: 'POST',
+      url: configRequestUrl,
+      headers: headerWithApiKey,
       body: {
         'services' : rootOnlyConfig.services,
         'rootServices' : rootOnlyConfig.rootServices
