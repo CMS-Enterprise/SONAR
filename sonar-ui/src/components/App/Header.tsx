@@ -36,6 +36,7 @@ const Header = (props: HeaderProps) => {
             HOME
           </Link>
           <label data-test="navbar-toggle-section">
+            Background Theme
             <Toggle
               defaultChecked={props.enableDarkTheme}
               css={styles.ThemeToggleStyle}
