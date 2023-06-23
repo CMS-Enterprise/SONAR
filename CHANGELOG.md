@@ -1,3 +1,459 @@
+## 0.1.1
+
+### SONAR Release v0.1.1
+
+* [view commit 387e74b](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/387e74b075f88d0bda7ceb1d1316a7e08197bd7e)
+* Author (Committer): Stephen Brey (Paul Wheeler)
+* Date: Fri, 23 Jun 2023 12:47:41 -0600
+
+### Update text to "Toggle Theme"
+
+* [view commit 4bc630c](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/4bc630cfe29e48b679b82f657b8e7cc2cc50af4b)
+* Author (Committer): Dale O'Neill (Dale O'Neill)
+* Date: Fri, 23 Jun 2023 15:28:01 -0700
+
+
+
+### Added text to label which gives a larger clickable area.  This meets section 508 requirements
+
+* [view commit 835c792](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/835c792dff52396435756b4c7772018f8aac3125)
+* Author (Committer): Dale O'Neill (Dale O'Neill)
+* Date: Thu, 22 Jun 2023 20:46:47 -0700
+
+
+
+### fixed date logic for timestamp hover
+
+* [view commit ab8ffa1](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/ab8ffa1ceae6e63b16b62f8ec67378d18f6d114c)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Fri, 23 Jun 2023 20:38:36 +0000
+
+```
+Closes BATAPI-291
+
+## Description:
+
+* fixed date logic for timestamp hover
+```
+
+### BATAPI-278: fixed lint issue
+
+* [view commit f2544f1](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/f2544f187067dfd3a60dc9c18cfc68c4531c436d)
+* Author (Committer): Teresa Tran (Teresa Tran)
+* Date: Fri, 23 Jun 2023 12:17:32 -0700
+
+
+
+### BATAPI-278: removed unnecessary pg-related devDependency/modules/configuration and white spaces
+
+* [view commit d7818b8](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/d7818b8deae6ecc4f23444895187634ce399c15a)
+* Author (Committer): Teresa Tran (Teresa Tran)
+* Date: Fri, 23 Jun 2023 11:15:47 -0700
+
+
+
+### BATAPI-278: added assertion for element that should not exist
+
+* [view commit ca39397](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/ca3939787659dda10141a2a7d1496ee37bf7b9c9)
+* Author (Committer): Teresa Tran (Teresa Tran)
+* Date: Wed, 21 Jun 2023 13:24:21 -0700
+
+
+
+### BATAPI-278: added cleanup for e2e test
+
+* [view commit cf95a46](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/cf95a46ef32cfa87e3d494d884d9486fd5f9e8ab)
+* Author (Committer): Teresa Tran (Teresa Tran)
+* Date: Wed, 21 Jun 2023 13:10:50 -0700
+
+
+
+### BATAPI-278: updated sonar-ui README with cypress section
+
+* [view commit 81b7f88](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/81b7f889ed4d11e1fca1cf51ddd08165253b79e1)
+* Author (Committer): Teresa Tran (Teresa Tran)
+* Date: Wed, 21 Jun 2023 01:44:02 -0700
+
+
+
+### BATAPI-278: root service-only service hierarchy config e2e test
+
+* [view commit ab95b73](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/ab95b73d3c204fc279000612bdb12db5771ea9bb)
+* Author (Committer): Teresa Tran (Teresa Tran)
+* Date: Wed, 21 Jun 2023 01:22:49 -0700
+
+
+
+### BATAPI-278: connect to database, test UI navigation bar
+
+* [view commit 9cbd8bd](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/9cbd8bddd837c34bd31916b90950ea35c5a2fc5f)
+* Author (Committer): Teresa Tran (Teresa Tran)
+* Date: Tue, 20 Jun 2023 22:36:52 -0700
+
+
+### Closes BATAPI-279 - Pipeline Refactor
+
+* [view commit ce5143c](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/ce5143ca39507f3c1de43ce11c824d7475000ebb)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Fri, 23 Jun 2023 18:09:52 +0000
+
+```
+Converts Sonar's GitLab CI/CD pipeline configuration to a parent-child architecture, and leverages the shared pipeline triggers (see https://code.batcave.internal.cms.gov/devops-pipelines/pipeline-triggers).
+
+The root .gitlab-ci.yml is the parent pipeline, which triggers three child pipelines:
+- .gitlab-ci/frontend-build-pipeline.yml: Handles build and image delivery of the Sonar UI.
+- .gitlab-ci/backend-build-pipeline.yml: Handles build and image delivery of the Sonar backend (both API and Agent).
+- .gitlab-ci/deployment-pipeline.yml: Handles serial deployment of all Sonar components.
+
+Feature/bugfix branch pipelines only run build, lint, and test jobs; they don't push any artifacts.
+
+The main branch runs the above jobs, and additionally runs the SAST, deliver, and deploy jobs (which push build artifacts and deployment triggers).
+
+There's two pipeline flavors for the main branch, `dev` and `release`; they both run the same set of jobs, but under different conditions using different artifact tags:
+- Dev pipelines run for non-tagged commits (i.e. merged feature/bugfix branches), tag all artifacts with the short commit SHA, and automatically deploy to the `dev`, `k3d`, and `impl` environments.
+- Release pipelines run for new git semver tags only, tag all artifacts with the version tag, automatically deploy to the `test` environment, and can manually deploy to the `prod` environment via button-click in the GitLab UI.
+```
+
+### fix undefined status bug in health status drawer
+
+* [view commit f6db5db](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/f6db5dbbd6974f7984f2d66bb75a3c1178a6c79e)
+* Author (Committer): btakushi (btakushi)
+* Date: Thu, 22 Jun 2023 09:18:25 -1000
+
+
+
+### update base image to 1.25-alpine-slim
+
+* [view commit df9a981](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/df9a981a2c1eeff02448da8fefb1dcfd5a3f4431)
+* Author (Committer): btakushi (btakushi)
+* Date: Tue, 20 Jun 2023 14:58:48 -1000
+
+
+
+### add exception handling for OperationCanceled and SocketException
+
+* [view commit 1c917a3](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/1c917a368b6a571563efaabfd776d8013cdf18f1)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Thu, 15 Jun 2023 17:58:10 +0000
+
+```
+Closes BATAPI-284
+
+## Description:
+
+* add exception handling for OperationCanceled and SocketException
+```
+
+### Undefine error
+
+* [view commit a3cdf20](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/a3cdf200e7005c99aaa330c9287c9fe8b35974d2)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Wed, 14 Jun 2023 20:31:54 -0700
+
+
+
+### Add conditional to deployment stages
+
+* [view commit 23c1a72](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/23c1a72939a9a5bd9ad20879f5d6205c41b030f6)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Wed, 14 Jun 2023 18:43:14 -0700
+
+
+
+### Change to gitlab-ci.yaml
+
+* [view commit 1a156bd](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/1a156bd32623595b44fe90851c8a03373cadfc15)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Wed, 14 Jun 2023 18:25:18 -0700
+
+
+
+### Update nginx configuration and service path
+
+* [view commit 3a38fe9](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/3a38fe9c655037bfb800c96101d61b89b90a11ff)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Wed, 14 Jun 2023 15:47:26 -0700
+
+
+
+### Add additional environments
+
+* [view commit 52c6f6c](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/52c6f6c4a0fb426bbed773e042277985726567d0)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Tue, 13 Jun 2023 11:56:34 -0700
+
+
+
+### Re-enable existing pipelines
+
+* [view commit 11a294f](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/11a294f9512b604771bfaf97630fcdcd5e308ffa)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Mon, 12 Jun 2023 17:18:54 -0700
+
+
+
+### Address lint
+
+* [view commit 36efc4a](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/36efc4af02c6cd9b5b0330bb5602409e2c9b3c73)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Mon, 12 Jun 2023 16:57:45 -0700
+
+
+
+### Add deployment to dev
+
+* [view commit 67a7714](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/67a771420293e9ec058978de40f2c1dea4abbb21)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Fri, 9 Jun 2023 17:14:56 -0700
+
+
+
+### Add build, test and pipeline-trigger stages
+
+* [view commit 81d9d14](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/81d9d141c5761ae798a7a2e0cdc63ee36250cb76)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Thu, 8 Jun 2023 11:53:19 -0700
+
+
+
+### Made the work factor for ApiKey hashing configurable so the performance impact on tests is less severe.
+
+* [view commit 3ea23ce](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/3ea23ced9b3ff72cc1e3c64749cb154a0f03e95d)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Fri, 9 Jun 2023 23:56:03 -1000
+
+
+
+### refactored authentication and authorization to use ASP.Net conventions.
+
+* [view commit dbf6d14](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/dbf6d144cc0743e7c46103ebc7a7fc4071adc31c)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Tue, 9 May 2023 09:10:10 -1000
+
+
+
+### BATAPI-254: fixed lint issue in Service
+
+* [view commit 8df8597](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/8df8597a665f6329c80cc507f57ac7d5e9f694f6)
+* Author (Committer): Teresa Tran (Teresa Tran)
+* Date: Mon, 12 Jun 2023 16:17:28 -0700
+
+
+
+### BATAPI-254: made health check in status history drawer unclickable
+
+* [view commit b20e603](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/b20e60304c095f5b154760bfaeea3f31b58ac0d4)
+* Author (Committer): Teresa Tran (Teresa Tran)
+* Date: Mon, 12 Jun 2023 15:50:06 -0700
+
+
+
+### BATAPI-254: added newline to tooltip text
+
+* [view commit 541bf2f](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/541bf2fd1bf6d0e9e5f1d2aa859e83fe8a1a03a7)
+* Author (Committer): Teresa Tran (Teresa Tran)
+* Date: Fri, 9 Jun 2023 14:38:44 -0700
+
+
+
+### BATAPI-254: removed StaticTextFontStyle, made font in overviews the same, updated header font
+
+* [view commit b06869b](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/b06869b00dc984c8f5223d3458cb1a30cce672db)
+* Author (Committer): Teresa Tran (Teresa Tran)
+* Date: Fri, 9 Jun 2023 14:14:50 -0700
+
+
+
+### BATAPI-254: updated status history tile and drawer style, added hover tooltip, utc timestamps converted to browser timezone
+
+* [view commit 1242d71](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/1242d715c950a0fb6d226bcd5fd3831b048aeb95)
+* Author (Committer): Teresa Tran (Teresa Tran)
+* Date: Fri, 9 Jun 2023 11:56:01 -0700
+
+
+
+### update readme
+
+* [view commit 6fc805f](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/6fc805f017a66cffc213df872c85c7131afc2fa4)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Thu, 8 Jun 2023 14:43:42 -0700
+
+
+
+### Add UI to ingress
+
+* [view commit bbe67fe](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/bbe67fe41fe293760b6cce3683b763ee7ac3bedc)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Wed, 7 Jun 2023 20:16:39 -0700
+
+
+
+### Update to readme, additional targetPort for UI
+
+* [view commit 1239799](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/1239799089db71525aa9ca4d6898f911d8589969)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Wed, 7 Jun 2023 13:49:16 -0700
+
+
+
+### Adding sonar-ui to k8 env
+
+* [view commit 1c2f4ed](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/1c2f4ed35ebadb796164c9b5966dbad7f096b1ea)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Tue, 6 Jun 2023 18:45:44 -0700
+
+
+
+### Add build Dockerfile, nginx, and update image
+
+* [view commit 40f5e3f](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/40f5e3f10c940542c5631afc96476f30b7a1e606)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Fri, 2 Jun 2023 10:26:43 -0700
+
+
+
+### Added support for ingress in our local K3D cluster setup so we can access services in the cluster without port forwarding
+
+* [view commit e36cad1](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/e36cad139bc010cd9a785388518a5e41cfe06ac4)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Wed, 7 Jun 2023 13:42:48 -1000
+
+
+
+### BATAPI-255: Align health check status details with mockups
+
+* [view commit 9e1a5f1](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/9e1a5f1b65868b65b3abfc905a8617a5f9214947)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Thu, 8 Jun 2023 15:42:57 +0000
+
+```
+Closes BATAPI-255
+
+## Description:
+
+* Moves health check status details view into drawer.
+* Updates styling to match what's in the mockup.
+```
+
+### removed a debug setting ApiKey2 back to ApiKey and a minor code format.  All parameters pushed onto a separate line.
+
+* [view commit 5e52448](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/5e524489c3fcc31e818f6558f3233cb161189409)
+* Author (Committer): Dale O'Neill (Dale O'Neill)
+* Date: Tue, 6 Jun 2023 20:36:06 -0700
+
+
+
+### Removed unused directives.
+
+* [view commit fb9b400](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/fb9b40099de069897f2f5ba17b8d12eca50a9754)
+* Author (Committer): Dale O'Neill (Dale O'Neill)
+* Date: Tue, 6 Jun 2023 10:30:06 -0700
+
+
+
+### Updated ApiKeyDataHelper to support checking for keys to see if they are valid.
+
+* [view commit dfe1d0a](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/dfe1d0afc2ea96878e69d7a69e5d7e288cf676c9)
+* Author (Committer): Dale O'Neill (Dale O'Neill)
+* Date: Tue, 6 Jun 2023 10:06:40 -0700
+
+
+
+### Fixed code formatting. Minor changes.
+
+* [view commit a8708f4](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/a8708f406ae5d72de86f73d20a42636494c00877)
+* Author (Committer): Dale O'Neill (Dale O'Neill)
+* Date: Tue, 6 Jun 2023 09:20:10 -0700
+
+
+
+### Do not return key ID except on creation.  Validate any request against the key with encrypted database keys.
+
+* [view commit 3910ae5](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/3910ae54c4cc559e456f9e504cbd29fc8d19bfaf)
+* Author (Committer): Dale O'Neill (Dale O'Neill)
+* Date: Tue, 6 Jun 2023 09:15:40 -0700
+
+
+
+### BCrypt to key and store in database.
+
+* [view commit 6dc2ddb](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/6dc2ddbc99e363e836a599380c214ee43bdff1c0)
+* Author (Committer): Dale O'Neill (Dale O'Neill)
+* Date: Thu, 1 Jun 2023 21:59:47 -0700
+
+
+
+### Fixed formatter name so the correct formatter is used.
+
+* [view commit d390241](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/d390241ea0f3da2ec53204f26997bcf8b5e62b36)
+* Author (Committer): Dale O'Neill (Dale O'Neill)
+* Date: Tue, 6 Jun 2023 12:53:05 -0700
+
+
+
+### Removed commented code - minor change.
+
+* [view commit e05fdc2](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/e05fdc25aaa332c0d4d200164dcc2263668a1375)
+* Author (Committer): Dale O'Neill (Dale O'Neill)
+* Date: Tue, 6 Jun 2023 10:42:37 -0700
+
+
+
+### Moved Custom Logger from Sona-Agent to sonar core.  Also added cutom formater to sonar-api
+
+* [view commit f536be1](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/f536be1a3e8b45dc75ab57979dcb8fdbf54ea71d)
+* Author (Committer): Dale O'Neill (Dale O'Neill)
+* Date: Tue, 6 Jun 2023 10:38:41 -0700
+
+
+
+### sonar-api: added integration tests for authentication and authorization scenarios.
+
+* [view commit 2b11017](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/2b11017465773a8d32db765243495f8ffbf0bf60)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Fri, 26 May 2023 00:15:31 -1000
+
+
+
+### Update .gitlab-ci.yml
+
+* [view commit 6babdd4](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/6babdd46fef6e5a1c8a532387d062973c129319f)
+* Author (Committer): Bacchus Jackson (Paul Wheeler)
+* Date: Mon, 5 Jun 2023 19:40:32 +0000
+
+
+
+### BATAPI-253: Align Dashboard with Mockups - Service View - navigation and container
+
+* [view commit 2f5f187](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/2f5f187026ca0f77004e7ed0091d82cba4205393)
+* Author (Committer): Teresa Tran (Teresa Tran)
+* Date: Tue, 6 Jun 2023 15:48:50 +0000
+
+```
+Closes BATAPI-253
+
+## Description:
+
+- Add breadcrumb navigation to Service view container
+- Update Service view to align with mockups format
+- When user clicks on a subservice, display that subservice’s info (status history tiles, health checks, and any services) and update breadcrumbs navigation to reflect hierarchy
+```
+
+### remove SIAQs from changelog
+
+* [view commit 2691c13](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/2691c13e6a3f71b600a26f9a1e7542986a84537a)
+* Author (Committer): btakushi (btakushi)
+* Date: Mon, 5 Jun 2023 13:10:46 -1000
+
+
+
+### chart-0.1.0
+
+* [view commit 19ba2e7](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/19ba2e7d7161a8893aa0980938bf020ab1453bec)
+* Author (Committer): btakushi (btakushi)
+* Date: Sun, 4 Jun 2023 20:09:43 -1000
+
+
 ## 0.1.0
 
 ### Align Environments page with mockups
