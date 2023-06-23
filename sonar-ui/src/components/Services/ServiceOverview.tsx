@@ -25,8 +25,7 @@ const ServiceOverview: React.FC<{
   servicePath: string,
   addTimestamp: (tupleData: DateTimeHealthStatusValueTuple, tileId: string, serviceData: ServiceHierarchyHealth) => void,
   closeDrawer: () => void,
-  selectedTileId: string,
-  showDate: boolean
+  selectedTileId: string
 }> =
   ({
     environmentName,
@@ -36,8 +35,7 @@ const ServiceOverview: React.FC<{
     servicePath,
     addTimestamp,
     closeDrawer,
-    selectedTileId,
-    showDate
+    selectedTileId
   }) => {
     const location = useLocation();
     const theme = useTheme();
@@ -57,7 +55,6 @@ const ServiceOverview: React.FC<{
             serviceHealth={serviceHealth}
             environmentName={environmentName}
             tenantName={tenantName}
-            showDate={showDate}
           />
         </div>
         <div>

@@ -1,5 +1,5 @@
 import { Spinner } from '@cmsgov/design-system';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery } from 'react-query';
 import {
   DateTimeHealthStatusValueTuple,
@@ -21,8 +21,7 @@ const StatusHistoryModule: React.FC<{
   servicePath: string,
   serviceHealth: ServiceHierarchyHealth,
   environmentName: string,
-  tenantName: string,
-  showDate: boolean
+  tenantName: string
 }> =
   ({
     addTimestamp,
@@ -31,11 +30,10 @@ const StatusHistoryModule: React.FC<{
     servicePath,
     serviceHealth,
     environmentName,
-    tenantName,
-    showDate
+    tenantName
   }) => {
     const sonarClient = createSonarClient();
-
+    const [diffDates, setDiffDates] = useState(false);
     const { isLoading, data } = useQuery<ServiceHierarchyHealthHistory, Error>(
       ['statusHistory', environmentName, tenantName, servicePath],
       () => sonarClient.getServiceHealthHistory(environmentName, tenantName, servicePath, calculateHistoryRange())
@@ -43,6 +41,23 @@ const StatusHistoryModule: React.FC<{
           return res.data;
         })
     );
+
+    useEffect(() => {
+      let currDate = '';
+      if (data?.aggregateStatus) {
+        for (let i = 0; i < data?.aggregateStatus?.length; i++) {
+          const currItem = data?.aggregateStatus[i];
+          const localDateString = new Date(currItem[0]).toDateString();
+          if (currDate !== '') {
+            if (currDate !== localDateString) {
+              setDiffDates(true);
+              break;
+            }
+          }
+          currDate = localDateString;
+        }
+      }
+    }, [data])
 
     return (
       <>
@@ -60,7 +75,7 @@ const StatusHistoryModule: React.FC<{
                 closeDrawer={closeDrawer}
                 selectedTileId={selectedTileId}
                 serviceHealth={serviceHealth}
-                showDate={showDate}
+                showDate={diffDates}
               />
             ))}
           </div>

@@ -33,8 +33,7 @@ const Service = () => {
   const [statusHistoryViewData, setStatusHistoryViewData] = useState<StatusHistoryView | null >(null);
   const [utcTimestampDate, setUtcTimestampDate] = useState<string>('');
   const [dataHasDifferentDates, setDataHasDifferentDates] = useState(false);
-
-  let firstTimestampDate = ''
+  const [firstTimestampDate, setFirstTimestampDate] = useState<string>('');
 
   useEffect(() => {
     if (statusHistoryViewData) {
@@ -54,7 +53,7 @@ const Service = () => {
   const addTimestamp = (tupleData: DateTimeHealthStatusValueTuple, tileId: string, serviceData: ServiceHierarchyHealth) => {
     setSelectedTileId(tileId);
     if (firstTimestampDate === '') {
-      firstTimestampDate = tupleData[0].split('T')[0];
+      setFirstTimestampDate(tupleData[0].split('T')[0]);
     }
     setUtcTimestampDate(tupleData[0].split('T')[0]);
     const viewData: StatusHistoryView = {
@@ -139,7 +138,6 @@ const Service = () => {
               addTimestamp={addTimestamp}
               closeDrawer={closeDrawer}
               selectedTileId={selectedTileId}
-              showDate={dataHasDifferentDates}
             />
           </div>
         </section>
