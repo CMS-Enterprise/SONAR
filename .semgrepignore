@@ -1,0 +1,4 @@
+# Ignore the artifacts folder when running in our CI pipeline
+.artifacts/
+# Our changelog includes git commit hashes which causes semgrep to have false positives
+CHANGELOG.md
