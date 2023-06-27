@@ -10,7 +10,7 @@ import { createSonarClient } from 'helpers/ApiHelper';
 import { StatusHistoryView } from 'interfaces/global_interfaces';
 import { useEffect, useState } from 'react';
 import { useQuery } from 'react-query';
-import { useLocation, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import StatusHistoryDrawer from '../components/Services/StatusHistory/StatusHistoryDrawer';
 import { ServiceOverviewContext } from 'components/Services/ServiceOverviewContext';
 import HealthStatusDrawer from 'components/Services/HealthStatus/HealthStatusDrawer';
@@ -21,8 +21,7 @@ const Service = () => {
   const environmentName = params.environment as string;
   const tenantName = params.tenant as string;
 
-  const location = useLocation();
-  const servicePath = location.pathname.split('services/')[1];
+  const servicePath = params['*'] || '';
   const serviceList = servicePath.split('/');
   const currentServiceIsRoot = (serviceList.length === 1) ? true : false;
   const serviceName : string = currentServiceIsRoot ?
