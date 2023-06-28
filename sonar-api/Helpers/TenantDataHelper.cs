@@ -95,7 +95,7 @@ public class TenantDataHelper {
 
     if (environment.Name == this._sonarEnvironment) {
       tenantList.Add(this.ToTenantHealth("sonar", environment.Name,
-        this._healthDataHelper.CheckSonarHealth(cancellationToken).Result.ToArray()));
+        (await this._healthDataHelper.CheckSonarHealth(cancellationToken)).ToArray()));
     }
 
     return tenantList;

@@ -202,8 +202,10 @@ public class ServiceDataHelper {
         children: null
       );
 
-    var sonarRootServices = ImmutableHashSet<String>.Empty.Add("postgresql");
-    sonarRootServices = sonarRootServices.Add("prometheus");
+    var sonarRootServices =
+      ImmutableHashSet<String>.Empty
+        .Add("postgresql")
+        .Add("prometheus");
 
     ServiceHierarchyConfiguration sonarConfiguration = new ServiceHierarchyConfiguration(
       ImmutableList.Create(
