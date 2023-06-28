@@ -38,6 +38,7 @@ const StatusHistoryTile: React.FC<{
   return (
     <span css={getTileSpanStyle(theme)} data-tooltip={tooltipText}>
       <Button
+        aria-label={tooltipText}
         variation="solid"
         onClick={handleSelect}
         size="small"
