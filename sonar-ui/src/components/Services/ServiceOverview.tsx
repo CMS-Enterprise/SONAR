@@ -47,18 +47,20 @@ const ServiceOverview: React.FC<{
           tenantName={tenantName}
         />
         <div>
-          <StatusHistoryModule
-            addTimestamp={addTimestamp}
-            closeDrawer={closeDrawer}
-            selectedTileId={selectedTileId}
-            servicePath={servicePath}
-            serviceHealth={serviceHealth}
-            environmentName={environmentName}
-            tenantName={tenantName}
-          />
+          { serviceHealth && (
+            <StatusHistoryModule
+              addTimestamp={addTimestamp}
+              closeDrawer={closeDrawer}
+              selectedTileId={selectedTileId}
+              servicePath={servicePath}
+              serviceHealth={serviceHealth}
+              environmentName={environmentName}
+              tenantName={tenantName}
+            />
+          )}
         </div>
         <div>
-          { serviceConfig && serviceConfig.healthChecks && (
+          { serviceConfig && serviceHealth && (
             <HealthCheckList
               serviceConfig={serviceConfig}
               healthCheckStatuses={serviceHealth.healthChecks}
