@@ -73,7 +73,7 @@ public class HealthCheckQueueProcessorUnitTest {
 
     cancellation.Cancel();
 
-    await Assert.ThrowsAsync<OperationCanceledException>(() => processorTask);
+    await Assert.ThrowsAnyAsync<OperationCanceledException>(() => processorTask);
   }
 
   // Verify max concurrency setting is not exceeded
@@ -143,7 +143,7 @@ public class HealthCheckQueueProcessorUnitTest {
 
     cancellation.Cancel();
 
-    await Assert.ThrowsAsync<OperationCanceledException>(() => processorTask);
+    await Assert.ThrowsAnyAsync<OperationCanceledException>(() => processorTask);
   }
 
   private static readonly HealthStatus[] HealthStatusValues = Enum.GetValues<HealthStatus>();

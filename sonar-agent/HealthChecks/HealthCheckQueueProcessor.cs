@@ -102,7 +102,7 @@ public sealed class HealthCheckQueueProcessor<TDefinition> : IDisposable
   public async Task Run(CancellationToken cancellationToken) {
     var roundRobinOffset = 0;
 
-    while (!cancellationToken.IsCancellationRequested) {
+    while (true) {
       // Wait for there to be a concurrency slots available
       await this._concurrencyLimit.WaitAsync(cancellationToken);
       this._logger.LogTrace(
