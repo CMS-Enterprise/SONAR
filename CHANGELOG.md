@@ -1,3 +1,84 @@
+## 0.1.2
+
+### update service overview to display aggregate status for each child service
+
+* [view commit c5298d5](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/c5298d566268e30c83a4dc77d7a4409234fc9ce8)
+* Author (Committer): Blaise Takushi (Paul Wheeler)
+* Date: Fri, 30 Jun 2023 19:49:30 +0000
+
+```
+Closes BATAPI-300
+```
+
+### Added aria-label attribute to provide the element with its accessible name.
+
+* [view commit af9b40d](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/af9b40d59e5361bb8a22dabb277ddc3c078d7ac3)
+* Author (Committer): Dale O'Neill (Dale O'Neill)
+* Date: Wed, 28 Jun 2023 14:22:55 -0700
+
+
+
+### Additional null checks in UI
+
+* [view commit 1c9ab5e](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/1c9ab5eb7ea008601ccd7eefb94ff4804cceea97)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Wed, 28 Jun 2023 11:15:36 -0700
+
+
+
+### Address PR comments
+
+* [view commit 31c9c5a](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/31c9c5a5338f0362654b00b0435bba57efd91ca3)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Wed, 28 Jun 2023 10:32:38 -0700
+
+
+
+### Create and add sonar-local environment, create new Internal HealthCheck definition, update and add healthModels and configurations
+
+* [view commit 776704b](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/776704b85cb70953fd161d3df29c4237ee739a66)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Thu, 22 Jun 2023 14:16:53 -0700
+
+
+
+### WIP Add sonar to tenants, and service configuration controllers
+
+* [view commit 48819bb](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/48819bb387c55deca09c15fb54565cc1987d9791)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Wed, 21 Jun 2023 21:45:10 -0700
+
+
+
+### Added support for running cypress e2e tests in headless mode.
+
+* [view commit 1f38a9f](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/1f38a9f7e2ef5e8d0c5833c56cb416cedaa151b5)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Wed, 21 Jun 2023 16:00:10 -1000
+
+
+
+### Made some tweaks to the cypress tests.
+
+* [view commit 818ac2f](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/818ac2f1e4610d1c7832df872156e26bf4b7c8fb)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Wed, 21 Jun 2023 15:49:46 -1000
+
+```
+ * Use a unique tenant name to avoid conflicts
+ * Match the tenant name when opening a service in case other tenants
+   with that service name exist
+ * Removed unused helper files and functions
+ * Made some tweaks so that TypeScript validation in the IDE works
+```
+
+### BATAPI-292: Fixed service path parsing (for root service names containing "services") in SONAR UI.
+
+* [view commit 67b6914](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/67b6914c38813f917073cfa9d3d76f249418b00b)
+* Author (Committer): Teresa Tran (Teresa Tran)
+* Date: Tue, 27 Jun 2023 19:31:16 +0000
+
+
 ## 0.1.1
 
 ### SONAR Release v0.1.1
