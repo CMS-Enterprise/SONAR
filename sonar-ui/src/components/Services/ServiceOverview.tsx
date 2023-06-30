@@ -7,6 +7,8 @@ import {
   ServiceHierarchyHealth,
 } from 'api/data-contracts';
 import { DynamicTextFontStyle } from '../../App.Style';
+import HealthStatusBadge from '../Badges/HealthStatusBadge';
+import { getBadgeSpanStyle } from '../Badges/HealthStatusBadge.Style';
 import Breadcrumbs from './Breadcrumbs/Breadcrumbs';
 import StatusHistoryModule from './StatusHistory/StatusHistoryModule';
 import HealthCheckList from './HealthStatus/HealthCheckList';
@@ -39,7 +41,6 @@ const ServiceOverview: React.FC<{
   }) => {
     const location = useLocation();
     const theme = useTheme();
-
     return (
       <div css={getServiceOverviewStyle(theme)}>
         <Breadcrumbs
@@ -72,15 +73,26 @@ const ServiceOverview: React.FC<{
             <div css={ServiceOverviewHeaderStyle}>
               Services
             </div>
-            {serviceConfig.children.map(child => (
+            {serviceConfig.children.map(child => {
+              const childAggStatus = serviceHealth?.children?.find(
+                childObj => childObj.name === child)?.aggregateStatus;
+
+              return (
               <div key={child} css={getSubContainerStyle}>
                 <div css={[getSubsectionContainerStyle, DynamicTextFontStyle]}>
-                  <Link to={location.pathname + "/" + child}>
-                    {child}
-                  </Link>
+                  {childAggStatus && (
+                    <span>
+                      <HealthStatusBadge theme={theme} status={childAggStatus} />
+                    </span>
+                  )}
+                  <span css={childAggStatus && getBadgeSpanStyle}>
+                    <Link to={location.pathname + "/" + child}>
+                      {child}
+                    </Link>
+                  </span>
                 </div>
               </div>
-            ))}
+            )})}
           </>
           : null}
       </div>
