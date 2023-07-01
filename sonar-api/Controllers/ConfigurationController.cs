@@ -79,7 +79,8 @@ public class ConfigurationController : ControllerBase {
     [FromRoute] String tenant,
     CancellationToken cancellationToken = default) {
 
-    if ((environment == this._sonarEnvironment) && (tenant == "sonar")) {
+    if (String.Equals(environment, this._sonarEnvironment, StringComparison.OrdinalIgnoreCase) &&
+      String.Equals(tenant, TenantDataHelper.SonarTenantName, StringComparison.OrdinalIgnoreCase)) {
       var sonarConfiguration = this._serviceDataHelper.FetchSonarConfiguration();
       return this.Ok(sonarConfiguration);
     }

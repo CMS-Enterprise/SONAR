@@ -133,10 +133,11 @@ public class HealthHistoryController : ControllerBase {
     [Optional] Int32? step,
     CancellationToken cancellationToken) {
 
-    (DateTime startTime, DateTime endTime, Int32 stepIncrement) = ValidateParameters(start, end, step);
+    var (startTime, endTime, stepIncrement) = ValidateParameters(start, end, step);
 
     // Checks if polling for Sonar Health
-    if ((environment == this._sonarEnvironment) && (tenant == "sonar")) {
+    if (String.Equals(environment, this._sonarEnvironment, StringComparison.OrdinalIgnoreCase) &&
+      String.Equals(tenant, TenantDataHelper.SonarTenantName, StringComparison.OrdinalIgnoreCase)) {
       var sonarHealth = this.GetSonarHealthHierarchy(servicePath, cancellationToken);
       return this.Ok(sonarHealth);
     }

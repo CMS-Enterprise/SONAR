@@ -201,7 +201,8 @@ public class HealthController : ControllerBase {
     [FromRoute] String tenant,
     CancellationToken cancellationToken) {
 
-    if ((environment == this._sonarEnvironment) && (tenant == "sonar")) {
+    if (String.Equals(environment, this._sonarEnvironment, StringComparison.OrdinalIgnoreCase) &&
+      String.Equals(tenant, TenantDataHelper.SonarTenantName, StringComparison.OrdinalIgnoreCase)) {
       return this.Ok(GetSonarHealth(environment, cancellationToken));
     }
 

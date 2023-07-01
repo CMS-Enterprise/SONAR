@@ -16,6 +16,8 @@ using Environment = Cms.BatCave.Sonar.Data.Environment;
 namespace Cms.BatCave.Sonar.Helpers;
 
 public class TenantDataHelper {
+  public const String SonarTenantName = "sonar";
+
   private readonly DbSet<Environment> _environmentsTable;
   private readonly DbSet<Tenant> _tenantsTable;
   private readonly HealthDataHelper _healthDataHelper;
@@ -63,10 +65,12 @@ public class TenantDataHelper {
   public async Task<IList<TenantHealth>> GetTenantsHealth(
     Environment environment,
     CancellationToken cancellationToken) {
-    var tenantList = new List<TenantHealth>();
-    var res = await this._tenantsTable.ToListAsync(cancellationToken);
-    var tenants = res.Where(t => t.EnvironmentId == environment.Id);
 
+    var tenants = await
+      this._tenantsTable.Where(t => t.EnvironmentId == environment.Id)
+        .ToListAsync(cancellationToken);
+
+    var tenantList = new List<TenantHealth>();
     foreach (var tenant in tenants) {
       var (_, _, services) =
         await this._serviceDataHelper.FetchExistingConfiguration(environment.Name, tenant.Name, cancellationToken);
@@ -89,13 +93,12 @@ public class TenantDataHelper {
       tenantList.Add(this.ToTenantHealth(tenant.Name, environment.Name, rootServiceHealth));
     }
 
-    if (res == null) {
-      throw new ResourceNotFoundException(nameof(Environment), environment.Name);
-    }
-
     if (environment.Name == this._sonarEnvironment) {
-      tenantList.Add(this.ToTenantHealth("sonar", environment.Name,
-        (await this._healthDataHelper.CheckSonarHealth(cancellationToken)).ToArray()));
+      tenantList.Add(this.ToTenantHealth(
+        SonarTenantName,
+        environment.Name,
+        (await this._healthDataHelper.CheckSonarHealth(cancellationToken)).ToArray()
+      ));
     }
 
     return tenantList;

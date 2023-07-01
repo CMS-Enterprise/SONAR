@@ -52,7 +52,9 @@ public class EnvironmentDataHelper {
     }
 
     // Add Sonar-Local Env
-    result.Add(new Environment(new Guid(), this._sonarEnvironment));
+    if (!result.Any(e => String.Equals(e.Name, this._sonarEnvironment, StringComparison.OrdinalIgnoreCase))) {
+      result.Add(new Environment(new Guid(), this._sonarEnvironment));
+    }
 
     return result;
   }
