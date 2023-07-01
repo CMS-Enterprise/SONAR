@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace Cms.BatCave.Sonar.Data;
 
-[Table("User")]
+[Table("user")]
 [Index(nameof(Email), IsUnique = true)]
 public class User {
   [Key]
