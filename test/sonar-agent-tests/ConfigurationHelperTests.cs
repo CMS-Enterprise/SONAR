@@ -35,22 +35,21 @@ public class ConfigurationHelperTests {
     Assert.Equal(expected: 2, tenantConfig.RootServices.Count);
   }
 
-  [Theory(Skip = "BATAPI-298")]
-  [InlineData(
-    "test-inputs/invalid-service-config-empty.json", new[] {
-      "Services: The Services field is required.",
-      "RootServices: The RootServices field is required."
-    })]
-  [InlineData(
-    "test-inputs/invalid-service-config-constraint-violations.json", new[] {
-      "RootServices: One or more of the specified root services do not exist in the services array.",
-      "Services[0].Name: The Name field is required.",
-      "Services[0].HealthChecks[0].Name: The field Name must match the regular expression '^[0-9a-zA-Z_-]+$'."
-    })]
+  /// <summary>
+  /// Some of our validation errors in the agent will occur _post_ serialization, manifested by an exception thrown
+  /// from the ServiceHierarchyConfiguration validator. We want to make sure the service hierarchy configuration
+  /// validator catches these errors gracefully and results in the invalid configuration NOT being added to
+  /// the database.
+  /// </summary>
+  /// <param name="testInputFilePath"></param>
+  [Theory]
+  [InlineData("test-inputs/invalid-service-config-empty.json")]
+  [InlineData("test-inputs/invalid-service-config-constraint-violations.json")]
+  [InlineData("test-inputs/invalid-service-config-missing-keys-1.json")]
+  [InlineData("test-inputs/invalid-service-config-missing-keys-2.json")]
   public async Task
     GetServiceHierarchyConfigurationFromJson_PostSerializationValidationError_ThrowsInvalidConfigurationException(
-      String testInputFilePath,
-      String[] expectedValidationErrors) {
+      String testInputFilePath) {
 
     var configHelper = new ConfigurationHelper(
       new LocalFileServiceConfigSource("test", new[] { testInputFilePath }),
@@ -58,19 +57,10 @@ public class ConfigurationHelperTests {
       Mock.Of<ILogger<ConfigurationHelper>>()
     );
 
-    var exception = await Assert.ThrowsAsync<InvalidConfigurationException>(() =>
-      configHelper.LoadAndValidateJsonServiceConfigAsync(CancellationToken.None)
-    );
+    var configuration = await configHelper.LoadAndValidateJsonServiceConfigAsync(CancellationToken.None);
 
-    Assert.Equal("Invalid JSON service configuration: One or more validation errors occurred.", exception.Message);
-    Assert.True(exception.Data.Contains("errors"));
-    Assert.IsType<List<ValidationResult>>(exception.Data["errors"]);
-    Assert.Equal(expected: expectedValidationErrors.Length, ((List<ValidationResult>)exception.Data["errors"]!).Count);
-    foreach (var expectedError in expectedValidationErrors) {
-      Assert.Contains(
-        (List<ValidationResult>)exception.Data["errors"]!,
-        filter: error => expectedError.Equals(error.ErrorMessage));
-    }
+    Assert.Equal(expected: 0, configuration.Count);
+    Assert.False(configuration.TryGetValue("test", out var tenantConfig));
   }
 
   /// <summary>
@@ -79,15 +69,13 @@ public class ConfigurationHelperTests {
   /// These result in the object not actually getting deserialized, and we want to make sure our deserialization helper
   /// catches these errors, and converts them to <see cref="InvalidConfigurationException"/>s.
   /// </summary>
-  [Theory(Skip = "BATAPI-298")]
-  [InlineData("test-inputs/invalid-service-config-missing-keys-1.json",
-    "Invalid JSON service configuration: One or more validation errors occurred.")]
-  [InlineData("test-inputs/invalid-service-config-missing-keys-2.json",
-    "Invalid JSON service configuration: One or more validation errors occurred.")]
+  [Theory]
+  [InlineData("test-inputs/invalid-service-config-json-format.json",
+    InvalidConfigurationErrorType.InvalidJson)]
   public async Task
     GetServiceHierarchyConfigurationFromJson_DuringSerializationValidationError_ThrowsInvalidConfigurationException(
       String testInputFilePath,
-      String expectedExceptionMessage) {
+      InvalidConfigurationErrorType expectedExceptionType) {
 
     var configHelper = new ConfigurationHelper(
       new LocalFileServiceConfigSource("test", new[] { testInputFilePath }),
@@ -99,7 +87,6 @@ public class ConfigurationHelperTests {
       configHelper.LoadAndValidateJsonServiceConfigAsync(CancellationToken.None)
     );
 
-    Assert.Equal(expectedExceptionMessage, exception.Message);
+    Assert.Equal(expectedExceptionType, exception.ErrorType);
   }
-
 }
