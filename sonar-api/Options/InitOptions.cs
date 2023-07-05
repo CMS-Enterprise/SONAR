@@ -10,7 +10,7 @@ public class InitOptions : CommonOptions {
   [Option('f', "force")]
   public Boolean Force { get; }
 
-  public InitOptions(Boolean force) {
+  public InitOptions(Boolean force, String appSettingsLocation) : base(appSettingsLocation) {
     this.Force = force;
   }
 }

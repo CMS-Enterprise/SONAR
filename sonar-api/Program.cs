@@ -75,7 +75,8 @@ public class Program {
           options.SchemaFilter<TupleSchemaFilter>();
           options.DocumentFilter<FillInVersionParameterFilter>();
         });
-
+        // apply common opts
+        ApplyCommonOptions(builder, opts);
         builder.WebHost.UseUrls("http://0.0.0.0:8081");
 
         await using var app = BuildApplication(builder);
@@ -83,6 +84,7 @@ public class Program {
       },
       // init command
       async opts => {
+        ApplyCommonOptions(builder, opts);
         await using var app = builder.Build();
         return await RunInit(app, opts);
       }
@@ -275,5 +277,11 @@ public class Program {
     }
 
     return 0;
+  }
+
+  private static void ApplyCommonOptions(WebApplicationBuilder builder, CommonOptions options) {
+    if (!String.IsNullOrEmpty(options.AppSettingsLocation)) {
+      builder.Configuration.AddJsonFile(Path.Combine(options.AppSettingsLocation, "appsettings.json"), optional: true);
+    }
   }
 }
