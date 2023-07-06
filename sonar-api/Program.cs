@@ -8,6 +8,7 @@ using Asp.Versioning;
 using Cms.BatCave.Sonar.Authentication;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
+using Cms.BatCave.Sonar.Data.Services;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Json;
 using Cms.BatCave.Sonar.Logger;
@@ -19,7 +20,6 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -34,8 +34,7 @@ public class Program {
     var builder = Program.CreateWebApplicationBuilder(args, new Dependencies());
 
     return await HandleCommandLine(args,
-      // serve command
-      async opts => {
+      runServe: async opts => {
         // Configure additional services that are only available when running the serve command.
         // Note: anything registered or configured here is not available when running unit tests.
 
@@ -82,11 +81,13 @@ public class Program {
         await using var app = BuildApplication(builder);
         return await RunServe(app, opts);
       },
-      // init command
-      async opts => {
-        ApplyCommonOptions(builder, opts);
+      runInit: async opts => {
         await using var app = builder.Build();
         return await RunInit(app, opts);
+      },
+      runMigrateDb: async opts => {
+        await using var app = builder.Build();
+        return await RunMigrateDb(app, opts);
       }
     );
   }
@@ -199,11 +200,11 @@ public class Program {
     return app;
   }
 
-
   private static Task<Int32> HandleCommandLine(
     String[] args,
     Func<ServeOptions, Task<Int32>> runServe,
-    Func<InitOptions, Task<Int32>> runInit) {
+    Func<InitOptions, Task<Int32>> runInit,
+    Func<MigrateDbOptions, Task<Int32>> runMigrateDb) {
 
     var useDefaultVerb = ShouldUseDefaultVerb(args);
 
@@ -213,11 +214,13 @@ public class Program {
       settings.HelpWriter = Console.Error;
     });
     var parserResult =
-      parser.ParseArguments<ServeOptions, InitOptions>(useDefaultVerb ? args.Prepend(ServeOptions.VerbName) : args);
+      parser.ParseArguments<ServeOptions, InitOptions, MigrateDbOptions>(
+        useDefaultVerb ? args.Prepend(ServeOptions.VerbName) : args);
     return parserResult
       .MapResult(
         runServe,
         runInit,
+        runMigrateDb,
         _ => Task.FromResult<Int32>(1)
       );
   }
@@ -230,7 +233,7 @@ public class Program {
       settings.IgnoreUnknownArguments = true;
       settings.AutoHelp = false;
     });
-    var preParseResult = preParser.ParseArguments<ServeOptions, InitOptions>(args);
+    var preParseResult = preParser.ParseArguments<ServeOptions, InitOptions, MigrateDbOptions>(args);
     var preParseErrors = preParseResult.Errors?.ToList();
     var useDefaultVerb =
       preParseErrors is { Count: 1 } &&
@@ -255,6 +258,10 @@ public class Program {
     return 0;
   }
 
+  // TODO BATAPI-325 Remove this. This uses DB creation method that is mutually exclusive from migrations.
+  // It's useful to keep around during development for validating the different schemas generated
+  // by this method and the migration method, but this should be removed along with its associated
+  // InitOptions class and all dependent code once we've proven out the various migration scenarios.
   private static async Task<Int32> RunInit(IHost app, InitOptions opts) {
     using var scope = app.Services.CreateScope();
 
@@ -283,5 +290,23 @@ public class Program {
     if (!String.IsNullOrEmpty(options.AppSettingsLocation)) {
       builder.Configuration.AddJsonFile(Path.Combine(options.AppSettingsLocation, "appsettings.json"), optional: true);
     }
+  }
+
+  private static async Task<Int32> RunMigrateDb(WebApplication app, MigrateDbOptions opts) {
+    await using var scope = app.Services.CreateAsyncScope();
+    var dbMigrationService = scope.ServiceProvider.GetRequiredService<IDbMigrationService>();
+
+    if (opts.ReCreate) {
+      if (app.Environment.IsDevelopment()) {
+        await dbMigrationService.ReCreateDbAsync();
+      } else {
+        throw new InvalidOperationException("Database re-creation is only allowed in development environments!");
+      }
+    }
+
+    await dbMigrationService.ProvisionMigrationsHistoryTable();
+    await dbMigrationService.MigrateDbAsync();
+
+    return 0;
   }
 }
