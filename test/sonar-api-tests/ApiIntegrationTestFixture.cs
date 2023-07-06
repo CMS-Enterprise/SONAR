@@ -115,7 +115,7 @@ public class ApiIntegrationTestFixture : IDisposable, ILoggerProvider {
 
   public RequestBuilder CreateAuthenticatedRequest(
     String url,
-    ApiKeyType type,
+    PermissionType type,
     String? environment = null,
     String? tenant = null) {
 
@@ -125,7 +125,7 @@ public class ApiIntegrationTestFixture : IDisposable, ILoggerProvider {
   }
 
   public ApiKeyConfiguration CreateApiKey(
-    ApiKeyType type,
+    PermissionType type,
     String? environment = null,
     String? tenant = null) {
 

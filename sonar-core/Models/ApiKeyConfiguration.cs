@@ -9,7 +9,7 @@ public record ApiKeyConfiguration {
   public ApiKeyConfiguration(
     Guid Id,
     String apiKey,
-    ApiKeyType apiKeyType,
+    PermissionType apiKeyType,
     String? environment = null,
     String? tenant = null) {
 
@@ -26,7 +26,7 @@ public record ApiKeyConfiguration {
   public String ApiKey { get; init; }
 
   [Required]
-  public ApiKeyType ApiKeyType { get; init; }
+  public PermissionType ApiKeyType { get; init; }
 
   public String? Environment { get; init; }
 

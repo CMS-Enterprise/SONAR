@@ -87,7 +87,7 @@ public class HealthCheckDataIntegrationTests : ApiControllerTestsBase {
     var response = await
       this.Fixture.CreateAuthenticatedRequest(
           $"/api/v2/health-check-data/{testEnvironment}/tenants/{testTenant}/services/{TestRootServiceName}",
-          ApiKeyType.Admin,
+          PermissionType.Admin,
           testEnvironment)
         .And(req => {
           req.Content = ToJsonContent(new ServiceHealthData(
@@ -117,7 +117,7 @@ public class HealthCheckDataIntegrationTests : ApiControllerTestsBase {
     var response = await
       this.Fixture.CreateAuthenticatedRequest(
           $"/api/v2/health-check-data/{testEnvironment}/tenants/{testTenant}/services/{TestRootServiceName}",
-          ApiKeyType.Admin,
+          PermissionType.Admin,
           testEnvironment,
           testTenant)
         .And(req => {
@@ -148,7 +148,7 @@ public class HealthCheckDataIntegrationTests : ApiControllerTestsBase {
     var response = await
       this.Fixture.CreateAuthenticatedRequest(
           $"/api/v2/health-check-data/{testEnvironment}/tenants/{testTenant}/services/{TestRootServiceName}",
-          ApiKeyType.Standard)
+          PermissionType.Standard)
         .And(req => {
           req.Content = ToJsonContent(new ServiceHealthData(
             ImmutableDictionary<String, TimeSeries>.Empty.Add(
@@ -234,7 +234,7 @@ public class HealthCheckDataIntegrationTests : ApiControllerTestsBase {
     var response = await
       this.Fixture.CreateAuthenticatedRequest(
           $"/api/v2/health-check-data/{testEnvironment}/tenants/{testTenant}/services/{TestRootServiceName}",
-          ApiKeyType.Admin,
+          PermissionType.Admin,
           testEnvironment,
           testTenant)
         .And(req => {
@@ -253,7 +253,7 @@ public class HealthCheckDataIntegrationTests : ApiControllerTestsBase {
     response = await
       this.Fixture.CreateAuthenticatedRequest(
           $"/api/v2/health-check-data/{testEnvironment}/tenants/{testTenant}/services/{TestRootServiceName}/health-check/{TestHealthCheckName}",
-          ApiKeyType.Standard,
+          PermissionType.Standard,
           testEnvironment,
           testTenant)
         .GetAsync();

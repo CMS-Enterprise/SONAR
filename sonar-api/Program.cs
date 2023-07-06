@@ -135,7 +135,7 @@ public class Program {
 
     var adminPolicy =
       new AuthorizationPolicyBuilder()
-        .RequireClaim(SonarIdentityClaims.Type, ApiKeyType.Admin.ToString())
+        .RequireClaim(SonarIdentityClaims.Type, PermissionType.Admin.ToString())
         .AddRequirements(new EnvironmentTenantScopeRequirement())
         .Build();
 
@@ -146,7 +146,7 @@ public class Program {
 
     var allowScopedAdminPolicy =
       new AuthorizationPolicyBuilder()
-        .RequireClaim(SonarIdentityClaims.Type, ApiKeyType.Admin.ToString())
+        .RequireClaim(SonarIdentityClaims.Type, PermissionType.Admin.ToString())
         .Build();
 
     builder.Services

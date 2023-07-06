@@ -365,7 +365,7 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
     var getResponse = await
       this.Fixture.CreateAuthenticatedRequest(
           $"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?start={start}&end={end}&step={Step}",
-          ApiKeyType.Standard,
+          PermissionType.Standard,
           testEnvironment,
           testTenant)
         .GetAsync();

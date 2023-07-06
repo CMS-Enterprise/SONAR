@@ -750,7 +750,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
     var response = await
       this.Fixture.CreateAuthenticatedRequest(
           $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{TestRootServiceName}",
-          ApiKeyType.Admin,
+          PermissionType.Admin,
           testEnvironment)
         .And(req => {
           req.Content = JsonContent.Create(new ServiceHealth(
@@ -780,7 +780,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
     var response = await
       this.Fixture.CreateAuthenticatedRequest(
           $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{TestRootServiceName}",
-          ApiKeyType.Admin,
+          PermissionType.Admin,
           testEnvironment,
           testTenant)
         .And(req => {
@@ -838,7 +838,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
     var response = await
       this.Fixture.CreateAuthenticatedRequest(
           $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{TestRootServiceName}",
-          ApiKeyType.Standard,
+          PermissionType.Standard,
           testEnvironment,
           testTenant)
         .And(req => {
@@ -870,7 +870,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
     var response = await
       this.Fixture.CreateAuthenticatedRequest(
           $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{TestRootServiceName}",
-          ApiKeyType.Standard,
+          PermissionType.Standard,
           testEnvironment,
           otherTenant)
         .And(req => {
@@ -912,7 +912,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
     var getResponse = await
       this.Fixture.CreateAuthenticatedRequest(
           $"/api/v2/health/{testEnvironment}/tenants/{testTenant}",
-          ApiKeyType.Standard,
+          PermissionType.Standard,
           testEnvironment)
         .AddHeader(name: "Accept", value: "application/json")
         .GetAsync();
@@ -932,7 +932,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
     var getResponse = await
       this.Fixture.CreateAuthenticatedRequest(
           $"/api/v2/health/{testEnvironment}/tenants/{testTenant}",
-          ApiKeyType.Standard,
+          PermissionType.Standard,
           otherEnvironment)
         .AddHeader(name: "Accept", value: "application/json")
         .GetAsync();
@@ -966,7 +966,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
     var getResponse = await
       this.Fixture.CreateAuthenticatedRequest(
           $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{TestRootServiceName}",
-          ApiKeyType.Standard,
+          PermissionType.Standard,
           testEnvironment)
         .AddHeader(name: "Accept", value: "application/json")
         .GetAsync();
@@ -986,7 +986,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
     var getResponse = await
       this.Fixture.CreateAuthenticatedRequest(
           $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{TestRootServiceName}",
-          ApiKeyType.Standard,
+          PermissionType.Standard,
           otherEnvironment)
         .AddHeader(name: "Accept", value: "application/json")
         .GetAsync();

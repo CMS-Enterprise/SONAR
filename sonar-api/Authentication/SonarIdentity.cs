@@ -10,7 +10,7 @@ namespace Cms.BatCave.Sonar.Authentication;
 
 public class SonarIdentity : ClaimsIdentity {
   public Guid ApiKeyId { get; }
-  public ApiKeyType ApiKeyType { get; }
+  public PermissionType ApiKeyType { get; }
 
   public Guid? EnvironmentId { get; }
   public Guid? TenantId { get; }

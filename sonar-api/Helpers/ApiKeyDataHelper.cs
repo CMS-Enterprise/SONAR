@@ -32,7 +32,7 @@ public class ApiKeyDataHelper {
       return new ApiKey(
         Guid.Empty,
         defaultApiKey,
-        ApiKeyType.Admin,
+        PermissionType.Admin,
         environmentId: null,
         tenantId: null
       );

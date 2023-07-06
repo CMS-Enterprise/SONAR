@@ -7,7 +7,7 @@ namespace Cms.BatCave.Sonar.Models;
 public record ApiKeyDetails {
 
   public ApiKeyDetails(
-    ApiKeyType apiKeyType,
+    PermissionType apiKeyType,
     String? environment = null,
     String? tenant = null
     ) {
@@ -18,7 +18,7 @@ public record ApiKeyDetails {
   }
 
   [Required]
-  public ApiKeyType ApiKeyType { get; init; }
+  public PermissionType ApiKeyType { get; init; }
 
   public String? Environment { get; init; }
 

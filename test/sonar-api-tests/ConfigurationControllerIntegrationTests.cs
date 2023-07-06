@@ -907,7 +907,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       this.Fixture
         .CreateAuthenticatedRequest(
           $"/api/v2/config/{testEnvironment}/tenants/{testTenant}",
-          ApiKeyType.Admin)
+          PermissionType.Admin)
         .And(req => {
           req.Content = JsonContent.Create(TestRootChildConfiguration);
         })
@@ -937,7 +937,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       this.Fixture
         .CreateAuthenticatedRequest(
           $"/api/v2/config/{testEnvironment}/tenants/{testTenant}",
-          ApiKeyType.Admin,
+          PermissionType.Admin,
           testEnvironment)
         .And(req => {
           req.Content = JsonContent.Create(TestRootChildConfiguration);
@@ -985,7 +985,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       this.Fixture
         .CreateAuthenticatedRequest(
           $"/api/v2/config/{testEnvironment}/tenants/{testTenant}",
-          ApiKeyType.Standard,
+          PermissionType.Standard,
           testEnvironment)
         .And(req => {
           req.Content = JsonContent.Create(TestRootChildConfiguration);
@@ -1017,7 +1017,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       this.Fixture
         .CreateAuthenticatedRequest(
           $"/api/v2/config/{testEnvironment}/tenants/{testTenant}",
-          ApiKeyType.Admin,
+          PermissionType.Admin,
           otherEnvironment)
         .And(req => {
           req.Content = JsonContent.Create(TestRootChildConfiguration);
@@ -1053,7 +1053,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       await this.Fixture.CreateEmptyTestConfiguration();
 
     var updateConfigResponse = await
-      this.Fixture.CreateAuthenticatedRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}", ApiKeyType.Admin)
+      this.Fixture.CreateAuthenticatedRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}", PermissionType.Admin)
         .And(req => {
           req.Content = JsonContent.Create(
             TestRootChildConfiguration);
@@ -1071,7 +1071,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       await this.Fixture.CreateEmptyTestConfiguration();
 
     var updateConfigResponse = await
-      this.Fixture.CreateAuthenticatedRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}", ApiKeyType.Admin, existingEnvironment)
+      this.Fixture.CreateAuthenticatedRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}", PermissionType.Admin, existingEnvironment)
         .And(req => {
           req.Content = JsonContent.Create(
             TestRootChildConfiguration);
@@ -1089,7 +1089,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       await this.Fixture.CreateEmptyTestConfiguration();
 
     var updateConfigResponse = await
-      this.Fixture.CreateAuthenticatedRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}", ApiKeyType.Standard, existingEnvironment)
+      this.Fixture.CreateAuthenticatedRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}", PermissionType.Standard, existingEnvironment)
         .And(req => {
           req.Content = JsonContent.Create(
             TestRootChildConfiguration);
@@ -1108,7 +1108,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
     var (otherEnvironment, _) = await this.Fixture.CreateEmptyTestConfiguration();
 
     var updateConfigResponse = await
-      this.Fixture.CreateAuthenticatedRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}", ApiKeyType.Admin, otherEnvironment)
+      this.Fixture.CreateAuthenticatedRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}", PermissionType.Admin, otherEnvironment)
         .And(req => {
           req.Content = JsonContent.Create(
             TestRootChildConfiguration);
@@ -1162,7 +1162,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       await this.Fixture.CreateEmptyTestConfiguration();
 
     var updateConfigResponse = await
-      this.Fixture.CreateAuthenticatedRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}", ApiKeyType.Admin)
+      this.Fixture.CreateAuthenticatedRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}", PermissionType.Admin)
         .And(req => {
           req.Content = JsonContent.Create(
             TestRootChildConfiguration);
@@ -1180,7 +1180,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       await this.Fixture.CreateEmptyTestConfiguration();
 
     var updateConfigResponse = await
-      this.Fixture.CreateAuthenticatedRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}", ApiKeyType.Admin, existingEnvironment)
+      this.Fixture.CreateAuthenticatedRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}", PermissionType.Admin, existingEnvironment)
         .And(req => {
           req.Content = JsonContent.Create(
             TestRootChildConfiguration);
@@ -1198,7 +1198,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       await this.Fixture.CreateEmptyTestConfiguration();
 
     var updateConfigResponse = await
-      this.Fixture.CreateAuthenticatedRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}", ApiKeyType.Standard, existingEnvironment)
+      this.Fixture.CreateAuthenticatedRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}", PermissionType.Standard, existingEnvironment)
         .And(req => {
           req.Content = JsonContent.Create(
             TestRootChildConfiguration);
@@ -1217,7 +1217,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
     var (otherEnvironment, _) = await this.Fixture.CreateEmptyTestConfiguration();
 
     var updateConfigResponse = await
-      this.Fixture.CreateAuthenticatedRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}", ApiKeyType.Admin, otherEnvironment)
+      this.Fixture.CreateAuthenticatedRequest($"/api/v2/config/{existingEnvironment}/tenants/{existingTenant}", PermissionType.Admin, otherEnvironment)
         .And(req => {
           req.Content = JsonContent.Create(
             TestRootChildConfiguration);
@@ -1256,7 +1256,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
     var getResponse = await
       this.Fixture.CreateAuthenticatedRequest(
           $"/api/v2/config/{testEnvironment}/tenants/{testTenant}",
-          ApiKeyType.Standard,
+          PermissionType.Standard,
           testEnvironment)
         .AddHeader(name: "Accept", value: "application/json")
         .GetAsync();
@@ -1277,7 +1277,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
     var getResponse = await
       this.Fixture.CreateAuthenticatedRequest(
           $"/api/v2/config/{testEnvironment}/tenants/{testTenant}",
-          ApiKeyType.Standard,
+          PermissionType.Standard,
           otherEnvironment)
         .AddHeader(name: "Accept", value: "application/json")
         .GetAsync();

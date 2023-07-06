@@ -14,14 +14,14 @@ public class ApiKey {
 
   [StringLength(74)] // BCrypt - Base64 encoded String for 32 bytes
   public String Key { get; init; }
-  public ApiKeyType Type { get; set; }
+  public PermissionType Type { get; set; }
   public Guid? EnvironmentId { get; set; }
   public Guid? TenantId { get; set; }
 
   public ApiKey(
     Guid id,
     String key,
-    ApiKeyType type,
+    PermissionType type,
     Guid? environmentId,
     Guid? tenantId) {
 
@@ -35,7 +35,7 @@ public class ApiKey {
   public static ApiKey New(
     Guid id,
     String key,
-    ApiKeyType type,
+    PermissionType type,
     Guid? environmentId,
     Guid? tenantId) =>
     new ApiKey(id, key, type, environmentId, tenantId);
