@@ -5,16 +5,13 @@ using Microsoft.AspNetCore.Http;
 
 namespace Cms.BatCave.Sonar.Middlewares;
 
-public class ProblemDetailExceptionMiddleware {
-  private readonly RequestDelegate _next;
-
-  public ProblemDetailExceptionMiddleware(RequestDelegate next) {
-    this._next = next;
+public class ProblemDetailExceptionMiddleware : Middleware {
+  public ProblemDetailExceptionMiddleware(RequestDelegate next) : base(next) {
   }
 
-  public async Task InvokeAsync(HttpContext context) {
+  public override async Task InvokeAsync(HttpContext context) {
     try {
-      await this._next(context);
+      await this.Next(context);
     } catch (ProblemDetailException ex) {
       context.Response.StatusCode = (Int32)ex.Status;
       await context.Response.WriteAsJsonAsync(ex.ToProblemDetails(), context.RequestAborted);

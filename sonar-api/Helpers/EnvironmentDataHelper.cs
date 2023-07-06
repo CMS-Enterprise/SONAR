@@ -27,16 +27,22 @@ public class EnvironmentDataHelper {
     CancellationToken cancellationToken) {
 
     // Check if the environment exists
-    var result =
-      await this._environmentsTable
-        .Where(e => e.Name == environmentName)
-        .SingleOrDefaultAsync(cancellationToken);
+    var result = await this.TryFetchEnvironmentAsync(environmentName, cancellationToken);
 
     if (result == null) {
       throw new ResourceNotFoundException(nameof(Environment), environmentName);
     }
 
     return result;
+  }
+
+  public async Task<Environment?> TryFetchEnvironmentAsync(
+    String environmentName,
+    CancellationToken cancellationToken) {
+
+    return await this._environmentsTable
+      .Where(e => e.Name == environmentName)
+      .SingleOrDefaultAsync(cancellationToken);
   }
 
   public async Task<IList<Environment>> FetchAllExistingEnvAsync(

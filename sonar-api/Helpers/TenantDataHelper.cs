@@ -43,23 +43,32 @@ public class TenantDataHelper {
     CancellationToken cancellationToken) {
 
     // Check if the environment and tenant exist
-    var result =
-      await this._environmentsTable
-        .Where(e => e.Name == environmentName)
-        .LeftJoin(
-          this._tenantsTable.Where(t => t.Name == tenantName),
-          leftKeySelector: e => e.Id,
-          rightKeySelector: t => t.EnvironmentId,
-          resultSelector: (env, t) => new { Environment = env, Tenant = t })
-        .SingleOrDefaultAsync(cancellationToken);
+    var (environment, tenant) = await this.TryFetchTenantAsync(environmentName, tenantName, cancellationToken);
 
-    if (result == null) {
+    if (environment == null) {
       throw new ResourceNotFoundException(nameof(Environment), environmentName);
-    } else if (result.Tenant == null) {
+    } else if (tenant == null) {
       throw new ResourceNotFoundException(nameof(Tenant), tenantName);
     }
 
-    return result.Tenant;
+    return tenant;
+  }
+
+  public async Task<(Environment?, Tenant?)> TryFetchTenantAsync(
+    String environmentName,
+    String tenantName,
+    CancellationToken cancellationToken) {
+
+    var result = await this._environmentsTable
+      .Where(e => e.Name == environmentName)
+      .LeftJoin(
+        this._tenantsTable.Where(t => t.Name == tenantName),
+        leftKeySelector: e => e.Id,
+        rightKeySelector: t => t.EnvironmentId,
+        resultSelector: (env, t) => new { Environment = env, Tenant = t })
+      .SingleOrDefaultAsync(cancellationToken);
+
+    return (result?.Environment, result?.Tenant);
   }
 
   public async Task<IList<TenantHealth>> GetTenantsHealth(

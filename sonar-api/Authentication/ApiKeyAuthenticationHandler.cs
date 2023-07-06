@@ -10,12 +10,12 @@ using Microsoft.Extensions.Options;
 
 namespace Cms.BatCave.Sonar.Authentication;
 
-public class ApiKeyHeaderAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions> {
-  public const String SchemeName = "ApiKeyHeader";
+public class ApiKeyAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions> {
+  public const String SchemeName = "ApiKey";
 
   private readonly ApiKeyDataHelper _apiKeyHelper;
 
-  public ApiKeyHeaderAuthenticationHandler(
+  public ApiKeyAuthenticationHandler(
     ApiKeyDataHelper apiKeyHelper,
     IOptionsMonitor<AuthenticationSchemeOptions> options,
     ILoggerFactory logger,

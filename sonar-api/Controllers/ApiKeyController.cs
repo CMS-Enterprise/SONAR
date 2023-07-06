@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Security.Claims;
 using System.Threading;
@@ -22,7 +21,7 @@ namespace Cms.BatCave.Sonar.Controllers;
 
 [ApiController]
 [ApiVersion(2)]
-[Authorize(Policy = "AllowScopedAdmin")]
+[Authorize(Policy = "AllowAnyScope")]
 [Route("api/v{version:apiVersion}/keys")]
 public class ApiKeyController : ControllerBase {
   private const String ApiKeyHeader = "ApiKey";
@@ -127,20 +126,32 @@ public class ApiKeyController : ControllerBase {
   public async Task<ActionResult> GetApiKeys(
     CancellationToken cancellationToken = default) {
 
-    List<ApiKeyConfiguration> results;
-    if (this.User.IsInRole("Admin")) {
-      var (environmentId, tenantId) = this.User.GetScope();
-      if (environmentId.HasValue) {
-        if (tenantId.HasValue) {
-          results = await this._apiKeys.GetTenantKeysAsync(environmentId.Value, tenantId.Value, cancellationToken);
-        } else {
-          results = await this._apiKeys.GetEnvKeysAsync(environmentId.Value, cancellationToken);
-        }
-      } else {
+    List<ApiKeyConfiguration> results = new();
+    var hasAdminAccess = false;
 
-        results = await this._apiKeys.GetKeysAsync(cancellationToken);
+    foreach (var accessScope in this.User.GetEffectivePermissions()) {
+      if (accessScope.HasPermission(PermissionType.Admin)) {
+        hasAdminAccess = true;
+
+        if (accessScope.EnvironmentId.HasValue) {
+          if (accessScope.TenantId.HasValue) {
+            results.AddRange(await this._apiKeys.GetTenantKeysAsync(
+              accessScope.EnvironmentId.Value,
+              accessScope.TenantId.Value,
+              cancellationToken
+            ));
+          } else {
+            results.AddRange(await this._apiKeys.GetEnvKeysAsync(accessScope.EnvironmentId.Value, cancellationToken));
+          }
+        } else {
+          // Since the user has global access this set of keys should cover everything they have
+          // access to (no need to AddRange)
+          results = await this._apiKeys.GetKeysAsync(cancellationToken);
+        }
       }
-    } else {
+    }
+
+    if (!hasAdminAccess) {
       throw new ForbiddenException($"Api Key is not authorized to list API Keys.");
     }
 
@@ -162,27 +173,24 @@ public class ApiKeyController : ControllerBase {
     Guid? tenantScope,
     String activity) {
 
-    //If scope of work requires global admin, make sure authenticated key has global admin scope.
-    if ((environmentScope == null) && (tenantScope == null)) {
-      if (!principal.IsGlobal()) {
-        throw new ForbiddenException(
-          $"Api Key not authorized to {activity}, must have global Admin scope.");
-      }
-    } else {
-      var (environmentId, tenantId) = principal.GetScope();
-      if (environmentId.HasValue) {
-        // Make sure that the Api Key being created is within the scope that the API client is restricted to
-        if (tenantId.HasValue) {
-          if (tenantId != tenantScope) {
-            throw new ForbiddenException(
-              $"Api Key not authorized to {activity}, because it has a different Tenant scope."
-            );
-          }
-        } else if (environmentId != environmentScope) {
+    // Make sure that the Api Key being created is within a scope that the API client has Admin access to
+    if (environmentScope.HasValue) {
+      if (tenantScope.HasValue) {
+        if (!principal.HasTenantAccess(environmentScope.Value, tenantScope.Value, PermissionType.Admin)) {
           throw new ForbiddenException(
-            $"Api Key not authorized to {activity} because it has a different Environment scope."
+            $"Api Key not authorized to {activity}, because it has a different Tenant scope."
           );
         }
+      } else if (!principal.HasEnvironmentAccess(environmentScope.Value, PermissionType.Admin)) {
+        throw new ForbiddenException(
+          $"Api Key not authorized to {activity} because it has a different Environment scope."
+        );
+      }
+    } else {
+      //If scope of work requires global admin, make sure authenticated key has global admin scope.
+      if (!principal.HasGlobalAccess(PermissionType.Admin)) {
+        throw new ForbiddenException(
+          $"Api Key not authorized to {activity}, must have global Admin scope.");
       }
     }
   }

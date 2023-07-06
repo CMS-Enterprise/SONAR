@@ -8,8 +8,10 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Asp.Versioning;
+using Cms.BatCave.Sonar.Authentication;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
+using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Extensions;
 using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
@@ -85,9 +87,17 @@ public class ConfigurationController : ControllerBase {
       return this.Ok(sonarConfiguration);
     }
 
-    var isAuthorized = this.User.IsInRole("Admin");
 
-    var (_, _, serviceMap) = await this._serviceDataHelper.FetchExistingConfiguration(environment, tenant, cancellationToken);
+
+    var (envEntity, tenantEntity, serviceMap) =
+      await this._serviceDataHelper.FetchExistingConfiguration(
+        environment,
+        tenant,
+        cancellationToken
+      );
+
+    var isAuthorized =
+      this.User.HasTenantAccess(envEntity.Id, tenantEntity.Id, PermissionType.Admin);
 
     var serviceRelationshipsByParent =
       (await this._serviceDataHelper.FetchExistingRelationships(serviceMap.Keys, cancellationToken))

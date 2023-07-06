@@ -1,41 +1,50 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
 using System.Security.Claims;
 using Cms.BatCave.Sonar.Data;
-using Cms.BatCave.Sonar.Enumeration;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace Cms.BatCave.Sonar.Authentication;
 
 public class SonarIdentity : ClaimsIdentity {
-  public Guid ApiKeyId { get; }
-  public PermissionType ApiKeyType { get; }
+  private readonly Guid _subjectId;
+  private readonly SonarIdentityType _type;
 
-  public Guid? EnvironmentId { get; }
-  public Guid? TenantId { get; }
+  private readonly IImmutableList<ScopedPermission> _access;
 
   public override IEnumerable<Claim> Claims {
     get {
-      yield return new Claim(SonarIdentityClaims.Subject, this.ApiKeyId.ToString());
-      yield return new Claim(SonarIdentityClaims.Type, this.ApiKeyType.ToString());
+      yield return new Claim(SonarIdentityClaims.SubjectType, this._type.ToString());
+      yield return new Claim(SonarIdentityClaims.SubjectId, this._subjectId.ToString());
 
-      if (this.EnvironmentId.HasValue) {
-        yield return new Claim(SonarIdentityClaims.Environment, this.EnvironmentId.Value.ToString());
-      }
-
-      if (this.TenantId.HasValue) {
-        yield return new Claim(SonarIdentityClaims.Tenant, this.TenantId.Value.ToString());
+      foreach (var access in this._access) {
+        yield return new Claim(
+          SonarIdentityClaims.Access,
+          access.ToString()
+        );
       }
     }
   }
 
   public SonarIdentity(ApiKey apiKey) :
-    base(authenticationType: "sonar", nameType: null, roleType: SonarIdentityClaims.Type) {
+    base(authenticationType: "apikey", nameType: null, roleType: null) {
 
-    this.ApiKeyId = apiKey.Id;
-    this.ApiKeyType = apiKey.Type;
-    this.EnvironmentId = apiKey.EnvironmentId;
-    this.TenantId = apiKey.TenantId;
+    this._type = SonarIdentityType.ApiKey;
+    this._subjectId = apiKey.Id;
+    this._access =
+      ImmutableList.Create(
+        new ScopedPermission(apiKey.Type, apiKey.EnvironmentId, apiKey.TenantId)
+      );
+  }
+
+  public SonarIdentity(User user, IEnumerable<UserPermission> permissions) :
+    base(authenticationType: "sso", nameType: null, roleType: null) {
+
+    this._type = SonarIdentityType.SsoUser;
+    this._subjectId = user.Id;
+    this._access =
+      permissions.Select(p => new ScopedPermission(p.Permission, p.EnvironmentId, p.TenantId))
+        .ToImmutableList();
   }
 }

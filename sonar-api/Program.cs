@@ -25,6 +25,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using Okta.AspNetCore;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Cms.BatCave.Sonar;
@@ -113,14 +114,25 @@ public class Program {
   }
 
   public static WebApplication BuildApplication(WebApplicationBuilder builder) {
+
+    // Add Okta Authentication
     builder.Services
       .AddAuthentication(options => {
-        options.DefaultScheme = ApiKeyHeaderAuthenticationHandler.SchemeName;
+        options.DefaultScheme = MultiSchemeAuthenticationHandler.SchemeName; // OktaDefaults.ApiAuthenticationScheme;
       })
-      .AddScheme<AuthenticationSchemeOptions, ApiKeyHeaderAuthenticationHandler>(
-        ApiKeyHeaderAuthenticationHandler.SchemeName,
+      .AddOktaWebApi(new OktaWebApiOptions {
+        // TODO: make this configurable
+        OktaDomain = "https://dev-85892419.okta.com",
+      })
+      .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(
+        ApiKeyAuthenticationHandler.SchemeName,
         options => {
           options.ClaimsIssuer = "sonar-api";
+        }
+      )
+      .AddScheme<AuthenticationSchemeOptions, MultiSchemeAuthenticationHandler>(
+        MultiSchemeAuthenticationHandler.SchemeName,
+        options => {
         }
       );
 
@@ -135,8 +147,8 @@ public class Program {
 
     var adminPolicy =
       new AuthorizationPolicyBuilder()
-        .RequireClaim(SonarIdentityClaims.Type, PermissionType.Admin.ToString())
-        .AddRequirements(new EnvironmentTenantScopeRequirement())
+        .RequireAuthenticatedUser()
+        .AddRequirements(new EnvironmentTenantScopeRequirement(PermissionType.Admin))
         .Build();
 
     var allowScopedPolicy =
@@ -144,17 +156,11 @@ public class Program {
         .RequireAuthenticatedUser()
         .Build();
 
-    var allowScopedAdminPolicy =
-      new AuthorizationPolicyBuilder()
-        .RequireClaim(SonarIdentityClaims.Type, PermissionType.Admin.ToString())
-        .Build();
-
     builder.Services
       .AddAuthorization(options => {
         options.AddPolicy("Admin", adminPolicy);
-        // Grant access to ApiKeys that have a different scope than that of the request URL
-        options.AddPolicy("AllowScoped", allowScopedPolicy);
-        options.AddPolicy("AllowScopedAdmin", allowScopedAdminPolicy);
+        // Grant access to principals that have a different scope than that of the request URL
+        options.AddPolicy("AllowAnyScope", allowScopedPolicy);
         options.DefaultPolicy = authenticatedPolicy;
       });
 
@@ -192,6 +198,8 @@ public class Program {
 
     app.UseMiddleware<ProblemDetailExceptionMiddleware>();
     app.UseAuthentication();
+
+    app.UseMiddleware<UserPermissionClaimsMiddleware>();
     app.UseAuthorization();
 
     // Route requests based on Controller attribute annotations

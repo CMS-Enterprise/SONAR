@@ -3,8 +3,7 @@ using System;
 namespace Cms.BatCave.Sonar.Authentication;
 
 public static class SonarIdentityClaims {
-  public const String Subject = "sub";
-  public const String Type = "Type";
-  public const String Environment = "Environment";
-  public const String Tenant = "Tenant";
+  public const String SubjectId = "SonarSubjectId";
+  public const String SubjectType = "SonarSubjectType";
+  public const String Access = "SonarAccess";
 }
