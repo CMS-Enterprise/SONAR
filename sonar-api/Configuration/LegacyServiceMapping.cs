@@ -11,12 +11,17 @@ namespace Cms.BatCave.Sonar.Configuration;
 /// </summary>
 /// <param name="LegacyName">
 ///   The name of the service to return from the legacy endpoint (or by which
-///   this service is accessed in the legacy endpoint's path.
+///   this service is accessed in the legacy endpoint's path).
 /// </param>
 /// <param name="DisplayName">
-///   The display name for the service. This parameter must be specified if no
-///   mapping to an Environment/Tenant/Service triple is supplied. If both are specified the specified
-///   value will override the standard <see cref="ServiceConfiguration.DisplayName" />
+///   The display name for the service. This parameter is always optional. If it is specified
+///   for a legacy service that is mapped to an actual service, then the specified value will override
+///   the standard <see cref="ServiceConfiguration.DisplayName" />.
+/// </param>
+/// <param name="Description">
+///   An alternate description for the service. This parameter is always optional. If it is specified
+///   for a legacy service that is mapped to an actual service, then the specified value will override
+///   the standard <see cref="ServiceConfiguration.Description" />.
 /// </param>
 /// <param name="Environment">The name of the Environment that this entry maps to.</param>
 /// <param name="Tenant">The name of the Tenant that this entry maps to.</param>
@@ -29,6 +34,7 @@ namespace Cms.BatCave.Sonar.Configuration;
 public record LegacyServiceMapping(
   String LegacyName,
   String? DisplayName = null,
+  String? Description = null,
   String? Environment = null,
   String? Tenant = null,
   String? Name = null,

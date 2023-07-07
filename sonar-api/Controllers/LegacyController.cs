@@ -149,7 +149,7 @@ public class LegacyController : ControllerBase {
     return new LegacyServiceHierarchyHealth(
       svc.LegacyService.LegacyName,
       svc.LegacyService.DisplayName ?? svc.MappedConfig?.DisplayName,
-      svc.MappedConfig?.Description,
+      svc.LegacyService.Description ?? svc.MappedConfig?.Description,
       aggregateStatus ?? LegacyHealthStatus.Unresponsive,
       svc.MappedConfig?.Url?.ToString(),
       children
