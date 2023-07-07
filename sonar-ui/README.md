@@ -19,7 +19,13 @@ Runs the app in the development mode.\
 Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
 The page will reload if you make edits.\
-You will also see any lint errors in the console. \
+You will also see any lint errors in the console.
+
+If you want to test the SONAR UI against an alternative API URL (such as our dev environment), you can use the `REACT_APP_API_URL` environment variable:
+
+```
+REACT_APP_API_URL=https://sonar-dev.batcave-ispg-nonprod.internal.cms.gov npm start
+```
 
 ### `npm test`
 
