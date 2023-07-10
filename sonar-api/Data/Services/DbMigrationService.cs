@@ -35,7 +35,7 @@ public class DbMigrationService : IDbMigrationService {
 
     this._logger.LogInformation("Awaiting lock on migrations history table to perform database migrations.");
     await this._dataContext.Database.ExecuteSqlRawAsync(
-      sql: @"LOCK TABLE ONLY public.""__EFMigrationsHistory"" IN ACCESS EXCLUSIVE MODE;",
+      sql: @"LOCK TABLE ONLY ""__EFMigrationsHistory"" IN ACCESS EXCLUSIVE MODE;",
       cancellationToken);
 
     var pendingMigrations =
@@ -82,18 +82,18 @@ public class DbMigrationService : IDbMigrationService {
     var provisionMigrationsHistoryTableSql = $@"
       BEGIN;
 
-      CREATE TABLE public.""__EFMigrationsHistory"" (
+      CREATE TABLE ""__EFMigrationsHistory"" (
         migration_id character varying(150) NOT NULL,
         product_version character varying(32) NOT NULL
       );
 
-      ALTER TABLE public.""__EFMigrationsHistory"" OWNER TO {this._databaseConfiguration.Value.Username};
+      ALTER TABLE ""__EFMigrationsHistory"" OWNER TO {this._databaseConfiguration.Value.Username};
 
-      ALTER TABLE ONLY public.""__EFMigrationsHistory""
+      ALTER TABLE ONLY ""__EFMigrationsHistory""
         ADD CONSTRAINT pk__ef_migrations_history PRIMARY KEY (migration_id);
 
-      INSERT INTO public.""__EFMigrationsHistory"" VALUES ('20230101000000_CreateDb', '7.0.8');
-      INSERT INTO public.""__EFMigrationsHistory"" VALUES ('20230629163433_InitialMigration', '7.0.8');
+      INSERT INTO ""__EFMigrationsHistory"" VALUES ('20230101000000_CreateDb', '7.0.8');
+      INSERT INTO ""__EFMigrationsHistory"" VALUES ('20230629163433_InitialMigration', '7.0.8');
 
       COMMIT;
     ";

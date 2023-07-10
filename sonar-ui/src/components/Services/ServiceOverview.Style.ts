@@ -31,9 +31,11 @@ export function getSubsectionContainerStyle(theme: Theme) {
     margin: "0px 24px 0px 24px",
     boxSizing: "border-box",
     borderLeft: "2px solid " + theme.textColor,
-    paddingLeft: 24,
+    paddingLeft: "24px",
     "&:hover": {
-      borderLeft: "4px solid " + theme.accentColor
+      borderLeft: "4px solid " + theme.accentColor,
+      // Compensate for the increased border width
+      paddingLeft: "22px"
     }
   });
 }
