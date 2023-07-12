@@ -81,10 +81,6 @@ public class Program {
         await using var app = BuildApplication(builder);
         return await RunServe(app, opts);
       },
-      runInit: async opts => {
-        await using var app = builder.Build();
-        return await RunInit(app, opts);
-      },
       runMigrateDb: async opts => {
         await using var app = builder.Build();
         return await RunMigrateDb(app, opts);
@@ -203,7 +199,6 @@ public class Program {
   private static Task<Int32> HandleCommandLine(
     String[] args,
     Func<ServeOptions, Task<Int32>> runServe,
-    Func<InitOptions, Task<Int32>> runInit,
     Func<MigrateDbOptions, Task<Int32>> runMigrateDb) {
 
     var useDefaultVerb = ShouldUseDefaultVerb(args);
@@ -214,12 +209,11 @@ public class Program {
       settings.HelpWriter = Console.Error;
     });
     var parserResult =
-      parser.ParseArguments<ServeOptions, InitOptions, MigrateDbOptions>(
+      parser.ParseArguments<ServeOptions, MigrateDbOptions>(
         useDefaultVerb ? args.Prepend(ServeOptions.VerbName) : args);
     return parserResult
       .MapResult(
         runServe,
-        runInit,
         runMigrateDb,
         _ => Task.FromResult<Int32>(1)
       );
@@ -233,7 +227,7 @@ public class Program {
       settings.IgnoreUnknownArguments = true;
       settings.AutoHelp = false;
     });
-    var preParseResult = preParser.ParseArguments<ServeOptions, InitOptions, MigrateDbOptions>(args);
+    var preParseResult = preParser.ParseArguments<ServeOptions, MigrateDbOptions>(args);
     var preParseErrors = preParseResult.Errors?.ToList();
     var useDefaultVerb =
       preParseErrors is { Count: 1 } &&
@@ -258,34 +252,6 @@ public class Program {
     return 0;
   }
 
-  // TODO BATAPI-325 Remove this. This uses DB creation method that is mutually exclusive from migrations.
-  // It's useful to keep around during development for validating the different schemas generated
-  // by this method and the migration method, but this should be removed along with its associated
-  // InitOptions class and all dependent code once we've proven out the various migration scenarios.
-  private static async Task<Int32> RunInit(IHost app, InitOptions opts) {
-    using var scope = app.Services.CreateScope();
-
-    var db = scope.ServiceProvider.GetRequiredService<DataContext>();
-    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-
-    if (opts.Force) {
-      var deleted = await db.Database.EnsureDeletedAsync();
-      if (deleted) {
-        logger.LogInformation("Existing database deleted");
-      }
-    }
-
-    try {
-      if (!await db.Database.EnsureCreatedAsync()) {
-        logger.LogInformation("Database already exists, creation skipped");
-      }
-    } catch (Exception ex) {
-      logger.LogError(ex, "An unexpected error occurred creating the database");
-    }
-
-    return 0;
-  }
-
   private static void ApplyCommonOptions(WebApplicationBuilder builder, CommonOptions options) {
     if (!String.IsNullOrEmpty(options.AppSettingsLocation)) {
       builder.Configuration.AddJsonFile(Path.Combine(options.AppSettingsLocation, "appsettings.json"), optional: true);
@@ -305,7 +271,12 @@ public class Program {
     }
 
     await dbMigrationService.ProvisionMigrationsHistoryTable();
-    await dbMigrationService.MigrateDbAsync();
+
+    if (opts.TargetMigration != null) {
+      await dbMigrationService.MigrateDbAsync(opts.TargetMigration);
+    } else {
+      await dbMigrationService.MigrateDbAsync();
+    }
 
     return 0;
   }
