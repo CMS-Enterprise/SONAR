@@ -1,3 +1,13 @@
+## 0.2.1
+
+### BATAPI-325 Migration support conversion post-work
+
+* [view commit ad59cc7](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/ad59cc7bce648cd81fb04039f61d2d969abefa38)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Wed, 12 Jul 2023 19:16:43 +0000
+
+```
+Cleans up the code that existed to support the conversion to migration support, but is no longer needed since all existing environments have been converted. Also adds support for targeting a specific database migration.
 ## 0.2.0
 
 ### BATAPI-332 Fix migration init container failure
