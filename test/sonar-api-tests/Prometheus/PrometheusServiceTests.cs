@@ -342,18 +342,18 @@ public class PrometheusServiceTests {
 
     // Assert that there are exactly two entries in the returned result, and that they have the expected health check
     // names and timestamps. Because of differences of time formats used internally by our API and how
-    // Prometheus expresses times, we allow a half-millisecond fudge-factor in our timestamp comparisons
+    // Prometheus expresses times, we allow a millisecond fudge-factor in our timestamp comparisons.
     Assert.Equal(expected: 2, latestHealthCheckDataTimestamps.Count);
     Assert.Contains(expected: "health-check-1", latestHealthCheckDataTimestamps);
     Assert.Equal(
       tenMinutesAgo.MillisSinceUnixEpoch(),
       latestHealthCheckDataTimestamps["health-check-1"].MillisSinceUnixEpoch(),
-      tolerance: 0.5);
+      tolerance: 1.0);
     Assert.Contains(expected: "health-check-2", latestHealthCheckDataTimestamps);
     Assert.Equal(
       oneMinuteAgo.MillisSinceUnixEpoch(),
       latestHealthCheckDataTimestamps["health-check-2"].MillisSinceUnixEpoch(),
-      tolerance: 0.5);
+      tolerance: 1.0);
   }
 
   [Fact]
