@@ -7,6 +7,7 @@ using Cms.BatCave.Sonar.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -31,12 +32,7 @@ public class DbMigrationService : IDbMigrationService {
 
   /// <inheritdoc />
   public async Task<Boolean> MigrateDbAsync(CancellationToken cancellationToken = default) {
-    await using var transaction = await this._dataContext.Database.BeginTransactionAsync(cancellationToken);
-
-    this._logger.LogInformation("Awaiting lock on migrations history table to perform database migrations.");
-    await this._dataContext.Database.ExecuteSqlRawAsync(
-      sql: @"LOCK TABLE ONLY ""__EFMigrationsHistory"" IN ACCESS EXCLUSIVE MODE;",
-      cancellationToken);
+    await using var transaction = await this.LockMigrationsHistoryTable(cancellationToken);
 
     var pendingMigrations =
       (await this._dataContext.Database.GetPendingMigrationsAsync(cancellationToken)).ToImmutableList();
@@ -51,15 +47,41 @@ public class DbMigrationService : IDbMigrationService {
 
       await this._dataContext.Database.MigrateAsync(cancellationToken);
 
+      this._logger.LogInformation("Database migration complete.");
       migrated = true;
     } else {
       this._logger.LogInformation($"The database is up to date, no pending migrations.");
     }
 
-    // TODO BATAPI-325 Remove; adding time delay for testing purposes.
-    this._logger.LogInformation("5s testing delay...");
-    await Task.Delay(5 * 1000, cancellationToken);
-    this._logger.LogInformation("...Done.");
+    await transaction.CommitAsync(cancellationToken);
+
+    return migrated;
+  }
+
+  /// <inheritdoc />
+  public async Task<Boolean> MigrateDbAsync(String targetMigration, CancellationToken cancellationToken = default) {
+    await using var transaction = await this.LockMigrationsHistoryTable(cancellationToken);
+
+    var appliedMigrations =
+      (await this._dataContext.Database.GetAppliedMigrationsAsync(cancellationToken)).ToImmutableList();
+
+    var migrated = false;
+
+    if (appliedMigrations.Any() && appliedMigrations.Last().Equals(targetMigration)) {
+      this._logger.LogInformation(
+        message: "The database is already at target migration: {targetMigration}",
+        targetMigration);
+    } else {
+      this._logger.LogInformation(
+        message: "{migrationAction} database to target migration: {targetMigration}",
+        appliedMigrations.Contains(targetMigration) ? "Downgrading" : "Upgrading",
+        targetMigration);
+
+      await this.MigrateDbTo(targetMigration, cancellationToken);
+
+      this._logger.LogInformation("Database migration complete.");
+      migrated = true;
+    }
 
     await transaction.CommitAsync(cancellationToken);
 
@@ -69,10 +91,10 @@ public class DbMigrationService : IDbMigrationService {
   /// <inheritdoc />
   public async Task<Boolean> ReCreateDbAsync(CancellationToken cancellationToken = default) {
     this._logger.LogInformation("Re-creating database!");
+
     var deleted = await this._dataContext.Database.EnsureDeletedAsync(cancellationToken);
 
-    var migrator = this._dataContext.GetInfrastructure().GetRequiredService<IMigrator>();
-    await migrator.MigrateAsync(targetMigration: "20230101000000_CreateDb", cancellationToken);
+    await this.MigrateDbTo(targetMigration: "20230101000000_CreateDb", cancellationToken);
 
     return deleted;
   }
@@ -92,19 +114,38 @@ public class DbMigrationService : IDbMigrationService {
       ALTER TABLE ONLY ""__EFMigrationsHistory""
         ADD CONSTRAINT pk__ef_migrations_history PRIMARY KEY (migration_id);
 
-      INSERT INTO ""__EFMigrationsHistory"" VALUES ('20230101000000_CreateDb', '7.0.8');
-      INSERT INTO ""__EFMigrationsHistory"" VALUES ('20230629163433_InitialMigration', '7.0.8');
-
       COMMIT;
     ";
+
+    Boolean created = false;
 
     try {
       await this._dataContext.Database.ExecuteSqlRawAsync(provisionMigrationsHistoryTableSql, cancellationToken);
       this._logger.LogInformation("Migrations history table created.");
+      created = true;
     } catch (PostgresException e) when (e is { SqlState: "42P07" }) {
       this._logger.LogInformation("Migrations history table exists.");
     }
 
-    return true;
+    return created;
+  }
+
+  private async Task<IDbContextTransaction> LockMigrationsHistoryTable(CancellationToken cancellationToken = default) {
+    var transaction = await this._dataContext.Database.BeginTransactionAsync(cancellationToken);
+
+    this._logger.LogInformation("Awaiting lock on migrations history table to perform database migrations.");
+
+    await this._dataContext.Database.ExecuteSqlRawAsync(
+      sql: @"LOCK TABLE ONLY ""__EFMigrationsHistory"" IN ACCESS EXCLUSIVE MODE;",
+      cancellationToken);
+
+    this._logger.LogInformation("Migrations history table lock acquired.");
+
+    return transaction;
+  }
+
+  private async Task MigrateDbTo(String targetMigration, CancellationToken cancellationToken) {
+    var migrator = this._dataContext.Database.GetInfrastructure().GetRequiredService<IMigrator>();
+    await migrator.MigrateAsync(targetMigration, cancellationToken);
   }
 }

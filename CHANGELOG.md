@@ -1,3 +1,96 @@
+## 0.2.1
+
+### BATAPI-325 Migration support conversion post-work
+
+* [view commit ad59cc7](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/ad59cc7bce648cd81fb04039f61d2d969abefa38)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Wed, 12 Jul 2023 19:16:43 +0000
+
+```
+Cleans up the code that existed to support the conversion to migration support, but is no longer needed since all existing environments have been converted. Also adds support for targeting a specific database migration.
+## 0.2.0
+
+### BATAPI-332 Fix migration init container failure
+
+* [view commit 5f3b4d2](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/5f3b4d2284ce690d7622195c0f69628caadc526a)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Mon, 10 Jul 2023 15:53:43 +0000
+
+```
+* Removes schema qualifier from raw SQL text to defer to default schema search path in the PG server
+```
+
+### Made some minor tweaks to the sonar ui
+
+* [view commit bf977ad](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/bf977ad84f11bf2a63313362ec9c1c7ae4be1713)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Thu, 6 Jul 2023 22:58:43 -1000
+
+```
+ * Changed the toggle theme label font and vertical alignment
+ * Fixed an issue where changing border size on hover changed control
+   position
+ * Added the ability to over ride the API_URL with an environment
+   variable on developer machines
+```
+
+### Added support for specifying a Description for a service in the legacy (v1) endpoint.
+
+* [view commit 92b4efc](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/92b4efc690ae1643c2b18b5e4aa6f0ff1b0ec459)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Thu, 6 Jul 2023 22:59:31 -1000
+
+
+
+### BATAPI-216: EntityFramework Migration Support
+
+* [view commit 31d4d33](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/31d4d332604190b97e31cbecd3f44209fb6feb67)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Thu, 6 Jul 2023 16:14:35 +0000
+
+```
+* Adds support for EntityFramework migrations, and creates initial database migration.
+* Removes the admin API endpoint for initializing the database; now that we have a process for database migration, it's not safe to keep around.
+* Adds a new `migratedb` command for migrating the database on the command line.
+    * This command also provisions the migration history table for pre-migration-support databases.
+* For now I've left a couple pieces of testing code present that are helpful for validation (the old init command is still there, and a small time delay added to the migration method to help with validating concurrent initializers); these need to be removed after this new migration mechanism has been proved-out in the lower environments; will be removed in BATAPI-325.
+```
+
+### add ability to specify appSettings location for sonar-api
+
+* [view commit ddbd9cc](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/ddbd9cc9bf4f4f6bf475dc7ea1326b6c1abefb53)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Wed, 5 Jul 2023 21:47:15 +0000
+
+```
+Closes BATAPI-288
+
+## Description:
+
+* add ability to specify appSettings location for sonar-api
+```
+
+### Sonar Agent: Fix failing unit tests
+
+* [view commit 5a50ead](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/5a50eada164f1dda16ec60c68a388e901126be0a)
+* Author (Committer): Teresa Tran (Teresa Tran)
+* Date: Wed, 5 Jul 2023 20:05:25 +0000
+
+
+
+### Fix issues that arise when there are existing tenants in the "sonar environment"
+
+* [view commit 2d19d8e](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/2d19d8e1c8be972092cedd897817c8460dfc96bb)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Fri, 30 Jun 2023 23:04:59 -1000
+
+```
+The sonar environment is the pre-configured environment where sonar
+reports it's self-health-check status.
+
+When there are existing tenants in the sonar environment, merge the
+self healh check tenant status with the normal tenants in the response
+from the environments and tenants controllers.
 ## 0.1.2
 
 ### update service overview to display aggregate status for each child service

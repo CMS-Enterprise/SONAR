@@ -11,9 +11,6 @@ namespace Cms.BatCave.Sonar.Data.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AlterDatabase()
-                .Annotation("Npgsql:CollationDefinition:ci_collation", "en-u-ks-level2,en-u-ks-level2,icu,False");
-
             migrationBuilder.CreateTable(
                 name: "environment",
                 columns: table => new
