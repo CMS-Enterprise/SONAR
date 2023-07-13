@@ -14,6 +14,7 @@ import { useParams } from 'react-router-dom';
 import StatusHistoryDrawer from '../components/Services/StatusHistory/StatusHistoryDrawer';
 import { ServiceOverviewContext } from 'components/Services/ServiceOverviewContext';
 import HealthStatusDrawer from 'components/Services/HealthStatus/HealthStatusDrawer';
+import useAuthenticatedQuery from '../helpers/UseAuthenicatedQuery';
 
 const Service = () => {
   const sonarClient = createSonarClient();
@@ -73,14 +74,21 @@ const Service = () => {
   useEffect(() => { selectedHealthCheck && closeDrawer() }, [selectedHealthCheck])
 
   const hierarchyHealthQuery = useQuery<ServiceHierarchyHealth[], Error>(
-    ['services'],
+    ['services', environmentName, tenantName],
     () => sonarClient.getServiceHierarchyHealth(environmentName, tenantName).then((res) => res.data)
   );
 
-  const hierarchyConfigQuery = useQuery<ServiceHierarchyConfiguration, Error>({
-    queryKey: ['ServiceHierarchyConfig'],
-    queryFn: () => sonarClient.getTenant(environmentName, tenantName).then((res) => res.data)
-  });
+  const hierarchyConfigQuery = useAuthenticatedQuery<ServiceHierarchyConfiguration, Error>(
+    ['ServiceHierarchyConfig', environmentName, tenantName],
+    (_, token) => {
+      return sonarClient
+        .getTenant(
+          environmentName, tenantName,
+          { headers: { 'Authorization': `Bearer ${token}` } })
+        .then((res) => res.data);
+    },
+    undefined
+  );
 
   if (hierarchyConfigQuery.data && hierarchyHealthQuery.data) {
     const serviceConfigLookup =

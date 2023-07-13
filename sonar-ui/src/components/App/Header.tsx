@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import Toggle from 'react-toggle';
 import DarkIcon from 'components/Icons/DarkIcon';
 import LightIcon from 'components/Icons/LightIcon';
-
 import 'react-toggle/style.css';
 import * as styles from './Header.Style';
+import LoginButton from './LoginButton';
 
 export type HeaderProps = {
   enableDarkTheme: boolean,
@@ -23,30 +23,24 @@ const Header = (props: HeaderProps) => {
         <Link
           to="/"
           css={styles.SiteTitleStyle}
-          data-test="navbar-sonar-link"
-        >
+          data-test="navbar-sonar-link">
           SONAR
         </Link>
         <div css={styles.NavBarRightSideStyle}>
-          <Link
-            to="/"
-            css={styles.NavLinkStyle}
-            data-test="navbar-home-link"
-          >
-            HOME
-          </Link>
-          <label css={styles.GetThemeToggleLabelStyle} data-test="navbar-toggle-section">
-            Toggle Theme
+          <LoginButton />
+          <label css={styles.GetThemeToggleLabelStyle} className="ds-u-focus-within" data-test="navbar-toggle-section">
+            <span> Light </span>
             <Toggle
               defaultChecked={props.enableDarkTheme}
               css={styles.ThemeToggleStyle}
-              aria-label="Enable the Dark Theme"
+              aria-label="Toggle between the Light and Dark Theme"
               icons={{
                 checked: <LightIcon style={styles.ToggleIconStyle} />,
                 unchecked: <DarkIcon style={styles.ToggleIconStyle} />
               }}
               onChange={handleThemeChange}
             />
+            <span> Dark </span>
           </label>
         </div>
       </nav>

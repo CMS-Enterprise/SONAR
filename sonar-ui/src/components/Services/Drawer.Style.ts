@@ -9,19 +9,19 @@ export function getDrawerStyle(theme: Theme) {
     "--drawer__border-color": theme.textColor,
     "--button__border-color": theme.accentColor,
 
-    "box-shadow": `-1px 0 0 ${theme.textColor}`,
+    "boxShadow": `-1px 0 0 ${theme.textColor}`,
 
     ".ds-c-drawer__header": {
-      "border-bottom": `3px solid ${theme.accentColor}`,
-      "margin-left": "1em",
-      "margin-right": "1em",
+      "borderBottom": `3px solid ${theme.accentColor}`,
+      "marginLeft": "1em",
+      "marginRight": "1em",
       "padding": "1em 0 0.5em 0"
     },
 
     // The heading level of this child selector must correspond to the
     // `headerLevel` property of the Drawer this style is applied to.
     ".ds-c-drawer__header h3": {
-      "padding-top": "1em"
+      "paddingTop": "1em"
     },
 
     ".ds-c-button": {

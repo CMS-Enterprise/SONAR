@@ -21,5 +21,5 @@ export function getChartsTablePropertiesStyle(theme: Theme) {
 }
 
 export const TextAlignCenter = css({
-  "text-align": "center"
+  textAlign: "center"
 });

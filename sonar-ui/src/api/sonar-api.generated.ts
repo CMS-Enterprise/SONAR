@@ -214,11 +214,11 @@ export class Api<SecurityDataType = unknown> extends HttpClient<SecurityDataType
    *
    * @tags Health
    * @name GetSonarHealth
-   * @request GET:/api/v2/health/{environment}/tenants/Sonar
+   * @request GET:/api/v2/health/{environment}/tenants/sonar
    */
   getSonarHealth = (environment: string, params: RequestParams = {}) =>
     this.request<ServiceHierarchyHealth[], ProblemDetails>({
-      path: `/api/v2/health/${environment}/tenants/Sonar`,
+      path: `/api/v2/health/${environment}/tenants/sonar`,
       method: "GET",
       format: "json",
       ...params,

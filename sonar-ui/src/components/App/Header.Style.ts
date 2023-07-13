@@ -43,7 +43,7 @@ export const GetThemeToggleLabelStyle: (theme: Theme) => SerializedStyles = them
 })
 
 export const ThemeToggleStyle: SerializedStyles = css({
-  marginLeft: '0.5rem',
+  margin: '0 0.1rem',
   top: '-2px',
   '&.react-toggle--checked .react-toggle-track': {
     backgroundColor: LightTheme.backgroundColor,
@@ -69,4 +69,49 @@ export const ThemeToggleStyle: SerializedStyles = css({
     boxShadow: 'none',
     borderColor: LightTheme.textColor
   }
+});
+
+export const ButtonStyles: (theme: Theme) => SerializedStyles = theme => css({
+  display: 'inline-block',
+  border: '1px solid' + theme.accentColor,
+  borderRadius: '7px',
+  marginRight: '15px',
+  padding: '15px',
+  gap: '10px',
+  color: theme.accentColor,
+
+  '&:hover, &:focus, &:focus:hover': {
+    color: theme.foregroundColor,
+    backgroundColor: theme.accentColor
+  },
+});
+
+export const IconButtonStyle: (theme: Theme) => SerializedStyles = theme => css({
+  display: 'inline-flex',
+  border: 'none',
+  alignItems: 'center',
+  marginRight: '0px',
+  color: theme.textColor,
+
+  '&:hover, &:focus, &:focus:hover': {
+    color: theme.accentColor,
+    backgroundColor: theme.highlightColor
+  }
+});
+
+export const DropdownModalStyle: (theme: Theme) => SerializedStyles = theme => css({
+  display: 'flex',
+  flexDirection: 'column',
+  position: 'absolute',
+  marginTop: '15px',
+  zIndex: 1,
+
+  backgroundColor: theme.foregroundColor,
+  borderRadius: '7px',
+  boxShadow: '0px 7px 7px 0px rgba(0, 0, 0, 0.25)'
+});
+
+export const DropdownLine: (theme: Theme) => SerializedStyles = theme => css({
+  borderTop: '1px solid' + theme.textColor,
+  margin: '0 10px'
 });
