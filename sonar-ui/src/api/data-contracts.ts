@@ -17,20 +17,21 @@ export interface ApiKeyConfiguration {
    * @maxLength 44
    */
   apiKey: string;
-  apiKeyType: ApiKeyType;
+  apiKeyType: PermissionType;
   environment?: string | null;
   tenant?: string | null;
 }
 
 export interface ApiKeyDetails {
-  apiKeyType: ApiKeyType;
+  apiKeyType: PermissionType;
   environment?: string | null;
   tenant?: string | null;
 }
 
-export enum ApiKeyType {
-  Admin = "Admin",
-  Standard = "Standard",
+export interface CurrentUserView {
+  firstName?: string | null;
+  lastName?: string | null;
+  email?: string | null;
 }
 
 /**
@@ -93,6 +94,11 @@ export enum HealthStatus {
 
 export interface MetricDataCollection {
   timeSeries: DateTimeDoubleValueTuple[];
+}
+
+export enum PermissionType {
+  Admin = "Admin",
+  Standard = "Standard",
 }
 
 export interface ProblemDetails {

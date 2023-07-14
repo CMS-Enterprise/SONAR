@@ -11,6 +11,7 @@
 
 import {
   ApiKeyDetails,
+  CurrentUserView,
   EnvironmentHealth,
   EnvironmentModel,
   MetricDataCollection,
@@ -429,6 +430,34 @@ tenant, service, and health check in Prometheus. Filters out samples outside of 
       path: `/api/v2/uptime/${environment}/tenants/${tenant}/services/${servicePath}`,
       method: "GET",
       query: query,
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags User
+   * @name V2UserCreate
+   * @request POST:/api/v2/user
+   */
+  v2UserCreate = (params: RequestParams = {}) =>
+    this.request<CurrentUserView, ProblemDetails>({
+      path: `/api/v2/user`,
+      method: "POST",
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags User
+   * @name V2UserList
+   * @request GET:/api/v2/user
+   */
+  v2UserList = (params: RequestParams = {}) =>
+    this.request<CurrentUserView[], any>({
+      path: `/api/v2/user`,
+      method: "GET",
       format: "json",
       ...params,
     });

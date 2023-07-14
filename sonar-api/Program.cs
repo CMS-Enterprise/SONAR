@@ -114,11 +114,11 @@ public class Program {
     // Add Okta Authentication
     builder.Services
       .AddAuthentication(options => {
-        options.DefaultScheme = MultiSchemeAuthenticationHandler.SchemeName; // OktaDefaults.ApiAuthenticationScheme;
+        options.DefaultScheme = MultiSchemeAuthenticationHandler.SchemeName;
       })
       .AddOktaWebApi(new OktaWebApiOptions {
         // TODO: make this configurable
-        OktaDomain = "https://dev-85892419.okta.com",
+        OktaDomain = "https://dev-50063805.okta.com",
       })
       .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(
         ApiKeyAuthenticationHandler.SchemeName,
