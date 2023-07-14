@@ -20,6 +20,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -132,6 +133,8 @@ public class Program {
 
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddScoped<IAuthorizationHandler, EnvironmentTenantScopeAuthorizationHandler>();
+    builder.Services.AddScoped<IAuthorizationHandler, IgnoreEnvironmentTenantScopeAuthorizationHandler>();
+
 
     var authenticatedPolicy =
       new AuthorizationPolicyBuilder()
@@ -148,6 +151,7 @@ public class Program {
     var allowScopedPolicy =
       new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
+        .AddRequirements(new IgnoreEnvironmentTenantScopeRequirement())
         .Build();
 
     builder.Services
@@ -161,6 +165,7 @@ public class Program {
     // Web API Specific Dependencies
     var mvcBuilder = builder.Services.AddControllers(options => {
       options.ReturnHttpNotAcceptable = true;
+      options.Filters.Add(new AuthorizeFilter(authenticatedPolicy));
     });
 
     mvcBuilder.AddJsonOptions(options => {

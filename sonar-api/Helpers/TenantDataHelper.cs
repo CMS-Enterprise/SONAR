@@ -71,6 +71,15 @@ public class TenantDataHelper {
     return (result?.Environment, result?.Tenant);
   }
 
+  public Task<IList<Tenant>> ListTenantsForEnvironment(
+    Guid environmentId,
+    CancellationToken cancellationToken) {
+
+    return this._tenantsTable.Where(t => t.EnvironmentId == environmentId)
+      .ToListAsync(cancellationToken)
+      .ContinueWith(list => (IList<Tenant>)list.Result, cancellationToken);
+  }
+
   public async Task<IList<TenantHealth>> GetTenantsHealth(
     Environment environment,
     CancellationToken cancellationToken) {
@@ -99,11 +108,11 @@ public class TenantDataHelper {
           svc, services, serviceStatuses, serviceChildIdsLookup, healthChecksByService, healthCheckStatus)
         ).ToArray();
 
-      tenantList.Add(this.ToTenantHealth(tenant.Name, environment.Name, rootServiceHealth));
+      tenantList.Add(ToTenantHealth(tenant.Name, environment.Name, rootServiceHealth));
     }
 
     if (environment.Name == this._sonarEnvironment) {
-      tenantList.Add(this.ToTenantHealth(
+      tenantList.Add(ToTenantHealth(
         SonarTenantName,
         environment.Name,
         (await this._healthDataHelper.CheckSonarHealth(cancellationToken)).ToArray()
@@ -113,11 +122,11 @@ public class TenantDataHelper {
     return tenantList;
   }
 
-  private TenantHealth ToTenantHealth(
+  private static TenantHealth ToTenantHealth(
     String tenantName,
     String environmentName,
     ServiceHierarchyHealth?[] rootServiceHealth
-  ) {
+) {
     HealthStatus? aggregateStatus = HealthStatus.Unknown;
     DateTime? statusTimestamp = null;
 

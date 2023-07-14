@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Helpers;
 using Microsoft.AspNetCore.Authorization;
@@ -29,6 +30,12 @@ public class EnvironmentTenantScopeAuthorizationHandler :
   protected override async Task HandleRequirementAsync(
     AuthorizationHandlerContext context,
     EnvironmentTenantScopeRequirement requirement) {
+
+    if (context.Requirements.Any(r => r is IgnoreEnvironmentTenantScopeRequirement)) {
+      // This action is explicitly annotated to override this requirement
+      context.Succeed(requirement);
+      return;
+    }
 
     var httpContext = this._contextAccessor.HttpContext;
     if (httpContext == null) {

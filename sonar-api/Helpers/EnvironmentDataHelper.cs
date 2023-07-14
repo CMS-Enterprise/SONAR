@@ -45,6 +45,7 @@ public class EnvironmentDataHelper {
       .SingleOrDefaultAsync(cancellationToken);
   }
 
+
   public async Task<IList<Environment>> FetchAllExistingEnvAsync(
     CancellationToken cancellationToken) {
 
@@ -63,5 +64,21 @@ public class EnvironmentDataHelper {
     }
 
     return result;
+  }
+
+  public async Task<Environment> AddAsync(
+    Environment environment,
+    CancellationToken cancellationToken) {
+
+    var result = await this._environmentsTable.AddAsync(
+      environment,
+      cancellationToken
+    );
+
+    return result.Entity;
+  }
+
+  public void Delete(Environment environment) {
+    this._environmentsTable.Remove(environment);
   }
 }

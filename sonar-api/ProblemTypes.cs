@@ -32,7 +32,8 @@ public static class ProblemTypes {
   public const String InvalidConfiguration = "sonar:InvalidConfiguration";
 
   /// <summary>
-  ///   A request to drop and recreate the database did not include a valid confirmation code.
+  ///   The requested deletion cannot be performed because the resource has dependencies that must be
+  ///   deleted first.
   /// </summary>
-  public const String MissingOrIncorrectConfirmationCode = "sonar:MissingOrIncorrectConfirmationCode";
+  public const String DependentResourcesPreventDeletion = "sonar:DependentResourcesPreventDeletion";
 }

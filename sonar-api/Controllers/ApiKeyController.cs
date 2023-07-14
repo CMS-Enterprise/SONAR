@@ -56,6 +56,7 @@ public class ApiKeyController : ControllerBase {
   [ProducesResponseType(typeof(ApiKeyConfiguration), statusCode: 201)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 400)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 401)]
+  [Authorize(Policy = "AllowAnyScope")]
   public async Task<ActionResult> CreateApiKey(
     [FromBody] ApiKeyDetails apiKeyDetails,
     CancellationToken cancellationToken = default) {
