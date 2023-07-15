@@ -29,8 +29,7 @@ export interface ApiKeyDetails {
 }
 
 export interface CurrentUserView {
-  firstName?: string | null;
-  lastName?: string | null;
+  fullName?: string | null;
   email?: string | null;
 }
 

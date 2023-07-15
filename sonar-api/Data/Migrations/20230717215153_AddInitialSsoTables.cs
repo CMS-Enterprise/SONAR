@@ -17,8 +17,7 @@ namespace Cms.BatCave.Sonar.Data.Migrations
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     email = table.Column<string>(type: "text", nullable: false, collation: "ci_collation"),
-                    first_name = table.Column<string>(type: "text", nullable: false, collation: "ci_collation"),
-                    last_name = table.Column<string>(type: "text", nullable: false, collation: "ci_collation")
+                    full_name = table.Column<string>(type: "text", nullable: false, collation: "ci_collation")
                 },
                 constraints: table =>
                 {

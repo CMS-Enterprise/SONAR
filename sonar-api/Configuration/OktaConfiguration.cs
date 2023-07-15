@@ -3,7 +3,7 @@ using System;
 namespace Cms.BatCave.Sonar.Configuration;
 
 public record OktaConfiguration(
-  String AuthorizationServerId,
-  String Audience,
-  String OktaDomain
+  String OktaDomain,
+  String? AuthorizationServerId = null,
+  String? Audience = null
 );

@@ -46,18 +46,16 @@ public class UserController : ControllerBase {
       });
     }
 
-    var userEmail = principal.FindFirstValue(ClaimTypes.NameIdentifier);
-    var firstName = principal.FindFirstValue("firstName");
-    var lastName = principal.FindFirstValue("lastName");
+    var userEmail = principal.FindFirstValue(ClaimTypes.Email);
 
     // return 400 (Bad Request) if claims are missing
-    if (String.IsNullOrEmpty(userEmail) ||
-      String.IsNullOrEmpty(firstName) ||
-      String.IsNullOrEmpty(lastName)) {
+    if (String.IsNullOrEmpty(userEmail)) {
       return this.BadRequest(new {
         Message = "Required claims are missing."
       });
     }
+
+    var fullName = principal.FindFirstValue("name") ?? userEmail;
 
     await using var tx = await this._dbContext.Database
       .BeginTransactionAsync(cancellationToken);
@@ -71,33 +69,29 @@ public class UserController : ControllerBase {
     if (existingUser != null) {
       // check if any user properties have changed
       // if so, update user entity and returned updated user.
-      if (existingUser.FirstName != firstName ||
-        existingUser.LastName != lastName) {
+      if (existingUser.FullName != fullName) {
         var updatedUser = this._userTable.Update(new User(
           existingUser.Id,
           existingUser.Email,
-          firstName,
-          lastName)
+          fullName)
         );
         await this._dbContext.SaveChangesAsync(cancellationToken);
         await tx.CommitAsync(cancellationToken);
         return this.Ok(new CurrentUserView(
-          updatedUser.Entity.FirstName,
-          updatedUser.Entity.LastName,
+          updatedUser.Entity.FullName,
           updatedUser.Entity.Email));
       }
 
       // no user properties have changed, return existing user
       return this.Ok(new CurrentUserView(
-        existingUser.FirstName,
-        existingUser.LastName,
+        existingUser.FullName,
         existingUser.Email));
     }
 
     // new user, create and return user obj
     var entity =
       await this._userTable.AddAsync(
-        new User(Guid.Empty, userEmail, firstName, lastName),
+        new User(Guid.Empty, userEmail, fullName),
         cancellationToken);
 
     await this._dbContext.SaveChangesAsync(cancellationToken);
@@ -105,9 +99,11 @@ public class UserController : ControllerBase {
 
     return this.StatusCode(
       (Int32)HttpStatusCode.Created,
-      new CurrentUserView(entity.Entity.FirstName,
-        entity.Entity.LastName,
-        entity.Entity.Email));
+      new CurrentUserView(
+        entity.Entity.FullName,
+        entity.Entity.Email
+      )
+    );
   }
 
   [HttpGet]
@@ -117,7 +113,7 @@ public class UserController : ControllerBase {
 
     var users = await this._userTable
       .Select(user =>
-        new CurrentUserView(user.FirstName, user.LastName, user.Email)
+        new CurrentUserView(user.FullName, user.Email)
       )
       .ToListAsync(cancellationToken);
     return this.Ok(users);

@@ -18,7 +18,7 @@ function useAuthenticatedQuery<
   return useQuery({
     queryKey,
     queryFn: async () => {
-      const token = oktaAuth.getAccessToken();
+      const token = oktaAuth.getIdToken();
       return fetcher(queryKey, token!);
     },
     ...options

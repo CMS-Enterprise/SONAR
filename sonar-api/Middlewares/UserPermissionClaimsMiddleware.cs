@@ -19,10 +19,10 @@ public class UserPermissionClaimsMiddleware : Middleware<DbSet<User>, DbSet<User
     DbSet<User> userTable,
     DbSet<UserPermission> permissionTable) {
 
-    var sub = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    var email = context.User.FindFirstValue(ClaimTypes.Email);
 
-    if (!String.IsNullOrEmpty(sub)) {
-      var user = await userTable.SingleOrDefaultAsync(u => u.Email == sub, context.RequestAborted);
+    if (!String.IsNullOrEmpty(email)) {
+      var user = await userTable.SingleOrDefaultAsync(u => u.Email == email, context.RequestAborted);
 
       if (user != null) {
         var permissions = await permissionTable.Where(p => p.UserId == user.Id).ToListAsync();

@@ -12,19 +12,16 @@ public class User {
   [Key]
   public Guid Id { get; init; }
   public String Email { get; init; }
-  public String FirstName { get; set; }
-  public String LastName { get; set; }
+  public String FullName { get; set; }
 
   public User(
     Guid id,
     String email,
-    String firstName,
-    String lastName) {
+    String fullName) {
 
     this.Id = id;
     this.Email = email;
-    this.FirstName = firstName;
-    this.LastName = lastName;
+    this.FullName = fullName;
   }
 
 }

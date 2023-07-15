@@ -117,9 +117,7 @@ public class Program {
       .AddAuthentication(options => {
         options.DefaultScheme = MultiSchemeAuthenticationHandler.SchemeName;
       })
-      .AddOktaWebApi(new OktaWebApiOptions {
-        OktaDomain = oktaConfig.OktaDomain,
-      })
+      .AddOktaWebApi(ToOktaWebApiOptions(oktaConfig))
       .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(
         ApiKeyAuthenticationHandler.SchemeName,
         options => {
@@ -202,6 +200,23 @@ public class Program {
     app.MapControllers();
 
     return app;
+  }
+
+  private static OktaWebApiOptions ToOktaWebApiOptions(OktaConfiguration oktaConfig) {
+    var oktaOptions = new OktaWebApiOptions {
+      OktaDomain = oktaConfig.OktaDomain,
+    };
+
+    // If AuthorizationServerId and Audience are not specified, use the Okta defaults
+    if (!String.IsNullOrEmpty(oktaConfig.AuthorizationServerId)) {
+      oktaOptions.AuthorizationServerId = oktaConfig.AuthorizationServerId;
+    }
+
+    if (!String.IsNullOrEmpty(oktaConfig.Audience)) {
+      oktaOptions.Audience = oktaConfig.Audience;
+    }
+
+    return oktaOptions;
   }
 
   private static Task<Int32> HandleCommandLine(

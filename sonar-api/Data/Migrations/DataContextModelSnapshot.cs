@@ -309,16 +309,10 @@ namespace Cms.BatCave.Sonar.Data.Migrations
                         .HasColumnName("email")
                         .UseCollation("ci_collation");
 
-                    b.Property<string>("FirstName")
+                    b.Property<string>("FullName")
                         .IsRequired()
                         .HasColumnType("text")
-                        .HasColumnName("first_name")
-                        .UseCollation("ci_collation");
-
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("last_name")
+                        .HasColumnName("full_name")
                         .UseCollation("ci_collation");
 
                     b.HasKey("Id")

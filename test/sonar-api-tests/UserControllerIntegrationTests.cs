@@ -17,12 +17,10 @@ public class UserControllerIntegrationTests : ApiControllerTestsBase {
   private static readonly User TestUser1 = new User(
     Guid.NewGuid(),
     "test1@test.com",
-    "Test",
     "User1");
   private static readonly User TestUser2 = new User(
     Guid.NewGuid(),
     "test2@test.com",
-    "Test",
     "User2");
   private ITestOutputHelper _output;
 

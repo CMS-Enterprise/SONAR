@@ -17,7 +17,7 @@ const LoginButton = () => {
 
   const login = async () => {
     oktaAuth.setOriginalUri(toRelativeUrl(window.location.href, window.location.origin));
-    oktaAuth.signInWithRedirect();
+    await oktaAuth.signInWithRedirect();
   }
 
   const toggleModal = () => {
@@ -32,7 +32,7 @@ const LoginButton = () => {
       oktaAuth.getUser().then((info) => {
         setUserInfo(info);
         sonarClient.v2UserCreate({
-          headers: { 'Authorization': `Bearer ${oktaAuth.getAccessToken()}` }
+          headers: { 'Authorization': `Bearer ${oktaAuth.getIdToken()}` }
         })
       }).catch((err) => {
         console.error(err);
