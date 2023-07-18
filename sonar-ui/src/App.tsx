@@ -6,6 +6,7 @@ import { Routes, Route, useNavigate } from 'react-router-dom';
 import { Security, LoginCallback } from '@okta/okta-react';
 import { mainStyle } from './App.Style';
 import Header from './components/App/Header';
+import ApiKeys from './pages/ApiKeys';
 import Environments from './pages/Environments';
 import Service from './pages/Service';
 import { LightTheme, DarkTheme } from './themes';
@@ -28,12 +29,17 @@ function App() {
       <ThemeProvider theme={enableDarkTheme ? DarkTheme : LightTheme}>
         <Security oktaAuth={oktaAuth} restoreOriginalUri={restoreOriginalUri}>
           <main css={mainStyle} data-test="app-main">
-            <Header enableDarkTheme={enableDarkTheme} setEnableDarkTheme={setEnableDarkTheme} />
-            <Routes>
-              <Route path="/" element={<Environments />} />
-              <Route path="/:environment/tenants/:tenant/services/*" element={<Service />} />
-              <Route path="/login/callback" element={<LoginCallback />} />
-            </Routes>
+            <div>
+              <Security oktaAuth={oktaAuth} restoreOriginalUri={restoreOriginalUri}>
+                <Header enableDarkTheme={enableDarkTheme} setEnableDarkTheme={setEnableDarkTheme} />
+                <Routes>
+                  <Route path="/" element={<Environments />} />
+                  <Route path="/:environment/tenants/:tenant/services/*" element={<Service />} />
+                  <Route path="/login/callback" element={<LoginCallback />} />
+                  <Route path="/api-keys" element={<ApiKeys />}/>
+                </Routes>
+              </Security>
+            </div>
           </main>
         </Security>
       </ThemeProvider>

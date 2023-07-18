@@ -1,0 +1,38 @@
+import { Button, TableCell, TableRow } from '@cmsgov/design-system';
+import React from 'react';
+import { ApiKeyConfiguration } from '../../api/data-contracts';
+import * as styles from '../App/Header.Style';
+import DeleteIcon from '../Icons/DeleteIcon';
+
+const ApiKeyTableItem: React.FC<{
+  apiKey: ApiKeyConfiguration
+}> =
+  ({ apiKey}) => {
+
+  return (
+    <TableRow>
+      <TableCell>
+        {apiKey.id}
+      </TableCell>
+      <TableCell>
+        {apiKey.apiKeyType}
+      </TableCell>
+      <TableCell>
+        {apiKey.environment}
+      </TableCell>
+      <TableCell>
+        {apiKey.tenant}
+      </TableCell>
+      <TableCell>
+        <Button
+          css={[styles.ButtonStyles, styles.IconButtonStyle]}
+          size={'small'}
+        >
+          <DeleteIcon /> Delete
+        </Button>
+      </TableCell>
+    </TableRow>
+  )
+}
+
+export default ApiKeyTableItem;

@@ -10,6 +10,7 @@
  */
 
 import {
+  ApiKeyConfiguration,
   ApiKeyDetails,
   CurrentUserView,
   EnvironmentHealth,
@@ -52,7 +53,7 @@ export class Api<SecurityDataType = unknown> extends HttpClient<SecurityDataType
    * @request GET:/api/v2/keys
    */
   v2KeysList = (params: RequestParams = {}) =>
-    this.request<ApiKeyDetails[], ProblemDetails>({
+    this.request<ApiKeyConfiguration[], ProblemDetails>({
       path: `/api/v2/keys`,
       method: "GET",
       format: "json",

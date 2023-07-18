@@ -120,7 +120,7 @@ public class ApiKeyController : ControllerBase {
   /// <response code="400">The API key details are not valid.</response>
   /// <response code="401">The API key in the header is not authorized for creating an API key.</response>
   [HttpGet]
-  [ProducesResponseType(typeof(IEnumerable<ApiKeyDetails>), statusCode: 200)]
+  [ProducesResponseType(typeof(IEnumerable<ApiKeyConfiguration>), statusCode: 200)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 400)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 401)]
   public async Task<ActionResult> GetApiKeys(
