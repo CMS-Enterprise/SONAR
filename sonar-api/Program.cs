@@ -112,13 +112,13 @@ public class Program {
   public static WebApplication BuildApplication(WebApplicationBuilder builder) {
 
     // Add Okta Authentication
+    var oktaConfig = builder.Configuration.GetSection("Okta").BindCtor<OktaConfiguration>();
     builder.Services
       .AddAuthentication(options => {
         options.DefaultScheme = MultiSchemeAuthenticationHandler.SchemeName;
       })
       .AddOktaWebApi(new OktaWebApiOptions {
-        // TODO: make this configurable
-        OktaDomain = "https://dev-50063805.okta.com",
+        OktaDomain = oktaConfig.OktaDomain,
       })
       .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(
         ApiKeyAuthenticationHandler.SchemeName,

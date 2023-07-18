@@ -17,5 +17,6 @@ public class ConfigurationDependencyRegistration {
     services.ConfigureRecord<WebHostConfiguration>(this._configuration.GetSection("WebHost"));
     services.ConfigureRecord<LegacyEndpointConfiguration>(this._configuration.GetSection("LegacyEndpoint"));
     services.ConfigureRecord<SecurityConfiguration>(this._configuration.GetSection("Security"));
+    services.ConfigureRecord<OktaConfiguration>(this._configuration.GetSection("Okta"));
   }
 }
