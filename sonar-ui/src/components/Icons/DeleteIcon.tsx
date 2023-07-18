@@ -7,6 +7,30 @@ const DeleteIcon = (props: SonarIconProps) =>
     viewBox="0 0 28 28"
     {...props}>
 
+    {/*
+      trash-outline.svg
+
+      The MIT License (MIT)
+
+      Copyright (c) 2015-present Ionic (http://ionic.io/)
+
+      Permission is hereby granted, free of charge, to any person obtaining a copy
+      of this software and associated documentation files (the "Software"), to deal
+      in the Software without restriction, including without limitation the rights
+      to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+      copies of the Software, and to permit persons to whom the Software is
+      furnished to do so, subject to the following conditions:
+
+      The above copyright notice and this permission notice shall be included in
+      all copies or substantial portions of the Software.
+
+      THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+      IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+      FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+      AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+      LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+      OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+      THE SOFTWARE. */}
     <path fillRule="evenodd" clipRule="evenodd"
           d="M6.07045 5.25173C6.55276 5.22159 6.96818 5.58814 6.99833 6.07045L8.09208 23.5704C8.09228 23.5737 8.09246 23.5769 8.09263 23.5801C8.12288 24.169 8.51385 24.5 8.96878 24.5H19.0313C19.4817 24.5 19.871 24.1764 19.9079 23.5717L21.0017 6.07045C21.0319 5.58814 21.4473 5.22159 21.9296 5.25173C22.4119 5.28188 22.7785 5.6973 22.7483 6.17961L21.6547 23.6784C21.6546 23.6785 21.6546 23.6785 21.6546 23.6786C21.5679 25.0961 20.5134 26.25 19.0313 26.25H8.96878C7.5005 26.25 6.42122 25.1062 6.34521 23.6752L5.25173 6.17961C5.22159 5.6973 5.58814 5.28188 6.07045 5.25173Z"/>
     <path fillRule="evenodd" clipRule="evenodd"
