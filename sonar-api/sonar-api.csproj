@@ -30,7 +30,7 @@
          Note: 2.x is largely backward comaptible. -->
     <PackageReference Include="NETStandard.Library" Version="2.0.3" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.4" />
-    <PackageReference Include="Okta.AspNetCore" Version="3.3.0" />
+    <PackageReference Include="Okta.AspNetCore" Version="4.4.2" />
     <PackageReference Include="Snappy.Standard" Version="0.2.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
   </ItemGroup>
