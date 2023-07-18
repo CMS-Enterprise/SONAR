@@ -5,8 +5,8 @@ import { OktaAuthOptions } from '@okta/okta-auth-js';
 export const apiUrl: string = process.env.REACT_APP_API_URL || (window as any).API_URL;
 
 export const oktaAuthOptions: OktaAuthOptions = {
-  issuer: process.env.OKTA_ISSUER || (window as any).OKTA_ISSUER,
-  clientId: process.env.OKTA_CLIENTID || (window as any).OKTA_CLIENTID,
+  issuer: process.env.REACT_APP_OKTA_ISSUER || (window as any).OKTA_ISSUER,
+  clientId: process.env.REACT_APP_OKTA_CLIENTID || (window as any).OKTA_CLIENTID,
   redirectUri: `${window.location.origin}/login/callback`,
   scopes: [ 'openid', 'email', 'profile' ],
 };

@@ -27,6 +27,12 @@ If you want to test the SONAR UI against an alternative API URL (such as our dev
 REACT_APP_API_URL=https://sonar-dev.batcave-ispg-nonprod.internal.cms.gov npm start
 ```
 
+If you want to point the SONAR UI at our development Okta instance, use the `REACT_APP_OKTA_ISSUER` and `REACT_APP_OKTA_CLIENTID` environment variables:
+
+```
+REACT_APP_OKTA_ISSUER="https://dev-50063805.okta.com/oauth2/default" REACT_APP_OKTA_CLIENTID="0oa9q02oc0wdwaB145d7" npm start
+```
+
 ### `npm test`
 
 Launches the test runner in the interactive watch mode.\
