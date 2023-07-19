@@ -52,48 +52,65 @@ public class DataContext : DbContext {
       // Root: English - with modifiers - comparison strength - case insensitive, accent & punctuation sensitive
       //       en      -       u        -          ks         -     level2
       .HasCollation(CaseInsensitiveCollation, locale: "en-u-ks-level2", provider: "icu", deterministic: false)
-      .Entity<ServiceRelationship>(entity => {
-        entity.HasOne<Service>()
-          .WithMany().HasForeignKey(sr => sr.ServiceId);
-        entity.HasOne<Service>()
-          .WithMany().HasForeignKey(sr => sr.ParentServiceId);
-        entity.HasKey(sr => new { sr.ServiceId, sr.ParentServiceId });
-      })
-      .Entity<Service>(entity => {
-        entity.HasOne<Tenant>()
-          .WithMany()
-          .HasForeignKey(s => s.TenantId);
-      })
       .Entity<Tenant>(entity => {
+        // Tenants must be explicitly deleted before deleting an environment
         entity.HasOne<Environment>()
           .WithMany()
           .HasForeignKey(t => t.EnvironmentId);
       })
+      .Entity<Service>(entity => {
+        entity.HasOne<Tenant>()
+          .WithMany()
+          .HasForeignKey(s => s.TenantId)
+          .OnDelete(DeleteBehavior.Cascade);
+      })
+      .Entity<ServiceRelationship>(entity => {
+        // If either service is deleted, delete the relationship
+        entity.HasOne<Service>()
+          .WithMany()
+          .HasForeignKey(sr => sr.ServiceId)
+          .OnDelete(DeleteBehavior.Cascade);
+        entity.HasOne<Service>()
+          .WithMany()
+          .HasForeignKey(sr => sr.ParentServiceId)
+          .OnDelete(DeleteBehavior.Cascade);
+        entity.HasKey(sr => new { sr.ServiceId, sr.ParentServiceId });
+      })
       .Entity<HealthCheck>(entity => {
         entity.HasOne<Service>()
           .WithMany()
-          .HasForeignKey(hc => hc.ServiceId);
+          .HasForeignKey(hc => hc.ServiceId)
+          .OnDelete(DeleteBehavior.Cascade);
       })
       .Entity<ApiKey>(entity => {
         entity.HasOne<Tenant>()
           .WithMany()
-          .HasForeignKey(t => t.TenantId);
+          .HasForeignKey(k => k.TenantId)
+          .OnDelete(DeleteBehavior.Cascade);
+        entity.HasOne<Environment>()
+          .WithMany()
+          .HasForeignKey(k => k.EnvironmentId)
+          .OnDelete(DeleteBehavior.Cascade);
       })
       .Entity<UserPermission>(entity => {
+        // Users are un-deletable, so no need to set up cascading delete
         entity.HasOne<User>()
           .WithMany()
           .HasForeignKey(up => up.UserId);
         entity.HasOne<Environment>()
           .WithMany()
-          .HasForeignKey(up => up.EnvironmentId);
+          .HasForeignKey(up => up.EnvironmentId)
+          .OnDelete(DeleteBehavior.Cascade);
         entity.HasOne<Tenant>()
           .WithMany()
-          .HasForeignKey(up => up.TenantId);
+          .HasForeignKey(up => up.TenantId)
+          .OnDelete(DeleteBehavior.Cascade);
       })
       .Entity<HealthCheckCache>(entity => {
         entity.HasOne<ServiceHealthCache>()
           .WithMany()
-          .HasForeignKey(hcc => hcc.ServiceHealthId);
+          .HasForeignKey(hcc => hcc.ServiceHealthId)
+          .OnDelete(DeleteBehavior.Cascade);
       });
   }
 }
