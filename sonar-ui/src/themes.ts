@@ -7,6 +7,7 @@ export const LightTheme : Theme = {
   highlightColor: '#F2F2F2',
   backgroundColor: '#F2F2F2',
   accentColor: '#0071BC',
+  accentShadedColor: '#005289',
   sonarColors: {
     sonarGreen: '#12890E',
     sonarGrey: '#D9D9D9',
@@ -23,6 +24,7 @@ export const DarkTheme : Theme = {
   highlightColor: '#5A5A5A',
   backgroundColor: '#393E46',
   accentColor: '#FFD369',
+  accentShadedColor: '#D8B258',
   sonarColors: {
     sonarGreen: '#12890E',
     sonarGrey: '#D9D9D9',

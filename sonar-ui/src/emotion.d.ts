@@ -8,6 +8,7 @@ declare module '@emotion/react' {
     highlightColor: string,
     backgroundColor: string,
     accentColor: string,
+    accentShadedColor: string,
     sonarColors: {
       sonarGreen: string,
       sonarGrey: string,
