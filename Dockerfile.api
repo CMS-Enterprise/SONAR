@@ -16,6 +16,9 @@ RUN apk add --no-cache snappy-dev
 # make sure we are running the most recent version of these libraries
 RUN apk upgrade --no-cache libssl3 libcrypto3
 
+# remove busybox (must be after usage of apk)
+RUN rm /bin/*
+
 WORKDIR /sonar/sonar-api
 COPY --from=build /sonar/sonar-api/bin/Release/net7.0/* .
 COPY --from=build /sonar/sonar-api/appsettings.json .
