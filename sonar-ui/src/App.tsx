@@ -29,17 +29,13 @@ function App() {
       <ThemeProvider theme={enableDarkTheme ? DarkTheme : LightTheme}>
         <Security oktaAuth={oktaAuth} restoreOriginalUri={restoreOriginalUri}>
           <main css={mainStyle} data-test="app-main">
-            <div>
-              <Security oktaAuth={oktaAuth} restoreOriginalUri={restoreOriginalUri}>
-                <Header enableDarkTheme={enableDarkTheme} setEnableDarkTheme={setEnableDarkTheme} />
-                <Routes>
-                  <Route path="/" element={<Environments />} />
-                  <Route path="/:environment/tenants/:tenant/services/*" element={<Service />} />
-                  <Route path="/login/callback" element={<LoginCallback />} />
-                  <Route path="/api-keys" element={<ApiKeys />}/>
-                </Routes>
-              </Security>
-            </div>
+            <Header enableDarkTheme={enableDarkTheme} setEnableDarkTheme={setEnableDarkTheme} />
+            <Routes>
+              <Route path="/" element={<Environments />} />
+              <Route path="/:environment/tenants/:tenant/services/*" element={<Service />} />
+              <Route path="/login/callback" element={<LoginCallback />} />
+              <Route path="/api-keys" element={<ApiKeys />} />
+            </Routes>
           </main>
         </Security>
       </ThemeProvider>
