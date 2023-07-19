@@ -1,8 +1,11 @@
-import { Button } from '@cmsgov/design-system';
 import { useTheme } from '@emotion/react';
 import { GetHeaderLabelStyle } from './ApiKeyHeader.Style';
+import PrimaryActionButton from 'components/Common/PrimaryActionButton';
+import React from 'react';
 
-const ApiKeyHeader = () => {
+const ApiKeyHeader: React.FC<{
+  handleModalToggle: () => void
+}> = ({handleModalToggle}) => {
   const theme = useTheme();
   return (
     <div className="ds-l-row ds-u-justify-content--end">
@@ -15,7 +18,11 @@ const ApiKeyHeader = () => {
       <div
         className="ds-l-col--2 ds-u-margin-right--0 ds-u-margin-left--auto ds-u-text-align--right"
       >
-        <Button variation={"solid"}>+ Create API Key</Button>
+        <PrimaryActionButton
+          onClick={handleModalToggle}
+        >
+          + Create API Key
+        </PrimaryActionButton>
       </div>
     </div>
   )

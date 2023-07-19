@@ -4,14 +4,16 @@ import { ApiKeyConfiguration } from '../api/data-contracts';
 import { parentContainerStyle } from '../App.Style';
 import ApiKeyHeader from '../components/ApiKeys/ApiKeyHeader';
 import ApiKeyTable from '../components/ApiKeys/ApiKeyTable';
+import CreateKeyModal from '../components/ApiKeys/CreateKeyModal';
 import TablePagination from '../components/App/TablePagination';
 import { createSonarClient } from '../helpers/ApiHelper';
 import useAuthenticatedQuery from '../helpers/UseAuthenicatedQuery';
 
-const PAGE_LIMIT = 2;
+const PAGE_LIMIT = 50;
 
 const ApiKeys = () => {
   const sonarClient = createSonarClient();
+  const [open, setOpen] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState(1);
   const { isLoading, data } = useAuthenticatedQuery<ApiKeyConfiguration[], Error>(
     ["apiKeys"],
@@ -29,6 +31,10 @@ const ApiKeys = () => {
   );
   const totalPages = Math.ceil((data ? data.length : 0) / PAGE_LIMIT);
 
+  const handleModalToggle = () => {
+    setOpen(!open);
+  }
+
   const currentTableData = useMemo(() => {
     if (!data) {
       return [];
@@ -40,11 +46,11 @@ const ApiKeys = () => {
 
   return (
     <section className="ds-l-container" css={parentContainerStyle()}>
-      <ApiKeyHeader />
+      <ApiKeyHeader handleModalToggle={handleModalToggle} />
       {isLoading ? (<Spinner />) : (
         <>
           <ApiKeyTable apiKeys={currentTableData}/>
-          {currentTableData?.length > PAGE_LIMIT ? (
+          {data?.length && data.length > PAGE_LIMIT ? (
             <TablePagination
               currentPage={currentPage}
               totalPages={totalPages}
@@ -52,7 +58,9 @@ const ApiKeys = () => {
               handleSelectPage={setCurrentPage}
             />
           ) : null}
-
+          {open ? (
+            <CreateKeyModal handleModalToggle={handleModalToggle} />
+          ) : null}
         </>
       )}
     </section>

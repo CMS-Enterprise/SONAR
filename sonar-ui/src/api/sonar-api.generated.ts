@@ -37,10 +37,11 @@ export class Api<SecurityDataType = unknown> extends HttpClient<SecurityDataType
    * @request POST:/api/v2/keys
    */
   v2KeysCreate = (data: ApiKeyDetails, params: RequestParams = {}) =>
-    this.request<void, ProblemDetails>({
+    this.request<ApiKeyConfiguration, ProblemDetails>({
       path: `/api/v2/keys`,
       method: "POST",
       body: data,
+      format: "json",
       type: ContentType.Json,
       ...params,
     });

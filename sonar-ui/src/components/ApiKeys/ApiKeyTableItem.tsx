@@ -18,10 +18,10 @@ const ApiKeyTableItem: React.FC<{
         {apiKey.apiKeyType}
       </TableCell>
       <TableCell>
-        {apiKey.environment}
+        {apiKey.environment ? apiKey.environment : "All Environments"}
       </TableCell>
       <TableCell>
-        {apiKey.tenant}
+        {apiKey.tenant ? apiKey.tenant : "All Tenants"}
       </TableCell>
       <TableCell>
         <Button

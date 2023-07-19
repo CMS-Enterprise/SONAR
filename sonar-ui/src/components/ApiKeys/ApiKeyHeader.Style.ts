@@ -6,3 +6,8 @@ export const GetHeaderLabelStyle: (theme: Theme) => SerializedStyles = theme => 
   cursor: 'pointer',
   fontSize: '2rem',
 })
+
+export const getCreateButtonStyle : (theme: Theme) => SerializedStyles = theme => css({
+  backgroundColor: theme.accentColor,
+  color: theme.backgroundColor
+});
