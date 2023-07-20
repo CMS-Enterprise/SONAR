@@ -1,13 +1,22 @@
+import { Button, TableCell, TableRow } from '@cmsgov/design-system';
+import React, { useState } from 'react';
 import { TableCell, TableRow } from '@cmsgov/design-system';
 import React from 'react';
 import { ApiKeyConfiguration } from '../../api/data-contracts';
+import * as styles from '../App/Header.Style';
 import DeleteIcon from '../Icons/DeleteIcon';
+import DeleteKeyModal from './DeleteKeyModal';
 import GhostActionButton from 'components/Common/GhostActionButton';
 
 const ApiKeyTableItem: React.FC<{
   apiKey: ApiKeyConfiguration
 }> =
   ({ apiKey}) => {
+    const [open, setOpen] = useState<boolean>(false);
+    const handleModalToggle = () => {
+      setOpen(!open);
+    }
+
 
   return (
     <TableRow>
@@ -24,9 +33,15 @@ const ApiKeyTableItem: React.FC<{
         {apiKey.tenant ? apiKey.tenant : "All Tenants"}
       </TableCell>
       <TableCell>
-        <GhostActionButton>
+        <GhostActionButton onClick={handleModalToggle}>
           <DeleteIcon /> Delete
         </GhostActionButton>
+        { open ? <DeleteKeyModal
+          handleModalToggle={handleModalToggle}
+          apiKey={apiKey}
+
+        /> : null}
+
       </TableCell>
     </TableRow>
   )
