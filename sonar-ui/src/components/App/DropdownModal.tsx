@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router';
 import * as styles from './Header.Style';
 import LogoutIcon from 'components/Icons/LogoutIcon';
 import KeyIcon from 'components/Icons/ApiKeyIcon';
+import GhostActionButton from 'components/Common/GhostActionButton';
 
 const DropdownModal: React.FC<{
   showModal: boolean,
@@ -19,16 +20,13 @@ const DropdownModal: React.FC<{
     <>
       {showModal && (
         <div css={styles.DropdownModalStyle} onMouseLeave={() => setShowModal(false)}>
-          <Button
-            css={[styles.ButtonStyles, styles.IconButtonStyle]}
-            size={'small'}
-            onClick={() => navigate('/api-keys')}
-          >
+          <GhostActionButton onClick={() => navigate('/api-keys')}>
             <KeyIcon /> Manage your API Keys
-          </Button>
+          </GhostActionButton>
           <div css={styles.DropdownLine} />
-          <Button css={[styles.ButtonStyles, styles.IconButtonStyle]} size={'small'} onClick={logout}>
-            <LogoutIcon /> Logout </Button>
+          <GhostActionButton onClick={logout}>
+            <LogoutIcon /> Logout
+          </GhostActionButton>
         </div>
       )}
     </>

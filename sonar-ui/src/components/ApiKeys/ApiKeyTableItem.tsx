@@ -3,6 +3,7 @@ import React from 'react';
 import { ApiKeyConfiguration } from '../../api/data-contracts';
 import * as styles from '../App/Header.Style';
 import DeleteIcon from '../Icons/DeleteIcon';
+import GhostActionButton from 'components/Common/GhostActionButton';
 
 const ApiKeyTableItem: React.FC<{
   apiKey: ApiKeyConfiguration
@@ -24,12 +25,9 @@ const ApiKeyTableItem: React.FC<{
         {apiKey.tenant ? apiKey.tenant : "All Tenants"}
       </TableCell>
       <TableCell>
-        <Button
-          css={[styles.ButtonStyles, styles.IconButtonStyle]}
-          size={'small'}
-        >
+        <GhostActionButton>
           <DeleteIcon /> Delete
-        </Button>
+        </GhostActionButton>
       </TableCell>
     </TableRow>
   )

@@ -86,19 +86,6 @@ export const ButtonStyles: (theme: Theme) => SerializedStyles = theme => css({
   },
 });
 
-export const IconButtonStyle: (theme: Theme) => SerializedStyles = theme => css({
-  display: 'inline-flex',
-  border: 'none',
-  alignItems: 'center',
-  marginRight: '0px',
-  color: theme.textColor,
-
-  '&:hover, &:focus, &:focus:hover': {
-    color: theme.accentColor,
-    backgroundColor: theme.highlightColor
-  }
-});
-
 export const DropdownModalStyle: (theme: Theme) => SerializedStyles = theme => css({
   display: 'flex',
   flexDirection: 'column',
