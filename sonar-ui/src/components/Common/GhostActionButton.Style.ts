@@ -5,9 +5,15 @@ export const getGhostActionButtonStyle: (theme: Theme) => SerializedStyles = the
   borderRadius: '7px',
   border: 'none',
   padding: '15px',
+  display: 'flex',
+  alignItems: 'center',
 
   '&:hover, &:focus, &:focus:hover': {
     color: theme.accentColor,
     backgroundColor: theme.highlightColor
+  },
+
+  '& svg': {
+    marginRight: '0.25rem'
   }
 });

@@ -1,6 +1,5 @@
 import React from 'react';
 import { useOktaAuth } from '@okta/okta-react';
-import { Button } from '@cmsgov/design-system';
 import { useNavigate } from 'react-router';
 import * as styles from './Header.Style';
 import LogoutIcon from 'components/Icons/LogoutIcon';
