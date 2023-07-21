@@ -1,9 +1,6 @@
-import { Button, TableCell, TableRow } from '@cmsgov/design-system';
-import React, { useState } from 'react';
 import { TableCell, TableRow } from '@cmsgov/design-system';
-import React from 'react';
+import React, { useState } from 'react';
 import { ApiKeyConfiguration } from '../../api/data-contracts';
-import * as styles from '../App/Header.Style';
 import DeleteIcon from '../Icons/DeleteIcon';
 import DeleteKeyModal from './DeleteKeyModal';
 import GhostActionButton from 'components/Common/GhostActionButton';
@@ -36,12 +33,11 @@ const ApiKeyTableItem: React.FC<{
         <GhostActionButton onClick={handleModalToggle}>
           <DeleteIcon /> Delete
         </GhostActionButton>
-        { open ? <DeleteKeyModal
+        { open ?
+          <DeleteKeyModal
           handleModalToggle={handleModalToggle}
           apiKey={apiKey}
-
         /> : null}
-
       </TableCell>
     </TableRow>
   )
