@@ -82,17 +82,18 @@ const CreateKeyModal: React.FC<{
     const allTenants = !tenantData.data ? [] : tenantData.data;
     if (+selectedEnvironment !== 0) {
       setTenantOptions(
-        allTenants.filter(tenant => tenant.environmentName === selectedEnvironment)
-          .map((tenant) => {
-            const option: DropdownOptions = {
-              label: tenant.tenantName,
-              value: tenant.tenantName
-            }
-            return option;
-          })
-      )
+        [INITIAL_TENANT_OPTION].concat(
+          allTenants.filter(tenant => tenant.environmentName === selectedEnvironment)
+            .map((tenant) => {
+              const option: DropdownOptions = {
+                label: tenant.tenantName,
+                value: tenant.tenantName
+              }
+              return option;
+            })
+        )
+      );
     } else {
-      setSelectedTenant(0);
       setTenantOptions([INITIAL_TENANT_OPTION]);
     }
     setSelectedTenant(0);
