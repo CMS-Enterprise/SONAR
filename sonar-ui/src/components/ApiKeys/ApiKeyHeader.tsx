@@ -1,17 +1,15 @@
-import { useTheme } from '@emotion/react';
-import { GetHeaderLabelStyle } from './ApiKeyHeader.Style';
+import { pageTitleStyle } from 'App.Style';
 import PrimaryActionButton from 'components/Common/PrimaryActionButton';
 import React from 'react';
 
 const ApiKeyHeader: React.FC<{
   handleModalToggle: () => void
 }> = ({handleModalToggle}) => {
-  const theme = useTheme();
   return (
     <div className="ds-l-row ds-u-justify-content--end">
       <div
         className="ds-l-col--4 ds-u-margin-right--auto ds-u-margin-left--0"
-        css={GetHeaderLabelStyle(theme)}
+        css={pageTitleStyle}
       >
         Your Api Keys
       </div>

@@ -28,11 +28,15 @@ export const DynamicTextFontStyle: CSSObject = {
   fontFamily: 'Verdana, Geneva, sans-serif'
 };
 
-export function parentContainerStyle() {
-  return css({
+export const parentContainerStyle: CSSObject = {
     marginLeft: 50,
     marginRight: 50,
     padding: "25px 0px",
     maxWidth: "none"
-  })
-}
+};
+
+export const pageTitleStyle: CSSObject = {
+  ...StaticTextFontStyle,
+  fontSize: '2rem',
+  cursor: 'default'
+};

@@ -11,6 +11,9 @@ import Environments from './pages/Environments';
 import Service from './pages/Service';
 import { LightTheme, DarkTheme } from './themes';
 import { oktaAuthOptions } from './config';
+import UserPermissions from 'pages/UserPermissions';
+import EnvironmentUsersTable from 'components/UserPermissions/EnvironmentUsersTable';
+import UserPermissionsTable from 'components/UserPermissions/UserPermissionsTable';
 
 const queryClient = new QueryClient();
 
@@ -35,6 +38,10 @@ function App() {
               <Route path="/:environment/tenants/:tenant/services/*" element={<Service />} />
               <Route path="/login/callback" element={<LoginCallback />} />
               <Route path="/api-keys" element={<ApiKeys />} />
+              <Route path="/user-permissions" element={<UserPermissions />}>
+                <Route index={true} element={<EnvironmentUsersTable />} />
+                <Route path="environments/:environmentName" element={<UserPermissionsTable />}/>
+              </Route>
             </Routes>
           </main>
         </Security>

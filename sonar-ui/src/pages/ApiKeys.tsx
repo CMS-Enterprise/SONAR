@@ -45,7 +45,7 @@ const ApiKeys = () => {
   }, [currentPage, data]);
 
   return (
-    <section className="ds-l-container" css={parentContainerStyle()}>
+    <section className="ds-l-container" css={parentContainerStyle}>
       <ApiKeyHeader handleModalToggle={handleModalToggle} />
       {isLoading ? (<Spinner />) : (
         <>

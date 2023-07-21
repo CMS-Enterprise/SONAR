@@ -1,9 +1,10 @@
-import { Table, TableBody, TableCell, TableHead, TableRow } from '@cmsgov/design-system';
+import { TableBody, TableCell, TableHead, TableRow } from '@cmsgov/design-system';
 import { useTheme } from '@emotion/react';
 import React from 'react';
 import { ApiKeyConfiguration } from '../../api/data-contracts';
 import ApiKeyTableItem from './ApiKeyTableItem';
-import { getEmptyTableMessageStyle, getTableContainerStyle, getTableStyle } from './ApiKeyTable.Style';
+import { getEmptyTableMessageStyle } from './ApiKeyTable.Style';
+import ThemedTable from 'components/Common/ThemedTable';
 
 const ApiKeyTable: React.FC<{
   apiKeys: ApiKeyConfiguration[]
@@ -11,10 +12,10 @@ const ApiKeyTable: React.FC<{
   ({ apiKeys }) => {
     const theme = useTheme();
     return (
-      <div className="ds-l-row">
-        <div className="ds-l-col--11 ds-u-margin-left--auto ds-u-margin-right--auto ds-u-margin-top--3" css={getTableContainerStyle(theme)}>
+      <div className='ds-l-row'>
+        <div className='ds-l-col--12'>
           {apiKeys.length > 0 ? (
-            <Table borderless css={getTableStyle(theme)}>
+            <ThemedTable>
               <TableHead>
                 <TableRow>
                   <TableCell>
@@ -37,9 +38,9 @@ const ApiKeyTable: React.FC<{
                   <ApiKeyTableItem key={apiKey.id} apiKey={apiKey} />
                 ))}
               </TableBody>
-            </Table>
+            </ThemedTable>
           ) : (
-            <div css={getEmptyTableMessageStyle(theme)}>
+            <div className='ds-u-margin-top--1' css={getEmptyTableMessageStyle(theme)}>
               There are no API Keys associated with your account
             </div>
           )}
