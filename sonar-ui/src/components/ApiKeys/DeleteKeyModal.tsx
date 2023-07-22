@@ -21,7 +21,7 @@ const DeleteKeyModal: React.FC<{
   const { oktaAuth } = useOktaAuth();
   const [alertHeading, setAlertHeading] = useState("Deleting an API Key cannot be undone");
   const [alertText, setAlertText] = useState(`Are you sure you want to delete the ${apiKey.apiKeyType}` +
-    ` API Key for the environment ${apiKey.environment} and tenant ${apiKey.tenant}.`);
+    ` API Key for the environment ${apiKey.environment} and tenant ${apiKey.tenant}?`);
 
   const deleteKey = useMutation({
     mutationFn: () => sonarClient.deleteApiKey(apiKey.id!, {
