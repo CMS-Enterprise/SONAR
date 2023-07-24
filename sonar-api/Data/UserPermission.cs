@@ -10,11 +10,11 @@ public class UserPermission {
   [Key]
   public Guid Id { get; init; }
 
-  public Guid UserId { get; init; }
+  public Guid UserId { get; set; }
 
-  public Guid? EnvironmentId { get; init; }
+  public Guid? EnvironmentId { get; set; }
 
-  public Guid? TenantId { get; init; }
+  public Guid? TenantId { get; set; }
 
   public PermissionType Permission { get; set; }
 

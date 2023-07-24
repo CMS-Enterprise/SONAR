@@ -33,6 +33,7 @@ public class Dependencies {
     builder.Services.AddScoped<HealthDataHelper>();
     builder.Services.AddScoped<CacheHelper>();
     builder.Services.AddScoped<IApiKeyRepository, DbApiKeyRepository>();
+    builder.Services.AddScoped<IPermissionsRepository, DbPermissionRepository>();
     builder.Services.AddScoped<KeyHashHelper>();
 
     builder.Services.AddHttpClient<IPrometheusRemoteProtocolClient, PrometheusRemoteProtocolClient>((provider, client) => {
