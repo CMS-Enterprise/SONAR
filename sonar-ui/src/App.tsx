@@ -1,7 +1,6 @@
 import { OktaAuth, toRelativeUrl } from '@okta/okta-auth-js';
 import React, { useState, useCallback } from 'react';
 import { ThemeProvider } from '@emotion/react';
-import { QueryClient, QueryClientProvider } from 'react-query';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { Security, LoginCallback } from '@okta/okta-react';
 import { mainStyle } from './App.Style';
@@ -14,8 +13,7 @@ import { oktaAuthOptions } from './config';
 import UserPermissions from 'pages/UserPermissions';
 import EnvironmentUsersTable from 'components/UserPermissions/EnvironmentUsersTable';
 import UserPermissionsTable from 'components/UserPermissions/UserPermissionsTable';
-
-const queryClient = new QueryClient();
+import SonarApiProvider from 'components/SonarApi/Provider';
 
 const oktaAuth = new OktaAuth(oktaAuthOptions);
 
@@ -28,9 +26,9 @@ function App() {
   }, [navigate]);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider theme={enableDarkTheme ? DarkTheme : LightTheme}>
-        <Security oktaAuth={oktaAuth} restoreOriginalUri={restoreOriginalUri}>
+    <ThemeProvider theme={enableDarkTheme ? DarkTheme : LightTheme}>
+      <Security oktaAuth={oktaAuth} restoreOriginalUri={restoreOriginalUri}>
+        <SonarApiProvider>
           <main css={mainStyle} data-test="app-main">
             <Header enableDarkTheme={enableDarkTheme} setEnableDarkTheme={setEnableDarkTheme} />
             <Routes>
@@ -44,9 +42,9 @@ function App() {
               </Route>
             </Routes>
           </main>
-        </Security>
-      </ThemeProvider>
-    </QueryClientProvider>
+        </SonarApiProvider>
+      </Security>
+    </ThemeProvider>
   );
 }
 
