@@ -6,9 +6,13 @@ import * as React from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { useQuery } from 'react-query';
 import AccordionToggleAllButton from 'components/Environments/AccordionToggleAllButton';
+import ThemedFab from '../components/Common/ThemedFab';
+import ThemedModalDialog from '../components/Common/ThemedModalDialog';
+import CreateEnvironmentForm from '../components/Environments/CreateEnvironmentForm';
 
 const Environments = () => {
   const sonarClient = createSonarClient();
+  const [createEnvOpen, setCreateEnvOpen] = useState(false);
   const [allPanelsOpen, setAllPanelsOpen] = useState<boolean>(true);
   const [openPanels, setOpenPanels] = useState<string[]>([]);
   const { isLoading, data } = useQuery<EnvironmentHealth[], Error>(
@@ -49,6 +53,10 @@ const Environments = () => {
     setAllPanelsOpen(!allPanelsOpen)
   }
 
+  const handleModalToggle = () => {
+    setCreateEnvOpen(!createEnvOpen);
+  }
+
   return (
     <section className="ds-l-container">
       <AccordionToggleAllButton allPanelsOpen={allPanelsOpen} handleToggle={handleToggleAll} />
@@ -63,6 +71,17 @@ const Environments = () => {
             />
         ))}
       </div>
+      <ThemedFab action={handleModalToggle} />
+      {createEnvOpen ? (
+        <ThemedModalDialog
+          heading={'Add Environment'}
+          onClose={handleModalToggle}
+          onExit={handleModalToggle}
+          actions={<CreateEnvironmentForm handleModalToggle={handleModalToggle} />}
+        />
+      ) : null}
+
+
     </section>
   )
 }

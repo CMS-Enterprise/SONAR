@@ -12,11 +12,3 @@ export const getDialogStyle : (theme: Theme) => SerializedStyles = theme => css(
     }
   }
 });
-
-export const getInputLabelStyle : (theme: Theme) => SerializedStyles = theme => css({
-  '& label': {
-    marginTop: 12
-  }
-});
-
-

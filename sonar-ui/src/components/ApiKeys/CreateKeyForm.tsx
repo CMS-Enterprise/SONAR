@@ -1,44 +1,55 @@
-import { Dropdown, TextField } from '@cmsgov/design-system';
 import { DropdownOptions, DropdownValue } from '@cmsgov/design-system/dist/types/Dropdown/Dropdown';
-import { useTheme } from '@emotion/react';
 import { useOktaAuth } from '@okta/okta-react';
 import React, { useEffect, useState } from 'react';
-import { useMutation, useQueryClient } from 'react-query';
+import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { ApiKeyDetails, PermissionType } from '../../api/data-contracts';
 import { createSonarClient } from '../../helpers/ApiHelper';
 import AlertBanner from '../App/AlertBanner';
 import PrimaryActionButton from '../Common/PrimaryActionButton';
 import SecondaryActionButton from '../Common/SecondaryActionButton';
-import { getInputLabelStyle } from './KeyModal.Style';
+import ThemedDropdown from '../Common/ThemedDropdown';
+import ThemedTextField from '../Common/ThemedTextField';
+
+const permissions: DropdownOptions[] = [
+  {
+    label: "Admin",
+    value: "Admin"
+  },
+  {
+    label: "Standard",
+    value: "Standard"
+  }
+];
+
+const INITIAL_OPTION: DropdownOptions = {
+  label: "Please Select",
+  value: 0
+}
+
+const INITIAL_ENV_OPTION: DropdownOptions = {
+  label: "All Environments",
+  value: 0
+}
+
+const INITIAL_TENANT_OPTION: DropdownOptions = {
+  label: "All Tenants",
+  value: 0
+}
 
 const CreateKeyForm: React.FC<{
-  selectedRole: DropdownValue,
-  roles: DropdownOptions[],
-  setSelectedRole: (value: DropdownValue) => void,
-  selectedEnvironment: DropdownValue,
-  environmentOptions: DropdownOptions[],
-  setSelectedEnvironment: (value: DropdownValue) => void,
-  selectedTenant: DropdownValue,
-  tenantOptions: DropdownOptions[],
-  setSelectedTenant: (value: DropdownValue) => void,
   handleModalToggle: () => void
 }> = ({
-  selectedRole,
-  roles,
-  setSelectedRole,
-  selectedEnvironment,
-  environmentOptions,
-  setSelectedEnvironment,
-  selectedTenant,
-  tenantOptions,
-  setSelectedTenant,
   handleModalToggle
 }) => {
-  const theme = useTheme();
   const sonarClient = createSonarClient();
   const queryClient = useQueryClient();
   const { oktaAuth } = useOktaAuth();
 
+  const roles = [INITIAL_OPTION, ...permissions]
+  // const [roles, setRoles] = useState<DropdownOptions[]>([INITIAL_OPTION, ...permissions]);
+  const [selectedRole, setSelectedRole] = useState<DropdownValue>(0);
+  const [selectedEnvironment, setSelectedEnvironment] = useState<DropdownValue>(0);
+  const [selectedTenant, setSelectedTenant] = useState<DropdownValue>(0);
   const [submitDisabled, setSubmitDisabled] = useState(true);
   const [createdKeyId, setCreatedKeyId] = useState("");
   const [createdKeyVal, setCreatedKeyVal] = useState("");
@@ -46,6 +57,61 @@ const CreateKeyForm: React.FC<{
   const [alertHeading, setAlertHeading] = useState("All fields are required");
   const [alertText, setAlertText] = useState("Set all fields to add a new user permission.");
   const [keyCreated, setKeyCreated] = useState(false);
+
+  const environmentData = useQuery({
+    queryKey: ['environments'],
+    staleTime: Infinity,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    queryFn: () => sonarClient.getEnvironments()
+      .then((res) => {
+        return res.data;
+      })
+  });
+
+  const environmentOptions = (!environmentData  || !environmentData.data) ? [] :
+    [INITIAL_ENV_OPTION].concat(
+      environmentData.data?.map((env) => {
+        const option: DropdownOptions = {
+          label: env.environmentName,
+          value: env.environmentName
+        }
+        return option;
+      })
+    );
+
+  const [tenantOptions, setTenantOptions] =
+    useState<DropdownOptions[]>([INITIAL_OPTION]);
+  const tenantData = useQuery({
+    queryKey: ['tenants'],
+    staleTime: Infinity,
+    refetchOnMount: false,
+    queryFn: () => sonarClient.getTenants()
+      .then((res) => {
+        return res.data;
+      })
+  });
+
+  useEffect(() => {
+    const allTenants = !tenantData.data ? [] : tenantData.data;
+    if (+selectedEnvironment !== 0) {
+      setTenantOptions(
+        [INITIAL_TENANT_OPTION].concat(
+          allTenants.filter(tenant => tenant.environmentName === selectedEnvironment)
+            .map((tenant) => {
+              const option: DropdownOptions = {
+                label: tenant.tenantName,
+                value: tenant.tenantName
+              }
+              return option;
+            })
+        )
+      );
+    } else {
+      setTenantOptions([INITIAL_TENANT_OPTION]);
+    }
+    setSelectedTenant(0);
+  }, [selectedEnvironment, tenantData.data]);
 
   const mutation = useMutation({
     mutationFn: (newKey: ApiKeyDetails) => sonarClient.v2KeysCreate(newKey, {
@@ -94,14 +160,13 @@ const CreateKeyForm: React.FC<{
         <div
           className="ds-l-col--6"
         >
-          <Dropdown
+          <ThemedDropdown
             label="Role:"
             name="role_field"
             disabled={keyCreated}
             onChange={(event) => setSelectedRole(event.target.value)}
             value={selectedRole}
             options={roles}
-            css={getInputLabelStyle(theme)}
           />
         </div>
       </div>
@@ -110,14 +175,13 @@ const CreateKeyForm: React.FC<{
         <div
           className="ds-l-col--8"
         >
-          <Dropdown
+          <ThemedDropdown
             label="Environment:"
             name="environment_field"
             disabled={keyCreated}
             onChange={(event) => setSelectedEnvironment(event.target.value)}
             value={selectedEnvironment}
             options={environmentOptions}
-            css={getInputLabelStyle(theme)}
           />
         </div>
       </div>
@@ -126,14 +190,13 @@ const CreateKeyForm: React.FC<{
         <div
           className="ds-l-col--8"
         >
-          <Dropdown
+          <ThemedDropdown
             label="Tenant:"
             name="tenant_field"
             disabled={keyCreated}
             onChange={(event) => setSelectedTenant(event.target.value)}
             value={selectedTenant}
             options={tenantOptions}
-            css={getInputLabelStyle(theme)}
           />
         </div>
       </div>
@@ -143,10 +206,10 @@ const CreateKeyForm: React.FC<{
             <div
               className="ds-l-col--8"
             >
-              <TextField
+              <ThemedTextField
                 name="key-id-field"
                 label="ID:"
-                readOnly
+                disabled
                 value={createdKeyId}
               />
             </div>
@@ -155,10 +218,10 @@ const CreateKeyForm: React.FC<{
             <div
               className="ds-l-col--8"
             >
-              <TextField
+              <ThemedTextField
                 name="key-text-field"
                 label="API KEY:"
-                readOnly
+                disabled
                 value={createdKeyVal}
               />
               <PrimaryActionButton
@@ -177,7 +240,7 @@ const CreateKeyForm: React.FC<{
 
       <div className="ds-l-row">
         <div
-          className="ds-l-col--12"
+          className="ds-l-col--12 ds-u-padding-right--0"
         >
           <AlertBanner
             alertHeading={alertHeading}
@@ -208,7 +271,7 @@ const CreateKeyForm: React.FC<{
               </SecondaryActionButton>
             </div>
             <div
-              className="ds-l-col--3 ds-u-margin-right--1"
+              className="ds-l-col--3"
             >
               <PrimaryActionButton
                 onClick={handleSubmit}

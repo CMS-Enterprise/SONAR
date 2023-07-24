@@ -1,11 +1,9 @@
 import { SerializedStyles, Theme, css } from "@emotion/react";
 
 export const primaryActionButtonStyle: (theme: Theme) => SerializedStyles = theme => css({
-  borderRadius: '7px',
-
+  borderRadius: '.625rem',
   color: theme.foregroundColor,
   backgroundColor: theme.accentColor,
-
   '&:hover, &:focus, &:focus:hover': {
     color: theme.backgroundColor,
     backgroundColor: theme.accentShadedColor

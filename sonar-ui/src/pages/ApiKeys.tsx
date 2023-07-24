@@ -4,8 +4,9 @@ import { ApiKeyConfiguration } from '../api/data-contracts';
 import { parentContainerStyle } from '../App.Style';
 import ApiKeyHeader from '../components/ApiKeys/ApiKeyHeader';
 import ApiKeyTable from '../components/ApiKeys/ApiKeyTable';
-import CreateKeyModal from '../components/ApiKeys/CreateKeyModal';
+import CreateKeyForm from '../components/ApiKeys/CreateKeyForm';
 import TablePagination from '../components/App/TablePagination';
+import ThemedModalDialog from '../components/Common/ThemedModalDialog';
 import { createSonarClient } from '../helpers/ApiHelper';
 import useAuthenticatedQuery from '../helpers/UseAuthenicatedQuery';
 
@@ -59,7 +60,16 @@ const ApiKeys = () => {
             />
           ) : null}
           {open ? (
-            <CreateKeyModal handleModalToggle={handleModalToggle} />
+            <ThemedModalDialog
+              heading={"Create API Key"}
+              onExit={handleModalToggle}
+              onClose={handleModalToggle}
+              actions={
+                <CreateKeyForm
+                  handleModalToggle={handleModalToggle}
+                />
+              }
+            />
           ) : null}
         </>
       )}

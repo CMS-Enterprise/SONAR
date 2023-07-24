@@ -1,10 +1,8 @@
-import { Dialog } from '@cmsgov/design-system';
-import { useTheme } from '@emotion/react';
 import { useOktaAuth } from '@okta/okta-react';
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from 'react-query';
 import { createSonarClient } from '../../helpers/ApiHelper';
-import { getDialogStyle } from './KeyModal.Style';
+import ThemedModalDialog from '../Common/ThemedModalDialog';
 import { ApiKeyConfiguration } from '../../api/data-contracts';
 import AlertBanner from 'components/App/AlertBanner';
 import SecondaryActionButton from 'components/Common/SecondaryActionButton';
@@ -15,7 +13,6 @@ const DeleteKeyModal: React.FC<{
   apiKey: ApiKeyConfiguration,
   handleModalToggle: () => void
 }> = ({ apiKey, handleModalToggle }) => {
-  const theme = useTheme();
   const sonarClient = createSonarClient();
   const queryClient = useQueryClient();
   const { oktaAuth } = useOktaAuth();
@@ -40,11 +37,10 @@ const DeleteKeyModal: React.FC<{
   });
 
   return  (
-    <Dialog
+    <ThemedModalDialog
       onExit={handleModalToggle}
       closeButtonVariation={"solid"}
       heading={"Delete API Key"}
-      css={getDialogStyle(theme)}
       onClose={handleModalToggle}
     >
       <div className="ds-l-row">
@@ -68,7 +64,7 @@ const DeleteKeyModal: React.FC<{
           </PrimaryActionButton>
         </div>
       </div>
-    </Dialog>
+    </ThemedModalDialog>
   );
 }
 
