@@ -95,6 +95,23 @@ export interface MetricDataCollection {
   timeSeries: DateTimeDoubleValueTuple[];
 }
 
+export interface PermissionConfiguration {
+  /** @format uuid */
+  id?: string;
+  permission?: PermissionType;
+  userEmail?: string | null;
+  environment?: string | null;
+  tenant?: string | null;
+}
+
+export interface PermissionDetails {
+  permission: PermissionType;
+  /** @minLength 1 */
+  userEmail: string;
+  environment?: string | null;
+  tenant?: string | null;
+}
+
 export enum PermissionType {
   Admin = "Admin",
   Standard = "Standard",

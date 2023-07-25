@@ -16,6 +16,8 @@ import {
   EnvironmentHealth,
   EnvironmentModel,
   MetricDataCollection,
+  PermissionConfiguration,
+  PermissionDetails,
   ProblemDetails,
   ServiceHealth,
   ServiceHealthData,
@@ -41,8 +43,8 @@ export class Api<SecurityDataType = unknown> extends HttpClient<SecurityDataType
       path: `/api/v2/keys`,
       method: "POST",
       body: data,
-      format: "json",
       type: ContentType.Json,
+      format: "json",
       ...params,
     });
   /**
@@ -188,6 +190,19 @@ export class Api<SecurityDataType = unknown> extends HttpClient<SecurityDataType
       path: `/api/v2/environments/${environment}`,
       method: "GET",
       format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags Environment
+   * @name DeleteEnvironment
+   * @request DELETE:/api/v2/environments/{environment}
+   */
+  deleteEnvironment = (environment: string, params: RequestParams = {}) =>
+    this.request<void, ProblemDetails>({
+      path: `/api/v2/environments/${environment}`,
+      method: "DELETE",
       ...params,
     });
   /**
@@ -459,6 +474,82 @@ tenant, service, and health check in Prometheus. Filters out samples outside of 
   v2UserList = (params: RequestParams = {}) =>
     this.request<CurrentUserView[], any>({
       path: `/api/v2/user`,
+      method: "GET",
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags UserPermissions
+   * @name V2PermissionsCreate
+   * @summary Create a user permission.
+   * @request POST:/api/v2/permissions
+   */
+  v2PermissionsCreate = (data: PermissionDetails, params: RequestParams = {}) =>
+    this.request<void, ProblemDetails>({
+      path: `/api/v2/permissions`,
+      method: "POST",
+      body: data,
+      type: ContentType.Json,
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags UserPermissions
+   * @name GetPermissions
+   * @summary Get permissions the current user has access to.
+   * @request GET:/api/v2/permissions
+   */
+  getPermissions = (params: RequestParams = {}) =>
+    this.request<PermissionConfiguration[], ProblemDetails | void>({
+      path: `/api/v2/permissions`,
+      method: "GET",
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags UserPermissions
+   * @name DeleteUserPermission
+   * @summary Delete a user permission.
+   * @request DELETE:/api/v2/permissions/{permissionId}
+   */
+  deleteUserPermission = (permissionId: string, params: RequestParams = {}) =>
+    this.request<void, ProblemDetails | void>({
+      path: `/api/v2/permissions/${permissionId}`,
+      method: "DELETE",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags UserPermissions
+   * @name UpdateUserPermission
+   * @summary Update a user permission.
+   * @request PUT:/api/v2/permissions/{permissionId}
+   */
+  updateUserPermission = (permissionId: string, data: PermissionDetails, params: RequestParams = {}) =>
+    this.request<void, ProblemDetails | void>({
+      path: `/api/v2/permissions/${permissionId}`,
+      method: "PUT",
+      body: data,
+      type: ContentType.Json,
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags UserPermissions
+   * @name GetCurrentUser
+   * @summary Get permissions of the current user.
+   * @request GET:/api/v2/permissions/me
+   */
+  getCurrentUser = (params: RequestParams = {}) =>
+    this.request<PermissionConfiguration[], ProblemDetails | void>({
+      path: `/api/v2/permissions/me`,
       method: "GET",
       format: "json",
       ...params,
