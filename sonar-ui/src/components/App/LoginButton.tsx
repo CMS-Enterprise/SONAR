@@ -3,14 +3,12 @@ import { Button } from '@cmsgov/design-system';
 import { useOktaAuth } from '@okta/okta-react';
 import { toRelativeUrl } from '@okta/okta-auth-js';
 import { UserClaims, CustomUserClaims } from '@okta/okta-auth-js'
-import { createSonarClient } from '../../helpers/ApiHelper';
-
+import { useSonarApi } from 'components/SonarApi/Provider';
 import DropdownModal from './DropdownModal'
 import * as styles from './Header.Style';
 
-const sonarClient = createSonarClient();
-
 const LoginButton = () => {
+  const sonarClient = useSonarApi();
   const { authState, oktaAuth } = useOktaAuth();
   const [userInfo, setUserInfo] = useState<UserClaims<CustomUserClaims> | null>(null);
   const [modal, setModalOpen] = useState(false);
@@ -31,14 +29,12 @@ const LoginButton = () => {
     } else {
       oktaAuth.getUser().then((info) => {
         setUserInfo(info);
-        sonarClient.v2UserCreate({
-          headers: { 'Authorization': `Bearer ${oktaAuth.getIdToken()}` }
-        })
+        sonarClient.v2UserCreate()
       }).catch((err) => {
         console.error(err);
       });
     }
-  }, [authState, oktaAuth]);
+  }, [authState, oktaAuth, sonarClient]);
 
   if (!authState) {
     return (

@@ -1,7 +1,7 @@
 import { Spinner } from '@cmsgov/design-system';
 import { EnvironmentHealth } from 'api/data-contracts';
 import EnvironmentItem from 'components/Environments/EnvironmentItem';
-import { createSonarClient } from 'helpers/ApiHelper';
+import { useSonarApi } from 'components/SonarApi/Provider';
 import * as React from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { useQuery } from 'react-query';
@@ -11,7 +11,7 @@ import ThemedModalDialog from '../components/Common/ThemedModalDialog';
 import CreateEnvironmentForm from '../components/Environments/CreateEnvironmentForm';
 
 const Environments = () => {
-  const sonarClient = createSonarClient();
+  const sonarClient = useSonarApi();
   const [createEnvOpen, setCreateEnvOpen] = useState(false);
   const [allPanelsOpen, setAllPanelsOpen] = useState<boolean>(true);
   const [openPanels, setOpenPanels] = useState<string[]>([]);

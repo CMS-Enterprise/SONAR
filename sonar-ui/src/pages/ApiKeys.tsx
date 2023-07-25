@@ -7,28 +7,19 @@ import ApiKeyTable from '../components/ApiKeys/ApiKeyTable';
 import CreateKeyForm from '../components/ApiKeys/CreateKeyForm';
 import TablePagination from '../components/App/TablePagination';
 import ThemedModalDialog from '../components/Common/ThemedModalDialog';
-import { createSonarClient } from '../helpers/ApiHelper';
-import useAuthenticatedQuery from '../helpers/UseAuthenicatedQuery';
+import { useSonarApi } from 'components/SonarApi/Provider';
+import { useQuery } from 'react-query';
 
 const PAGE_LIMIT = 50;
 
 const ApiKeys = () => {
-  const sonarClient = createSonarClient();
+  const sonarClient = useSonarApi();
   const [open, setOpen] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const { isLoading, data } = useAuthenticatedQuery<ApiKeyConfiguration[], Error>(
+  const { isLoading, data } = useQuery<ApiKeyConfiguration[], Error>(
     ["apiKeys"],
-    (_, token) => {
-      return sonarClient
-        .v2KeysList(
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          })
-        .then((res) => res.data)
-    },
-    {enabled: true}
+    () => sonarClient.v2KeysList()
+      .then((res) => res.data)
   );
   const totalPages = Math.ceil((data ? data.length : 0) / PAGE_LIMIT);
 

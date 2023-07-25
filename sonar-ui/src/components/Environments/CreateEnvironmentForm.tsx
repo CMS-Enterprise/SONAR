@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from 'react-query';
 import { EnvironmentModel } from '../../api/data-contracts';
 import { HttpResponse } from '../../api/http-client';
-import { createSonarClient } from '../../helpers/ApiHelper';
+import { useSonarApi } from 'components/SonarApi/Provider';
 import AlertBanner from '../App/AlertBanner';
 import PrimaryActionButton from '../Common/PrimaryActionButton';
 import SecondaryActionButton from '../Common/SecondaryActionButton';
@@ -18,7 +18,7 @@ const CreateEnvironmentForm: React.FC<{
 }> = ({
   handleModalToggle
 }) => {
-  const sonarClient = createSonarClient();
+  const sonarClient = useSonarApi();
   const queryClient = useQueryClient();
   const { oktaAuth } = useOktaAuth();
   const [environmentName, setEnvironmentName] = useState("")

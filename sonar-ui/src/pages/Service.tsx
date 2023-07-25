@@ -6,7 +6,6 @@ import {
   ServiceHierarchyHealth
 } from 'api/data-contracts';
 import ServiceOverview from 'components/Services/ServiceOverview';
-import { createSonarClient } from 'helpers/ApiHelper';
 import { StatusHistoryView } from 'interfaces/global_interfaces';
 import { useEffect, useState } from 'react';
 import { useQuery } from 'react-query';
@@ -14,10 +13,10 @@ import { useParams } from 'react-router-dom';
 import StatusHistoryDrawer from '../components/Services/StatusHistory/StatusHistoryDrawer';
 import { ServiceOverviewContext } from 'components/Services/ServiceOverviewContext';
 import HealthStatusDrawer from 'components/Services/HealthStatus/HealthStatusDrawer';
-import useAuthenticatedQuery from '../helpers/UseAuthenicatedQuery';
+import { useSonarApi } from 'components/SonarApi/Provider';
 
 const Service = () => {
-  const sonarClient = createSonarClient();
+  const sonarClient = useSonarApi();
   const params = useParams();
   const environmentName = params.environment as string;
   const tenantName = params.tenant as string;
@@ -78,16 +77,9 @@ const Service = () => {
     () => sonarClient.getServiceHierarchyHealth(environmentName, tenantName).then((res) => res.data)
   );
 
-  const hierarchyConfigQuery = useAuthenticatedQuery<ServiceHierarchyConfiguration, Error>(
+  const hierarchyConfigQuery = useQuery<ServiceHierarchyConfiguration, Error>(
     ['ServiceHierarchyConfig', environmentName, tenantName],
-    (_, token) => {
-      return sonarClient
-        .getTenant(
-          environmentName, tenantName,
-          { headers: { 'Authorization': `Bearer ${token}` } })
-        .then((res) => res.data);
-    },
-    undefined
+    () => sonarClient.getTenant(environmentName, tenantName).then((res) => res.data)
   );
 
   if (hierarchyConfigQuery.data && hierarchyHealthQuery.data) {

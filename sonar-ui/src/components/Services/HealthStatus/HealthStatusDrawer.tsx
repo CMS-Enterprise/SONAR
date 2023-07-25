@@ -3,7 +3,7 @@ import { useTheme } from '@emotion/react';
 import { HealthCheckType, HealthStatus } from 'api/data-contracts';
 import { DynamicTextFontStyle } from 'App.Style'
 import HealthStatusBadge from 'components/Badges/HealthStatusBadge';
-import { createSonarClient } from 'helpers/ApiHelper';
+import { useSonarApi } from 'components/SonarApi/Provider';
 import React, { useContext, useState } from 'react';
 import { useQuery } from 'react-query';
 import { IHealthCheckDefinition } from 'types';
@@ -32,7 +32,7 @@ const HealthStatusDrawer: React.FC<{
 
   useQuery(
     `${healthCheck.name}-data`,
-    () => createSonarClient()
+    () => useSonarApi()
       .getHealthCheckData(
         context.environmentName,
         context.tenantName,

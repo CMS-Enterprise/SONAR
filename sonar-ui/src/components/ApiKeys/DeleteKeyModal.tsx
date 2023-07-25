@@ -1,7 +1,7 @@
 import { useOktaAuth } from '@okta/okta-react';
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from 'react-query';
-import { createSonarClient } from '../../helpers/ApiHelper';
+import { useSonarApi } from 'components/SonarApi/Provider';
 import ThemedModalDialog from '../Common/ThemedModalDialog';
 import { ApiKeyConfiguration } from '../../api/data-contracts';
 import AlertBanner from 'components/App/AlertBanner';
@@ -13,7 +13,7 @@ const DeleteKeyModal: React.FC<{
   apiKey: ApiKeyConfiguration,
   handleModalToggle: () => void
 }> = ({ apiKey, handleModalToggle }) => {
-  const sonarClient = createSonarClient();
+  const sonarClient = useSonarApi();
   const queryClient = useQueryClient();
   const { oktaAuth } = useOktaAuth();
   const [alertHeading, setAlertHeading] = useState("Deleting an API Key cannot be undone");

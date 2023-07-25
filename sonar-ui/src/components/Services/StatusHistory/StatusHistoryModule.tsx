@@ -8,7 +8,7 @@ import {
   ServiceHierarchyHealthHistory
 } from 'api/data-contracts';
 import { HttpResponse } from 'api/http-client';
-import { createSonarClient } from 'helpers/ApiHelper';
+import { useSonarApi } from 'components/SonarApi/Provider';
 import { calculateHistoryRange } from 'helpers/StatusHistoryHelper';
 import { ServiceOverviewHeaderStyle } from '../ServiceOverview.Style';
 import StatusHistoryTile from './StatusHistoryTile';
@@ -32,7 +32,7 @@ const StatusHistoryModule: React.FC<{
     environmentName,
     tenantName
   }) => {
-    const sonarClient = createSonarClient();
+    const sonarClient = useSonarApi();
     const [diffDates, setDiffDates] = useState(false);
     const { isLoading, data } = useQuery<ServiceHierarchyHealthHistory, Error>(
       ['statusHistory', environmentName, tenantName, servicePath],

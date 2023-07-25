@@ -2,7 +2,7 @@ import { Accordion, AccordionItem, ArrowIcon, Spinner } from '@cmsgov/design-sys
 import { useTheme } from '@emotion/react';
 import { EnvironmentHealth, TenantHealth } from 'api/data-contracts';
 import TenantItem from 'components/Environments/Tenant/TenantItem';
-import { createSonarClient } from 'helpers/ApiHelper';
+import { useSonarApi } from 'components/SonarApi/Provider';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useQuery } from 'react-query';
 import {
@@ -16,7 +16,7 @@ const EnvironmentItem: React.FC<{
   setOpenPanels: (value: string[]) => void
 }> =
   ({ environment, openPanels, setOpenPanels }) => {
-    const sonarClient = createSonarClient();
+    const sonarClient = useSonarApi();
     const theme = useTheme();
     const [expanded, setExpanded] =  useState<boolean>(true);
     const { isLoading, data } = useQuery<TenantHealth[], Error>({
