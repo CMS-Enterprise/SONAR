@@ -20,7 +20,7 @@ const HealthStatusDrawer: React.FC<{
 }) => {
   const theme = useTheme();
   const context = useContext(ServiceOverviewContext)!;
-
+  const sonarClient = useSonarApi();
   const serviceConfiguration = context.serviceConfiguration;
   const healthCheck = context.selectedHealthCheck!;
   const healthCheckStatus = context.serviceHierarchyHealth.healthChecks![healthCheck.name] ?
@@ -32,7 +32,7 @@ const HealthStatusDrawer: React.FC<{
 
   useQuery(
     `${healthCheck.name}-data`,
-    () => useSonarApi()
+    () => sonarClient
       .getHealthCheckData(
         context.environmentName,
         context.tenantName,
