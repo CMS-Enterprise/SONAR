@@ -2,9 +2,11 @@ import { parentContainerStyle, pageTitleStyle } from 'App.Style';
 import PrimaryActionButton from 'components/Common/PrimaryActionButton';
 import { Outlet, useParams } from 'react-router';
 import { Link } from 'react-router-dom';
+import { usePermissionConfigurationByEnvironment } from './UserPermissions.Hooks';
 
 const UserPermissions = () => {
-  const params = useParams();
+  const { environmentName } = useParams();
+  const { data: permConfigByEnv } = usePermissionConfigurationByEnvironment();
 
   const handleAddPermission = () => console.log('TODO: Handle add permission.');
 
@@ -14,7 +16,7 @@ const UserPermissions = () => {
         <div className='ds-l-col--auto'>
           <div css={pageTitleStyle}>
             <Link to="/user-permissions">User Permissions</Link>
-            {params.environmentName && ` - ${params.environmentName}`}
+            {environmentName && ` - ${environmentName}`}
           </div>
         </div>
       </div>
@@ -23,7 +25,7 @@ const UserPermissions = () => {
           <PrimaryActionButton onClick={handleAddPermission}>+ Add new Permission</PrimaryActionButton>
         </div>
       </div>
-      <Outlet />
+      <Outlet context={permConfigByEnv || {}}/>
     </section>
   );
 };

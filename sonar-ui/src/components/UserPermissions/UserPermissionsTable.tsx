@@ -1,30 +1,15 @@
 import { TableBody, TableCell, TableHead, TableRow } from "@cmsgov/design-system";
 import UserCell from "./UserPermissionsTableUserCell";
 import ThemedTable from "components/Common/ThemedTable";
-import { userPermsTableData } from "./test-data"
 import DeleteIcon from "components/Icons/DeleteIcon";
 import GhostActionButton from "components/Common/GhostActionButton";
-
-export interface UserPermissions {
-  name: string,
-  email: string,
-  tenant: string,
-  role: string
-}
+import { useOutletContext, useParams } from "react-router";
+import { PermissionConfigurationByEnvironment } from "pages/UserPermissions.Hooks";
 
 const UserPermissionsTable = () => {
-  const tableRows = userPermsTableData.map(row => (
-    <TableRow key={`${row.email}:${row.tenant}:${row.role}`}>
-      <UserCell name={row.name} email={row.email} />
-      <TableCell>{row.role}</TableCell>
-      <TableCell>{row.tenant}</TableCell>
-      <TableCell align="center">
-        <GhostActionButton>
-          <DeleteIcon /> <strong>Delete</strong>
-        </GhostActionButton>
-      </TableCell>
-    </TableRow>
-  ));
+  const { environmentName } = useParams();
+  const permConfigByEnv = useOutletContext<PermissionConfigurationByEnvironment>();
+  const envPermConfig = permConfigByEnv[environmentName!];
 
   return (
     <div className='ds-l-row'>
@@ -39,7 +24,20 @@ const UserPermissionsTable = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {tableRows}
+            {
+              envPermConfig.map(row => (
+                <TableRow key={`${row.userEmail}:${row.tenant}:${row.permission}`}>
+                  <UserCell name={row.id!} email={row.userEmail!} />
+                  <TableCell>{row.permission}</TableCell>
+                  <TableCell>{row.tenant}</TableCell>
+                  <TableCell align="center">
+                    <GhostActionButton>
+                      <DeleteIcon /> <strong>Delete</strong>
+                    </GhostActionButton>
+                  </TableCell>
+                </TableRow>
+              ))
+            }
           </TableBody>
         </ThemedTable>
       </div>

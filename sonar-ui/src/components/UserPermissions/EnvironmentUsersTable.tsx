@@ -1,29 +1,11 @@
 import { TableBody, TableCell, TableHead, TableRow } from "@cmsgov/design-system";
-import { envsTableData } from "./test-data";
-import { Link } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import PeopleIcon from "components/Icons/PeopleIcon";
 import ThemedTable from "components/Common/ThemedTable";
+import { PermissionConfigurationByEnvironment } from "pages/UserPermissions.Hooks";
 
-export interface EnvironmentUsers {
-  environmentName: string;
-  numUsers: number;
-}
-
-interface Props {
-  data?: EnvironmentUsers[];
-}
-
-const EnvironmentUsersTable = (props: Props) => {
-  const tableRows = envsTableData.map(row => (
-    <TableRow key={row.environmentName}>
-      <TableCell>
-        <Link to={`environments/${row.environmentName}`}>{row.environmentName}</Link>
-      </TableCell>
-      <TableCell align="right">
-        <PeopleIcon />&nbsp;&nbsp;{row.numUsers}
-      </TableCell>
-    </TableRow>
-  ));
+const EnvironmentUsersTable = () => {
+  const permConfigByEnv = useOutletContext<PermissionConfigurationByEnvironment>();
 
   return (
     <div className='ds-l-row'>
@@ -36,7 +18,18 @@ const EnvironmentUsersTable = (props: Props) => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {tableRows}
+            {
+              Object.keys(permConfigByEnv).map(envName => (
+                <TableRow key={envName}>
+                  <TableCell>
+                    <Link to={`environments/${envName}`}>{envName}</Link>
+                  </TableCell>
+                  <TableCell align="right">
+                    <PeopleIcon />&nbsp;&nbsp;{permConfigByEnv[envName].length}
+                  </TableCell>
+                </TableRow>
+              ))
+            }
           </TableBody>
         </ThemedTable>
       </div>
