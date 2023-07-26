@@ -2,7 +2,7 @@ import { OktaAuth, toRelativeUrl } from '@okta/okta-auth-js';
 import React, { useState, useCallback } from 'react';
 import { ThemeProvider } from '@emotion/react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
-import { Security, LoginCallback, SecureRoute } from '@okta/okta-react';
+import { Security, LoginCallback } from '@okta/okta-react';
 import { mainStyle } from './App.Style';
 import Header from './components/App/Header';
 import ApiKeys from './pages/ApiKeys';
