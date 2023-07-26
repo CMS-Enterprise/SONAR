@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from 'react-query';
 import { EnvironmentModel } from '../../api/data-contracts';
 import { HttpResponse } from '../../api/http-client';
-import { useSonarApi } from 'components/SonarApi/Provider';
+import { useSonarApi } from 'components/AppContext/AppContextProvider';
 import AlertBanner from '../App/AlertBanner';
 import PrimaryActionButton from '../Common/PrimaryActionButton';
 import SecondaryActionButton from '../Common/SecondaryActionButton';

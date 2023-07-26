@@ -2,7 +2,7 @@ import { OktaAuth, toRelativeUrl } from '@okta/okta-auth-js';
 import React, { useState, useCallback } from 'react';
 import { ThemeProvider } from '@emotion/react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
-import { Security, LoginCallback } from '@okta/okta-react';
+import { Security, LoginCallback, SecureRoute } from '@okta/okta-react';
 import { mainStyle } from './App.Style';
 import Header from './components/App/Header';
 import ApiKeys from './pages/ApiKeys';
@@ -13,7 +13,7 @@ import { oktaAuthOptions } from './config';
 import UserPermissions from 'pages/UserPermissions';
 import EnvironmentUsersTable from 'components/UserPermissions/EnvironmentUsersTable';
 import UserPermissionsTable from 'components/UserPermissions/UserPermissionsTable';
-import SonarApiProvider from 'components/SonarApi/Provider';
+import AppContextProvider from 'components/AppContext/AppContextProvider';
 
 const oktaAuth = new OktaAuth(oktaAuthOptions);
 
@@ -28,7 +28,7 @@ function App() {
   return (
     <ThemeProvider theme={enableDarkTheme ? DarkTheme : LightTheme}>
       <Security oktaAuth={oktaAuth} restoreOriginalUri={restoreOriginalUri}>
-        <SonarApiProvider>
+        <AppContextProvider>
           <main css={mainStyle} data-test="app-main">
             <Header enableDarkTheme={enableDarkTheme} setEnableDarkTheme={setEnableDarkTheme} />
             <Routes>
@@ -42,7 +42,7 @@ function App() {
               </Route>
             </Routes>
           </main>
-        </SonarApiProvider>
+        </AppContextProvider>
       </Security>
     </ThemeProvider>
   );

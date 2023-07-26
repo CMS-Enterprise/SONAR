@@ -8,7 +8,7 @@ import {
   ServiceHierarchyHealthHistory
 } from 'api/data-contracts';
 import { HttpResponse } from 'api/http-client';
-import { useSonarApi } from 'components/SonarApi/Provider';
+import { useSonarApi } from 'components/AppContext/AppContextProvider';
 import { calculateHistoryRange } from 'helpers/StatusHistoryHelper';
 import { ServiceOverviewHeaderStyle } from '../ServiceOverview.Style';
 import StatusHistoryTile from './StatusHistoryTile';

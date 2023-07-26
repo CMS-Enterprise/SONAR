@@ -1,7 +1,7 @@
 import { Spinner } from '@cmsgov/design-system';
 import { EnvironmentHealth } from 'api/data-contracts';
 import EnvironmentItem from 'components/Environments/EnvironmentItem';
-import { useSonarApi } from 'components/SonarApi/Provider';
+import { useSonarApi } from 'components/AppContext/AppContextProvider';
 import * as React from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { useQuery } from 'react-query';

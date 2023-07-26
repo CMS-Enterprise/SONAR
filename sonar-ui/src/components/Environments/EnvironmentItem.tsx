@@ -2,7 +2,7 @@ import { Accordion, AccordionItem, ArrowIcon, Spinner } from '@cmsgov/design-sys
 import { useTheme } from '@emotion/react';
 import { EnvironmentHealth, TenantHealth } from 'api/data-contracts';
 import TenantItem from 'components/Environments/Tenant/TenantItem';
-import { useSonarApi } from 'components/SonarApi/Provider';
+import { useSonarApi } from 'components/AppContext/AppContextProvider';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useQuery } from 'react-query';
 import {

@@ -1,7 +1,7 @@
 import { useOktaAuth } from '@okta/okta-react';
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from 'react-query';
-import { useSonarApi } from 'components/SonarApi/Provider';
+import { useSonarApi } from 'components/AppContext/AppContextProvider';
 import ThemedModalDialog from '../Common/ThemedModalDialog';
 import { ApiKeyConfiguration } from '../../api/data-contracts';
 import AlertBanner from 'components/App/AlertBanner';

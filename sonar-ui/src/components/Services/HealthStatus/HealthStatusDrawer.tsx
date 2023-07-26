@@ -3,7 +3,7 @@ import { useTheme } from '@emotion/react';
 import { HealthCheckType, HealthStatus } from 'api/data-contracts';
 import { DynamicTextFontStyle } from 'App.Style'
 import HealthStatusBadge from 'components/Badges/HealthStatusBadge';
-import { useSonarApi } from 'components/SonarApi/Provider';
+import { useSonarApi } from 'components/AppContext/AppContextProvider';
 import React, { useContext, useState } from 'react';
 import { useQuery } from 'react-query';
 import { IHealthCheckDefinition } from 'types';

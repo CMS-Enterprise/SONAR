@@ -1,20 +1,18 @@
 import React from 'react';
-import { useOktaAuth } from '@okta/okta-react';
 import { useNavigate } from 'react-router';
 import * as styles from './Header.Style';
 import LogoutIcon from 'components/Icons/LogoutIcon';
 import KeyIcon from 'components/Icons/ApiKeyIcon';
 import PersonIcon from 'components/Icons/PersonIcon';
 import GhostActionButton from 'components/Common/GhostActionButton';
+import { useUserContext } from 'components/AppContext/AppContextProvider';
 
 const DropdownModal: React.FC<{
   showModal: boolean,
   setShowModal: (value: boolean) => void,
 }> = ({ showModal, setShowModal }) => {
-
   const navigate = useNavigate();
-  const { oktaAuth } = useOktaAuth();
-  const logout = async () => oktaAuth.signOut();
+  const { logUserOut } = useUserContext();
 
   return (
     <>
@@ -27,7 +25,7 @@ const DropdownModal: React.FC<{
             <KeyIcon /> Manage your API Keys
           </GhostActionButton>
           <div css={styles.DropdownLine} />
-          <GhostActionButton onClick={logout}>
+          <GhostActionButton onClick={logUserOut}>
             <LogoutIcon /> Logout
           </GhostActionButton>
         </div>

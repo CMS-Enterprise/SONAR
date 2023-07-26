@@ -7,7 +7,7 @@ import ApiKeyTable from '../components/ApiKeys/ApiKeyTable';
 import CreateKeyForm from '../components/ApiKeys/CreateKeyForm';
 import TablePagination from '../components/App/TablePagination';
 import ThemedModalDialog from '../components/Common/ThemedModalDialog';
-import { useSonarApi } from 'components/SonarApi/Provider';
+import { useSonarApi } from 'components/AppContext/AppContextProvider';
 import { useQuery } from 'react-query';
 
 const PAGE_LIMIT = 50;

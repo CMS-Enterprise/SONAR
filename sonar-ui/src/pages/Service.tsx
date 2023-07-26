@@ -13,7 +13,7 @@ import { useParams } from 'react-router-dom';
 import StatusHistoryDrawer from '../components/Services/StatusHistory/StatusHistoryDrawer';
 import { ServiceOverviewContext } from 'components/Services/ServiceOverviewContext';
 import HealthStatusDrawer from 'components/Services/HealthStatus/HealthStatusDrawer';
-import { useSonarApi } from 'components/SonarApi/Provider';
+import { useSonarApi } from 'components/AppContext/AppContextProvider';
 
 const Service = () => {
   const sonarClient = useSonarApi();

@@ -1,5 +1,5 @@
 import { PermissionConfiguration } from "api/data-contracts";
-import { useSonarApi } from "components/SonarApi/Provider";
+import { useSonarApi } from "components/AppContext/AppContextProvider";
 import { UseQueryResult, useQuery } from "react-query";
 
 export enum QueryKeys {
