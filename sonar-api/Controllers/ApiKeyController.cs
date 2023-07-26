@@ -48,7 +48,7 @@ public class ApiKeyController : ControllerBase {
   /// </summary>
   /// <param name="apiKeyDetails">The API key type and, if they exist, environment and tenant.</param>
   /// <param name="cancellationToken"></param>
-  /// <response code="200">The API key details led to a successful API key creation.</response>
+  /// <response code="201">The API key details led to a successful API key creation.</response>
   /// <response code="400">The API key details are not valid.</response>
   /// <response code="401">The API key in the header is not authorized for creating an API key.</response>
   [HttpPost]
