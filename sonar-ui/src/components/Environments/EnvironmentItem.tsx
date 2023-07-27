@@ -1,14 +1,13 @@
 import { Accordion, AccordionItem, ArrowIcon, Spinner } from '@cmsgov/design-system';
 import { useTheme } from '@emotion/react';
-import { EnvironmentHealth, TenantHealth } from 'api/data-contracts';
+import { EnvironmentHealth } from 'api/data-contracts';
 import TenantItem from 'components/Environments/Tenant/TenantItem';
-import { useSonarApi } from 'components/AppContext/AppContextProvider';
 import React, { useEffect, useMemo, useState } from 'react';
-import { useQuery } from 'react-query';
 import {
   EnvironmentItemContainerStyle,
   getEnvironmentStatusStyle,
 } from './EnvironmentItem.Style';
+import { useGetTenants } from './Environments.Hooks';
 
 const EnvironmentItem: React.FC<{
   environment: EnvironmentHealth,
@@ -16,17 +15,9 @@ const EnvironmentItem: React.FC<{
   setOpenPanels: (value: string[]) => void
 }> =
   ({ environment, openPanels, setOpenPanels }) => {
-    const sonarClient = useSonarApi();
     const theme = useTheme();
     const [expanded, setExpanded] =  useState<boolean>(true);
-    const { isLoading, data } = useQuery<TenantHealth[], Error>({
-      queryKey: ["tenantHealth"],
-      enabled: expanded,
-      queryFn: () => sonarClient.getTenants()
-        .then((res) => {
-          return res.data;
-        })
-    })
+    const { isLoading, data } = useGetTenants(expanded);
 
     // check if current accordion is open when openPanels changes.
     useEffect(() => {

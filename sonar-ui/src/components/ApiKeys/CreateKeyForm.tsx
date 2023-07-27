@@ -1,37 +1,25 @@
 import { DropdownOptions, DropdownValue } from '@cmsgov/design-system/dist/types/Dropdown/Dropdown';
-import { useOktaAuth } from '@okta/okta-react';
 import React, { useEffect, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from 'react-query';
 import { ApiKeyDetails, PermissionType } from '../../api/data-contracts';
-import { useSonarApi } from 'components/AppContext/AppContextProvider';
+import { useCreateKey, useGetPermissions } from './ApiKeys.Hooks';
 import AlertBanner from '../App/AlertBanner';
 import PrimaryActionButton from '../Common/PrimaryActionButton';
 import SecondaryActionButton from '../Common/SecondaryActionButton';
 import ThemedDropdown from '../Common/ThemedDropdown';
 import ThemedTextField from '../Common/ThemedTextField';
+import { useGetEnvironments, useGetTenants } from '../Environments/Environments.Hooks';
 
-const permissions: DropdownOptions[] = [
-  {
-    label: "Admin",
-    value: "Admin"
-  },
-  {
-    label: "Standard",
-    value: "Standard"
-  }
-];
-
-const INITIAL_OPTION: DropdownOptions = {
-  label: "Please Select",
+const initialRoleOption: DropdownOptions = {
+  label: "Please Select Role",
   value: 0
 }
 
-const INITIAL_ENV_OPTION: DropdownOptions = {
+const initialEnvOption: DropdownOptions = {
   label: "All Environments",
   value: 0
 }
 
-const INITIAL_TENANT_OPTION: DropdownOptions = {
+const initialTenantOption: DropdownOptions = {
   label: "All Tenants",
   value: 0
 }
@@ -41,12 +29,7 @@ const CreateKeyForm: React.FC<{
 }> = ({
   handleModalToggle
 }) => {
-  const sonarClient = useSonarApi();
-  const queryClient = useQueryClient();
-  const { oktaAuth } = useOktaAuth();
-
-  const roles = [INITIAL_OPTION, ...permissions]
-  // const [roles, setRoles] = useState<DropdownOptions[]>([INITIAL_OPTION, ...permissions]);
+  const createKey = useCreateKey();
   const [selectedRole, setSelectedRole] = useState<DropdownValue>(0);
   const [selectedEnvironment, setSelectedEnvironment] = useState<DropdownValue>(0);
   const [selectedTenant, setSelectedTenant] = useState<DropdownValue>(0);
@@ -58,19 +41,23 @@ const CreateKeyForm: React.FC<{
   const [alertText, setAlertText] = useState("Set all fields to add a new user permission.");
   const [keyCreated, setKeyCreated] = useState(false);
 
-  const environmentData = useQuery({
-    queryKey: ['environments'],
-    staleTime: Infinity,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    queryFn: () => sonarClient.getEnvironments()
-      .then((res) => {
-        return res.data;
-      })
-  });
+  const permissionData = useGetPermissions();
 
-  const environmentOptions = (!environmentData  || !environmentData.data) ? [] :
-    [INITIAL_ENV_OPTION].concat(
+  const permissionOptions = (!permissionData || !permissionData.data) ? [initialRoleOption] :
+    [initialRoleOption].concat(
+      permissionData.data?.map((role) => {
+        const option: DropdownOptions = {
+          label: role.permission,
+          value: role.permission!
+        }
+        return option;
+      })
+    );
+
+  const environmentData = useGetEnvironments();
+
+  const environmentOptions = (!environmentData  || !environmentData.data) ? [initialEnvOption] :
+    [initialEnvOption].concat(
       environmentData.data?.map((env) => {
         const option: DropdownOptions = {
           label: env.environmentName,
@@ -81,22 +68,14 @@ const CreateKeyForm: React.FC<{
     );
 
   const [tenantOptions, setTenantOptions] =
-    useState<DropdownOptions[]>([INITIAL_OPTION]);
-  const tenantData = useQuery({
-    queryKey: ['tenants'],
-    staleTime: Infinity,
-    refetchOnMount: false,
-    queryFn: () => sonarClient.getTenants()
-      .then((res) => {
-        return res.data;
-      })
-  });
+    useState<DropdownOptions[]>([initialTenantOption]);
+  const tenantData = useGetTenants(true);
 
   useEffect(() => {
     const allTenants = !tenantData.data ? [] : tenantData.data;
     if (+selectedEnvironment !== 0) {
       setTenantOptions(
-        [INITIAL_TENANT_OPTION].concat(
+        [initialTenantOption].concat(
           allTenants.filter(tenant => tenant.environmentName === selectedEnvironment)
             .map((tenant) => {
               const option: DropdownOptions = {
@@ -108,41 +87,32 @@ const CreateKeyForm: React.FC<{
         )
       );
     } else {
-      setTenantOptions([INITIAL_TENANT_OPTION]);
+      setTenantOptions([initialTenantOption]);
     }
     setSelectedTenant(0);
   }, [selectedEnvironment, tenantData.data]);
-
-  const mutation = useMutation({
-    mutationFn: (newKey: ApiKeyDetails) => sonarClient.v2KeysCreate(newKey, {
-      headers: {
-        'Authorization': `Bearer ${oktaAuth.getIdToken()}`
-      }
-    }),
-    onSuccess: res => {
-      // request was successful, invalidate apiKeys query to re-fetch in background.
-      // update state accordingly
-      queryClient.invalidateQueries({queryKey: ['apiKeys']});
-      setCreatedKeyId(res.data.id ? res.data.id : "");
-      setCreatedKeyVal(res.data.apiKey);
-      setAlertHeading("Copy your API Key to a safe location");
-      setAlertText("Once you click Close, you will not be able to access it.")
-      setKeyCreated(true);
-    },
-    onError: res => {
-      // set error state
-      setAlertHeading("Error Creating API Key");
-      setAlertText("An error occurred while processing your request. Please try again.")
-    }
-  });
 
   const handleSubmit = () => {
     const newKey: ApiKeyDetails = {
       apiKeyType: PermissionType[selectedRole.toString() as keyof typeof PermissionType],
       environment: +selectedEnvironment === 0 ? null : selectedEnvironment.toString(),
       tenant: +selectedTenant === 0 ? null : selectedTenant.toString()
-    }
-    mutation.mutate(newKey)
+    };
+
+    createKey.mutate(newKey, {
+      onSuccess: (res) => {
+        setCreatedKeyId(res.data.id ? res.data.id : "");
+        setCreatedKeyVal(res.data.apiKey);
+        setAlertHeading("Copy your API Key to a safe location");
+        setAlertText("Once you click Close, you will not be able to access it.")
+        setKeyCreated(true);
+      },
+      onError: res => {
+        // set error state
+        setAlertHeading("Error Creating API Key");
+        setAlertText("An error occurred while processing your request. Please try again.")
+      }
+    });
   }
 
   // hook to update disabled state of submit button
@@ -166,7 +136,7 @@ const CreateKeyForm: React.FC<{
             disabled={keyCreated}
             onChange={(event) => setSelectedRole(event.target.value)}
             value={selectedRole}
-            options={roles}
+            options={permissionOptions}
           />
         </div>
       </div>
@@ -245,7 +215,7 @@ const CreateKeyForm: React.FC<{
           <AlertBanner
             alertHeading={alertHeading}
             alertText={alertText}
-            variation={mutation.isError ?
+            variation={createKey.isError ?
               "error" : keyCreated ?
                 "warn" : undefined}
           />

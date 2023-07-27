@@ -1,27 +1,18 @@
 import { Spinner } from '@cmsgov/design-system';
-import { EnvironmentHealth } from 'api/data-contracts';
 import EnvironmentItem from 'components/Environments/EnvironmentItem';
-import { useSonarApi } from 'components/AppContext/AppContextProvider';
 import * as React from 'react';
 import { useCallback, useEffect, useState } from 'react';
-import { useQuery } from 'react-query';
 import AccordionToggleAllButton from 'components/Environments/AccordionToggleAllButton';
 import ThemedFab from '../components/Common/ThemedFab';
 import ThemedModalDialog from '../components/Common/ThemedModalDialog';
 import CreateEnvironmentForm from '../components/Environments/CreateEnvironmentForm';
+import { useGetEnvironments } from '../components/Environments/Environments.Hooks';
 
 const Environments = () => {
-  const sonarClient = useSonarApi();
   const [createEnvOpen, setCreateEnvOpen] = useState(false);
   const [allPanelsOpen, setAllPanelsOpen] = useState<boolean>(true);
   const [openPanels, setOpenPanels] = useState<string[]>([]);
-  const { isLoading, data } = useQuery<EnvironmentHealth[], Error>(
-    ["environments"],
-    () =>  sonarClient.getEnvironments()
-      .then((res) => {
-        return res.data;
-      })
-  );
+  const { isLoading, data } = useGetEnvironments();
 
   const updateOpenPanels = useCallback(() => {
     if (data) {

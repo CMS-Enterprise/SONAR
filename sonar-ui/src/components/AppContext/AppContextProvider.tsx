@@ -29,7 +29,16 @@ const sonarApi = new SonarApi({
   }
 });
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: Infinity,
+      refetchOnMount: 'always',
+      refetchOnWindowFocus: false,
+      // TODO: set global behavior for onError callback
+    },
+  }
+});
 
 interface AppContextType {
   sonarApi: SonarApi;

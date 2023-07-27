@@ -1,16 +1,11 @@
 import { Spinner } from '@cmsgov/design-system';
 import React, { useEffect, useState } from 'react';
-import { useQuery } from 'react-query';
 import {
   DateTimeHealthStatusValueTuple,
-  ProblemDetails,
   ServiceHierarchyHealth,
-  ServiceHierarchyHealthHistory
 } from 'api/data-contracts';
-import { HttpResponse } from 'api/http-client';
-import { useSonarApi } from 'components/AppContext/AppContextProvider';
-import { calculateHistoryRange } from 'helpers/StatusHistoryHelper';
 import { ServiceOverviewHeaderStyle } from '../ServiceOverview.Style';
+import { useGetServiceHealthHistory } from '../Services.Hooks';
 import StatusHistoryTile from './StatusHistoryTile';
 import { StatusHistoryTileContainerStyle } from './StatusHistory.Style';
 
@@ -32,15 +27,9 @@ const StatusHistoryModule: React.FC<{
     environmentName,
     tenantName
   }) => {
-    const sonarClient = useSonarApi();
     const [diffDates, setDiffDates] = useState(false);
-    const { isLoading, data } = useQuery<ServiceHierarchyHealthHistory, Error>(
-      ['statusHistory', environmentName, tenantName, servicePath],
-      () => sonarClient.getServiceHealthHistory(environmentName, tenantName, servicePath, calculateHistoryRange())
-        .then((res: HttpResponse<ServiceHierarchyHealthHistory, ProblemDetails | void>) => {
-          return res.data;
-        })
-    );
+    const { isLoading, data } =
+      useGetServiceHealthHistory(environmentName, tenantName, servicePath);
 
     useEffect(() => {
       let currDate = '';

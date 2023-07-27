@@ -1,40 +1,33 @@
-import { useOktaAuth } from '@okta/okta-react';
 import React, { useState } from 'react';
-import { useMutation, useQueryClient } from 'react-query';
-import { useSonarApi } from 'components/AppContext/AppContextProvider';
 import ThemedModalDialog from '../Common/ThemedModalDialog';
 import { ApiKeyConfiguration } from '../../api/data-contracts';
 import AlertBanner from 'components/App/AlertBanner';
 import SecondaryActionButton from 'components/Common/SecondaryActionButton';
 import PrimaryActionButton from 'components/Common/PrimaryActionButton';
+import { useDeleteKey } from './ApiKeys.Hooks';
 
 
 const DeleteKeyModal: React.FC<{
   apiKey: ApiKeyConfiguration,
   handleModalToggle: () => void
 }> = ({ apiKey, handleModalToggle }) => {
-  const sonarClient = useSonarApi();
-  const queryClient = useQueryClient();
-  const { oktaAuth } = useOktaAuth();
   const [alertHeading, setAlertHeading] = useState("Deleting an API Key cannot be undone");
   const [alertText, setAlertText] = useState(`Are you sure you want to delete the ${apiKey.apiKeyType}` +
     ` API Key for the environment ${apiKey.environment} and tenant ${apiKey.tenant}?`);
 
-  const deleteKey = useMutation({
-    mutationFn: () => sonarClient.deleteApiKey(apiKey.id!, {
-      headers: {
-        'Authorization': `bearer ${oktaAuth.getIdToken()}`
+  const deleteKey = useDeleteKey();
+
+  const handleDelete = () => {
+    deleteKey.mutate(apiKey.id!, {
+      onSuccess: res => {
+        handleModalToggle();
+      },
+      onError: res => {
+        setAlertHeading("Error Deleting API Key");
+        setAlertText("An error occurred while processing your request. Please try again.")
       }
-    }),
-    onSuccess: res => {
-      handleModalToggle();
-      queryClient.invalidateQueries({queryKey: ['apiKeys']});
-    },
-    onError: res => {
-      setAlertHeading("Error Deleting API Key");
-      setAlertText("An error occurred while processing your request. Please try again.")
-    }
-  });
+    });
+  }
 
   return  (
     <ThemedModalDialog
@@ -59,7 +52,7 @@ const DeleteKeyModal: React.FC<{
           </SecondaryActionButton>
         </div>
         <div className="ds-l-col--3 ds-u-margin-right--1">
-          <PrimaryActionButton onClick={() => deleteKey.mutate()}>
+          <PrimaryActionButton onClick={handleDelete}>
             Delete
           </PrimaryActionButton>
         </div>

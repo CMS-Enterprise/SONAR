@@ -1,26 +1,20 @@
 import { Spinner } from '@cmsgov/design-system';
 import React, { useMemo, useState } from 'react';
-import { ApiKeyConfiguration } from '../api/data-contracts';
 import { parentContainerStyle } from '../App.Style';
 import ApiKeyHeader from '../components/ApiKeys/ApiKeyHeader';
+import { useGetKeys } from '../components/ApiKeys/ApiKeys.Hooks';
 import ApiKeyTable from '../components/ApiKeys/ApiKeyTable';
 import CreateKeyForm from '../components/ApiKeys/CreateKeyForm';
 import TablePagination from '../components/App/TablePagination';
 import ThemedModalDialog from '../components/Common/ThemedModalDialog';
-import { useSonarApi } from 'components/AppContext/AppContextProvider';
-import { useQuery } from 'react-query';
 
 const PAGE_LIMIT = 50;
 
 const ApiKeys = () => {
-  const sonarClient = useSonarApi();
   const [open, setOpen] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const { isLoading, data } = useQuery<ApiKeyConfiguration[], Error>(
-    ["apiKeys"],
-    () => sonarClient.v2KeysList()
-      .then((res) => res.data)
-  );
+
+  const { isLoading, data } = useGetKeys();
   const totalPages = Math.ceil((data ? data.length : 0) / PAGE_LIMIT);
 
   const handleModalToggle = () => {
