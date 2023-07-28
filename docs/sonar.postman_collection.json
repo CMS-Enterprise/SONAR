@@ -1,11 +1,2063 @@
 {
 	"info": {
-		"_postman_id": "7aa22636-b06a-4f37-8fe5-cbf8979a360c",
+		"_postman_id": "91a3f4d0-97df-4634-8180-77954ce27b16",
 		"name": "SONAR",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "26427260"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
+		{
+			"name": "API Keys",
+			"item": [
+				{
+					"name": "API Keys",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/keys",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"keys"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[JWT] API Keys",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/keys",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"keys"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create API Key",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"apiKeyType\": \"Standard\",\n    \"environment\": \"{{TEST_ENVIRONMENT}}\",\n    \"tenant\": \"{{TEST_TENANT}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/keys",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"keys"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[JWT] Create API Key Copy",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"apiKeyType\": \"Standard\",\n    \"environment\": \"{{TEST_ENVIRONMENT}}\",\n    \"tenant\": \"{{TEST_TENANT}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/keys",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"keys"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Admin Api Key",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"ApiKeyType\": \"Admin\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/keys",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"keys"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[JWT] Create Admin Api Key Copy",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"ApiKeyType\": \"Admin\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/keys",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"keys"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete API Key",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/keys/ad8713ea-e21a-40c9-80c2-31352146f155",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"keys",
+								"ad8713ea-e21a-40c9-80c2-31352146f155"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[JWT] Delete API Key Copy",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/keys/9db92789-2672-480d-a25b-a7b9b1826db2",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"keys",
+								"9db92789-2672-480d-a25b-a7b9b1826db2"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Service Hierarchy Configuration",
+			"item": [
+				{
+					"name": "Get Service Hierarchy",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/config/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"config",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Service Hierarchy",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"services\": [\n        {\n            \"name\": \"my-root\",\n            \"displayName\": \"My Root Service\",\n            \"description\": \"Example root service\",\n            \"url\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"RootHealth\",\n                    \"description\": \"Desc\",\n                    \"type\": \"prometheusMetric\",\n                    \"definition\": {\n                        \"duration\": \"08:00:00\",\n                        \"expression\": \"promExpression1\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"NotEqual\",\n                                \"threshold\": 1.0,\n                                \"healthStatus\": \"Offline\"\n                            }\n                        ]\n                    }\n                },\n                {\n                    \"name\": \"RootHealth2\",\n                    \"type\": \"prometheusMetric\",\n                    \"description\": \"What Another Health Check?\",\n                    \"definition\": {\n                        \"duration\": \"08:00:00\",\n                        \"expression\": \"promExpression2\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"GreaterThan\",\n                                \"threshold\": 1.0,\n                                \"healthStatus\": \"Online\"\n                            }\n                        ]\n                    }\n                }\n            ],\n            \"children\": [\n                \"my-child\",\n                \"my-child2\"\n            ]\n        },\n        {\n            \"name\": \"my-child\",\n            \"displayName\": \"My Child Service\",\n            \"description\": \"Example child service\",\n            \"url\": null,\n            \"children\": null\n        },\n        {\n            \"name\": \"my-child2\",\n            \"displayName\": \"My Child Service2\",\n            \"description\": \"Example child service2\",\n            \"url\": null,\n            \"children\": null\n        },\n        {\n            \"name\": \"http-metric-test-app\",\n            \"displayName\": \"Test Application for HTTP Health Check\",\n            \"description\": \"A test application that has one endpoint to simulate different HTTP status codes.\",\n            \"url\": \"http://localhost:8082/api/ready\",\n            \"children\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"exampleHttpTest\",\n                    \"description\": \"Check to see if request contains failed status code and/or request duration greater than specified threshold.\",\n                    \"definition\": {\n                        \"url\": \"http://localhost:8082/api/ready\",\n                        \"followRedirects\": true,\n                        \"authorizationHeader\": \"test-header\",\n                        \"conditions\": [\n                            {\n                                \"status\": \"Online\",\n                                \"statusCodes\": [\n                                    200\n                                ],\n                                \"type\": \"HttpStatusCode\"\n                            },\n                            {\n                                \"status\": \"Degraded\",\n                                \"responseTime\": \"00:00:02\",\n                                \"type\": \"HttpResponseTime\"\n                            }\n                        ]\n                    },\n                    \"type\": \"httpRequest\"\n                }\n            ]\n        }\n    ],\n    \"rootServices\": [\n        \"my-root\",\n        \"http-metric-test-app\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/config/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"config",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[JWT] Create Service Hierarchy",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"services\": [\n        {\n            \"name\": \"my-root\",\n            \"displayName\": \"My Root Service\",\n            \"description\": \"Example root service\",\n            \"url\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"RootHealth\",\n                    \"description\": \"Desc\",\n                    \"type\": \"prometheusMetric\",\n                    \"definition\": {\n                        \"duration\": \"08:00:00\",\n                        \"expression\": \"promExpression1\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"NotEqual\",\n                                \"threshold\": 1.0,\n                                \"healthStatus\": \"Offline\"\n                            }\n                        ]\n                    }\n                },\n                {\n                    \"name\": \"RootHealth2\",\n                    \"type\": \"prometheusMetric\",\n                    \"description\": \"What Another Health Check?\",\n                    \"definition\": {\n                        \"duration\": \"08:00:00\",\n                        \"expression\": \"promExpression2\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"GreaterThan\",\n                                \"threshold\": 1.0,\n                                \"healthStatus\": \"Online\"\n                            }\n                        ]\n                    }\n                }\n            ],\n            \"children\": [\n                \"my-child\",\n                \"my-child2\"\n            ]\n        },\n        {\n            \"name\": \"my-child\",\n            \"displayName\": \"My Child Service\",\n            \"description\": \"Example child service\",\n            \"url\": null,\n            \"children\": null\n        },\n        {\n            \"name\": \"my-child2\",\n            \"displayName\": \"My Child Service2\",\n            \"description\": \"Example child service2\",\n            \"url\": null,\n            \"children\": null\n        },\n        {\n            \"name\": \"http-metric-test-app\",\n            \"displayName\": \"Test Application for HTTP Health Check\",\n            \"description\": \"A test application that has one endpoint to simulate different HTTP status codes.\",\n            \"url\": \"http://localhost:8082/api/ready\",\n            \"children\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"exampleHttpTest\",\n                    \"description\": \"Check to see if request contains failed status code and/or request duration greater than specified threshold.\",\n                    \"definition\": {\n                        \"url\": \"http://localhost:8082/api/ready\",\n                        \"followRedirects\": true,\n                        \"authorizationHeader\": \"test-header\",\n                        \"conditions\": [\n                            {\n                                \"status\": \"Online\",\n                                \"statusCodes\": [\n                                    200\n                                ],\n                                \"type\": \"HttpStatusCode\"\n                            },\n                            {\n                                \"status\": \"Degraded\",\n                                \"responseTime\": \"00:00:02\",\n                                \"type\": \"HttpResponseTime\"\n                            }\n                        ]\n                    },\n                    \"type\": \"httpRequest\"\n                }\n            ]\n        }\n    ],\n    \"rootServices\": [\n        \"my-root\",\n        \"http-metric-test-app\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/config/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"config",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Service Hierarchy",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"services\": [\n        {\n            \"name\": \"my-root\",\n            \"displayName\": \"My Root Service\",\n            \"description\": \"Example root service\",\n            \"url\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"Root-Health2\",\n                    \"description\": \"What Another Health Check?\",\n                    \"type\": \"prometheusMetric\",\n                    \"definition\": {\n                        \"duration\": \"420.03:14:56.1667000\",\n                        \"expression\": \"Expression\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"GreaterThan\",\n                                \"threshold\": 1.0,\n                                \"healthStatus\": \"Online\"\n                            }\n                        ]\n                    }\n                }\n            ],\n            \"children\": [\"my-CHILD\"]\n        },\n        {\n            \"name\": \"MY-child\",\n            \"displayName\": \"My Child Service!!!!\",\n            \"description\": \"Example child service NEAT!\",\n            \"url\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"Not-RootHealth\",\n                    \"description\": \"Moved from Root\",\n                    \"type\": \"prometheusMetric\",\n                    \"definition\": {\n                        \"duration\": \"1.03:14:56.1667000\",\n                        \"expression\": \"Not expresso, Expression!!!\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"NotEqual\",\n                                \"threshold\": 1,\n                                \"healthStatus\": \"Degraded\"\n                            }\n                        ]\n                    }\n                }\n            ],\n            \"children\": [\"sub-SUB-service\"]\n        },\n        {\n            \"name\": \"MY-child2\",\n            \"displayName\": \"My Child Service2!!!!\",\n            \"description\": \"Example child service NEAT2!\",\n            \"url\": null,\n            \"children\": [\"sub-SUB-service\"]\n        },\n        {\n            \"name\": \"sub-sub-service\",\n            \"displayName\": \"New Sub Service\",\n            \"description\": \"Example sub-sub-service.\",\n            \"url\": null,\n            \"children\": []\n        },\n        {\n            \"name\": \"another-root\",\n            \"displayName\": \"My Second Root Service\"\n        }\n    ],\n    \"rootServices\": [\n        \"my-ROOT\",\n        \"another-ROOT\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/config/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"config",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[JWT] Update Service Hierarchy",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"services\": [\n        {\n            \"name\": \"my-root\",\n            \"displayName\": \"My Root Service\",\n            \"description\": \"Example root service\",\n            \"url\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"Root-Health2\",\n                    \"description\": \"What Another Health Check?\",\n                    \"type\": \"prometheusMetric\",\n                    \"definition\": {\n                        \"duration\": \"420.03:14:56.1667000\",\n                        \"expression\": \"Expression\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"GreaterThan\",\n                                \"threshold\": 1.0,\n                                \"healthStatus\": \"Online\"\n                            }\n                        ]\n                    }\n                }\n            ],\n            \"children\": [\"my-CHILD\"]\n        },\n        {\n            \"name\": \"MY-child\",\n            \"displayName\": \"My Child Service!!!!\",\n            \"description\": \"Example child service NEAT!\",\n            \"url\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"Not-RootHealth\",\n                    \"description\": \"Moved from Root\",\n                    \"type\": \"prometheusMetric\",\n                    \"definition\": {\n                        \"duration\": \"1.03:14:56.1667000\",\n                        \"expression\": \"Not expresso, Expression!!!\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"NotEqual\",\n                                \"threshold\": 1,\n                                \"healthStatus\": \"Degraded\"\n                            }\n                        ]\n                    }\n                }\n            ],\n            \"children\": [\"sub-SUB-service\"]\n        },\n        {\n            \"name\": \"MY-child2\",\n            \"displayName\": \"My Child Service2!!!!\",\n            \"description\": \"Example child service NEAT2!\",\n            \"url\": null,\n            \"children\": [\"sub-SUB-service\"]\n        },\n        {\n            \"name\": \"sub-sub-service\",\n            \"displayName\": \"New Sub Service\",\n            \"description\": \"Example sub-sub-service.\",\n            \"url\": null,\n            \"children\": []\n        },\n        {\n            \"name\": \"another-root\",\n            \"displayName\": \"My Second Root Service\"\n        }\n    ],\n    \"rootServices\": [\n        \"my-ROOT\",\n        \"another-ROOT\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/config/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"config",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Tenant",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/config/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"config",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[JWT] Delete Tenant",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/config/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"config",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Environments",
+			"item": [
+				{
+					"name": "Get Aggregate Health - Environments",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/environments",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"environments"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Specific Environment",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/environments/{{TEST_ENVIRONMENT2}}",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"environments",
+								"{{TEST_ENVIRONMENT2}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Environment",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"{{TEST_ENVIRONMENT2}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/environments",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"environments"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[JWT] Create Environment",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"{{TEST_ENVIRONMENT2}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/environments",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"environments"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Environment",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/environments/{{TEST_ENVIRONMENT2}}",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"environments",
+								"{{TEST_ENVIRONMENT2}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[JWT] Delete Environment",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/environments/{{TEST_ENVIRONMENT2}}",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"environments",
+								"{{TEST_ENVIRONMENT2}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Tenants",
+			"item": [
+				{
+					"name": "Get Aggregate Health - Tenants",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/tenants",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"tenants"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Health",
+			"item": [
+				{
+					"name": "Get Tenant Health",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/health/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"health",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Specific Service Health",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/health/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE}}",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"health",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}",
+								"services",
+								"{{TEST_SERVICE}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Self Health Check",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/health/{{SONAR_ENVIRONMENT}}/tenants/sonar",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"health",
+								"{{SONAR_ENVIRONMENT}}",
+								"tenants",
+								"sonar"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Post Service Health - Root",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var now = Date.now();",
+									"pm.environment.set(\"now\", new Date(now));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"timestamp\": \"{{now}}\",\n    \"aggregateStatus\": \"online\",\n    \"healthChecks\": {\n        \"RootHealth\": \"online\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/health/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE}}",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"health",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}",
+								"services",
+								"{{TEST_SERVICE}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[JWT] Post Service Health - Root",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var now = Date.now();",
+									"pm.environment.set(\"now\", new Date(now));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"timestamp\": \"{{now}}\",\n    \"aggregateStatus\": \"online\",\n    \"healthChecks\": {\n        \"RootHealth\": \"online\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/health/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE}}",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"health",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}",
+								"services",
+								"{{TEST_SERVICE}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Post Service Health - Child",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var now = Date.now();",
+									"pm.environment.set(\"now\", new Date(now));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"timestamp\": \"{{now}}\",\n    \"aggregateStatus\": \"degraded\",\n    \"healthChecks\": {}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/health/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_CHILD_SERVICE}}",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"health",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}",
+								"services",
+								"{{TEST_CHILD_SERVICE}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[JWT] Post Service Health - Child",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var now = Date.now();",
+									"pm.environment.set(\"now\", new Date(now));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"timestamp\": \"{{now}}\",\n    \"aggregateStatus\": \"degraded\",\n    \"healthChecks\": {}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/health/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_CHILD_SERVICE}}",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"health",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}",
+								"services",
+								"{{TEST_CHILD_SERVICE}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Health-Check-Data",
+			"item": [
+				{
+					"name": "Get Service Health Check Data (no start and end specified)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/health-check-data/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE}}/health-check/{{TEST_HEALTH_CHECK}}",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"health-check-data",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}",
+								"services",
+								"{{TEST_SERVICE}}",
+								"health-check",
+								"{{TEST_HEALTH_CHECK}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Service Health Check Data (start and end specified)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/health-check-data/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE}}/health-check/{{TEST_HEALTH_CHECK}}?queryStart={{now_minus_61m}}&queryEnd={{now}}",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"health-check-data",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}",
+								"services",
+								"{{TEST_SERVICE}}",
+								"health-check",
+								"{{TEST_HEALTH_CHECK}}"
+							],
+							"query": [
+								{
+									"key": "queryStart",
+									"value": "{{now_minus_61m}}"
+								},
+								{
+									"key": "queryEnd",
+									"value": "{{now}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Post Service Health Check Data",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var now = Date.now();",
+									"pm.environment.set(\"now\", new Date(now));",
+									"pm.environment.set(\"now_minus_5s\", new Date(now - 5 * 1000));",
+									"pm.environment.set(\"now_minus_10s\", new Date(now - 10 * 1000));",
+									"pm.environment.set(\"now_minus_15s\", new Date(now - 15 * 1000));",
+									"pm.environment.set(\"now_minus_20s\", new Date(now - 20 * 1000));",
+									"pm.environment.set(\"now_minus_30m\", new Date(now - 30 * 60 * 1000));",
+									"pm.environment.set(\"now_minus_61m\", new Date(now - 61 * 60 * 1000));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"healthCheckSamples\": {\n        \"health-check-1\": [\n            [\"{{now_minus_61m}}\", 0.0],\n            [\"{{now_minus_30m}}\", 0.0],\n            [\"{{now_minus_20s}}\", 1.0],\n            [\"{{now_minus_15s}}\", 2.0],\n            [\"{{now_minus_10s}}\", 3.0],\n            [\"{{now_minus_5s}}\", 4.0],\n            [\"{{now}}\", 5.0]\n        ],\n        \"health-check-2\": [\n            [\"{{now_minus_61m}}\", 0.0],\n            [\"{{now_minus_30m}}\", 0.0],\n            [\"{{now_minus_20s}}\", 0.1],\n            [\"{{now_minus_15s}}\", 0.2],\n            [\"{{now_minus_10s}}\", 0.3],\n            [\"{{now_minus_5s}}\", 0.4],\n            [\"{{now}}\", 0.5]\n        ]\n    }\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/health-check-data/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE}}",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"health-check-data",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}",
+								"services",
+								"{{TEST_SERVICE}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[JWT] Post Service Health Check Data",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var now = Date.now();",
+									"pm.environment.set(\"now\", new Date(now));",
+									"pm.environment.set(\"now_minus_5s\", new Date(now - 5 * 1000));",
+									"pm.environment.set(\"now_minus_10s\", new Date(now - 10 * 1000));",
+									"pm.environment.set(\"now_minus_15s\", new Date(now - 15 * 1000));",
+									"pm.environment.set(\"now_minus_20s\", new Date(now - 20 * 1000));",
+									"pm.environment.set(\"now_minus_30m\", new Date(now - 30 * 60 * 1000));",
+									"pm.environment.set(\"now_minus_61m\", new Date(now - 61 * 60 * 1000));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"healthCheckSamples\": {\n        \"health-check-1\": [\n            [\"{{now_minus_61m}}\", 0.0],\n            [\"{{now_minus_30m}}\", 0.0],\n            [\"{{now_minus_20s}}\", 1.0],\n            [\"{{now_minus_15s}}\", 2.0],\n            [\"{{now_minus_10s}}\", 3.0],\n            [\"{{now_minus_5s}}\", 4.0],\n            [\"{{now}}\", 5.0]\n        ],\n        \"health-check-2\": [\n            [\"{{now_minus_61m}}\", 0.0],\n            [\"{{now_minus_30m}}\", 0.0],\n            [\"{{now_minus_20s}}\", 0.1],\n            [\"{{now_minus_15s}}\", 0.2],\n            [\"{{now_minus_10s}}\", 0.3],\n            [\"{{now_minus_5s}}\", 0.4],\n            [\"{{now}}\", 0.5]\n        ]\n    }\n}\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/health-check-data/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE}}",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"health-check-data",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}",
+								"services",
+								"{{TEST_SERVICE}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Health-History",
+			"item": [
+				{
+					"name": "Get Service Health History",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/health-history/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE}}?step=10",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"health-history",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}",
+								"services",
+								"{{TEST_SERVICE}}"
+							],
+							"query": [
+								{
+									"key": "start",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "end",
+									"value": null,
+									"disabled": true
+								},
+								{
+									"key": "step",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Tenant Health History",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/health-history/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}?step=10",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"health-history",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}"
+							],
+							"query": [
+								{
+									"key": "start",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "end",
+									"value": null,
+									"disabled": true
+								},
+								{
+									"key": "step",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Prometheus Test Data",
+			"item": [
+				{
+					"name": "Get Prometheus Test Data (promExpression1)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{PROMETHEUS_BASE_URL}}/api/v1/query_range?query=promExpression1&start={{now_minus_10s}}&end={{now}}&step=1s",
+							"host": [
+								"{{PROMETHEUS_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"query_range"
+							],
+							"query": [
+								{
+									"key": "query",
+									"value": "promExpression1"
+								},
+								{
+									"key": "start",
+									"value": "{{now_minus_10s}}"
+								},
+								{
+									"key": "end",
+									"value": "{{now}}"
+								},
+								{
+									"key": "step",
+									"value": "1s"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Prometheus Test Data (promExpression2)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{PROMETHEUS_BASE_URL}}/api/v1/query_range?query=promExpression2&start={{now_minus_10s}}&end={{now}}&step=1s",
+							"host": [
+								"{{PROMETHEUS_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"query_range"
+							],
+							"query": [
+								{
+									"key": "query",
+									"value": "promExpression2"
+								},
+								{
+									"key": "start",
+									"value": "{{now_minus_10s}}"
+								},
+								{
+									"key": "end",
+									"value": "{{now}}"
+								},
+								{
+									"key": "step",
+									"value": "1s"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Prometheus Test Data (Root-Health)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var now = Date.now();",
+									"pm.environment.set(\"now\", new Date(now));",
+									"pm.environment.set(\"now_minus_5s\", new Date(now - 5 * 1000));",
+									"pm.environment.set(\"now_minus_10s\", new Date(now - 10 * 1000));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"MetricName\": \"promExpression1\",\n    \"MetricType\": \"Gauge\",\n    \"HelpText\": \"example help text\",\n    \"Labels\": {\n        \"__name__\": \"promExpression1\",\n        \"foo2\": \"val\"\n    },\n    \"Timeseries\": [\n        [\"{{now}}\", 0.97],\n        [\"{{now_minus_5s}}\", 0.98],\n        [\"{{now_minus_10s}}\", 0.99]\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/test/data",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"test",
+								"data"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[JWT] Create Prometheus Test Data (Root-Health)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var now = Date.now();",
+									"pm.environment.set(\"now\", new Date(now));",
+									"pm.environment.set(\"now_minus_5s\", new Date(now - 5 * 1000));",
+									"pm.environment.set(\"now_minus_10s\", new Date(now - 10 * 1000));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"MetricName\": \"promExpression1\",\n    \"MetricType\": \"Gauge\",\n    \"HelpText\": \"example help text\",\n    \"Labels\": {\n        \"__name__\": \"promExpression1\",\n        \"foo2\": \"val\"\n    },\n    \"Timeseries\": [\n        [\"{{now}}\", 0.97],\n        [\"{{now_minus_5s}}\", 0.98],\n        [\"{{now_minus_10s}}\", 0.99]\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/test/data",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"test",
+								"data"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Prometheus Test Data (Root-Health2)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var now = Date.now();",
+									"pm.environment.set(\"now\", new Date(now));",
+									"pm.environment.set(\"now_minus_5s\", new Date(now - 5 * 1000));",
+									"pm.environment.set(\"now_minus_10s\", new Date(now - 10 * 1000));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"MetricName\": \"promExpression2\",\n    \"MetricType\": \"Gauge\",\n    \"HelpText\": \"example help text\",\n    \"Labels\": {\n        \"__name__\": \"promExpression2\",\n        \"foo2\": \"val\"\n    },\n    \"Timeseries\": [\n        [\"{{now}}\", 1.97],\n        [\"{{now_minus_5s}}\", 1.98],\n        [\"{{now_minus_10s}}\", 1.99]\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/test/data",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"test",
+								"data"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[JWT] Create Prometheus Test Data (Root-Health2)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var now = Date.now();",
+									"pm.environment.set(\"now\", new Date(now));",
+									"pm.environment.set(\"now_minus_5s\", new Date(now - 5 * 1000));",
+									"pm.environment.set(\"now_minus_10s\", new Date(now - 10 * 1000));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"MetricName\": \"promExpression2\",\n    \"MetricType\": \"Gauge\",\n    \"HelpText\": \"example help text\",\n    \"Labels\": {\n        \"__name__\": \"promExpression2\",\n        \"foo2\": \"val\"\n    },\n    \"Timeseries\": [\n        [\"{{now}}\", 1.97],\n        [\"{{now_minus_5s}}\", 1.98],\n        [\"{{now_minus_10s}}\", 1.99]\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/test/data",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"test",
+								"data"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "User",
+			"item": [
+				{
+					"name": "Get User",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/user",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"user"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[JWT] Get User",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/user",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"user"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create User",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJraWQiOiJhVlNHR2R4cThQa3JuY1pkMTFvM0xueHdSUXplVlR3Y3hZLWFzNEpldm13IiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiIwMHVhOTgwdGkyOEhMZkwxWTVkNyIsIm5hbWUiOiJLZXZpbiBMeSIsImVtYWlsIjoia2x5QHJldmFjb21tLmNvbSIsInZlciI6MSwiaXNzIjoiaHR0cHM6Ly9kZXYtNTAwNjM4MDUub2t0YS5jb20vb2F1dGgyL2RlZmF1bHQiLCJhdWQiOiIwb2E5cTAyb2Mwd2R3YUIxNDVkNyIsImlhdCI6MTY5MDUzMzc0OCwiZXhwIjoxNjkwNTM3MzQ4LCJqdGkiOiJJRC5Xb0hPVy0tM3liZ1gyZVlTcnpLVDBIMDNDOVc0dTAwWFNLemFJZlMwZHVnIiwiYW1yIjpbInB3ZCJdLCJpZHAiOiIwMG85cDBhNWt4WW5yaEdVTTVkNyIsIm5vbmNlIjoiV0xkQ2JHY3dyMXcxanRLV3piZFlrNzBGcUN4UE9jbktMSENmaFlvdHRMeTFjeGZoak56S2ZxeExqb0J2T1MyZyIsInByZWZlcnJlZF91c2VybmFtZSI6ImtseUByZXZhY29tbS5jb20iLCJhdXRoX3RpbWUiOjE2OTA1MzM3NDQsImF0X2hhc2giOiI3NmdIMlVnQWR5dDVzcHBCLXNtZkN3In0.oop4iUD0dVxvQ2uEYcPJi67pLtPlJb2nxnH08iGTiF0xiNkGPqGrmWxBnf6rJmAtv1BmR6dwXEwIV8XxdeOyV_sBUOqA4RY1UnkU3c1cARfBkUdjD46tbk1AGF953YbyrVvy1S4nYI5X1RgtXYmVwTfyAUL_O7kCUFOfj1QYBapbsoTfet-5irTVetT1ZjEtG2hqAcSzllvMWCBTcjGCDM9j-xdabxVxXAuLgXWSnGuEjzTX0dH40gf-Kx_vIh8lSS9wvkxczk7ntgQh9_z_AUgjMpCIkIsOFwBjrelfQFmGyDrtxUpv6sMFlu0ByWEdrm9KqlpA-QSfWoU4J-yzeA",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/user",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"user"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "User Permissions",
+			"item": [
+				{
+					"name": "Get User Permission",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/permissions",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"permissions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[JWT] Get User Permission",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/permissions",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"permissions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create User with Admin Permission",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"permission\": \"Admin\",\n  \"userEmail\": \"{{TEST_EMAIL}}\",\n  \"environment\":\"{{TEST_ENVIRONMENT}}\",\n  \"tenant\":\"{{TEST_TENANT}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/permissions",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"permissions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[JWT] Create User with Admin Permission",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"permission\": \"Admin\",\n  \"userEmail\": \"{{TEST_EMAIL}}\",\n  \"environment\":\"{{TEST_ENVIRONMENT}}\",\n  \"tenant\":\"{{TEST_TENANT}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/permissions",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"permissions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Standard Permission",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"permission\": \"Standard\",\n  \"userEmail\": \"{{TEST_EMAIL}}\",\n  \"environment\":\"{{TEST_ENVIRONMENT}}\",\n  \"tenant\":\"{{TEST_TENANT}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/permissions",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"permissions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[JWT] Create Standard Permission",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"permission\": \"Standard\",\n  \"userEmail\": \"{{TEST_EMAIL}}\",\n  \"environment\":\"{{TEST_ENVIRONMENT}}\",\n  \"tenant\":\"{{TEST_TENANT}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/permissions",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"permissions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update User Permission",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"permission\": \"Standard\",\n  \"userEmail\": \"kly@revacomm.com\",\n  \"environment\":\"{{TEST_ENVIRONMENT}}\",\n  \"tenant\":\"{{TEST_TENANT}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/permissions/40b0c4fa-c1e8-408b-b9ce-de4b621a0086",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"permissions",
+								"40b0c4fa-c1e8-408b-b9ce-de4b621a0086"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[JWT] Update User Permission",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"permission\": \"Standard\",\n  \"userEmail\": \"{{TEST_EMAIL}}\",\n  \"environment\":\"{{TEST_ENVIRONMENT}}\",\n  \"tenant\":\"{{TEST_TENANT}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/permissions/40b0c4fa-c1e8-408b-b9ce-de4b621a0086",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"permissions",
+								"40b0c4fa-c1e8-408b-b9ce-de4b621a0086"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User Permission",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/permissions/431c691b-d259-47bb-9b1e-5a53f6896f1f",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"permissions",
+								"431c691b-d259-47bb-9b1e-5a53f6896f1f"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[JWT] Delete User Permission",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/permissions/431c691b-d259-47bb-9b1e-5a53f6896f1f",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"permissions",
+								"431c691b-d259-47bb-9b1e-5a53f6896f1f"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
 		{
 			"name": "Readiness Endpoint",
 			"request": {
@@ -28,779 +2080,6 @@
 					"path": [
 						"api",
 						"ready"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Get Service Hierarchy",
-			"request": {
-				"auth": {
-					"type": "noauth"
-				},
-				"method": "GET",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"url": {
-					"raw": "{{SONAR_BASE_URL}}/api/v2/config/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}",
-					"host": [
-						"{{SONAR_BASE_URL}}"
-					],
-					"path": [
-						"api",
-						"v2",
-						"config",
-						"{{TEST_ENVIRONMENT}}",
-						"tenants",
-						"{{TEST_TENANT}}"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Get Tenant Health",
-			"request": {
-				"auth": {
-					"type": "noauth"
-				},
-				"method": "GET",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"url": {
-					"raw": "{{SONAR_BASE_URL}}/api/v2/health/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}",
-					"host": [
-						"{{SONAR_BASE_URL}}"
-					],
-					"path": [
-						"api",
-						"v2",
-						"health",
-						"{{TEST_ENVIRONMENT}}",
-						"tenants",
-						"{{TEST_TENANT}}"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Get Tenant Health History",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{SONAR_BASE_URL}}/api/v2/health-history/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}?step=10",
-					"host": [
-						"{{SONAR_BASE_URL}}"
-					],
-					"path": [
-						"api",
-						"v2",
-						"health-history",
-						"{{TEST_ENVIRONMENT}}",
-						"tenants",
-						"{{TEST_TENANT}}"
-					],
-					"query": [
-						{
-							"key": "start",
-							"value": "",
-							"disabled": true
-						},
-						{
-							"key": "end",
-							"value": null,
-							"disabled": true
-						},
-						{
-							"key": "step",
-							"value": "10"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Get Service Health History",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{SONAR_BASE_URL}}/api/v2/health-history/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE_PATH}}?step=10",
-					"host": [
-						"{{SONAR_BASE_URL}}"
-					],
-					"path": [
-						"api",
-						"v2",
-						"health-history",
-						"{{TEST_ENVIRONMENT}}",
-						"tenants",
-						"{{TEST_TENANT}}",
-						"services",
-						"{{TEST_SERVICE_PATH}}"
-					],
-					"query": [
-						{
-							"key": "start",
-							"value": "",
-							"disabled": true
-						},
-						{
-							"key": "end",
-							"value": null,
-							"disabled": true
-						},
-						{
-							"key": "step",
-							"value": "10"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Self Health Check",
-			"request": {
-				"auth": {
-					"type": "noauth"
-				},
-				"method": "GET",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"url": {
-					"raw": "{{SONAR_BASE_URL}}/api/v2/health/{{SONAR_ENVIRONMENT}}/tenants/sonar",
-					"host": [
-						"{{SONAR_BASE_URL}}"
-					],
-					"path": [
-						"api",
-						"v2",
-						"health",
-						"{{SONAR_ENVIRONMENT}}",
-						"tenants",
-						"sonar"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Create Service Hierarchy",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"services\": [\n        {\n            \"name\": \"my-root\",\n            \"displayName\": \"My Root Service\",\n            \"description\": \"Example root service\",\n            \"url\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"RootHealth\",\n                    \"description\": \"Desc\",\n                    \"type\": \"prometheusMetric\",\n                    \"definition\": {\n                        \"duration\": \"08:00:00\",\n                        \"expression\": \"promExpression1\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"NotEqual\",\n                                \"threshold\": 1.0,\n                                \"healthStatus\": \"Offline\"\n                            }\n                        ]\n                    }\n                },\n                {\n                    \"name\": \"RootHealth2\",\n                    \"type\": \"prometheusMetric\",\n                    \"description\": \"What Another Health Check?\",\n                    \"definition\": {\n                        \"duration\": \"08:00:00\",\n                        \"expression\": \"promExpression2\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"GreaterThan\",\n                                \"threshold\": 1.0,\n                                \"healthStatus\": \"Online\"\n                            }\n                        ]\n                    }\n                }\n            ],\n            \"children\": [\n                \"my-child\",\n                \"my-child2\"\n            ]\n        },\n        {\n            \"name\": \"my-child\",\n            \"displayName\": \"My Child Service\",\n            \"description\": \"Example child service\",\n            \"url\": null,\n            \"children\": null\n        },\n        {\n            \"name\": \"my-child2\",\n            \"displayName\": \"My Child Service2\",\n            \"description\": \"Example child service2\",\n            \"url\": null,\n            \"children\": null\n        },\n        {\n            \"name\": \"http-metric-test-app\",\n            \"displayName\": \"Test Application for HTTP Health Check\",\n            \"description\": \"A test application that has one endpoint to simulate different HTTP status codes.\",\n            \"url\": \"http://localhost:8082/api/ready\",\n            \"children\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"exampleHttpTest\",\n                    \"description\": \"Check to see if request contains failed status code and/or request duration greater than specified threshold.\",\n                    \"definition\": {\n                        \"url\": \"http://localhost:8082/api/ready\",\n                        \"followRedirects\": true,\n                        \"authorizationHeader\": \"test-header\",\n                        \"conditions\": [\n                            {\n                                \"status\": \"Online\",\n                                \"statusCodes\": [\n                                    200\n                                ],\n                                \"type\": \"HttpStatusCode\"\n                            },\n                            {\n                                \"status\": \"Degraded\",\n                                \"responseTime\": \"00:00:02\",\n                                \"type\": \"HttpResponseTime\"\n                            }\n                        ]\n                    },\n                    \"type\": \"httpRequest\"\n                }\n            ]\n        }\n    ],\n    \"rootServices\": [\n        \"my-root\",\n        \"http-metric-test-app\"\n    ]\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{SONAR_BASE_URL}}/api/v2/config/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}",
-					"host": [
-						"{{SONAR_BASE_URL}}"
-					],
-					"path": [
-						"api",
-						"v2",
-						"config",
-						"{{TEST_ENVIRONMENT}}",
-						"tenants",
-						"{{TEST_TENANT}}"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Update Service Hierarchy",
-			"request": {
-				"method": "PUT",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"services\": [\n        {\n            \"name\": \"my-root\",\n            \"displayName\": \"My Root Service\",\n            \"description\": \"Example root service\",\n            \"url\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"Root-Health2\",\n                    \"description\": \"What Another Health Check?\",\n                    \"definition\": {\n                        \"duration\": \"420.03:14:56.1667000\",\n                        \"expression\": \"Expression\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"GreaterThan\",\n                                \"threshold\": 1.0,\n                                \"healthStatus\": \"Online\"\n                            }\n                        ]\n                    }\n                }\n            ],\n            \"children\": [\"my-CHILD\"]\n        },\n        {\n            \"name\": \"MY-child\",\n            \"displayName\": \"My Child Service!!!!\",\n            \"description\": \"Example child service NEAT!\",\n            \"url\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"Not-RootHealth\",\n                    \"description\": \"Moved from Root\",\n                    \"definition\": {\n                        \"duration\": \"1.03:14:56.1667000\",\n                        \"expression\": \"Not expresso, Expression!!!\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"NotEqual\",\n                                \"threshold\": 1,\n                                \"healthStatus\": \"Degraded\"\n                            }\n                        ]\n                    }\n                }\n            ],\n            \"children\": [\"sub-SUB-service\"]\n        },\n        {\n            \"name\": \"MY-child2\",\n            \"displayName\": \"My Child Service2!!!!\",\n            \"description\": \"Example child service NEAT2!\",\n            \"url\": null,\n            \"children\": [\"sub-SUB-service\"]\n        },\n        {\n            \"name\": \"sub-sub-service\",\n            \"displayName\": \"New Sub Service\",\n            \"description\": \"Example sub-sub-service.\",\n            \"url\": null,\n            \"children\": []\n        },\n        {\n            \"name\": \"another-root\",\n            \"displayName\": \"My Second Root Service\"\n        }\n    ],\n    \"rootServices\": [\n        \"my-ROOT\",\n        \"another-ROOT\"\n    ]\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{SONAR_BASE_URL}}/api/v2/config/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}",
-					"host": [
-						"{{SONAR_BASE_URL}}"
-					],
-					"path": [
-						"api",
-						"v2",
-						"config",
-						"{{TEST_ENVIRONMENT}}",
-						"tenants",
-						"{{TEST_TENANT}}"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Create Prometheus Test Data (Root-Health)",
-			"request": {
-				"auth": {
-					"type": "noauth"
-				},
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"MetricName\": \"promExpression1\",\n    \"MetricType\": \"Gauge\",\n    \"HelpText\": \"example help text\",\n    \"Labels\": {\n        \"__name__\": \"promExpression1\",\n        \"foo2\": \"val\"\n    },\n    \"Timeseries\": [\n        [\"2022-11-08T00:09:00Z\", 0.97],\n        [\"2022-11-08T00:09:05Z\", 0.98],\n        [\"2022-11-08T00:09:10Z\", 0.99]\n    ]\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{SONAR_BASE_URL}}/api/test/data",
-					"host": [
-						"{{SONAR_BASE_URL}}"
-					],
-					"path": [
-						"api",
-						"test",
-						"data"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Create Prometheus Test Data (Root-Health2)",
-			"request": {
-				"auth": {
-					"type": "noauth"
-				},
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"MetricName\": \"promExpression2\",\n    \"MetricType\": \"Gauge\",\n    \"HelpText\": \"example help text\",\n    \"Labels\": {\n        \"__name__\": \"promExpression2\",\n        \"foo2\": \"val\"\n    },\n    \"Timeseries\": [\n       [\"2022-11-08T00:09:00Z\", 1.97],\n        [\"2022-11-08T00:09:05Z\", 1.98],\n        [\"2022-11-08T00:09:10Z\", 1.99]\n    ]\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{SONAR_BASE_URL}}/api/test/data",
-					"host": [
-						"{{SONAR_BASE_URL}}"
-					],
-					"path": [
-						"api",
-						"test",
-						"data"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Get Prometheus Test Data (promExpression1)",
-			"request": {
-				"auth": {
-					"type": "noauth"
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{PROMETHEUS_BASE_URL}}/api/v1/query_range?query=promExpression1&start=2022-11-08T12:09:00Z&end=2022-11-08T12:09:10Z&step=1s",
-					"host": [
-						"{{PROMETHEUS_BASE_URL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"query_range"
-					],
-					"query": [
-						{
-							"key": "query",
-							"value": "promExpression1"
-						},
-						{
-							"key": "start",
-							"value": "2022-11-08T12:09:00Z"
-						},
-						{
-							"key": "end",
-							"value": "2022-11-08T12:09:10Z"
-						},
-						{
-							"key": "step",
-							"value": "1s"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Get Prometheus Test Data (promExpression2)",
-			"request": {
-				"auth": {
-					"type": "noauth"
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{PROMETHEUS_BASE_URL}}/api/v1/query_range?query=promExpression2&start=2022-11-08T12:09:00Z&end=2022-11-08T12:09:10Z&step=1s",
-					"host": [
-						"{{PROMETHEUS_BASE_URL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"query_range"
-					],
-					"query": [
-						{
-							"key": "query",
-							"value": "promExpression2"
-						},
-						{
-							"key": "start",
-							"value": "2022-11-08T12:09:00Z"
-						},
-						{
-							"key": "end",
-							"value": "2022-11-08T12:09:10Z"
-						},
-						{
-							"key": "step",
-							"value": "1s"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Post Service Health - Root",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"timestamp\": \"2022-11-07T08:25:58Z\",\n    \"aggregateStatus\": \"online\",\n    \"healthChecks\": {\n        \"Root-Health\": \"online\"\n    }\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{SONAR_BASE_URL}}/api/v2/health/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/my-root",
-					"host": [
-						"{{SONAR_BASE_URL}}"
-					],
-					"path": [
-						"api",
-						"v2",
-						"health",
-						"{{TEST_ENVIRONMENT}}",
-						"tenants",
-						"{{TEST_TENANT}}",
-						"services",
-						"my-root"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Post Service Health - Child",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"timestamp\": \"2022-11-07T08:25:58Z\",\n    \"aggregateStatus\": \"degraded\",\n    \"healthChecks\": {\n        \"Not-RootHealth\": \"degraded\"\n    }\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{SONAR_BASE_URL}}/api/v2/health/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/my-child",
-					"host": [
-						"{{SONAR_BASE_URL}}"
-					],
-					"path": [
-						"api",
-						"v2",
-						"health",
-						"{{TEST_ENVIRONMENT}}",
-						"tenants",
-						"{{TEST_TENANT}}",
-						"services",
-						"my-child"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Post Service Health Check Data",
-			"event": [
-				{
-					"listen": "prerequest",
-					"script": {
-						"exec": [
-							"var now = Date.now();",
-							"pm.environment.set(\"now\", new Date(now));",
-							"pm.environment.set(\"now_minus_5s\", new Date(now - 5 * 1000));",
-							"pm.environment.set(\"now_minus_10s\", new Date(now - 10 * 1000));",
-							"pm.environment.set(\"now_minus_15s\", new Date(now - 15 * 1000));",
-							"pm.environment.set(\"now_minus_20s\", new Date(now - 20 * 1000));",
-							"pm.environment.set(\"now_minus_25s\", new Date(now - 25 * 1000));",
-							"pm.environment.set(\"now_minus_61m\", new Date(now - 61 * 60 * 1000));"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"healthCheckSamples\": {\n        \"health-check-1\": [\n            [\"{{now_minus_61m}}\", 0.0],\n            [\"{{now_minus_25s}}\", 0.0],\n            [\"{{now_minus_20s}}\", 1.0],\n            [\"{{now_minus_15s}}\", 2.0],\n            [\"{{now_minus_10s}}\", 3.0],\n            [\"{{now_minus_5s}}\", 4.0],\n            [\"{{now}}\", 5.0]\n        ],\n        \"health-check-2\": [\n            [\"{{now_minus_61m}}\", 0.0],\n            [\"{{now_minus_25s}}\", 0.0],\n            [\"{{now_minus_20s}}\", 0.1],\n            [\"{{now_minus_15s}}\", 0.2],\n            [\"{{now_minus_10s}}\", 0.3],\n            [\"{{now_minus_5s}}\", 0.4],\n            [\"{{now}}\", 0.5]\n        ]\n    }\n}\n",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{SONAR_BASE_URL}}/api/v2/health-check-data/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/my-root",
-					"host": [
-						"{{SONAR_BASE_URL}}"
-					],
-					"path": [
-						"api",
-						"v2",
-						"health-check-data",
-						"{{TEST_ENVIRONMENT}}",
-						"tenants",
-						"{{TEST_TENANT}}",
-						"services",
-						"my-root"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Get Service Health Check Data (no start and end specified)",
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"url": {
-					"raw": "{{SONAR_BASE_URL}}/api/v2/health-check-data/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE}}/health-check/{{TEST_HEALTH_CHECK}}",
-					"host": [
-						"{{SONAR_BASE_URL}}"
-					],
-					"path": [
-						"api",
-						"v2",
-						"health-check-data",
-						"{{TEST_ENVIRONMENT}}",
-						"tenants",
-						"{{TEST_TENANT}}",
-						"services",
-						"{{TEST_SERVICE}}",
-						"health-check",
-						"{{TEST_HEALTH_CHECK}}"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Get Service Health Check Data (start and end specified)",
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"url": {
-					"raw": "{{SONAR_BASE_URL}}/api/v2/health-check-data/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE}}/health-check/{{TEST_HEALTH_CHECK}}/yyyy-MM-ddTHH:mm:ssZ/yyyy-MM-ddTHH:mm:ssZ",
-					"host": [
-						"{{SONAR_BASE_URL}}"
-					],
-					"path": [
-						"api",
-						"v2",
-						"health-check-data",
-						"{{TEST_ENVIRONMENT}}",
-						"tenants",
-						"{{TEST_TENANT}}",
-						"services",
-						"{{TEST_SERVICE}}",
-						"health-check",
-						"{{TEST_HEALTH_CHECK}}",
-						"yyyy-MM-ddTHH:mm:ssZ",
-						"yyyy-MM-ddTHH:mm:ssZ"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Create Admin Api Key",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"ApiKeyType\": \"Admin\"\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{SONAR_BASE_URL}}/api/v2/keys",
-					"host": [
-						"{{SONAR_BASE_URL}}"
-					],
-					"path": [
-						"api",
-						"v2",
-						"keys"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Create API Key",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"apiKeyType\": \"Standard\",\n    \"environment\": \"{{TEST_ENVIRONMENT}}\",\n    \"tenant\": \"{{TEST_TENANT}}\"\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{SONAR_BASE_URL}}/api/v2/keys",
-					"host": [
-						"{{SONAR_BASE_URL}}"
-					],
-					"path": [
-						"api",
-						"v2",
-						"keys"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "API Keys",
-			"protocolProfileBehavior": {
-				"disableBodyPruning": true
-			},
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json",
-						"type": "text"
-					},
-					{
-						"key": "ApiKey",
-						"value": "test+api+key+do+not+use+in+production+xxxxx=",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://localhost:8081/api/v2/keys",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8081",
-					"path": [
-						"api",
-						"v2",
-						"keys"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Delete API Key",
-			"request": {
-				"method": "DELETE",
-				"header": [
-					{
-						"key": "Accept",
-						"value": "application/json",
-						"type": "text"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "{{SONAR_BASE_URL}}/api/v2/keys/ad8713ea-e21a-40c9-80c2-31352146f155",
-					"host": [
-						"{{SONAR_BASE_URL}}"
-					],
-					"path": [
-						"api",
-						"v2",
-						"keys",
-						"ad8713ea-e21a-40c9-80c2-31352146f155"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Get Aggregate Health - Tenants",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{SONAR_BASE_URL}}/api/v2/tenants",
-					"host": [
-						"{{SONAR_BASE_URL}}"
-					],
-					"path": [
-						"api",
-						"v2",
-						"tenants"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Get Aggregate Health - Environments",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{SONAR_BASE_URL}}/api/v2/environments",
-					"host": [
-						"{{SONAR_BASE_URL}}"
-					],
-					"path": [
-						"api",
-						"v2",
-						"environments"
 					]
 				}
 			},
