@@ -1,13 +1,18 @@
-import { PermissionConfiguration } from "api/data-contracts";
+import { CurrentUserView, PermissionConfiguration } from "api/data-contracts";
 import { useSonarApi } from "components/AppContext/AppContextProvider";
-import { UseQueryResult, useQuery } from "react-query";
+import { UseQueryResult, useMutation, useQuery, useQueryClient } from "react-query";
 
 export enum QueryKeys {
-  GetPermissions = 'getPermissions'
+  GetPermissions = 'getPermissions',
+  GetUsers = 'getUsers'
 }
 
 export type PermissionConfigurationByEnvironment = {
   [key: string]: PermissionConfiguration[];
+}
+
+export type UsersByEmail = {
+  [key: string]: string
 }
 
 function groupByEnvironment(grouping: PermissionConfigurationByEnvironment, item: PermissionConfiguration) {
@@ -23,10 +28,32 @@ export function usePermissionConfigurationByEnvironment(): UseQueryResult<Permis
     queryKey: [QueryKeys.GetPermissions],
     queryFn: () => sonarApi.getPermissions()
       .then((response) => {
-        return (response.data || []).reduce(groupByEnvironment, {})
+        return (response.data || []).reduce(groupByEnvironment, {});
       })
-      .catch((error) => {
-        console.error(`Error executing ${QueryKeys.GetPermissions} query: `, error);
+  });
+}
+
+function toUsersByEmail(usersByEmail: UsersByEmail, user: CurrentUserView) {
+  usersByEmail[user.email!] = user.fullName!
+  return usersByEmail;
+}
+
+export function useUsersByEmail(): UseQueryResult<UsersByEmail> {
+  const sonarApi = useSonarApi();
+  return useQuery({
+    queryKey: [QueryKeys.GetUsers],
+    queryFn: () => sonarApi.v2UserList()
+      .then((response) => {
+        return (response.data || []).reduce(toUsersByEmail, {});
       })
+  });
+}
+
+export function useDeletePermission() {
+  const sonarApi = useSonarApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (permId: string) => sonarApi.deleteUserPermission(permId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [QueryKeys.GetPermissions] })
   });
 }

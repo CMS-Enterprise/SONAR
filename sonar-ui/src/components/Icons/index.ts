@@ -1,5 +1,6 @@
 import { CSSProperties } from 'react';
 
 export interface SonarIconProps {
-  style?: CSSProperties
+  style?: CSSProperties,
+  className?: string
 }

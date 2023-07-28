@@ -14,6 +14,7 @@ import UserPermissions from 'pages/UserPermissions';
 import EnvironmentUsersTable from 'components/UserPermissions/EnvironmentUsersTable';
 import UserPermissionsTable from 'components/UserPermissions/UserPermissionsTable';
 import AppContextProvider from 'components/AppContext/AppContextProvider';
+import DeletePermissionModal from 'components/UserPermissions/DeletePermissionModal';
 
 const oktaAuth = new OktaAuth(oktaAuthOptions);
 
@@ -38,7 +39,9 @@ function App() {
               <Route path="/api-keys" element={<ApiKeys />} />
               <Route path="/user-permissions" element={<UserPermissions />}>
                 <Route index={true} element={<EnvironmentUsersTable />} />
-                <Route path="environments/:environmentName" element={<UserPermissionsTable />}/>
+                <Route path="environments/:environmentName" element={<UserPermissionsTable />}>
+                  <Route path=":permissionId/delete" element={<DeletePermissionModal />}/>
+                </Route>
               </Route>
             </Routes>
           </main>

@@ -14,8 +14,18 @@ export const getTableStyle: (theme: Theme) => SerializedStyles = theme => css({
     borderTop: `1px solid ${theme.highlightColor}`
   },
 
-  '& tr:hover': {
+  '& tbody tr:hover': {
     backgroundColor: theme.highlightColor
+  },
+
+  '& th.sortable:hover': {
+    backgroundColor: theme.highlightColor,
+    color: theme.accentColor,
+    cursor: 'pointer'
+  },
+
+  '& th.sortable svg': {
+    height: '0.75em'
   }
 });
 
