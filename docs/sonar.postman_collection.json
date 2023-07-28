@@ -56,7 +56,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{ACCESS_TOKEN}}",
+									"value": "{{ID_TOKEN}}",
 									"type": "string"
 								}
 							]
@@ -127,14 +127,14 @@
 					"response": []
 				},
 				{
-					"name": "[JWT] Create API Key Copy",
+					"name": "[JWT] Create API Key",
 					"request": {
 						"auth": {
 							"type": "bearer",
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{ACCESS_TOKEN}}",
+									"value": "{{ID_TOKEN}}",
 									"type": "string"
 								}
 							]
@@ -205,14 +205,14 @@
 					"response": []
 				},
 				{
-					"name": "[JWT] Create Admin Api Key Copy",
+					"name": "[JWT] Create Admin Api Key",
 					"request": {
 						"auth": {
 							"type": "bearer",
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{ACCESS_TOKEN}}",
+									"value": "{{ID_TOKEN}}",
 									"type": "string"
 								}
 							]
@@ -284,14 +284,14 @@
 					"response": []
 				},
 				{
-					"name": "[JWT] Delete API Key Copy",
+					"name": "[JWT] Delete API Key",
 					"request": {
 						"auth": {
 							"type": "bearer",
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{ACCESS_TOKEN}}",
+									"value": "{{ID_TOKEN}}",
 									"type": "string"
 								}
 							]
@@ -327,6 +327,26 @@
 						}
 					},
 					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
 				}
 			]
 		},
@@ -409,7 +429,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{ACCESS_TOKEN}}",
+									"value": "{{ID_TOKEN}}",
 									"type": "string"
 								}
 							]
@@ -493,7 +513,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{ACCESS_TOKEN}}",
+									"value": "{{ID_TOKEN}}",
 									"type": "string"
 								}
 							]
@@ -562,7 +582,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{ACCESS_TOKEN}}",
+									"value": "{{ID_TOKEN}}",
 									"type": "string"
 								}
 							]
@@ -672,7 +692,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{ACCESS_TOKEN}}",
+									"value": "{{ID_TOKEN}}",
 									"type": "string"
 								}
 							]
@@ -705,16 +725,6 @@
 				{
 					"name": "Delete Environment",
 					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{ACCESS_TOKEN}}",
-									"type": "string"
-								}
-							]
-						},
 						"method": "DELETE",
 						"header": [],
 						"url": {
@@ -735,6 +745,16 @@
 				{
 					"name": "[JWT] Delete Environment",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ID_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "DELETE",
 						"header": [],
 						"url": {
@@ -945,6 +965,16 @@
 						}
 					],
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ID_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "POST",
 						"header": [
 							{
@@ -1052,7 +1082,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{ACCESS_TOKEN}}",
+									"value": "{{ID_TOKEN}}",
 									"type": "string"
 								}
 							]
@@ -1185,14 +1215,7 @@
 							"listen": "prerequest",
 							"script": {
 								"exec": [
-									"var now = Date.now();",
-									"pm.environment.set(\"now\", new Date(now));",
-									"pm.environment.set(\"now_minus_5s\", new Date(now - 5 * 1000));",
-									"pm.environment.set(\"now_minus_10s\", new Date(now - 10 * 1000));",
-									"pm.environment.set(\"now_minus_15s\", new Date(now - 15 * 1000));",
-									"pm.environment.set(\"now_minus_20s\", new Date(now - 20 * 1000));",
-									"pm.environment.set(\"now_minus_30m\", new Date(now - 30 * 60 * 1000));",
-									"pm.environment.set(\"now_minus_61m\", new Date(now - 61 * 60 * 1000));"
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -1242,20 +1265,23 @@
 							"listen": "prerequest",
 							"script": {
 								"exec": [
-									"var now = Date.now();",
-									"pm.environment.set(\"now\", new Date(now));",
-									"pm.environment.set(\"now_minus_5s\", new Date(now - 5 * 1000));",
-									"pm.environment.set(\"now_minus_10s\", new Date(now - 10 * 1000));",
-									"pm.environment.set(\"now_minus_15s\", new Date(now - 15 * 1000));",
-									"pm.environment.set(\"now_minus_20s\", new Date(now - 20 * 1000));",
-									"pm.environment.set(\"now_minus_30m\", new Date(now - 30 * 60 * 1000));",
-									"pm.environment.set(\"now_minus_61m\", new Date(now - 61 * 60 * 1000));"
+									""
 								],
 								"type": "text/javascript"
 							}
 						}
 					],
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ID_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "POST",
 						"header": [
 							{
@@ -1291,6 +1317,34 @@
 						}
 					},
 					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"var now = Date.now();",
+							"pm.environment.set(\"now\", new Date(now));",
+							"pm.environment.set(\"now_minus_5s\", new Date(now - 5 * 1000));",
+							"pm.environment.set(\"now_minus_10s\", new Date(now - 10 * 1000));",
+							"pm.environment.set(\"now_minus_15s\", new Date(now - 15 * 1000));",
+							"pm.environment.set(\"now_minus_20s\", new Date(now - 20 * 1000));",
+							"pm.environment.set(\"now_minus_30m\", new Date(now - 30 * 60 * 1000));",
+							"pm.environment.set(\"now_minus_61m\", new Date(now - 61 * 60 * 1000));",
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
 				}
 			]
 		},
@@ -1328,7 +1382,7 @@
 								},
 								{
 									"key": "end",
-									"value": null,
+									"value": "",
 									"disabled": true
 								},
 								{
@@ -1473,10 +1527,7 @@
 							"listen": "prerequest",
 							"script": {
 								"exec": [
-									"var now = Date.now();",
-									"pm.environment.set(\"now\", new Date(now));",
-									"pm.environment.set(\"now_minus_5s\", new Date(now - 5 * 1000));",
-									"pm.environment.set(\"now_minus_10s\", new Date(now - 10 * 1000));"
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -1515,10 +1566,7 @@
 							"listen": "prerequest",
 							"script": {
 								"exec": [
-									"var now = Date.now();",
-									"pm.environment.set(\"now\", new Date(now));",
-									"pm.environment.set(\"now_minus_5s\", new Date(now - 5 * 1000));",
-									"pm.environment.set(\"now_minus_10s\", new Date(now - 10 * 1000));"
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -1530,7 +1578,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{ACCESS_TOKEN}}",
+									"value": "{{ID_TOKEN}}",
 									"type": "string"
 								}
 							]
@@ -1567,10 +1615,7 @@
 							"listen": "prerequest",
 							"script": {
 								"exec": [
-									"var now = Date.now();",
-									"pm.environment.set(\"now\", new Date(now));",
-									"pm.environment.set(\"now_minus_5s\", new Date(now - 5 * 1000));",
-									"pm.environment.set(\"now_minus_10s\", new Date(now - 10 * 1000));"
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -1609,10 +1654,7 @@
 							"listen": "prerequest",
 							"script": {
 								"exec": [
-									"var now = Date.now();",
-									"pm.environment.set(\"now\", new Date(now));",
-									"pm.environment.set(\"now_minus_5s\", new Date(now - 5 * 1000));",
-									"pm.environment.set(\"now_minus_10s\", new Date(now - 10 * 1000));"
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -1624,7 +1666,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{ACCESS_TOKEN}}",
+									"value": "{{ID_TOKEN}}",
 									"type": "string"
 								}
 							]
@@ -1653,6 +1695,30 @@
 						}
 					},
 					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"var now = Date.now();",
+							"pm.environment.set(\"now\", new Date(now));",
+							"pm.environment.set(\"now_minus_5s\", new Date(now - 5 * 1000));",
+							"pm.environment.set(\"now_minus_10s\", new Date(now - 10 * 1000));",
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
 				}
 			]
 		},
@@ -1686,7 +1752,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{ACCESS_TOKEN}}",
+									"value": "{{ID_TOKEN}}",
 									"type": "string"
 								}
 							]
@@ -1708,14 +1774,14 @@
 					"response": []
 				},
 				{
-					"name": "Create User",
+					"name": "[JWT] Create User",
 					"request": {
 						"auth": {
 							"type": "bearer",
 							"bearer": [
 								{
 									"key": "token",
-									"value": "eyJraWQiOiJhVlNHR2R4cThQa3JuY1pkMTFvM0xueHdSUXplVlR3Y3hZLWFzNEpldm13IiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiIwMHVhOTgwdGkyOEhMZkwxWTVkNyIsIm5hbWUiOiJLZXZpbiBMeSIsImVtYWlsIjoia2x5QHJldmFjb21tLmNvbSIsInZlciI6MSwiaXNzIjoiaHR0cHM6Ly9kZXYtNTAwNjM4MDUub2t0YS5jb20vb2F1dGgyL2RlZmF1bHQiLCJhdWQiOiIwb2E5cTAyb2Mwd2R3YUIxNDVkNyIsImlhdCI6MTY5MDUzMzc0OCwiZXhwIjoxNjkwNTM3MzQ4LCJqdGkiOiJJRC5Xb0hPVy0tM3liZ1gyZVlTcnpLVDBIMDNDOVc0dTAwWFNLemFJZlMwZHVnIiwiYW1yIjpbInB3ZCJdLCJpZHAiOiIwMG85cDBhNWt4WW5yaEdVTTVkNyIsIm5vbmNlIjoiV0xkQ2JHY3dyMXcxanRLV3piZFlrNzBGcUN4UE9jbktMSENmaFlvdHRMeTFjeGZoak56S2ZxeExqb0J2T1MyZyIsInByZWZlcnJlZF91c2VybmFtZSI6ImtseUByZXZhY29tbS5jb20iLCJhdXRoX3RpbWUiOjE2OTA1MzM3NDQsImF0X2hhc2giOiI3NmdIMlVnQWR5dDVzcHBCLXNtZkN3In0.oop4iUD0dVxvQ2uEYcPJi67pLtPlJb2nxnH08iGTiF0xiNkGPqGrmWxBnf6rJmAtv1BmR6dwXEwIV8XxdeOyV_sBUOqA4RY1UnkU3c1cARfBkUdjD46tbk1AGF953YbyrVvy1S4nYI5X1RgtXYmVwTfyAUL_O7kCUFOfj1QYBapbsoTfet-5irTVetT1ZjEtG2hqAcSzllvMWCBTcjGCDM9j-xdabxVxXAuLgXWSnGuEjzTX0dH40gf-Kx_vIh8lSS9wvkxczk7ntgQh9_z_AUgjMpCIkIsOFwBjrelfQFmGyDrtxUpv6sMFlu0ByWEdrm9KqlpA-QSfWoU4J-yzeA",
+									"value": "{{ID_TOKEN}}",
 									"type": "string"
 								}
 							]
@@ -1777,13 +1843,69 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{ACCESS_TOKEN}}",
+									"value": "{{ID_TOKEN}}",
 									"type": "string"
 								}
 							]
 						},
 						"method": "GET",
 						"header": [],
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/permissions",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"permissions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create User with Global Admin Permission",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"permission\": \"Admin\",\n  \"userEmail\": \"{{TEST_EMAIL}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/permissions",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"permissions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[JWT] Create User with Global Admin Permission Copy",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"permission\": \"Admin\",\n  \"userEmail\": \"{{TEST_EMAIL}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
 						"url": {
 							"raw": "{{SONAR_BASE_URL}}/api/v2/permissions",
 							"host": [
@@ -1834,7 +1956,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{ACCESS_TOKEN}}",
+									"value": "{{ID_TOKEN}}",
 									"type": "string"
 								}
 							]
@@ -1895,6 +2017,16 @@
 				{
 					"name": "[JWT] Create Standard Permission",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ID_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -1957,7 +2089,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{ACCESS_TOKEN}}",
+									"value": "{{ID_TOKEN}}",
 									"type": "string"
 								}
 							]
@@ -2025,7 +2157,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{ACCESS_TOKEN}}",
+									"value": "{{ID_TOKEN}}",
 									"type": "string"
 								}
 							]
