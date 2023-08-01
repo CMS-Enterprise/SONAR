@@ -35,7 +35,7 @@ public class ApiIntegrationTestFixture : IDisposable, ILoggerProvider {
     this.FixtureId = Guid.NewGuid().ToString().Split("-").First();
   }
 
-  public void InitializeHost(Action<WebApplicationBuilder> build) {
+  public void InitializeHost(Action<WebApplicationBuilder> build, Boolean resetDatabase = false) {
 
     // Create the WebApplicationBuilder used to run the sonar-api but override
     // certain dependencies for testing purposes
@@ -53,6 +53,10 @@ public class ApiIntegrationTestFixture : IDisposable, ILoggerProvider {
 
     using (var scope = this._app.Services.CreateScope()) {
       var dbContext = scope.ServiceProvider.GetRequiredService<DataContext>();
+      if (resetDatabase) {
+        //This means all tests will have the database deleted and a new one will be created on each separate run.
+        dbContext.Database.EnsureDeleted();
+      }
       dbContext.Database.EnsureCreated();
     }
 

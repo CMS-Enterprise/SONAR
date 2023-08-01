@@ -11,6 +11,7 @@ using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Environment = Cms.BatCave.Sonar.Data.Environment;
 using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
@@ -37,6 +38,7 @@ public class UserPermissionsController : ControllerBase {
   /// <response code="200">The parameters led to a successful permission creation.</response>
   /// <response code="400">The parameters are not valid.</response>
   /// <response code="401">The user is not authorized to create a permission.</response>
+  [Authorize(Policy = "AllowAnyScope")]
   [HttpPost]
   [Consumes(typeof(PermissionDetails), contentType: "application/json")]
   [ProducesResponseType(typeof(PermissionConfiguration), statusCode: 201)]
@@ -76,6 +78,7 @@ permissionDetails.Environment,
   /// <response code="400">The user permission is not valid.</response>
   /// <response code="401">User not authorized to delete specified user permission.</response>
   /// <response code="404">The specified user permission was not found.</response>
+  [Authorize(Policy = "AllowAnyScope")]
   [HttpDelete("{permissionId}", Name = "DeleteUserPermission")]
   [Consumes(contentType: "application/json")]
   [ProducesResponseType(statusCode: 204)]
@@ -149,6 +152,7 @@ permissionDetails.Environment,
   /// <param name="cancellationToken"></param>
   /// <response code="200">Successfully retrieved current user permissions.</response>
   /// <response code="401">The user is not authorized to retrieve its permissions.</response>
+  [Authorize(Policy = "AllowAnyScope")]
   [HttpGet("me", Name = "GetCurrentUser")]
   [ProducesResponseType(typeof(PermissionConfiguration[]), statusCode: 200)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 400)]
@@ -195,6 +199,7 @@ permissionDetails.Environment,
   /// <param name="cancellationToken"></param>
   /// <response code="200">successfully retrieved permissions.</response>
   /// <response code="401">The user is not authorized to get permission.</response>
+  [Authorize(Policy = "AllowAnyScope")]
   [HttpGet(Name = "GetPermissions")]
   [ProducesResponseType(typeof(PermissionConfiguration[]), statusCode: 200)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 401)]
@@ -217,7 +222,7 @@ permissionDetails.Environment,
       });
     }
 
-    var sonarAccessIDs = GetSonarAccessIDs(access);
+    var scopedPermissions = ScopedPermission.Parse(access);
 
     if (this.User.HasGlobalAccess()) {
       var permConfig = await this._permissionsRepository.GetPermissionsAsync(cancellationToken);
@@ -225,13 +230,9 @@ permissionDetails.Environment,
     } else {
       if (subjectType.Equals("ApiKey", StringComparison.OrdinalIgnoreCase)) {
         //subjectId is the apiKeyId
-        var apiKey = await this._apiKeys.FindAsync(new Guid(subjectId), cancellationToken);
-        var repository = await this._permissionsRepository.GetObjectsFromIds(null, sonarAccessIDs.environmentId, sonarAccessIDs.tenantId, cancellationToken);
         return this.StatusCode(
             (Int32)HttpStatusCode.OK,
-            new List<PermissionConfiguration>() {
-              new PermissionConfiguration(default(Guid), String.Empty, apiKey.Type, repository.environment?.Name, repository.tenant?.Name)
-            }
+            await this._permissionsRepository.GetPermissionsScopeAsync(scopedPermissions.EnvironmentId, scopedPermissions.TenantId, cancellationToken)
           );
       } else {
         //SubjectId is the userId
@@ -242,24 +243,6 @@ permissionDetails.Environment,
       }
     }
   }
-
-  private (Guid environmentId, Guid tenantId) GetSonarAccessIDs(String? sonarAccess) {
-    if (!String.IsNullOrEmpty(sonarAccess)) {
-      var items = sonarAccess.Split(':').ToList();
-      if (items.Count > 1) {
-        var permissionType = items[0];
-        var ids = items[1].Split('/').ToList();
-        if (ids.Count > 1) {
-          //Confirm we have a tenant. If no tenant the string should contain '-' which is not a valid guid string.
-          Guid.TryParse(ids[0], out var envGuid);
-          Guid.TryParse(ids[1], out var tenantGuid);
-          return (envGuid, tenantGuid);
-        }
-      }
-    }
-    return (new Guid(), new Guid());
-  }
-
   private static void ValidatePermission(
       ClaimsPrincipal principal,
       Guid? environmentScope,

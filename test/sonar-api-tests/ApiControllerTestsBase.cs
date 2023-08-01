@@ -21,12 +21,12 @@ public class ApiControllerTestsBase : IClassFixture<ApiIntegrationTestFixture>, 
 
   protected ApiIntegrationTestFixture Fixture { get; }
 
-  protected ApiControllerTestsBase(ApiIntegrationTestFixture fixture, ITestOutputHelper outputHelper) {
+  protected ApiControllerTestsBase(ApiIntegrationTestFixture fixture, ITestOutputHelper outputHelper, Boolean resetDatabase = false) {
     this.Fixture = fixture;
     this.Fixture.LogMessageEvent +=
       this._logHandler = (_, args) => outputHelper.WriteLine($"{args.Level}: {args.Message}");
 
-    this.Fixture.InitializeHost(this.OnInitializing);
+    this.Fixture.InitializeHost(this.OnInitializing, resetDatabase);
   }
 
   protected virtual void OnInitializing(WebApplicationBuilder builder) {

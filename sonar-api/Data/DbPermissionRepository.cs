@@ -189,6 +189,67 @@ public class DbPermissionRepository : IPermissionsRepository {
     return pgResults.Values.ToList();
   }
 
+
+  public async Task<List<PermissionConfiguration>> GetPermissionsScopeAsync(Guid? envId, Guid? tenantId, CancellationToken cancelToken) {
+
+    var currentUserPermissions = await this._userPermissionTable.Where(up => ((up.EnvironmentId == envId) && (up.TenantId == tenantId))).ToListAsync(cancellationToken: cancelToken);
+    var users = await this._userTable.ToListAsync(cancellationToken: cancelToken);
+    var envs = await this._environmentsTable.ToDictionaryAsync<Environment, Guid>(x => x.Id, cancellationToken: cancelToken);
+    var tenants = await this._tenantsTable.ToDictionaryAsync<Tenant, Guid>(x => x.Id, cancellationToken: cancelToken);
+
+    var upResults = new List<UserPermission>();
+    var envsAdminScope = new List<Environment>();
+    var tenantsAdminScope = new List<Tenant>();
+
+    foreach (var up in currentUserPermissions) {
+      envs.TryGetValue(up.EnvironmentId ?? Guid.Empty, out var env);
+      tenants.TryGetValue(up.TenantId ?? Guid.Empty, out var tenant);
+      if (env != null) {
+        if (tenant != null) {
+          //tenant admin scope
+          if (up.Permission == PermissionType.Admin) {
+            tenantsAdminScope.Add(tenant);
+          }
+          upResults.Add(up);
+        } else {
+          //environment admin scope
+          if (up.Permission == PermissionType.Admin) {
+            envsAdminScope.Add(env);
+          }
+          upResults.Add(up);
+        }
+      } else {
+        //global scope
+        upResults.Add(up);
+      }
+    }
+
+    //Add all permissions with the current users environments scope
+    foreach (var env in envsAdminScope) {
+      var ups = await this._userPermissionTable.Where(e => e.EnvironmentId == env.Id).ToListAsync(cancelToken);
+      upResults.AddRange(ups);
+    }
+    //Add all permissions with the current users tenants scope
+    foreach (var ten in tenantsAdminScope) {
+      var ups = await this._userPermissionTable.Where(up => up.TenantId == ten.Id).ToListAsync(cancelToken);
+      upResults.AddRange(ups);
+    }
+
+    var pgResults = new Dictionary<Guid, PermissionConfiguration>();
+    foreach (var up in upResults) {
+      var user = users.FirstOrDefault(u => u.Id == up.UserId);
+      if (user != null) {
+        envs.TryGetValue(up.EnvironmentId ?? Guid.Empty, out var env);
+        tenants.TryGetValue(up.TenantId ?? Guid.Empty, out var tenant);
+        pgResults.TryAdd(
+          up.Id,
+          new PermissionConfiguration(up.Id, user.Email, up.Permission, env?.Name, tenant?.Name)
+        );
+      }
+    }
+    return pgResults.Values.ToList();
+  }
+
   public async Task<List<PermissionConfiguration>> GetPermissionsAsync(CancellationToken cancelToken) {
     var ups = await this._userPermissionTable.ToListAsync(cancellationToken: cancelToken);
     var users = await this._userTable.ToListAsync(cancellationToken: cancelToken);
