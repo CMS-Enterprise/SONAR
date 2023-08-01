@@ -1,14 +1,16 @@
-import { parentContainerStyle, pageTitleStyle } from 'App.Style';
-import PrimaryActionButton from 'components/Common/PrimaryActionButton';
+import { Spinner } from '@cmsgov/design-system';
+import React, { useState } from 'react';
 import { Outlet, useParams } from 'react-router';
-import { Link } from 'react-router-dom';
+import { parentContainerStyle } from 'App.Style';
 import {
   PermissionConfigurationByEnvironment,
   UsersByEmail,
   usePermissionConfigurationByEnvironment,
   useUsersByEmail
 } from './UserPermissions.Hooks';
-import { Spinner } from '@cmsgov/design-system';
+import ThemedModalDialog from 'components/Common/ThemedModalDialog';
+import AddPermissionForm from 'components/UserPermissions/AddPermissionForm';
+import UserPermissionsHeader from 'components/UserPermissions/UserPermissionsHeader';
 
 export interface OutletContextType {
   permConfigByEnv: PermissionConfigurationByEnvironment;
@@ -26,7 +28,11 @@ const UserPermissions = () => {
     isLoading: usersByEmailIsLoading
   } = useUsersByEmail();
 
-  const handleAddPermission = () => console.log('TODO: Handle add permission.');
+  const [openAdd, setOpenAdd] = useState<boolean>(false);
+
+  const handleAddModalToggle = () => {
+    setOpenAdd(!openAdd);
+  }
 
   const context: OutletContextType = {
     permConfigByEnv: permConfigByEnv || {},
@@ -35,24 +41,27 @@ const UserPermissions = () => {
 
   return (
     <section className='ds-l-container' css={parentContainerStyle}>
-      <div className='ds-l-row ds-u-justify-content--start'>
-        <div className='ds-l-col--auto'>
-          <div css={pageTitleStyle}>
-            <Link to="/user-permissions">User Permissions</Link>
-            {environmentName && ` - ${environmentName}`}
-          </div>
-        </div>
-      </div>
-      <div className='ds-l-row ds-u-justify-content--end'>
-        <div className='ds-l-col--auto'>
-          <PrimaryActionButton onClick={handleAddPermission}>+ Add new Permission</PrimaryActionButton>
-        </div>
-      </div>
+      <UserPermissionsHeader
+        environment={environmentName!}
+        handleAddModalToggle={handleAddModalToggle}
+      />
       {
         permConfigByEnvIsLoading || usersByEmailIsLoading
           ? <Spinner />
           : <Outlet context={context}/>
       }
+      { openAdd ? (
+        <ThemedModalDialog
+          heading={"Add User Permission"}
+          onExit={handleAddModalToggle}
+          onClose={handleAddModalToggle}
+          actions={
+            <AddPermissionForm
+              handleAddModalToggle={handleAddModalToggle}
+            />
+          }
+        />
+      ) : null}
     </section>
   );
 };

@@ -3,10 +3,12 @@ export const getDropdownStyle : (theme: Theme) => SerializedStyles = theme => cs
   '& select': {
     borderRadius: ".4375rem",
     border: '1px solid #5A5A5A',
-    backgroundColor: theme.foregroundColor,
-    color: theme.textColor
+    backgroundColor: theme.backgroundColor,
+    color: theme.textColor,
+    whiteSpace: "pre-wrap"
   },
   '& label': {
-    marginTop: 12
+    marginTop: 12,
+    whiteSpace: "pre-wrap"
   }
 });

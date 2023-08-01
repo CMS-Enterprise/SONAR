@@ -1,7 +1,7 @@
 import { css, SerializedStyles, Theme } from '@emotion/react';
 export const getDialogStyle : (theme: Theme) => SerializedStyles = theme => css({
   color: theme.textColor,
-  backgroundColor: theme.backgroundColor,
+  backgroundColor: theme.foregroundColor,
   borderRadius: '10px',
   boxShadow: "none",
   '& header': {

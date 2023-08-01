@@ -1,6 +1,10 @@
-import { CurrentUserView, PermissionConfiguration } from "api/data-contracts";
-import { useSonarApi } from "components/AppContext/AppContextProvider";
 import { UseQueryResult, useMutation, useQuery, useQueryClient } from "react-query";
+import {
+  CurrentUserView,
+  PermissionConfiguration,
+  PermissionDetails
+} from "api/data-contracts";
+import { useSonarApi } from "components/AppContext/AppContextProvider";
 
 export enum QueryKeys {
   GetPermissions = 'getPermissions',
@@ -46,6 +50,15 @@ export function useUsersByEmail(): UseQueryResult<UsersByEmail> {
       .then((response) => {
         return (response.data || []).reduce(toUsersByEmail, {});
       })
+  });
+}
+
+export function useAddPermission() {
+  const sonarApi = useSonarApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (newPermission: PermissionDetails) => sonarApi.v2PermissionsCreate(newPermission),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [QueryKeys.GetPermissions] })
   });
 }
 

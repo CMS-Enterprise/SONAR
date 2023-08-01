@@ -1,42 +1,38 @@
 import { DropdownOptions, DropdownValue } from '@cmsgov/design-system/dist/types/Dropdown/Dropdown';
 import React, { useEffect, useState } from 'react';
-import { ApiKeyDetails, PermissionType } from '../../api/data-contracts';
-import { useCreateKey, useGetPermissions } from './ApiKeys.Hooks';
+import { PermissionDetails, PermissionType } from '../../api/data-contracts';
 import AlertBanner from '../App/AlertBanner';
 import {
   getEnvironmentOptions,
-  getPermissionOptions,
   getTenantOptions,
+  getUserOptions,
   initialEnvOption,
-  initialRoleOption,
-  initialTenantOption
+  initialTenantOption,
+  roles
 } from '../../helpers/DropdownOptions';
+import ThemedDropdown from '../Common/ThemedDropdown';
 import PrimaryActionButton from '../Common/PrimaryActionButton';
 import SecondaryActionButton from '../Common/SecondaryActionButton';
-import ThemedDropdown from '../Common/ThemedDropdown';
-import ThemedTextField from '../Common/ThemedTextField';
 import { useGetEnvironments, useGetTenants } from '../Environments/Environments.Hooks';
+import { useAddPermission, useUsersByEmail } from '../../pages/UserPermissions.Hooks';
 
-const CreateKeyForm: React.FC<{
-  handleModalToggle: () => void
+const AddPermissionForm: React.FC<{
+  handleAddModalToggle: () => void
 }> = ({
-  handleModalToggle
+  handleAddModalToggle
 }) => {
-  const createKey = useCreateKey();
+  const addPermission = useAddPermission();
+  const [selectedUserEmail, setSelectedUserEmail] = useState<DropdownValue>(0);
   const [selectedRole, setSelectedRole] = useState<DropdownValue>(0);
   const [selectedEnvironment, setSelectedEnvironment] = useState<DropdownValue>(0);
   const [selectedTenant, setSelectedTenant] = useState<DropdownValue>(0);
   const [submitDisabled, setSubmitDisabled] = useState(true);
-  const [createdKeyId, setCreatedKeyId] = useState("");
-  const [createdKeyVal, setCreatedKeyVal] = useState("");
-  const [copied, setCopied] = useState(false);
   const [alertHeading, setAlertHeading] = useState("All fields are required");
   const [alertText, setAlertText] = useState("Set all fields to add a new user permission.");
-  const [keyCreated, setKeyCreated] = useState(false);
+  const [permissionCreated, setPermissionCreated] = useState(false);
 
-  const permissionData = useGetPermissions();
-  const permissionOptions = (!permissionData || !permissionData.data) ?
-    [initialRoleOption] : getPermissionOptions(permissionData.data);
+  const usersByEmail = useUsersByEmail();
+  const userOptions = getUserOptions(usersByEmail.data || {});
 
   const environmentData = useGetEnvironments();
   const environmentOptions = (!environmentData  || !environmentData.data) ?
@@ -59,23 +55,22 @@ const CreateKeyForm: React.FC<{
   }, [selectedEnvironment, tenantData.data]);
 
   const handleSubmit = () => {
-    const newKey: ApiKeyDetails = {
-      apiKeyType: PermissionType[selectedRole.toString() as keyof typeof PermissionType],
+    const newPermission: PermissionDetails = {
+      permission: PermissionType[selectedRole.toString() as keyof typeof PermissionType],
+      userEmail: selectedUserEmail.toString(),
       environment: +selectedEnvironment === 0 ? null : selectedEnvironment.toString(),
       tenant: +selectedTenant === 0 ? null : selectedTenant.toString()
-    };
+    }
 
-    createKey.mutate(newKey, {
+    addPermission.mutate(newPermission, {
       onSuccess: (res) => {
-        setCreatedKeyId(res.data.id ? res.data.id : "");
-        setCreatedKeyVal(res.data.apiKey);
-        setAlertHeading("Copy your API Key to a safe location");
-        setAlertText("Once you click Close, you will not be able to access it.")
-        setKeyCreated(true);
+        setAlertHeading("User Permission Successfully Added");
+        setAlertText("Please click Close.")
+        setPermissionCreated(true);
       },
-      onError: res => {
+      onError: (res) => {
         // set error state
-        setAlertHeading("Error Creating API Key");
+        setAlertHeading("Error Adding Permission");
         setAlertText("An error occurred while processing your request. Please try again.")
       }
     });
@@ -83,38 +78,47 @@ const CreateKeyForm: React.FC<{
 
   // hook to update disabled state of submit button
   useEffect(() => {
-    if (+selectedRole === 0) {
+    if ((+selectedUserEmail === 0) || (+selectedRole === 0)) {
       setSubmitDisabled(true)
     } else {
       setSubmitDisabled(false)
     }
-  }, [selectedRole, selectedEnvironment, selectedTenant]);
+  }, [selectedUserEmail, selectedRole]);
 
   return (
     <section className="ds-l-container">
       <div className="ds-l-row">
-        <div
-          className="ds-l-col--6"
-        >
+        <div className="ds-l-col--12">
           <ThemedDropdown
-            label="Role:"
-            name="role_field"
-            disabled={keyCreated}
-            onChange={(event) => setSelectedRole(event.target.value)}
-            value={selectedRole}
-            options={permissionOptions}
+            label="User:"
+            name="user_field"
+            disabled={permissionCreated}
+            onChange={(event) => setSelectedUserEmail(event.target.value)}
+            value={selectedUserEmail}
+            options={userOptions}
           />
         </div>
       </div>
 
       <div className="ds-l-row">
-        <div
-          className="ds-l-col--8"
-        >
+        <div className="ds-l-col--6">
+          <ThemedDropdown
+            label="Role:"
+            name="role_field"
+            disabled={permissionCreated}
+            onChange={(event) => setSelectedRole(event.target.value)}
+            value={selectedRole}
+            options={roles}
+          />
+        </div>
+      </div>
+
+      <div className="ds-l-row">
+        <div className="ds-l-col--8">
           <ThemedDropdown
             label="Environment:"
             name="environment_field"
-            disabled={keyCreated}
+            disabled={permissionCreated}
             onChange={(event) => setSelectedEnvironment(event.target.value)}
             value={selectedEnvironment}
             options={environmentOptions}
@@ -129,69 +133,40 @@ const CreateKeyForm: React.FC<{
           <ThemedDropdown
             label="Tenant:"
             name="tenant_field"
-            disabled={keyCreated}
+            disabled={permissionCreated}
             onChange={(event) => setSelectedTenant(event.target.value)}
             value={selectedTenant}
             options={tenantOptions}
           />
         </div>
       </div>
-      {keyCreated ? (
-        <>
-          <div className="ds-l-row ds-u-align-items--end">
-            <div
-              className="ds-l-col--8"
-            >
-              <ThemedTextField
-                name="key-id-field"
-                label="ID:"
-                disabled
-                value={createdKeyId}
-              />
-            </div>
-          </div>
-          <div className="ds-l-row ds-u-align-items--end">
-            <div
-              className="ds-l-col--8"
-            >
-              <ThemedTextField
-                name="key-text-field"
-                label="API KEY:"
-                disabled
-                value={createdKeyVal}
-              />
-              <PrimaryActionButton
-                onClick={() => {
-                  navigator.clipboard.writeText(createdKeyVal);
-                  setCopied(true)
-                }}
-                size="small"
-              >
-                {copied ? "Copied" : "Copy"}
-              </PrimaryActionButton>
-            </div>
-          </div>
-        </>
-        ) : null}
 
       <div className="ds-l-row">
         <div
           className="ds-l-col--12 ds-u-padding-right--0"
         >
-          <AlertBanner
-            alertHeading={alertHeading}
-            alertText={alertText}
-            variation={createKey.isError ?
-              "error" : keyCreated ?
-                "warn" : undefined}
-          />
+          {permissionCreated ? (
+            <AlertBanner
+              alertHeading={alertHeading}
+              alertText={alertText}
+              variation={"success"}
+            />
+          ) : (
+            <AlertBanner
+              alertHeading={alertHeading}
+              alertText={alertText}
+              variation={addPermission.isError ?
+                "error" : permissionCreated ?
+                  "warn" : undefined}
+            />
+          )}
         </div>
       </div>
 
       <div className="ds-l-row ds-u-justify-content--end">
-        {keyCreated ? (
+        {permissionCreated ? (
           <PrimaryActionButton
-            onClick={handleModalToggle}
+            onClick={handleAddModalToggle}
           >
             Close
           </PrimaryActionButton>
@@ -201,7 +176,7 @@ const CreateKeyForm: React.FC<{
               className="ds-l-col--3 ds-u-margin-right--1"
             >
               <SecondaryActionButton
-                onClick={handleModalToggle}
+                onClick={handleAddModalToggle}
               >
                 Cancel
               </SecondaryActionButton>
@@ -213,7 +188,7 @@ const CreateKeyForm: React.FC<{
                 onClick={handleSubmit}
                 disabled={submitDisabled}
               >
-                Create
+                Add
               </PrimaryActionButton>
             </div>
           </>
@@ -223,4 +198,4 @@ const CreateKeyForm: React.FC<{
   )
 }
 
-export default CreateKeyForm;
+export default AddPermissionForm;
