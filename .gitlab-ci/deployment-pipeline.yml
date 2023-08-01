@@ -16,10 +16,6 @@ stages:
   TARGET_SERVICE: $API_PROJECT_NAME
   APP_IMAGE_SRC: $API_APP_IMAGE_SRC
 
-.agent-deploy-vars: &agent-deploy-vars
-  TARGET_SERVICE: $AGENT_PROJECT_NAME
-  APP_IMAGE_SRC: $AGENT_APP_IMAGE_SRC
-
 .ui-deploy-vars: &ui-deploy-vars
   TARGET_SERVICE: $UI_PROJECT_NAME
   APP_IMAGE_SRC: $UI_APP_IMAGE_SRC
@@ -39,15 +35,6 @@ deploy-api-dev:
     TARGET_ENVIRONMENT: dev
     <<: *api-deploy-vars
 
-deploy-agent-dev:
-  needs: [ deploy-api-dev ]
-  extends: .deploy
-  rules:
-    - if: $CI_COMMIT_BRANCH == $MAIN_BRANCH_NAME && $CI_COMMIT_TAG == null
-  variables:
-    TARGET_ENVIRONMENT: dev
-    <<: *agent-deploy-vars
-
 deploy-ui-dev:
   needs: [ deploy-agent-dev ]
   extends: .deploy
@@ -66,15 +53,6 @@ deploy-api-k3d:
     TARGET_ENVIRONMENT: k3d
     <<: *api-deploy-vars
 
-deploy-agent-k3d:
-  needs: [ deploy-api-k3d ]
-  extends: .deploy
-  rules:
-    - if: $CI_COMMIT_BRANCH == $MAIN_BRANCH_NAME && $CI_COMMIT_TAG == null
-  variables:
-    TARGET_ENVIRONMENT: k3d
-    <<: *agent-deploy-vars
-
 deploy-ui-k3d:
   needs: [ deploy-agent-k3d ]
   extends: .deploy
@@ -92,15 +70,6 @@ deploy-api-impl:
   variables:
     TARGET_ENVIRONMENT: impl
     <<: *api-deploy-vars
-
-deploy-agent-impl:
-  needs: [ deploy-api-impl ]
-  extends: .deploy
-  rules:
-    - if: $CI_COMMIT_BRANCH == $MAIN_BRANCH_NAME && $CI_COMMIT_TAG == null
-  variables:
-    TARGET_ENVIRONMENT: impl
-    <<: *agent-deploy-vars
 
 deploy-ui-impl:
   needs: [ deploy-agent-impl ]
@@ -124,16 +93,6 @@ deploy-api-test:
     <<: *api-deploy-vars
     APP_IMAGE_TAG: $CI_COMMIT_TAG
 
-deploy-agent-test:
-  needs: [ deploy-api-test ]
-  extends: .deploy
-  rules:
-    - if: $CI_COMMIT_TAG =~ $VERSION_TAG_REGEX
-  variables:
-    TARGET_ENVIRONMENT: test
-    <<: *agent-deploy-vars
-    APP_IMAGE_TAG: $CI_COMMIT_TAG
-
 deploy-ui-test:
   needs: [ deploy-agent-test ]
   extends: .deploy
@@ -153,17 +112,6 @@ deploy-api-prod:
   variables:
     TARGET_ENVIRONMENT: prod
     <<: *api-deploy-vars
-    APP_IMAGE_TAG: $CI_COMMIT_TAG
-
-deploy-agent-prod:
-  needs: [ deploy-api-prod ]
-  extends: .deploy
-  rules:
-    - if: $CI_COMMIT_TAG =~ $VERSION_TAG_REGEX
-  when: manual
-  variables:
-    TARGET_ENVIRONMENT: prod
-    <<: *agent-deploy-vars
     APP_IMAGE_TAG: $CI_COMMIT_TAG
 
 deploy-ui-prod:
