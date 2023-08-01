@@ -115,7 +115,7 @@ When making changes to the Sonar API data model, use the following procedure:
         # List the previous migrations:
         dotnet ef migrations list
         # Copy the name of an appropriate migration, and downgrade to it:
-        dotnet database update <name_of_previous_migration>
+        dotnet ef database update <name_of_previous_migration>
         ```
     1. Then remove the most-recently generated migration code:
         ```shell
