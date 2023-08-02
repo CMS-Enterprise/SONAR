@@ -36,7 +36,7 @@ deploy-api-dev:
     <<: *api-deploy-vars
 
 deploy-ui-dev:
-  needs: [ deploy-agent-dev ]
+  needs: [ deploy-api-dev ]
   extends: .deploy
   rules:
     - if: $CI_COMMIT_BRANCH == $MAIN_BRANCH_NAME && $CI_COMMIT_TAG == null
@@ -54,7 +54,7 @@ deploy-api-k3d:
     <<: *api-deploy-vars
 
 deploy-ui-k3d:
-  needs: [ deploy-agent-k3d ]
+  needs: [ deploy-api-k3d ]
   extends: .deploy
   rules:
     - if: $CI_COMMIT_BRANCH == $MAIN_BRANCH_NAME && $CI_COMMIT_TAG == null
@@ -72,7 +72,7 @@ deploy-api-impl:
     <<: *api-deploy-vars
 
 deploy-ui-impl:
-  needs: [ deploy-agent-impl ]
+  needs: [ deploy-api-impl ]
   extends: .deploy
   rules:
     - if: $CI_COMMIT_BRANCH == $MAIN_BRANCH_NAME && $CI_COMMIT_TAG == null
@@ -94,7 +94,7 @@ deploy-api-test:
     APP_IMAGE_TAG: $CI_COMMIT_TAG
 
 deploy-ui-test:
-  needs: [ deploy-agent-test ]
+  needs: [ deploy-api-test ]
   extends: .deploy
   rules:
     - if: $CI_COMMIT_TAG =~ $VERSION_TAG_REGEX
@@ -115,7 +115,7 @@ deploy-api-prod:
     APP_IMAGE_TAG: $CI_COMMIT_TAG
 
 deploy-ui-prod:
-  needs: [ deploy-agent-prod ]
+  needs: [ deploy-api-prod ]
   extends: .deploy
   rules:
     - if: $CI_COMMIT_TAG =~ $VERSION_TAG_REGEX
