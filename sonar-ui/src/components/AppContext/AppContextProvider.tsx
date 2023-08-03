@@ -35,7 +35,6 @@ const queryClient = new QueryClient({
       staleTime: Infinity,
       refetchOnMount: 'always',
       refetchOnWindowFocus: false,
-      // TODO: set global behavior for onError callback
     },
   }
 });
@@ -43,7 +42,7 @@ const queryClient = new QueryClient({
 interface AppContextType {
   sonarApi: SonarApi;
   userContext: {
-    userIsAuthenticated: boolean;
+    userIsAuthenticated: boolean | null;
     userInfo?: CurrentUserView | null;
     logUserIn: () => void;
     logUserOut: () => void;
@@ -57,7 +56,7 @@ export const useSonarApi = () => useContext(AppContext)!.sonarApi;
 export const useUserContext = () => useContext(AppContext)!.userContext;
 
 export default function AppContextProvider({ children }: { children: ReactNode }): JSX.Element {
-  const [ userIsAuthenticated, setUserIsAuthenticated ] = useState<boolean>(false);
+  const [ userIsAuthenticated, setUserIsAuthenticated ] = useState<boolean | null>(null);
   const [ userInfo, setUserInfo ] = useState<CurrentUserView | null>(null);
   const { oktaAuth, authState } = useOktaAuth();
 
@@ -79,12 +78,15 @@ export default function AppContextProvider({ children }: { children: ReactNode }
   }, [oktaAuth]);
 
   useEffect(() => {
-    if (authState?.isAuthenticated) {
+    if (!authState) {
+      sonarApi.setSecurityData(null);
+      setUserIsAuthenticated(null);
+    } else if (authState?.isAuthenticated) {
       sonarApi.setSecurityData(oktaAuth.getIdToken());
+      setUserIsAuthenticated(true);
       sonarApi.v2UserCreate()
-        .then((response) => {
-          setUserIsAuthenticated(true);
-          setUserInfo(response.data);
+      .then((response) => {
+        setUserInfo(response.data);
         })
         .catch((error) => {
           console.error(error);

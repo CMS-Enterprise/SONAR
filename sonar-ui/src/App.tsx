@@ -15,6 +15,7 @@ import EnvironmentUsersTable from 'components/UserPermissions/EnvironmentUsersTa
 import UserPermissionsTable from 'components/UserPermissions/UserPermissionsTable';
 import AppContextProvider from 'components/AppContext/AppContextProvider';
 import DeletePermissionModal from 'components/UserPermissions/DeletePermissionModal';
+import ProtectedRoute from 'components/App/ProtectedRoute';
 
 const oktaAuth = new OktaAuth(oktaAuthOptions);
 
@@ -36,11 +37,15 @@ function App() {
               <Route path="/" element={<Environments />} />
               <Route path="/:environment/tenants/:tenant/services/*" element={<Service />} />
               <Route path="/login/callback" element={<LoginCallback />} />
-              <Route path="/api-keys" element={<ApiKeys />} />
-              <Route path="/user-permissions" element={<UserPermissions />}>
-                <Route index={true} element={<EnvironmentUsersTable />} />
-                <Route path="environments/:environmentName" element={<UserPermissionsTable />}>
-                  <Route path=":permissionId/delete" element={<DeletePermissionModal />}/>
+              <Route path="/api-keys" element={<ProtectedRoute />}>
+                <Route path="" element={<ApiKeys />} />
+              </Route>
+              <Route path="/user-permissions" element={<ProtectedRoute />}>
+                <Route path="" element={<UserPermissions />}>
+                  <Route index={true} element={<EnvironmentUsersTable />} />
+                  <Route path="environments/:environmentName" element={<UserPermissionsTable />}>
+                    <Route path=":permissionId/delete" element={<DeletePermissionModal />}/>
+                  </Route>
                 </Route>
               </Route>
             </Routes>
