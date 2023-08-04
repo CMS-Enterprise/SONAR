@@ -20,6 +20,8 @@ export interface ApiKeyConfiguration {
   apiKeyType: PermissionType;
   environment?: string | null;
   tenant?: string | null;
+  creation: Date;
+  lastUsage: Date;
 }
 
 export interface ApiKeyDetails {

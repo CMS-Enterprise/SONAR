@@ -61,6 +61,7 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<AuthenticationS
     if (existingApiKey == null) {
       return AuthenticateResult.Fail("The specified ApiKey is not valid.");
     } else {
+      await this._apiKeyHelper.UpdateApiKeyUsageAsync(existingApiKey, this.Context.RequestAborted);
       return AuthenticateResult.Success(new AuthenticationTicket(
         new ClaimsPrincipal(new SonarIdentity(existingApiKey)),
         SchemeName

@@ -7,15 +7,19 @@ namespace Cms.BatCave.Sonar.Models;
 public record ApiKeyConfiguration {
 
   public ApiKeyConfiguration(
-    Guid Id,
+    Guid id,
     String apiKey,
     PermissionType apiKeyType,
+    DateTime creationDateTime,
+    DateTime lastUsageDateTime,
     String? environment = null,
     String? tenant = null) {
 
-    this.Id = Id;
+    this.Id = id;
     this.ApiKey = apiKey;
     this.ApiKeyType = apiKeyType;
+    this.Creation = creationDateTime;
+    this.LastUsage = lastUsageDateTime;
     this.Environment = environment;
     this.Tenant = tenant;
   }
@@ -31,4 +35,8 @@ public record ApiKeyConfiguration {
   public String? Environment { get; init; }
 
   public String? Tenant { get; init; }
+
+  public DateTime Creation { get; set; }
+
+  public DateTime LastUsage { get; set; }
 }

@@ -4,6 +4,7 @@ import { ApiKeyConfiguration } from '../../api/data-contracts';
 import DeleteIcon from '../Icons/DeleteIcon';
 import DeleteKeyModal from './DeleteKeyModal';
 import GhostActionButton from 'components/Common/GhostActionButton';
+import dayjs from "dayjs";
 
 const ApiKeyTableItem: React.FC<{
   apiKey: ApiKeyConfiguration
@@ -14,33 +15,36 @@ const ApiKeyTableItem: React.FC<{
       setOpen(!open);
     }
 
-
-  return (
-    <TableRow>
-      <TableCell>
-        {apiKey.id}
-      </TableCell>
-      <TableCell>
-        {apiKey.apiKeyType}
-      </TableCell>
-      <TableCell>
-        {apiKey.environment ? apiKey.environment : "All Environments"}
-      </TableCell>
-      <TableCell>
-        {apiKey.tenant ? apiKey.tenant : "All Tenants"}
-      </TableCell>
-      <TableCell>
-        <GhostActionButton onClick={handleModalToggle}>
-          <DeleteIcon /> Delete
-        </GhostActionButton>
-        { open ?
-          <DeleteKeyModal
-          handleModalToggle={handleModalToggle}
-          apiKey={apiKey}
-        /> : null}
-      </TableCell>
-    </TableRow>
-  )
+  return <TableRow>
+    <TableCell>
+      {apiKey.id}
+    </TableCell>
+    <TableCell>
+      {apiKey.apiKeyType}
+    </TableCell>
+    <TableCell>
+      {apiKey.environment ? apiKey.environment : "All Environments"}
+    </TableCell>
+    <TableCell>
+      {apiKey.tenant ? apiKey.tenant : "All Tenants"}
+    </TableCell>
+    <TableCell>
+      { dayjs(apiKey.creation).format("MM/DD/YYYY HH:mm:ss")}
+    </TableCell>
+    <TableCell>
+      {dayjs(apiKey.lastUsage).format("MM/DD/YYYY HH:mm:ss")}
+    </TableCell>
+    <TableCell>
+      <GhostActionButton onClick={handleModalToggle}>
+        <DeleteIcon /> Delete
+      </GhostActionButton>
+      { open ?
+        <DeleteKeyModal
+        handleModalToggle={handleModalToggle}
+        apiKey={apiKey}
+      /> : null}
+    </TableCell>
+  </TableRow>
 }
 
 export default ApiKeyTableItem;

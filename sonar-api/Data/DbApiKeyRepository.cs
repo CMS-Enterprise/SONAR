@@ -71,7 +71,9 @@ public class DbApiKeyRepository : IApiKeyRepository {
         apiKey.key,
         createdApiKey.Entity.Type,
         createdApiKey.Entity.EnvironmentId,
-        createdApiKey.Entity.TenantId
+        createdApiKey.Entity.TenantId,
+        createdApiKey.Entity.Creation,
+        createdApiKey.Entity.LastUsage
       );
 
       //Build and return data to client.
@@ -110,6 +112,33 @@ public class DbApiKeyRepository : IApiKeyRepository {
     return id;
   }
 
+  public async Task<Guid> UpdateUsageAsync(Guid id, CancellationToken cancelToken) {
+    await using var tx =
+      await this._dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancelToken);
+    try {
+      // Get API key
+      var existingApiKey = await this._apiKeysTable
+        .Where(k => k.Id == id)
+        .SingleOrDefaultAsync(cancelToken);
+
+      if (existingApiKey != null) {
+        existingApiKey.LastUsage = DateTime.Now.ToUniversalTime();
+      } else {
+        throw new ResourceNotFoundException(nameof(ApiKey), id);
+      }
+
+      // Update key last usage with current date time.
+      this._apiKeysTable.Update(existingApiKey);
+      // Save
+      await this._dbContext.SaveChangesAsync(cancelToken);
+      await tx.CommitAsync(cancelToken);
+    } catch {
+      await tx.RollbackAsync(cancelToken);
+      throw;
+    }
+    return id;
+  }
+
   public async Task<List<ApiKeyConfiguration>> GetKeysAsync(CancellationToken cancelToken) {
     return
       await this._apiKeysTable
@@ -134,6 +163,8 @@ public class DbApiKeyRepository : IApiKeyRepository {
             result.KeyEnv.key.Id,
             string.Empty,
             result.KeyEnv.key.Type,
+            result.KeyEnv.key.Creation,
+            result.KeyEnv.key.LastUsage,
             (result.KeyEnv.env != null) ? result.KeyEnv.env.Name : null,
             result.tenant != null ? result.tenant.Name : null))
         .ToListAsync(cancellationToken: cancelToken);
@@ -163,6 +194,8 @@ public class DbApiKeyRepository : IApiKeyRepository {
             // The Key itself is only provided during the initial creation
             String.Empty,
             result.KeyEnv.key.Type,
+            result.KeyEnv.key.Creation,
+            result.KeyEnv.key.LastUsage,
             result.KeyEnv.env.Name,
             result.tenant != null ? result.tenant.Name : null))
         .ToListAsync(cancellationToken: cancelToken);
@@ -198,6 +231,8 @@ public class DbApiKeyRepository : IApiKeyRepository {
             // The Key itself is only provided during the initial creation
             String.Empty,
             result.key.Type,
+            result.key.Creation,
+            result.key.LastUsage,
             result.environment.Name,
             result.tenant.Name))
         .ToListAsync(cancelToken);
@@ -246,6 +281,8 @@ public class DbApiKeyRepository : IApiKeyRepository {
       entity.Id,
       entity.Key,
       entity.Type,
+      entity.Creation,
+      entity.LastUsage,
       environment?.Name,
       tenant?.Name
     );

@@ -30,6 +30,12 @@ const ApiKeyTable: React.FC<{
                   <TableCell>
                     Tenant
                   </TableCell>
+                  <TableCell>
+                    Creation
+                  </TableCell>
+                  <TableCell>
+                    Last Used
+                  </TableCell>
                   <TableCell />
                 </TableRow>
               </TableHead>
