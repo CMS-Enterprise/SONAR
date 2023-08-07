@@ -1,0 +1,41 @@
+include: .gitlab-ci/shared-pipeline-variables.yml
+
+stages:
+  - test
+  - deliver
+
+variables:
+  ARTIFACT_FOLDER: .ci-artifacts-$CI_COMMIT_SHORT_SHA
+  HELM_CHART_PKG_FOLDER: $ARTIFACT_FOLDER/helm-charts
+
+.with-helm:
+  image:
+    name: alpine/helm:3.10.2
+    entrypoint: [ '/bin/sh' ]
+
+lint:
+  stage: test
+  extends: .with-helm
+  script:
+    - cd charts/sonar-agent
+    - helm lint
+
+deliver:
+  stage: deliver
+  extends: .with-helm
+  before_script:
+    - 'apk update && apk add yq'
+  script:
+    - |
+      echo "Packaging Sonar agent helm chart"
+      helm package charts/sonar-agent -d ${HELM_CHART_PKG_FOLDER}
+
+      echo "Pushing Sonar agent helm chart to GitLab package registry"
+      export CHART_VERSION=$(helm show chart charts/sonar-agent | yq .version)
+      curl \
+        --request POST \
+        --user gitlab-ci-token:${CI_JOB_TOKEN} \
+        --form "chart=@${HELM_CHART_PKG_FOLDER}/sonar-agent-${CHART_VERSION}.tgz" \
+        "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/helm/api/stable/charts"
+  rules:
+    - if: $CI_COMMIT_TAG =~ $CHART_VERSION_TAG_REGEX

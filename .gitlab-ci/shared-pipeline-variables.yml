@@ -1,6 +1,7 @@
 variables:
   PIPELINE_TRIGGERS_VERSION: v1
-  VERSION_TAG_REGEX: '/^[0-9]+\.[0-9]+\.[0-9]+(-.+)?$/'
+  APP_VERSION_TAG_REGEX: '/^[0-9]+\.[0-9]+\.[0-9]+(-.+)?$/'
+  CHART_VERSION_TAG_REGEX: '/^chart-[0-9]+\.[0-9]+\.[0-9]+(-.+)?$/'
   MAIN_BRANCH_NAME: main
   API_PROJECT_NAME: sonar-api
   API_APP_IMAGE_SRC: $BC_IMAGE_REPO/$CI_PROJECT_NAMESPACE/$API_PROJECT_NAME
