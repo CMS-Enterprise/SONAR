@@ -1,3 +1,595 @@
+## 0.3.0
+
+### BATAPI-311 Sonar Agent Helm Chart Pipeline
+
+* [view commit 4826bea](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/4826bea9b05f02fa257ea1061cd3a5184edac994)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Mon, 7 Aug 2023 16:50:37 +0000
+
+```
+* Adds a new pipeline that lints and delivers the Sonar Agent Helm chart
+* Lint runs on every pipeline run, deliver only runs on `chart-M.m.p` git tags
+```
+
+### BATAPI-377 Updated ApiKey to include date created and last usage of the Key.
+
+* [view commit cb96315](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/cb963156e886ac21eeccf23de417ff344b0a5ba1)
+* Author (Committer): Dale O'Neill (Dale O'Neill)
+* Date: Fri, 4 Aug 2023 03:27:49 +0000
+
+```
+Closes BATAPI-337
+
+* Added ApiKey creation and usage date time.  Whenever a key is used/authenticated the apiKey record has its last usage field updated with the current DateTime.
+
+* Database migration
+
+* Key management UI displays these added new fields.
+```
+
+### Resolve BATAPI-361 "Protected route component"
+
+* [view commit 979c349](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/979c349d8f8876b6fbc43b65e6418e0a602434ae)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Thu, 3 Aug 2023 17:55:12 +0000
+
+```
+Closes BATAPI-361
+
+## Description:
+* Add protected route component
+```
+
+### ## Description:
+
+* [view commit 2afa300](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/2afa300375b04ca8a538de81edfe620fd83161b1)
+* Author (Committer): Teresa Tran (Teresa Tran)
+* Date: Wed, 2 Aug 2023 17:44:05 +0000
+
+```
+* Fix broken dependency reference in deployment pipeline trigger job (related to BATAPI-309)
+```
+
+### Add markdown and images in docs folder, resolve broken links, updated collection to support JWT auth, added pre-request scripts to health-check-data and prometheus collections
+
+* [view commit addcfe9](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/addcfe91eb3cc09cb300b929425edd12a615933d)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Fri, 28 Jul 2023 16:35:06 -0700
+
+
+
+### Update postman collection
+
+* [view commit b725a70](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/b725a708ff91d7151fcc422f3b654b7e04649c14)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Fri, 28 Jul 2023 14:34:19 -0700
+
+
+
+### BATAPI-309: remove agent deployment jobs from SONAR CI/CD deployment pipeline
+
+* [view commit 41fb3d4](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/41fb3d42ec20241df7b6153e604ec8cfeb02d421)
+* Author (Committer): Teresa Tran (Teresa Tran)
+* Date: Tue, 1 Aug 2023 21:57:20 +0000
+
+```
+## Description:
+Part 1 of BATAPI-309
+
+* Remove all deployment jobs for the Agent from the Sonar CI/CD deployment pipeline (both the lower and upper realm deployments) in [deployment-pipeline.yml](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/blob/main/.gitlab-ci/deployment-pipeline.yml).
+```
+
+### BATAPI-349 Created a user Permissions controller test
+
+* [view commit 9a8e40a](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/9a8e40aa22fdc3ea348b60a2be1f930e8b62ec30)
+* Author (Committer): Dale O'Neill (Dale O'Neill)
+* Date: Tue, 1 Aug 2023 20:52:03 +0000
+
+```
+Closes BATAPI-349
+
+* Implements tests for all endpoints for user permission controller.
+
+* Made changes ApiControllerTestsBase and ApiIntegrationTestFixture so default behavior keeps database changes for every test run. Added option so database can be recreated on each run.
+
+* Added Policy AllowAnyScope to GetPermissions and GetCurrentUser in the UserPermission controller. Also added new method to the UserPermission Repository used when using API Key for authorization.
+```
+
+### Fix Sonar API README error
+
+* [view commit 329169b](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/329169b60bc39d4396b0f82d79f6f6f99c5b7cee)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Tue, 1 Aug 2023 17:06:49 +0000
+
+```
+Adds missing reference to dotnet ef tool in CLI command example
+```
+
+### Feature 335 add permission dialog
+
+* [view commit 6180be5](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/6180be5ed4878437c8aa9dc2f5a3115e20c4e59b)
+* Author (Committer): Teresa Tran (Teresa Tran)
+* Date: Tue, 1 Aug 2023 00:58:00 +0000
+
+```
+Closes BATAPI-335
+
+## Description:
+
+* Implements user permission addition
+* Some refactoring for hooks used by multiple components
+* Some minor restyling of modals for readability
+```
+
+### Closes BATAPI-334
+
+* [view commit 2b47ccd](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/2b47ccdfe7cfdc8bc68aa7804f843b4616a53012)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Fri, 28 Jul 2023 02:46:56 +0000
+
+```
+* Implements user permission deletion.
+    * Does not let a user delete their own permissions.
+* Implements sorting on the user permissions table.
+* Some minor styles refactoring.
+* Handle scenario when no data is available to the current user.
+```
+
+### Resolve BATAPI-359 "React query refactor"
+
+* [view commit a8ca56c](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/a8ca56c55949081c444ad5ed0ecd5cc4b32118cd)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Thu, 27 Jul 2023 18:01:48 +0000
+
+```
+Closes BATAPI-359
+
+## Description:
+
+* implement refactor
+
+* resolve merge conflicts
+
+* configure global options for queryClient
+
+* implement POC in CreateKeyForm.tsx
+```
+
+### Fixes unused import error
+
+* [view commit 7fd9ca7](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/7fd9ca7d47ac5ebd4de6cfe0857925da49652b0a)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Wed, 26 Jul 2023 13:21:09 -0600
+
+
+
+### Refactor Sonar UI Global State
+
+* [view commit bca988c](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/bca988c496e218ed3fa0eea95a91e99836c23763)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Wed, 26 Jul 2023 19:17:19 +0000
+
+```
+* Drop the `SonarApiProvider`, and replace with a more generic `AppContextProvider`.
+* This new provider provides Sonar API client and the RQ client in the same way as the `SonarApiProvider` did.
+* Additionally, this provider adds user context with info about the currently logged-in user, login, and logout callbacks.
+* Refactors the login and logout UI components to use the user context and it's callbacks.
+* I first tried adding the user info context with a separate use-effect hook, but that wound up being pretty inefficient, and since the sonarApi client and the userInfo are ultimately dependent on the Okta state, it worked better to handle all those concerns together in one `useEffect`.
+```
+
+### fix bug with open api spec for POST method
+
+* [view commit fda3a86](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/fda3a86874dc1b6a3a44854bda1f25ba9d644d11)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Wed, 26 Jul 2023 18:30:51 +0000
+
+```
+Closes BATAPI-351
+
+## Description:
+
+* fix bug with open api spec for POST method
+```
+
+### BATAPI-334 User Permissions Management UI: PART 2 - Live Data Retrieval
+
+* [view commit 2541dac](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/2541dac7fd87f07bf7d894006e2cce84de3031d5)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Wed, 26 Jul 2023 14:53:55 +0000
+
+```
+* Implements loading real data from the Sonar backend for the user management UI.
+* Uses our new pattern for separating data concerns into their own hooks module.
+* Gets rid of the test data junk.
+```
+
+### Address wrong instantiation
+
+* [view commit 7248229](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/7248229bedb749f2765fbe276786b9ba9d9e4dae)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Tue, 25 Jul 2023 11:00:53 -0700
+
+
+
+### Update queries to use Sonar API provider
+
+* [view commit 64d6a86](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/64d6a86179c6ee567ac100418b1792bf63ca6b15)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Mon, 24 Jul 2023 22:58:46 -0700
+
+
+
+### Updates generated Typescript Sonar API client with recent User Permissions API additions
+
+* [view commit 4a1c8fb](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/4a1c8fb974bf232f6be12364c372d52e8a0d0640)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Tue, 25 Jul 2023 16:18:34 +0000
+
+
+
+### * Always use secure: true request parameter * Adds a queryClient and sonarApi provider component and hook, and an example of how its used
+
+* [view commit 5060e72](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/5060e72a5e66a3f20868802e351becc703c92fa9)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Mon, 24 Jul 2023 22:44:38 +0000
+
+
+
+### finish create env implementation
+
+* [view commit 9bf6bb0](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/9bf6bb002fb9caafb00902f704f8470ba7e705d3)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Mon, 24 Jul 2023 22:20:40 +0000
+
+```
+Closes BATAPI-336
+
+## Description:
+
+* finish create env implementation
+* refactor dialog into shared component, refactor api keys to use shared component
+
+Closes BATAPI-336
+```
+
+### Update alert text
+
+* [view commit ed1eaa6](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/ed1eaa6b966516436868045eb410ba0b1cf4f994)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Fri, 21 Jul 2023 17:35:41 -0700
+
+
+
+### Update query to useMutation
+
+* [view commit 80726b8](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/80726b869f16ae4a10fd08bd173cc5b8d1492d89)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Fri, 21 Jul 2023 13:17:34 -0700
+
+
+
+### Create modal, and delete ability
+
+* [view commit fca0c54](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/fca0c544a56f52d3d816217b329614c774be3f45)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Thu, 20 Jul 2023 13:10:38 -0700
+
+
+
+### Batapi permission controller
+
+* [view commit dc30424](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/dc30424de54e6052fdb3d10b5505e4a1f6e3f84b)
+* Author (Committer): Dale O'Neill (Dale O'Neill)
+* Date: Mon, 24 Jul 2023 17:24:13 +0000
+
+```
+Closes BATAPI-316
+
+## Description:
+
+* Add API Controller to support the management of User Permissions
+
+```
+
+### BATAPI-334 User Permissions Management UI: PART 1 - Frontend implementation with fake data
+
+* [view commit cc02138](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/cc0213833371a048ad986068d8b657d9540b6bb1)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Fri, 21 Jul 2023 21:46:34 +0000
+
+```
+This PR is only a partial implementation of BATAPI-334. I want to get what I've currently got finished in the UI merged into main in order to unblock some of Teresa's work on BATAPI-335. We'll both be dependent on BATAPI-316 for talking to the backend after that is merged (in review now), but this will at least unblock the frontend parts of 335. I will be following up with the completion of the 334 in a second PR.
+
+Included in this PR:
+* Implemented (most of) the main frontend functionality for user permissions management using **test data**.
+* Did some refactoring around shared components and styles that touched the ApiKeys work that has already been merged.
+
+Not in this PR that will be included in the next one:
+* Data interactions with the backend API.
+* The "No Data" variations on the two data tables.
+* Sorting buttons on column headers in user permissions table (parts of this will be dependent on backend implementation).
+* Disabling deletion of one's own permissions (currently the user permissions table shows the delete button on all rows, but the UI mockup requires that you cannot delete your own permissions).
+```
+
+### quickfix for tenant dropdown bug
+
+* [view commit a497864](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/a497864c7de1fb7f96f3cd7b3214a4dcb10614b2)
+* Author (Committer): btakushi (btakushi)
+* Date: Thu, 20 Jul 2023 14:22:22 -1000
+
+
+
+### * Fix linter errors * Fix visual alignment issues of button content
+
+* [view commit 51794b1](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/51794b1deeffbe42865ca417e7d5b8365bb878bb)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Thu, 20 Jul 2023 21:37:54 +0000
+
+
+
+### Sonar UI GhostActionButton
+
+* [view commit 621a68f](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/621a68f0f14f332c6ab23f023ec240606c3eeefd)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Thu, 20 Jul 2023 20:01:41 +0000
+
+```
+* Adds GhostActionButton shared component
+* Refactors previously copy-pasted buttons to use shared component
+```
+
+### Resolve BATAPI-315 "Create key ui"
+
+* [view commit d698294](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/d6982947b16274925ecbf55ace1eada1eedf381c)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Wed, 19 Jul 2023 21:35:53 +0000
+
+```
+Closes BATAPI-315
+
+## Description:
+
+* Implement Create API Key feature
+
+Closes BATAPI-315
+```
+
+### Adds shaded accent color to themes
+
+* [view commit 37945b4](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/37945b422f55934e576d5be07e995099fdd22882)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Wed, 19 Jul 2023 11:15:12 -0600
+
+
+
+### Fixes merge issue
+
+* [view commit 025c06f](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/025c06f196111706b8b084f601cfe850dbd24622)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Wed, 19 Jul 2023 10:53:30 -0600
+
+
+
+### Enabled cascading deletes for ApiKeys and UserPermissions. Made behavior explicit for other entities.
+
+* [view commit f1b229e](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/f1b229e4d6bd9dd58515721c43fdc0ed207e7ec8)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Tue, 18 Jul 2023 18:28:34 -1000
+
+
+
+### sonar-api: added DeleteEnvironment action.
+
+* [view commit 2365545](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/23655453d5d9072da3c4f3c4704fa681f5262e14)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Fri, 14 Jul 2023 12:25:22 -1000
+
+
+
+### Updated dockerfiles to remove busybox
+
+* [view commit 5b4d739](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/5b4d739ba0461aa5805ccf726e12dda86a5a474c)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Tue, 18 Jul 2023 14:39:45 -1000
+
+
+
+### sonar-ui: Added license headers for our SVG icons.
+
+* [view commit 47113f1](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/47113f188f1d0e334a6b32d89df12739cf29daf2)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Tue, 18 Jul 2023 13:59:26 -1000
+
+
+
+### Prefixes Okta config override env var names with REACT_APP_ so they get embedded in the app bundle at build time; updates developer doco with instructions on how to run the UI pointed at a custom Okta instance
+
+* [view commit 0da72c8](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/0da72c87e3e2ca607a1d920c2fdbff5db5ca86ea)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Tue, 18 Jul 2023 16:56:27 -0600
+
+
+
+### Upgrade Okta.AspNetCore to v4
+
+* [view commit 56cc582](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/56cc582939926fb9024159a6e72746af2493682a)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Tue, 18 Jul 2023 10:00:21 -1000
+
+
+
+### Updated Okta configuration to use IDM-Impl: SONAR Dev application
+
+* [view commit 6c5df77](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/6c5df77b249ac9e03faf6cb92e2141ac95485b41)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Sat, 15 Jul 2023 12:29:50 -1000
+
+```
+Resolved issues with IDM Okta integration
+
+ * Use id_token not access_token for accessing the SONAR API
+ * Expect the email address to be in the email claim, not the subject
+   claim
+ * Switched to using "name" from IDM instead of firstName/lastName
+ * Updated SSO data migration to replace FirstName/LastName with
+   FullName
+```
+
+### Added support for configuring okta settings via appsettings
+
+* [view commit 1545620](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/15456203f9e3c5a40b2c7de56f7efe6f4b3afce4)
+* Author (Committer): Teresa Tran (Paul Wheeler)
+* Date: Tue, 18 Jul 2023 08:40:34 +0000
+
+```
+Closes BATAPI-331
+```
+
+### Resolve BATAPI-313 "Api key list view"
+
+* [view commit 53b8702](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/53b8702aa861b64a7174ba8befd8665acefef0de)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Tue, 18 Jul 2023 03:27:48 +0000
+
+```
+Closes BATAPI-313
+
+## Description:
+
+* Implemented table with test data, pagination
+
+Closes BATAPI-313
+```
+
+### * Mocks config module in App.test
+
+* [view commit f3cd73a](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/f3cd73a35706bbbae1ef86f4f558e2d18e19dde7)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Mon, 17 Jul 2023 23:42:15 +0000
+
+
+
+### sonar-ui: User Upsert support
+
+* [view commit e31e195](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/e31e1957da6f9881c222efadca85774363db4782)
+* Author (Committer): Stephen Brey (Paul Wheeler)
+* Date: Fri, 14 Jul 2023 23:40:15 +0000
+
+```
+Closes BATAPI-307
+
+* Adds config module; refactors Okta configuration; moves router context to outer scope.
+* Fixes the Okta domain in the API backend.
+* Ensures the user is ultimately sent back to their starting point after they complete the login flow.
+* Regenerates the API and client and DTOs to include latest User stuff.
+* Updates/inserts user records in Sonar API when user logs in.
+```
+
+### Added SSO support to sonar UI
+
+* [view commit 602ddd4](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/602ddd405933a468fca164edf1ad39b207f8e919)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Thu, 13 Jul 2023 19:17:09 +0000
+
+```
+* Create modal dropdown, add svg icons, load Okta issuer and IDclient from file, attach OktaAuth to login button
+* create use query wrapper for attaching okta JWT credentials
+* update k8s configmap for sonar-ui settings
+
+Author: Kevin Ly <kevin.ly@cms.hhs.gov>
+
+Closes BATAPI-303
+```
+
+### Merge branch 'main' of https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar into feature-sso
+
+* [view commit fed3b08](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/fed3b08d6140062a6f6818beab16836e18766552)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Thu, 13 Jul 2023 12:24:56 -0600
+
+
+
+### Increases tolerance of floating-point comparison of timestamps to 1ms from 0.5ms
+
+* [view commit 36fef43](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/36fef438416a211298361faa6227846bc16eb2be)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Thu, 13 Jul 2023 11:30:16 -0600
+
+
+
+### BATAPI-306 User Controller
+
+* [view commit cc91b50](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/cc91b50268ca8a7c6fdd450996f0f9049bdaaa84)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Thu, 13 Jul 2023 03:48:19 +0000
+
+```
+Closes BATAPI-306
+
+## Description:
+
+* implement user controller
+
+Closes BATAPI-306
+```
+
+### Merge branch 'main' of https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar into feature-sso
+
+* [view commit fb7bdae](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/fb7bdae5c9aa95be79c596ae1cac307db3fad199)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Mon, 10 Jul 2023 10:29:56 -0600
+
+
+
+### Implemented Okta JwtBearer support in SONAR Api.
+
+* [view commit acf9e93](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/acf9e93287606c79f5496364ce288cee262ba461)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Wed, 5 Jul 2023 23:15:42 -1000
+
+```
+Closes BATAPI-305
+```
+
+### BATAPI-308, BATAPI-304: Adds database migrations for adding the SSO user and user_permission tables.
+
+* [view commit 2eeee33](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/2eeee336bf21f4f2fe6eabfd681014b2263b2b19)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Fri, 7 Jul 2023 16:30:47 +0000
+
+
+
+### Added UserPermission data entity.
+
+* [view commit ac6d5e2](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/ac6d5e22a5854ca5061181e4677114547dda3c5a)
+* Author (Committer): Paul Wheeler (Stephen Brey)
+* Date: Sun, 2 Jul 2023 23:20:03 -1000
+
+
+
+### Fixes merge conflicts
+
+* [view commit 35cbcb8](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/35cbcb814e03c1011dac197be9310131ae79b00e)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Thu, 6 Jul 2023 10:40:33 -0600
+
+
+
+### Changed table name to be all lower case and when creating the table just model the entity with no additional updates.
+
+* [view commit 55447cf](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/55447cf71ad6e1c2ef042ac549123ba2701004c7)
+* Author (Committer): Dale O'Neill (Stephen Brey)
+* Date: Fri, 30 Jun 2023 18:04:50 -0700
+
+
+
+### Added Entity User to the database.
+
+* [view commit 785d806](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/785d806eb6239c7ea289e18a1af817e844ef3c6b)
+* Author (Committer): Dale O'Neill (Stephen Brey)
+* Date: Thu, 29 Jun 2023 12:57:18 -0700
+
+
 ## 0.2.1
 
 ### BATAPI-325 Migration support conversion post-work
