@@ -1,15 +1,14 @@
 import { DropdownOptions, DropdownValue } from '@cmsgov/design-system/dist/types/Dropdown/Dropdown';
 import React, { useEffect, useState } from 'react';
 import { ApiKeyDetails, PermissionType } from '../../api/data-contracts';
-import { useCreateKey, useGetPermissions } from './ApiKeys.Hooks';
+import { useCreateKey } from './ApiKeys.Hooks';
 import AlertBanner from '../App/AlertBanner';
 import {
   getEnvironmentOptions,
-  getPermissionOptions,
   getTenantOptions,
   initialEnvOption,
-  initialRoleOption,
-  initialTenantOption
+  initialTenantOption,
+  roles
 } from '../../helpers/DropdownOptions';
 import PrimaryActionButton from '../Common/PrimaryActionButton';
 import SecondaryActionButton from '../Common/SecondaryActionButton';
@@ -33,10 +32,6 @@ const CreateKeyForm: React.FC<{
   const [alertHeading, setAlertHeading] = useState("All fields are required");
   const [alertText, setAlertText] = useState("Set all fields to add a new user permission.");
   const [keyCreated, setKeyCreated] = useState(false);
-
-  const permissionData = useGetPermissions();
-  const permissionOptions = (!permissionData || !permissionData.data) ?
-    [initialRoleOption] : getPermissionOptions(permissionData.data);
 
   const environmentData = useGetEnvironments();
   const environmentOptions = (!environmentData  || !environmentData.data) ?
@@ -102,7 +97,7 @@ const CreateKeyForm: React.FC<{
             disabled={keyCreated}
             onChange={(event) => setSelectedRole(event.target.value)}
             value={selectedRole}
-            options={permissionOptions}
+            options={roles}
           />
         </div>
       </div>
