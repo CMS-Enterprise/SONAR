@@ -8,5 +8,5 @@ export const oktaAuthOptions: OktaAuthOptions = {
   issuer: process.env.REACT_APP_OKTA_ISSUER || (window as any).OKTA_ISSUER,
   clientId: process.env.REACT_APP_OKTA_CLIENTID || (window as any).OKTA_CLIENTID,
   redirectUri: `${window.location.origin}/login/callback`,
-  scopes: [ 'openid', 'email', 'profile' ]
+  scopes: [ 'openid', 'email', 'profile', 'offline_access' ]
 };
