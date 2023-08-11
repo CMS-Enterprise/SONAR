@@ -9,6 +9,7 @@ using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Npgsql;
 
 namespace Cms.BatCave.Sonar.Data;
 
@@ -43,10 +44,21 @@ public class DbPermissionRepository : IPermissionsRepository {
       permission = await this._userPermissionTable.AddAsync(userPermission, cancelToken);
       await this._dbContext.SaveChangesAsync(cancelToken);
       await tx.CommitAsync(cancelToken);
-    } catch {
+    } catch (Exception exception) {
       await tx.RollbackAsync(cancelToken);
+
+      if (exception.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation }) {
+        throw new ResourceAlreadyExistsException(userPermission.GetType(), new {
+          userPermission.UserId,
+          userPermission.EnvironmentId,
+          userPermission.TenantId,
+          userPermission.Permission
+        });
+      }
+
       throw;
     }
+
     return permission.Entity;
   }
 

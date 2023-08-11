@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Models;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -93,6 +94,41 @@ public class PermissionControllerIntegrationTest : ApiControllerTestsBase {
         Assert.Equal(permissionCreating.Tenant, body.Tenant);
       }
     }
+  }
+
+  [Theory]
+  [MemberData(nameof(CreatePermission_PermissionAlreadyExists_ReturnsClientError_Data))]
+  public async Task CreatePermission_PermissionAlreadyExists_ReturnsClientError(
+    String? environmentName,
+    String? tenantName,
+    PermissionType permissionType) {
+
+    // Setup test data preconditions; we need the base DB values and a unique test user to already exist in the DB.
+    await this.BuildDbTables();
+    var user = this.CreateUniqueTestUserInDB();
+
+    // A local function for creating the CreatePermission request that we are going to send multiple times.
+    // Request instances can't be reused, hence the local factory function.
+    RequestBuilder CreateCreatePermissionRequest() => this.Fixture.CreateAuthenticatedRequest(
+      "/api/v2/permissions",
+      PermissionType.Admin,
+      environmentName,
+      tenantName
+    ).And(msg => msg.Content = JsonContent.Create(
+      new PermissionDetails(
+        user.Email,
+        permissionType,
+        environmentName,
+        tenantName)
+    ));
+
+    // Send the request; it should succeed because we haven't added any permissions for this user yet.
+    var firstResponse = await CreateCreatePermissionRequest().PostAsync();
+    Assert.True(firstResponse.IsSuccessStatusCode);
+
+    // Send the same request again; this time it should fail the unique constraint.
+    var secondResponse = await CreateCreatePermissionRequest().PostAsync();
+    Assert.False(secondResponse.IsSuccessStatusCode);
   }
   #endregion
 
@@ -495,6 +531,19 @@ public class PermissionControllerIntegrationTest : ApiControllerTestsBase {
       await dbContext.SaveChangesAsync(cancellationToken);
     });
   }
+
+  internal User CreateUniqueTestUserInDB() {
+    var userId = Guid.NewGuid();
+    var user = new User(userId, $"{userId}@test.com", $"Test User {userId}");
+    this.Fixture.WithDependencies(services => {
+      var db = services.GetRequiredService<DataContext>();
+      var users = services.GetRequiredService<DbSet<User>>();
+      users.Add(user);
+      db.SaveChanges();
+    });
+    return user;
+  }
+
   internal async Task<PermissionConfiguration?> CreatePermission(HttpContent content) {
     //Create User Permission request
     var requestBuilder = this.Fixture.CreateAdminRequest("/api/v2/permissions");
@@ -569,6 +618,19 @@ public class PermissionControllerIntegrationTest : ApiControllerTestsBase {
     };
   }
 
+  public static IEnumerable<Object?[]> CreatePermission_PermissionAlreadyExists_ReturnsClientError_Data =>
+    new[] {
+      // Tenant-scoped permissions
+      new Object[] { Env1.Name, Tenant11.Name, PermissionType.Admin },
+      new Object[] { Env1.Name, Tenant11.Name, PermissionType.Standard },
+      // Environment-scoped permissions
+      new Object?[] { Env1.Name, null, PermissionType.Admin },
+      new Object?[] { Env1.Name, null, PermissionType.Standard },
+      // Global-scoped permissions
+      new Object?[] { null, null, PermissionType.Admin },
+      new Object?[] { null, null, PermissionType.Standard },
+    };
+
   //Here are the inputs and expected output for Deleting permissions
   //permission used to perform deletion
   //Permission created and that will be deleted
@@ -608,7 +670,3 @@ public class PermissionControllerIntegrationTest : ApiControllerTestsBase {
 
 
 }
-
-
-
-

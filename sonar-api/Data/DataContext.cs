@@ -105,6 +105,30 @@ public class DataContext : DbContext {
           .WithMany()
           .HasForeignKey(up => up.TenantId)
           .OnDelete(DeleteBehavior.Cascade);
+        entity.HasIndex(p => new {
+          p.UserId,
+          p.Permission
+        })
+          .HasDatabaseName("ix_user_permission_unique_global_scope")
+          .HasFilter("environment_id IS NULL AND tenant_id IS NULL")
+          .IsUnique();
+        entity.HasIndex(p => new {
+          p.UserId,
+          p.EnvironmentId,
+          p.Permission
+        })
+          .HasDatabaseName("ix_user_permission_unique_environment_scope")
+          .HasFilter("environment_id IS NOT NULL AND tenant_id IS NULL")
+          .IsUnique();
+        entity.HasIndex(p => new {
+          p.UserId,
+          p.EnvironmentId,
+          p.TenantId,
+          p.Permission
+        })
+          .HasDatabaseName("ix_user_permission_unique_tenant_scope")
+          .HasFilter("environment_id IS NOT NULL AND tenant_id IS NOT NULL")
+          .IsUnique();
       })
       .Entity<HealthCheckCache>(entity => {
         entity.HasOne<ServiceHealthCache>()
