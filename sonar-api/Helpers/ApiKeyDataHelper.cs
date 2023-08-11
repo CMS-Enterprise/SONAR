@@ -41,10 +41,11 @@ public class ApiKeyDataHelper {
     }
   }
 
-  public async Task<Guid?> UpdateApiKeyUsageAsync(ApiKey apiKey, CancellationToken cancellationToken) {
+  public async Task UpdateApiKeyUsageAsync(ApiKey apiKey, CancellationToken cancellationToken) {
     if (apiKey.Id == Guid.Empty) {
-      return null;
+      return;
     }
-    return await this._apiKeyRepository.UpdateUsageAsync(apiKey.Id, cancellationToken);
+
+    await this._apiKeyRepository.UpdateUsageAsync(apiKey, cancellationToken);
   }
 }

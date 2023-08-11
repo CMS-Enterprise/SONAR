@@ -3,26 +3,36 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
+using Cms.BatCave.Sonar.Configuration;
+using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Helpers;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Environment = Cms.BatCave.Sonar.Data.Environment;
 
 namespace Cms.BatCave.Sonar.Authentication;
 
 public class ApiKeyAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions> {
   public const String SchemeName = "ApiKey";
 
-  private readonly ApiKeyDataHelper _apiKeyHelper;
+  private readonly IOptions<DatabaseConfiguration> _dbConfiguration;
+  private readonly IOptions<SecurityConfiguration> _securityConfiguration;
+  private readonly ILoggerFactory _loggerFactory;
+  private readonly KeyHashHelper _keyHashHelper;
 
   public ApiKeyAuthenticationHandler(
-    ApiKeyDataHelper apiKeyHelper,
     IOptionsMonitor<AuthenticationSchemeOptions> options,
-    ILoggerFactory logger,
+    IOptions<DatabaseConfiguration> dbConfiguration,
+    IOptions<SecurityConfiguration> securityConfiguration,
+    ILoggerFactory loggerFactory,
     UrlEncoder encoder,
-    ISystemClock clock) : base(options, logger, encoder, clock) {
-
-    this._apiKeyHelper = apiKeyHelper;
+    ISystemClock clock,
+    KeyHashHelper keyHashHelper) : base(options, loggerFactory, encoder, clock) {
+    this._dbConfiguration = dbConfiguration;
+    this._securityConfiguration = securityConfiguration;
+    this._loggerFactory = loggerFactory;
+    this._keyHashHelper = keyHashHelper;
   }
 
   protected override async Task<AuthenticateResult> HandleAuthenticateAsync() {
@@ -37,6 +47,7 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<AuthenticationS
         return await this.AuthenticateApiKey(authHeaderValue[6..].Trim());
       }
     }
+
     if (this.Context.Request.Headers.TryGetValue("ApiKey", out var extractedApiKey)) {
       // Legacy/Deprecated ApiKey Header support (Prefer Authorization: ApiKey xxx)
       // If an ApiKey was specified, validate that API key
@@ -52,16 +63,28 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<AuthenticationS
   }
 
   private async Task<AuthenticateResult> AuthenticateApiKey(String? headerApiKey) {
+    // Use a short lived DataContext for ApiKey authentication and updates.
+    await using var dataContext = new DataContext(this._dbConfiguration, this._loggerFactory);
+    using var repository =
+      new DbApiKeyRepository(
+        dataContext,
+        dataContext.Set<ApiKey>(),
+        dataContext.Set<Environment>(),
+        dataContext.Set<Tenant>(),
+        this._keyHashHelper
+      );
+    var apiKeyHelper = new ApiKeyDataHelper(this._securityConfiguration, repository);
+    // Use a single shared transaction for reading and updating ApiKeys
     // Check if header's API key is an existing API key
     var existingApiKey =
       headerApiKey != null ?
-        await this._apiKeyHelper.TryMatchApiKeyAsync(headerApiKey, this.Context.RequestAborted) :
+        await apiKeyHelper.TryMatchApiKeyAsync(headerApiKey, this.Context.RequestAborted) :
         null;
 
     if (existingApiKey == null) {
       return AuthenticateResult.Fail("The specified ApiKey is not valid.");
     } else {
-      await this._apiKeyHelper.UpdateApiKeyUsageAsync(existingApiKey, this.Context.RequestAborted);
+      await apiKeyHelper.UpdateApiKeyUsageAsync(existingApiKey, this.Context.RequestAborted);
       return AuthenticateResult.Success(new AuthenticationTicket(
         new ClaimsPrincipal(new SonarIdentity(existingApiKey)),
         SchemeName

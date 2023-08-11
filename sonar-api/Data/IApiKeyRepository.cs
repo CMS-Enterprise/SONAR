@@ -9,7 +9,7 @@ namespace Cms.BatCave.Sonar.Data;
 public interface IApiKeyRepository {
   Task<ApiKeyConfiguration> AddAsync(ApiKeyDetails apiKey, CancellationToken cancelToken);
   Task<Guid> DeleteAsync(Guid id, CancellationToken cancelToken);
-  Task<Guid> UpdateUsageAsync(Guid id, CancellationToken cancelToken);
+  Task UpdateUsageAsync(ApiKey apiKey, CancellationToken cancelToken);
   Task<ApiKey> FindAsync(Guid keyId, CancellationToken cancellationToken);
   Task<ApiKey?> FindAsync(String encKey, CancellationToken cancellationToken);
   Task<List<ApiKeyConfiguration>> GetKeysAsync(CancellationToken cancelToken);

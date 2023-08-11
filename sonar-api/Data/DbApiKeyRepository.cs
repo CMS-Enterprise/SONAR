@@ -121,31 +121,14 @@ public class DbApiKeyRepository : IApiKeyRepository {
     return id;
   }
 
-  public async Task<Guid> UpdateUsageAsync(Guid id, CancellationToken cancelToken) {
-    await using var tx =
-      await this._dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancelToken);
-    try {
-      // Get API key
-      var existingApiKey = await this._apiKeysTable
-        .Where(k => k.Id == id)
-        .SingleOrDefaultAsync(cancelToken);
-
-      if (existingApiKey != null) {
-        existingApiKey.LastUsage = DateTime.Now.ToUniversalTime();
-      } else {
-        throw new ResourceNotFoundException(nameof(ApiKey), id);
-      }
-
-      // Update key last usage with current date time.
-      this._apiKeysTable.Update(existingApiKey);
-      // Save
-      await this._dbContext.SaveChangesAsync(cancelToken);
-      await tx.CommitAsync(cancelToken);
-    } catch {
-      await tx.RollbackAsync(cancelToken);
-      throw;
-    }
-    return id;
+  public Task UpdateUsageAsync(ApiKey apiKey, CancellationToken cancelToken) {
+    // Because we are doing this outside of a transaction, only update the last_usage column and
+    // leave other properties unchanged to avoid overwriting changes made by another concurrent
+    // database request.
+    return this._dbContext.Database.ExecuteSqlInterpolatedAsync(
+      $"UPDATE api_key SET last_usage = {DateTime.UtcNow} WHERE id = {apiKey.Id}",
+      cancelToken
+    );
   }
 
   public async Task<List<ApiKeyConfiguration>> GetKeysAsync(CancellationToken cancelToken) {
