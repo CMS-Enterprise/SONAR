@@ -1,15 +1,13 @@
 using System;
-using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Json;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Http;
 using Cms.BatCave.Sonar.Json;
-using Cms.BatCave.Sonar.Query;
+using PrometheusQuerySdk.Models;
 
 namespace Cms.BatCave.Sonar.Loki;
 

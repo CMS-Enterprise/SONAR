@@ -1,7 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Cms.BatCave.Sonar.Query;
+using PrometheusQuerySdk.Models;
 
 namespace Cms.BatCave.Sonar.Loki;
 

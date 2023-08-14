@@ -9,6 +9,7 @@ using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.Extensions.Logging;
 using Prometheus;
+using PrometheusQuerySdk;
 
 namespace Cms.BatCave.Sonar.Prometheus;
 

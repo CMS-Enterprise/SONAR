@@ -1,5 +1,4 @@
 using System;
-using Cms.BatCave.Sonar.Query;
 
 namespace Cms.BatCave.Sonar.Loki;
 

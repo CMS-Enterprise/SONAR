@@ -11,7 +11,7 @@ using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
-using Cms.BatCave.Sonar.Prometheus;
+using PrometheusQuerySdk;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;

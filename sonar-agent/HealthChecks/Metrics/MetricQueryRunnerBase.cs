@@ -3,7 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Cms.BatCave.Sonar.Query;
+using PrometheusQuerySdk.Models;
 using Microsoft.Extensions.Logging;
 
 namespace Cms.BatCave.Sonar.Agent.HealthChecks.Metrics;

@@ -16,7 +16,7 @@ using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Loki;
 using Cms.BatCave.Sonar.Models;
-using Cms.BatCave.Sonar.Prometheus;
+using PrometheusQuerySdk;
 using CommandLine;
 using k8s;
 using Microsoft.Extensions.Configuration;

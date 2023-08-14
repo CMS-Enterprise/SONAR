@@ -1,16 +1,14 @@
 using System;
 using System.Net.Http;
 using Cms.BatCave.Sonar.Configuration;
-using Cms.BatCave.Sonar.Controllers;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Data.Services;
 using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Prometheus;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Environment = Cms.BatCave.Sonar.Data.Environment;
+using PrometheusQuerySdk;
 
 namespace Cms.BatCave.Sonar;
 

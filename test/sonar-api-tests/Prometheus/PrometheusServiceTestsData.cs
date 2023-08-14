@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using Cms.BatCave.Sonar.Query;
+using PrometheusQuerySdk.Models;
 using ImmutableSamplesList = System.Collections.Immutable.IImmutableList<(System.DateTime Timestamp, System.Double Value)>;
 
 namespace Cms.BatCave.Sonar.Tests.Prometheus;
