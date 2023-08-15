@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Exceptions;
@@ -12,6 +15,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Cms.BatCave.Sonar.Data;
 
 public class DbApiKeyRepository : IApiKeyRepository {
+
+  private static readonly ConcurrentDictionary<String, Guid?> KeyIdLookupCache = new();
 
   private readonly DataContext _dbContext;
   private readonly DbSet<ApiKey> _apiKeysTable;
@@ -219,21 +224,33 @@ public class DbApiKeyRepository : IApiKeyRepository {
 
   public async Task<ApiKey?> FindAsync(String encKey, CancellationToken cancellationToken) {
 
-    var keys = await this._apiKeysTable.ToListAsync(cancellationToken);
+    using var hashAlg = SHA256.Create();
+    var keyHash = Convert.ToBase64String(hashAlg.ComputeHash(Encoding.UTF8.GetBytes(encKey)));
 
-    if (keys == null) {
-      throw new ResourceNotFoundException($"The API key provided does not exist.");
-    }
-
-    ApiKey? keyFound = null;
-    foreach (var apiKey in keys) {
-      if (KeyHashHelper.ValidatePassword(encKey, apiKey.Key)) {
-        keyFound = apiKey;
-        break;
+    if (KeyIdLookupCache.TryGetValue(keyHash, out var keyId)) {
+      if (keyId != null) {
+        var apiKey = await this.FindAsync(keyId.Value, cancellationToken);
+        // revalidate the actual bcrypt hash, just in case
+        return KeyHashHelper.ValidatePassword(encKey, apiKey.Key) ? apiKey : null;
+      } else {
+        return null;
       }
-    }
+    } else {
+      var keys = await this._apiKeysTable.ToListAsync(cancellationToken);
 
-    return keyFound;
+      ApiKey? keyFound = null;
+      foreach (var apiKey in keys) {
+        if (KeyHashHelper.ValidatePassword(encKey, apiKey.Key)) {
+          keyFound = apiKey;
+          break;
+        }
+      }
+
+      // Cache the fact that we found they key id
+      KeyIdLookupCache.TryAdd(keyHash, keyFound?.Id);
+
+      return keyFound;
+    }
   }
 
 
