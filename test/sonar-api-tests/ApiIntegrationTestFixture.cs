@@ -128,6 +128,33 @@ public class ApiIntegrationTestFixture : IDisposable, ILoggerProvider {
     return this.CreateAuthenticatedRequest(url, apiKey.ApiKey);
   }
 
+  public RequestBuilder CreateAdminRequestUpdated(String url) {
+    return this.WithDependencies(provider => {
+      var config = provider.GetRequiredService<IOptions<SecurityConfiguration>>();
+      return this.CreateAuthenticatedRequestUpdated(url, config.Value.DefaultApiKey ?? "", Guid.Empty);
+    });
+  }
+
+  public RequestBuilder CreateAuthenticatedRequestUpdated(String url, String apiKey, Guid apiKeyId) {
+    var updatedApiKey = apiKeyId + ":" + apiKey;
+
+    return this.Server.CreateRequest(url)
+      .And(req => {
+        req.Headers.Add("ApiKey", updatedApiKey);
+      });
+  }
+
+  public RequestBuilder CreateAuthenticatedRequestUpdated(
+    String url,
+    PermissionType type,
+    String? environment = null,
+    String? tenant = null) {
+
+    var apiKey = this.CreateApiKey(type, environment, tenant);
+
+    return this.CreateAuthenticatedRequestUpdated(url, apiKey.ApiKey, apiKey.Id);
+  }
+
   public ApiKeyConfiguration CreateApiKey(
     PermissionType type,
     String? environment = null,
@@ -149,7 +176,7 @@ public class ApiIntegrationTestFixture : IDisposable, ILoggerProvider {
     var testTenant = Guid.NewGuid().ToString();
 
     var createConfigResponse = await
-      this.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      this.CreateAdminRequestUpdated($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(new ServiceHierarchyConfiguration(
             ImmutableArray<ServiceConfiguration>.Empty,

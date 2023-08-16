@@ -29,23 +29,17 @@ public class ApiKeyDataHelper {
 
   public async Task<ApiKey?> TryMatchApiKeyAsync(String headerApiKey, CancellationToken cancellationToken) {
     if (headerApiKey.Contains(':')) {
-      var headerApi = headerApiKey.Split(':');
-
+      var apiKeyHeaderParts = headerApiKey.Split(':');
       try {
-        //Checks API key to match Default API
-        var defaultApiKey = this.MatchDefaultApiKey(headerApi[1]);
-        //Checks default GUID of 00000000-0000-0000-0000-000000000000
-        if (new Guid(headerApi[0]) == Guid.Empty) {
-          return defaultApiKey;
-        }
-        //Non default key logic
-        if (defaultApiKey == null) {
-          var apiKeyDb = await this._apiKeyRepository.FindAsync(new Guid(headerApi[0]), cancellationToken);
-          if (KeyHashHelper.ValidatePassword(headerApi[1], apiKeyDb.Key )) {
+        var apiKeyId = Guid.Parse(apiKeyHeaderParts[0]);
+        if (apiKeyId == Guid.Empty) {
+          return this.MatchDefaultApiKey(apiKeyHeaderParts[1]);
+        } else {
+          var apiKeyDb = await this._apiKeyRepository.FindAsync(apiKeyId, cancellationToken);
+          if (KeyHashHelper.ValidatePassword(apiKeyHeaderParts[1], apiKeyDb.Key)) {
             return apiKeyDb;
           }
         }
-
       } catch (FormatException) {
         throw new BadRequestException("Invalid Guid. Guid should contain 32 hex-characters with 4 dashes (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx).");
       }

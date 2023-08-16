@@ -74,7 +74,12 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<AuthenticationS
         this._keyHashHelper,
         this._loggerFactory.CreateLogger<DbApiKeyRepository>()
       );
-    var apiKeyHelper = new ApiKeyDataHelper(this._securityConfiguration, repository);
+    var apiKeyHelper =
+      new ApiKeyDataHelper(
+        this._securityConfiguration,
+        repository,
+        this._loggerFactory.CreateLogger<ApiKeyDataHelper>()
+      );
     // Use a single shared transaction for reading and updating ApiKeys
     // Check if header's API key is an existing API key
     var existingApiKey =
