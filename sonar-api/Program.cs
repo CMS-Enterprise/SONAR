@@ -186,6 +186,7 @@ public class Program {
       });
     }
 
+    app.UseMiddleware<RequestTracingMiddleware>();
     app.UseMiddleware<ProblemDetailExceptionMiddleware>();
     app.UseAuthentication();
     app.UseAuthorization();
