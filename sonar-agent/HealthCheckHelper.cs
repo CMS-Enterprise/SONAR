@@ -42,7 +42,6 @@ public class HealthCheckHelper {
   }
 
   public async Task RunScheduledHealthCheck(
-    IConfigurationRoot configRoot,
     String tenant,
     CancellationToken token) {
 
@@ -51,7 +50,7 @@ public class HealthCheckHelper {
     // SONAR client
     using var sonarHttpClient = new HttpClient();
     sonarHttpClient.Timeout = TimeSpan.FromSeconds(this._agentConfig.Value.AgentInterval);
-    var client = new SonarClient(configRoot, baseUrl: this._apiConfig.Value.BaseUrl, sonarHttpClient);
+    var client = new SonarClient(this._apiConfig, sonarHttpClient);
 
     while (!token.IsCancellationRequested) {
       // Configs

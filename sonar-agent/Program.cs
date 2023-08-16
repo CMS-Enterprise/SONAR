@@ -150,7 +150,7 @@ internal class Program {
 
     (IDisposable, ISonarClient) SonarClientFactory() {
       var http = new HttpClient();
-      return (http, new SonarClient(configuration, apiConfig.Value.BaseUrl, http));
+      return (http, new SonarClient(apiConfig, http));
     }
 
     var configurationHelper = new ConfigurationHelper(
@@ -241,7 +241,7 @@ internal class Program {
               var httpClient = new HttpClient();
               httpClient.Timeout = TimeSpan.FromSeconds(agentConfig.Value.AgentInterval);
               try {
-                return (httpClient, new SonarClient(configuration, baseUrl: apiConfig.Value.BaseUrl, httpClient));
+                return (httpClient, new SonarClient(apiConfig, httpClient));
               } catch {
                 httpClient.Dispose();
                 throw;
@@ -265,7 +265,7 @@ internal class Program {
               var httpClient = new HttpClient();
               httpClient.Timeout = TimeSpan.FromSeconds(agentConfig.Value.AgentInterval);
               try {
-                return (httpClient, new SonarClient(configuration, baseUrl: apiConfig.Value.BaseUrl, httpClient));
+                return (httpClient, new SonarClient(apiConfig, httpClient));
               } catch {
                 httpClient.Dispose();
                 throw;
@@ -299,7 +299,7 @@ internal class Program {
       disposables.Add(k8sWatcher);
 
       k8sWatcher.TenantCreated += (sender, args) => {
-        tasks.Add(healthCheckHelper.RunScheduledHealthCheck(configuration, args.Tenant, token));
+        tasks.Add(healthCheckHelper.RunScheduledHealthCheck(args.Tenant, token));
       };
 
       // The namespace watcher will automatically start threads for existing tenants configured via
@@ -310,7 +310,6 @@ internal class Program {
         if (services.Services.Count > 0) {
           tasks.Add(
             healthCheckHelper.RunScheduledHealthCheck(
-              configuration,
               agentConfig.Value.DefaultTenant,
               token
             ));
@@ -318,7 +317,7 @@ internal class Program {
       }
     } else {
       foreach (var kvp in servicesHierarchy.ToList()) {
-        tasks.Add(healthCheckHelper.RunScheduledHealthCheck(configuration, kvp.Key, token));
+        tasks.Add(healthCheckHelper.RunScheduledHealthCheck(kvp.Key, token));
       }
     }
 

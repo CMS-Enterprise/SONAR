@@ -4,17 +4,23 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Cms.BatCave.Sonar.Configuration;
+using Cms.BatCave.Sonar.Agent.Configuration;
 using Cms.BatCave.Sonar.Json;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace Cms.BatCave.Sonar.Agent;
 
 public partial class SonarClient {
 
   private readonly String _apiKeyValue;
-  public SonarClient(IConfigurationRoot configuration, String baseUrl, HttpClient client) : this(baseUrl, client) {
-    var apiKeyValue = configuration.GetSection("ApiKey").Value;
+  public SonarClient(IOptions<ApiConfiguration> apiConfig, HttpClient client) : this(apiConfig.Value.BaseUrl, client) {
+    var apiKeyValue = apiConfig.Value.ApiKey;
+
+    if (apiConfig.Value.ApiKeyId.HasValue) {
+      apiKeyValue = apiConfig.Value.ApiKeyId + ":" + apiConfig.Value.ApiKey;
+    }
+
     if (apiKeyValue != null) {
       this._apiKeyValue = apiKeyValue;
     }
