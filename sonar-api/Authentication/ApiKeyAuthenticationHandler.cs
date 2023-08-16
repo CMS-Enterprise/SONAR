@@ -65,13 +65,14 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<AuthenticationS
   private async Task<AuthenticateResult> AuthenticateApiKey(String? headerApiKey) {
     // Use a short lived DataContext for ApiKey authentication and updates.
     await using var dataContext = new DataContext(this._dbConfiguration, this._loggerFactory);
-    using var repository =
+    var repository =
       new DbApiKeyRepository(
         dataContext,
         dataContext.Set<ApiKey>(),
         dataContext.Set<Environment>(),
         dataContext.Set<Tenant>(),
-        this._keyHashHelper
+        this._keyHashHelper,
+        this._loggerFactory.CreateLogger<DbApiKeyRepository>()
       );
     var apiKeyHelper = new ApiKeyDataHelper(this._securityConfiguration, repository);
     // Use a single shared transaction for reading and updating ApiKeys
