@@ -11,6 +11,7 @@ using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Extensions;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Cms.BatCave.Sonar.Data;
 
@@ -23,19 +24,22 @@ public class DbApiKeyRepository : IApiKeyRepository {
   private readonly DbSet<Environment> _environmentsTable;
   private readonly DbSet<Tenant> _tenantsTable;
   private readonly KeyHashHelper _keyHashHelper;
+  private readonly ILogger<DbApiKeyRepository> _logger;
 
   public DbApiKeyRepository(
     DataContext context,
     DbSet<ApiKey> apiKeysTable,
     DbSet<Environment> environmentsTable,
     DbSet<Tenant> tenantsTable,
-    KeyHashHelper keyHashHelper) {
+    KeyHashHelper keyHashHelper,
+    ILogger<DbApiKeyRepository> logger) {
 
     this._dbContext = context;
     this._apiKeysTable = apiKeysTable;
     this._environmentsTable = environmentsTable;
     this._tenantsTable = tenantsTable;
     this._keyHashHelper = keyHashHelper;
+    this._logger = logger;
   }
 
   public async Task<ApiKeyConfiguration> AddAsync(ApiKeyDetails apiKeyDetails, CancellationToken cancelToken) {
@@ -229,13 +233,12 @@ public class DbApiKeyRepository : IApiKeyRepository {
 
     if (KeyIdLookupCache.TryGetValue(keyHash, out var keyId)) {
       if (keyId != null) {
-        var apiKey = await this.FindAsync(keyId.Value, cancellationToken);
-        // revalidate the actual bcrypt hash, just in case
-        return KeyHashHelper.ValidatePassword(encKey, apiKey.Key) ? apiKey : null;
+        return await this.FindAsync(keyId.Value, cancellationToken);
       } else {
         return null;
       }
     } else {
+      this._logger.LogDebug("Cache miss validating apiKey with hash code: {HashCode}", keyHash.GetHashCode());
       var keys = await this._apiKeysTable.ToListAsync(cancellationToken);
 
       ApiKey? keyFound = null;
