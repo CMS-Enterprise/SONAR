@@ -1,36 +1,45 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Extensions;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Cms.BatCave.Sonar.Data;
 
 public class DbApiKeyRepository : IApiKeyRepository {
+
+  private static readonly ConcurrentDictionary<String, Guid?> KeyIdLookupCache = new();
 
   private readonly DataContext _dbContext;
   private readonly DbSet<ApiKey> _apiKeysTable;
   private readonly DbSet<Environment> _environmentsTable;
   private readonly DbSet<Tenant> _tenantsTable;
   private readonly KeyHashHelper _keyHashHelper;
+  private readonly ILogger<DbApiKeyRepository> _logger;
 
   public DbApiKeyRepository(
     DataContext context,
     DbSet<ApiKey> apiKeysTable,
     DbSet<Environment> environmentsTable,
     DbSet<Tenant> tenantsTable,
-    KeyHashHelper keyHashHelper) {
+    KeyHashHelper keyHashHelper,
+    ILogger<DbApiKeyRepository> logger) {
 
     this._dbContext = context;
     this._apiKeysTable = apiKeysTable;
     this._environmentsTable = environmentsTable;
     this._tenantsTable = tenantsTable;
     this._keyHashHelper = keyHashHelper;
+    this._logger = logger;
   }
 
   public async Task<ApiKeyConfiguration> AddAsync(ApiKeyDetails apiKeyDetails, CancellationToken cancelToken) {
@@ -254,21 +263,32 @@ public class DbApiKeyRepository : IApiKeyRepository {
 
   public async Task<ApiKey?> FindAsync(String encKey, CancellationToken cancellationToken) {
 
-    var keys = await this._apiKeysTable.ToListAsync(cancellationToken);
+    using var hashAlg = SHA256.Create();
+    var keyHash = Convert.ToBase64String(hashAlg.ComputeHash(Encoding.UTF8.GetBytes(encKey)));
 
-    if (keys == null) {
-      throw new ResourceNotFoundException($"The API key provided does not exist.");
-    }
-
-    ApiKey? keyFound = null;
-    foreach (var apiKey in keys) {
-      if (KeyHashHelper.ValidatePassword(encKey, apiKey.Key)) {
-        keyFound = apiKey;
-        break;
+    if (KeyIdLookupCache.TryGetValue(keyHash, out var keyId)) {
+      if (keyId != null) {
+        return await this.FindAsync(keyId.Value, cancellationToken);
+      } else {
+        return null;
       }
-    }
+    } else {
+      this._logger.LogDebug("Cache miss validating apiKey with hash code: {HashCode}", keyHash.GetHashCode());
+      var keys = await this._apiKeysTable.ToListAsync(cancellationToken);
 
-    return keyFound;
+      ApiKey? keyFound = null;
+      foreach (var apiKey in keys) {
+        if (KeyHashHelper.ValidatePassword(encKey, apiKey.Key)) {
+          keyFound = apiKey;
+          break;
+        }
+      }
+
+      // Cache the fact that we found they key id
+      KeyIdLookupCache.TryAdd(keyHash, keyFound?.Id);
+
+      return keyFound;
+    }
   }
 
 
