@@ -3,24 +3,28 @@ import React, { useEffect, useState } from 'react';
 import { PermissionDetails, PermissionType } from '../../api/data-contracts';
 import AlertBanner from '../App/AlertBanner';
 import {
-  getEnvironmentOptions,
-  getTenantOptions,
   getUserOptions,
   initialEnvOption,
   initialTenantOption,
   roles
 } from '../../helpers/DropdownOptions';
+import { useUserContext } from '../AppContext/AppContextProvider';
 import ThemedDropdown from '../Common/ThemedDropdown';
 import PrimaryActionButton from '../Common/PrimaryActionButton';
 import SecondaryActionButton from '../Common/SecondaryActionButton';
-import { useGetEnvironments, useGetTenants } from '../Environments/Environments.Hooks';
-import { useAddPermission, useUsersByEmail } from '../../pages/UserPermissions.Hooks';
+import {
+  useAddPermission,
+  useGetPermissionTree,
+  useUsersByEmail
+} from '../../pages/UserPermissions.Hooks';
 
 const AddPermissionForm: React.FC<{
   handleAddModalToggle: () => void
 }> = ({
   handleAddModalToggle
 }) => {
+  const {userInfo } = useUserContext();
+
   const addPermission = useAddPermission();
   const [selectedUserEmail, setSelectedUserEmail] = useState<DropdownValue>(0);
   const [selectedRole, setSelectedRole] = useState<DropdownValue>(0);
@@ -31,28 +35,53 @@ const AddPermissionForm: React.FC<{
   const [alertText, setAlertText] = useState("Set all fields to add a new user permission.");
   const [permissionCreated, setPermissionCreated] = useState(false);
 
-  const usersByEmail = useUsersByEmail();
-  const userOptions = getUserOptions(usersByEmail.data || {});
+  const permissionTreeData = useGetPermissionTree();
 
-  const environmentData = useGetEnvironments();
-  const environmentOptions = (!environmentData  || !environmentData.data) ?
-    [initialEnvOption] : getEnvironmentOptions(environmentData.data);
+  const usersByEmail = useUsersByEmail();
+  const userOptions = getUserOptions(usersByEmail.data || {}, userInfo?.email ? userInfo.email : '');
+
+  const [environmentOptions, setEnvironmentOptions] =
+    useState<DropdownOptions[]>([initialEnvOption]);
 
   const [tenantOptions, setTenantOptions] =
     useState<DropdownOptions[]>([initialTenantOption]);
-  const tenantData = useGetTenants(true);
 
   useEffect(() => {
-    const allTenants = !tenantData.data ? [] : tenantData.data;
-    if (+selectedEnvironment !== 0) {
-      setTenantOptions(
-        [initialTenantOption].concat(getTenantOptions(allTenants, selectedEnvironment))
-      );
+    if (+selectedUserEmail !== 0) {
+      setEnvironmentOptions(
+        [initialEnvOption].concat(!permissionTreeData.data?.permissionTree ? [] : Object.keys(permissionTreeData.data.permissionTree).map(
+          env => {
+            const option: DropdownOptions = {
+              label: env,
+              value: env
+            }
+            return option;
+          }))
+      )
     } else {
+      setEnvironmentOptions([initialEnvOption]);
       setTenantOptions([initialTenantOption]);
     }
+    setSelectedEnvironment(0);
     setSelectedTenant(0);
-  }, [selectedEnvironment, tenantData.data]);
+  }, [permissionTreeData.data, selectedUserEmail])
+
+  useEffect(() => {
+    if (+selectedEnvironment !== 0) {
+      setTenantOptions(
+        [initialTenantOption].concat(
+          !permissionTreeData.data?.permissionTree ? [] :
+            permissionTreeData.data.permissionTree[selectedEnvironment].map(tenant => {
+              const option: DropdownOptions = {
+                label: tenant,
+                value: tenant
+              }
+              return option;
+            })
+        )
+      );
+    }
+  }, [permissionTreeData.data?.permissionTree, selectedEnvironment])
 
   const handleSubmit = () => {
     const newPermission: PermissionDetails = {

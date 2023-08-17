@@ -26,6 +26,7 @@ import {
   ServiceHierarchyHealthHistory,
   TenantHealth,
   UptimeModel,
+  UserPermissionsView,
 } from "./data-contracts";
 import { ContentType, HttpClient, RequestParams } from "./http-client";
 
@@ -474,6 +475,20 @@ tenant, service, and health check in Prometheus. Filters out samples outside of 
   v2UserList = (params: RequestParams = {}) =>
     this.request<CurrentUserView[], any>({
       path: `/api/v2/user`,
+      method: "GET",
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags User
+   * @name GetUserPermissionTree
+   * @request GET:/api/v2/user/permission-tree
+   */
+  getUserPermissionTree = (params: RequestParams = {}) =>
+    this.request<UserPermissionsView, ProblemDetails>({
+      path: `/api/v2/user/permission-tree`,
       method: "GET",
       format: "json",
       ...params,

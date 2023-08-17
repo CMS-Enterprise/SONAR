@@ -12,19 +12,23 @@ const DropdownModal: React.FC<{
   setShowModal: (value: boolean) => void,
 }> = ({ showModal, setShowModal }) => {
   const navigate = useNavigate();
-  const { logUserOut } = useUserContext();
+  const { logUserOut, userInfo } = useUserContext();
 
   return (
     <>
       {showModal && (
         <div css={styles.DropdownModalStyle} onMouseLeave={() => setShowModal(false)}>
-          <GhostActionButton onClick={() => navigate('/user-permissions')}>
-            <PersonIcon /> User Permissions
-          </GhostActionButton>
-          <GhostActionButton onClick={() => navigate('/api-keys')}>
-            <KeyIcon /> Manage your API Keys
-          </GhostActionButton>
-          <div css={styles.DropdownLine} />
+          {userInfo?.isAdmin ? (
+            <>
+              <GhostActionButton onClick={() => navigate('/user-permissions')}>
+                <PersonIcon /> User Permissions
+              </GhostActionButton>
+              <GhostActionButton onClick={() => navigate('/api-keys')}>
+                <KeyIcon /> Manage your API Keys
+              </GhostActionButton>
+              <div css={styles.DropdownLine} />
+            </>
+          ): null}
           <GhostActionButton onClick={logUserOut}>
             <LogoutIcon /> Logout
           </GhostActionButton>

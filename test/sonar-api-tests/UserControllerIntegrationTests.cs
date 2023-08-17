@@ -5,28 +5,58 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Enumeration;
+using Cms.BatCave.Sonar.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;
+using Environment = Cms.BatCave.Sonar.Data.Environment;
 
 namespace Cms.BatCave.Sonar.Tests;
 
 public class UserControllerIntegrationTests : ApiControllerTestsBase {
-
+  private static readonly Guid User1Id = Guid.NewGuid();
   private static readonly User TestUser1 = new User(
-    Guid.NewGuid(),
+    User1Id,
     "test1@test.com",
     "User1");
+  private static readonly Guid User2Id = Guid.NewGuid();
   private static readonly User TestUser2 = new User(
-    Guid.NewGuid(),
+    User2Id,
     "test2@test.com",
     "User2");
+
+  private static readonly Guid Env1Id = Guid.NewGuid();
+  private static readonly Guid Tenant1Id = Guid.NewGuid();
+  private static readonly Environment Env1 = new Environment(Env1Id, "env1");
+  private static readonly Tenant Tenant1 = new Tenant(Tenant1Id, Env1Id, "ten1");
+  private static readonly PermissionType PermissionType1 = PermissionType.Admin;
+  private static readonly UserPermission UserPermission1 = new UserPermission(
+    Guid.NewGuid(),
+    User1Id,
+    Env1Id,
+    Tenant1Id,
+    PermissionType1
+  );
+
+  private static readonly Guid Env2Id = Guid.NewGuid();
+  private static readonly Guid Tenant2Id = Guid.NewGuid();
+  private static readonly Environment Env2 = new Environment(Env2Id, "env2");
+  private static readonly Tenant Tenant2 = new Tenant(Tenant2Id, Env2Id, "ten2");
+  private static readonly PermissionType PermissionType2 = PermissionType.Standard;
+  private static readonly UserPermission UserPermission2 = new UserPermission(
+    Guid.NewGuid(),
+    User2Id,
+    Env2Id,
+    Tenant2Id,
+    PermissionType2
+  );
+
   private ITestOutputHelper _output;
 
   public UserControllerIntegrationTests(
     ApiIntegrationTestFixture fixture,
-    ITestOutputHelper outputHelper) : base(fixture, outputHelper) {
+    ITestOutputHelper outputHelper) : base(fixture, outputHelper, true) {
     this._output = outputHelper;
   }
 
@@ -79,4 +109,53 @@ public class UserControllerIntegrationTests : ApiControllerTestsBase {
     Assert.Contains(body, user => user.Email == TestUser2.Email);
   }
 
+  [Fact]
+  public async Task GetUserAdminStatus_Success() {
+    // create users and permissions
+    await this.BuildUserPermissionDbTables();
+
+    var response = await this.Fixture.CreateAdminRequest("/api/v2/user")
+      .AddHeader(name: "Accept", value: "application/json")
+      .GetAsync();
+    var body = await response.Content.ReadFromJsonAsync<CurrentUserView[]>(SerializerOptions);
+    Assert.Equal(2, body.Length);
+    Assert.Contains(body, user => user.IsAdmin);
+    Assert.Contains(body, user => !user.IsAdmin);
+  }
+
+  [Fact]
+  public async Task GetUserPermissionView_Success() {
+    // create users and permissions
+    await this.BuildUserPermissionDbTables();
+
+    await this.Fixture.WithDependenciesAsync(async (services, cancellationToken) => {
+      var permissionsRepo = services.GetRequiredService<IPermissionsRepository>();
+
+      // Test first permission tree that contains User1 with Admin permissions for Env1/Tenant1
+      var userPv1 = await permissionsRepo.GetUserPermissionsView(User1Id, cancellationToken);
+      var permissionEntry = Assert.Single(userPv1.PermissionTree);
+      Assert.Equal(permissionEntry.Key, Env1.Name);
+      Assert.Single(permissionEntry.Value);
+      Assert.Contains(permissionEntry.Value, permission => permission == Tenant1.Name);
+
+      // Test second permission tree that should be empty due to standard permission
+      var userPv2 = await permissionsRepo.GetUserPermissionsView(User2Id, cancellationToken);
+      Assert.Empty(userPv2.PermissionTree);
+    });
+  }
+
+  internal async Task BuildUserPermissionDbTables() {
+    await this.Fixture.WithDependenciesAsync(async (services, cancellationToken) => {
+      var dbContext = services.GetRequiredService<DataContext>();
+      var userDbSet = services.GetRequiredService<DbSet<User>>();
+      var permissionDbSet = services.GetRequiredService<DbSet<UserPermission>>();
+      var envDbSet = services.GetRequiredService<DbSet<Environment>>();
+      var tenantDbSet = services.GetRequiredService<DbSet<Tenant>>();
+      await envDbSet.AddRangeAsync(new[] { Env1, Env2 });
+      await tenantDbSet.AddRangeAsync(new[] { Tenant1, Tenant2 });
+      await userDbSet.AddRangeAsync(new[] { TestUser1, TestUser2 }, cancellationToken);
+      await permissionDbSet.AddRangeAsync(new[] { UserPermission1, UserPermission2 }, cancellationToken);
+      await dbContext.SaveChangesAsync(cancellationToken);
+    });
+  }
 }

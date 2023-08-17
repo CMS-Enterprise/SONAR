@@ -20,8 +20,10 @@ export interface ApiKeyConfiguration {
   apiKeyType: PermissionType;
   environment?: string | null;
   tenant?: string | null;
-  creation: Date;
-  lastUsage: Date;
+  /** @format date-time */
+  creation?: string;
+  /** @format date-time */
+  lastUsage?: string;
 }
 
 export interface ApiKeyDetails {
@@ -33,6 +35,7 @@ export interface ApiKeyDetails {
 export interface CurrentUserView {
   fullName?: string | null;
   email?: string | null;
+  isAdmin?: boolean;
 }
 
 /**
@@ -245,4 +248,8 @@ export interface UptimeModel {
   currentUptime: TimeSpan;
   unknownDuration: TimeSpan;
   children: UptimeModel[];
+}
+
+export interface UserPermissionsView {
+  permissionTree?: Record<string, string[]>;
 }

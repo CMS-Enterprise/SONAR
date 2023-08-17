@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
+using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -20,6 +21,8 @@ public class DbPermissionRepository : IPermissionsRepository {
   private readonly DbSet<Tenant> _tenantsTable;
   private readonly DbSet<User> _userTable;
   private readonly DbSet<UserPermission> _userPermissionTable;
+  private readonly EnvironmentDataHelper _environmentDataHelper;
+  private readonly TenantDataHelper _tenantDataHelper;
 
 
   public DbPermissionRepository(
@@ -27,12 +30,16 @@ public class DbPermissionRepository : IPermissionsRepository {
     DbSet<Environment> environmentsTable,
     DbSet<Tenant> tenantsTable,
     DbSet<UserPermission> userPermissionTable,
-    DbSet<User> userTable) {
+    DbSet<User> userTable,
+    EnvironmentDataHelper environmentDataHelper,
+    TenantDataHelper tenantDataHelper) {
     this._dbContext = dbContext;
     this._environmentsTable = environmentsTable;
     this._tenantsTable = tenantsTable;
     this._userPermissionTable = userPermissionTable;
     this._userTable = userTable;
+    this._environmentDataHelper = environmentDataHelper;
+    this._tenantDataHelper = tenantDataHelper;
   }
 
   public async Task<UserPermission> AddAsync(UserPermission userPermission, CancellationToken cancelToken) {
@@ -324,6 +331,59 @@ public class DbPermissionRepository : IPermissionsRepository {
         null;
 
     return (environment, tenant, user);
+  }
+
+  public async Task<Boolean> GetAdminStatus(
+    Guid userId,
+    CancellationToken cancellationToken) {
+    var scopedPermissions = await this
+      .GetPermissionsScopeAsync(userId, cancellationToken);
+
+    return scopedPermissions
+      .Any(p => p.Permission == PermissionType.Admin);
+  }
+
+  public async Task<UserPermissionsView> GetUserPermissionsView(
+    Guid userId,
+    CancellationToken cancellationToken) {
+    var scopedPermissions = await this
+      .GetPermissionsScopeAsync(userId, cancellationToken);
+
+    // if GlobalAdmin, return full env/tenant tree
+    if (scopedPermissions
+      .Where(p =>
+        p.Permission == PermissionType.Admin)
+      .Any(p =>
+        String.IsNullOrEmpty(p.Environment) &&
+        String.IsNullOrEmpty(p.Tenant))) {
+
+      return new UserPermissionsView(
+        await this._tenantDataHelper.GetEnvironmentTenantTree(cancellationToken));
+    }
+
+    var permissionTree = scopedPermissions
+      .Where(p => p.Permission == PermissionType.Admin)
+      .Where(p =>
+        !String.IsNullOrEmpty(p.Environment))
+      .ToLookup(
+        permission => permission.Environment,
+        permission => String.IsNullOrEmpty(permission.Tenant) ? String.Empty : permission.Tenant)
+      .ToDictionary(x => x.Key!, x =>
+        x.Any(String.IsNullOrEmpty) ? new List<String>() : x.ToList());
+
+    // if there are any entries with an empty array, user is global admin for that env
+    // replace that entry's value with all tenants for that env
+    foreach (var env in permissionTree
+      .Where(kvp => !kvp.Value.Any())
+      .Select(kvp => kvp.Key)) {
+      var environmentObj = await this._environmentDataHelper
+        .FetchExistingEnvAsync(env, cancellationToken);
+      var tenants = await this._tenantDataHelper
+        .ListTenantsForEnvironment(environmentObj.Id, cancellationToken);
+      permissionTree[env] = tenants.Select(tenant => tenant.Name).ToList();
+    }
+
+    return new UserPermissionsView(permissionTree);
   }
 
 }

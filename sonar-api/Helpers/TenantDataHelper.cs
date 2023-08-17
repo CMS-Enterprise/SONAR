@@ -80,6 +80,20 @@ public class TenantDataHelper {
       .ContinueWith(list => (IList<Tenant>)list.Result, cancellationToken);
   }
 
+  public async Task<Dictionary<String, List<String>>> GetEnvironmentTenantTree(
+    CancellationToken cancellationToken) {
+
+    var environments = await this._environmentsTable
+      .ToListAsync(cancellationToken);
+    var envTenantTree = new Dictionary<String, List<String>>();
+    foreach (var env in environments) {
+      var tenants = await this.ListTenantsForEnvironment(env.Id, cancellationToken);
+      envTenantTree.Add(env.Name, tenants.Select(tenant => tenant.Name).ToList());
+    }
+
+    return envTenantTree;
+  }
+
   public async Task<IList<TenantHealth>> GetTenantsHealth(
     Environment environment,
     CancellationToken cancellationToken) {

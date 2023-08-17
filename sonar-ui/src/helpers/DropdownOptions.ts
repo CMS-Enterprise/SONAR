@@ -84,10 +84,13 @@ export function getTenantOptions(
 }
 
 export function getUserOptions(
-  allUsersByEmail: UsersByEmail
+  allUsersByEmail: UsersByEmail,
+  currentUserEmail: string
 ) {
   return [initialUserOption].concat(
-    Object.keys(allUsersByEmail).map((key, i) => {
+    Object.keys(allUsersByEmail)
+      .filter(user => user !== currentUserEmail)
+    .map((key, i) => {
       const option: DropdownOptions = {
         label: `${allUsersByEmail[key]} (${key})`,
         value: key

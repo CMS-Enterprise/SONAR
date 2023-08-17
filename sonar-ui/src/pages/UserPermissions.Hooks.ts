@@ -3,12 +3,13 @@ import {
   CurrentUserView,
   PermissionConfiguration,
   PermissionDetails
-} from "api/data-contracts";
+} from 'api/data-contracts';
 import { useSonarApi } from "components/AppContext/AppContextProvider";
 
 export enum QueryKeys {
   GetPermissions = 'getPermissions',
-  GetUsers = 'getUsers'
+  GetUsers = 'getUsers',
+  GetPermissionTree = 'getPermissionTree'
 }
 
 export type PermissionConfigurationByEnvironment = {
@@ -68,5 +69,16 @@ export function useDeletePermission() {
   return useMutation({
     mutationFn: (permId: string) => sonarApi.deleteUserPermission(permId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [QueryKeys.GetPermissions] })
+  });
+}
+
+export const useGetPermissionTree = () => {
+  const sonarApi = useSonarApi();
+  return useQuery({
+    queryKey: [QueryKeys.GetPermissionTree],
+    queryFn: () => sonarApi.getUserPermissionTree()
+      .then((response) => {
+        return response.data;
+      })
   });
 }

@@ -18,4 +18,6 @@ public interface IPermissionsRepository {
   Task<List<PermissionConfiguration>> GetPermissionsScopeAsync(Guid? envId, Guid? tenantId, CancellationToken cancelToken);
   Task<(User? user, Environment? Env, Tenant? tenant)> GetObjectsFromNames(String emailName, String? envName, String? tenantName, CancellationToken cancelToken);
   Task<(Environment? environment, Tenant? tenant, User? user)> GetObjectsFromIds(String? emailName, Guid? envId, Guid? tenantId, CancellationToken cancelToken);
+  Task<Boolean> GetAdminStatus(Guid userId, CancellationToken cancellationToken);
+  Task<UserPermissionsView> GetUserPermissionsView(Guid userId, CancellationToken cancellationToken);
 }

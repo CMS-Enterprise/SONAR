@@ -1,6 +1,6 @@
 import { Spinner } from '@cmsgov/design-system';
 import React, { useEffect } from 'react';
-import { Outlet } from "react-router";
+import { Navigate, Outlet } from 'react-router';
 import { useUserContext } from "components/AppContext/AppContextProvider";
 
 export default function ProtectedRoute(): JSX.Element {
@@ -14,6 +14,10 @@ export default function ProtectedRoute(): JSX.Element {
 
   if (!userIsAuthenticated || !userInfo) {
     return (<><Spinner/></>);
+  }
+
+  if (!userInfo.isAdmin) {
+    return (<Navigate to="/" replace/>)
   }
 
   return (<Outlet />);

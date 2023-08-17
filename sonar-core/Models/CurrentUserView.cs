@@ -4,5 +4,6 @@ namespace Cms.BatCave.Sonar.Models;
 
 public record CurrentUserView(
   String FullName,
-  String Email
+  String Email,
+  Boolean IsAdmin
 );
