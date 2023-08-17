@@ -10,6 +10,9 @@ CMD ["npm", "start"]
 
 FROM artifactory.cloud.cms.gov/docker/nginx:1.25-alpine-slim
 
+# make sure we are running the most recent version of these libraries
+RUN apk upgrade --no-cache libssl3 libcrypto3
+
 WORKDIR /usr/share/nginx/html
 RUN rm -rf ./*
 
