@@ -1,7 +1,9 @@
 using System;
+using System.Linq;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -19,24 +21,20 @@ public class TestDependencies : Dependencies {
   public override void RegisterDependencies(WebApplicationBuilder builder) {
     builder.Logging.AddProvider(this._loggerProvider);
 
-    builder.Services.AddScoped<IOptions<TestDatabaseConfiguration>>(provider => {
-      var baseConfig = provider.GetRequiredService<IOptions<DatabaseConfiguration>>();
-      return new OptionsWrapper<TestDatabaseConfiguration>(
-        new TestDatabaseConfiguration(
-          baseConfig.Value.Host,
-          baseConfig.Value.Port,
-          baseConfig.Value.Username,
-          baseConfig.Value.Password,
+    base.RegisterDependencies(builder);
+    builder.Services.Remove(builder.Services.Single(sd => sd.ServiceType == typeof(IOptions<DatabaseConfiguration>)));
+    builder.Services.AddScoped<IOptions<DatabaseConfiguration>>(provider => {
+      var baseConfig = builder.Configuration.GetSection("Database").BindCtor<DatabaseConfiguration>();
+      return new OptionsWrapper<DatabaseConfiguration>(
+        new DatabaseConfiguration(
+          baseConfig.Host,
+          baseConfig.Port,
+          baseConfig.Username,
+          baseConfig.Password,
           this._databaseName,
-          baseConfig.Value.DbLogging
+          baseConfig.DbLogging
         )
       );
     });
-    base.RegisterDependencies(builder);
-  }
-
-  protected override void RegisterDataDependencies(WebApplicationBuilder builder) {
-    // Use TestDataContext to customize Database settings per-test-class
-    DataDependencyRegistration.RegisterDependencies<TestDataContext>(builder.Services);
   }
 }
