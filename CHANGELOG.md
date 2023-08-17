@@ -1,3 +1,114 @@
+## 0.3.1
+
+### Fixed issue with test database configuration not being applied everywhere.
+
+* [view commit 3ee039c](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/3ee039c4cfab2aae3eb7b399936282d862f62779)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Wed, 16 Aug 2023 21:51:31 -0500
+
+
+
+### Fixed build issue creating DbApiKeyRepository.
+
+* [view commit 66b3c2e](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/66b3c2ea77c5f28b6afa1fd7721685551404f217)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Wed, 16 Aug 2023 13:45:14 -0500
+
+
+
+### Update the LastUsage timestamp of ApiKeys without a transaction to avoid conflicts when multiple API requests are handled simultaneously.
+
+* [view commit cc5ac6b](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/cc5ac6b4f876307e74c7575ffb31fff171600e57)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Fri, 11 Aug 2023 14:44:27 -0500
+
+
+
+### Merge branch 'release-0.2.1' into 'main'
+
+* [view commit 3084d7c](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/3084d7c74a2aee6cbe8d2d00c9f1719f85c36fb8)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Wed, 16 Aug 2023 17:25:49 +0000
+
+```
+HOTFIX: Cache ApiKey->KeyId lookup so that performance is less horrible
+
+See merge request ado-repositories/oit/waynetech/sonar!204
+```
+
+### HOTFIX: further reduce CPU utilization validating new API keys for the first time, log cache misses.
+
+* [view commit 6fbe52f](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/6fbe52f62be272c8fd3e76442b887e690a550732)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Tue, 15 Aug 2023 23:39:34 -0500
+
+
+
+### Added RequestTracingMiddleware
+
+* [view commit 5ee6459](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/5ee6459dfd7981b22883f762e9d6eb71a874ea51)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Tue, 15 Aug 2023 23:36:30 -0500
+
+
+
+### HOTFIX: Cache ApiKey->KeyId lookup so that performance is less horrible.
+
+* [view commit b4c116e](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/b4c116e50c8a09386dcb55e4ba5cfc150459ac0d)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Tue, 15 Aug 2023 18:39:21 -0500
+
+
+
+### BATAPI-369 Removed Prometheus client code in favor of the PrometheusSDK nuget package
+
+* [view commit 1489049](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/14890496c24ebd0e299e9790276610e119d609a7)
+* Author (Committer): Dale O'Neill (Dale O'Neill)
+* Date: Mon, 14 Aug 2023 16:31:34 +0000
+
+```
+Closes BATAPI-369
+
+* Removed Prometheus client code in favor of the PrometheusSDK nuget package created by intern Ridge working with Blaise.The nuget package code is from the sonar Prometheus client code.
+```
+
+### BATAPI-363 User Permission Unique Constraints
+
+* [view commit 7406c1f](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/7406c1f118fe1058e6b6e7e7c188f330c440fb89)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Fri, 11 Aug 2023 16:48:39 +0000
+
+```
+* Adds unique partial indexes for user_permission table to ensure created user permissions are unique in each of our three scoping scenarios (globally scoped, environment scoped, tenant scoped)
+* Adds ResourceAlreadyExistsException type and exception handling to translate DB unique constraint violations into 409 HTTP response
+```
+
+### add offline_access scope to enable refresh token behavior
+
+* [view commit bc66fc4](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/bc66fc4bfe1676cc39b8b34b9c82d93180674622)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Wed, 9 Aug 2023 19:42:41 +0000
+
+```
+Closes BATAPI-348
+
+## Description:
+
+* add offline_access scope to enable refresh token behavior
+```
+
+### BATAPI-362 Remove duplicate roles listed in Create API Key dialog
+
+* [view commit 736e26c](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/736e26c832684ecc567a8f430de74f04de79587f)
+* Author (Committer): Dale O'Neill (Dale O'Neill)
+* Date: Wed, 9 Aug 2023 17:40:12 +0000
+
+```
+Closes BATAPI-362
+
+* Removed permissionsOptions from options property in Create API Keys dialog. Set the options property to {roles} which is a static list of sonar Roles.  This same options is used when adding user permissions.
+```
+
 ## 0.3.0
 
 ### BATAPI-311 Sonar Agent Helm Chart Pipeline
@@ -600,6 +711,8 @@ Closes BATAPI-305
 
 ```
 Cleans up the code that existed to support the conversion to migration support, but is no longer needed since all existing environments have been converted. Also adds support for targeting a specific database migration.
+```
+
 ## 0.2.0
 
 ### BATAPI-332 Fix migration init container failure
@@ -683,6 +796,8 @@ reports it's self-health-check status.
 When there are existing tenants in the sonar environment, merge the
 self healh check tenant status with the normal tenants in the response
 from the environments and tenants controllers.
+```
+
 ## 0.1.2
 
 ### update service overview to display aggregate status for each child service
