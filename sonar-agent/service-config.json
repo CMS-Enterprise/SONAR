@@ -80,6 +80,18 @@
                 "status": "Degraded",
                 "responseTime": "00:00:02",
                 "type": "HttpResponseTime"
+              },
+              {
+                "status": "Online",
+                "path": "/path1/path2",
+                "value": "Yes",
+                "type": "HttpBodyJson"
+              },
+              {
+                "status": "Degraded",
+                "path": "/path1/path",
+                "value": "Yes",
+                "type": "HttpBodyXml"
               }
             ]
           },

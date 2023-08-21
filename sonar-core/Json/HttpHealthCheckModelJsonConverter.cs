@@ -50,6 +50,21 @@ public class HttpHealthCheckConditionJsonConverter : JsonConverter<HttpHealthChe
                 $"The {nameof(ResponseTimeCondition.ResponseTime)} property is required.");
             }
             return JsonSerializer.Deserialize<ResponseTimeCondition>(ref originalReader, options);
+          case HttpHealthCheckConditionType.HttpBodyJson:
+            if (!element.TryGetProperty(nameof(HttpBodyHealthCheckCondition.Path), ignoreCase: true,
+              out var myJsonResponseElement)) {
+              throw new JsonException(
+                $"The {nameof(HttpBodyHealthCheckCondition.Path)} property is required.");
+            }
+            return JsonSerializer.Deserialize<HttpBodyHealthCheckCondition>(ref originalReader, options);
+          case HttpHealthCheckConditionType.HttpBodyXml:
+            if (!element.TryGetProperty(nameof(HttpBodyHealthCheckCondition.Path), ignoreCase: true,
+              out var myXmlResponseElement)) {
+              throw new JsonException(
+                $"The {nameof(HttpBodyHealthCheckCondition.Path)} property is required.");
+            }
+            return JsonSerializer.Deserialize<HttpBodyHealthCheckCondition>(ref originalReader, options);
+
           default:
             throw new JsonException($"Invalid HTTP Health Check Condition Type: {type}");
         }
@@ -70,6 +85,12 @@ public class HttpHealthCheckConditionJsonConverter : JsonConverter<HttpHealthChe
         break;
       case HttpHealthCheckConditionType.HttpResponseTime:
         JsonSerializer.Serialize(writer, (ResponseTimeCondition)value, options);
+        break;
+      case HttpHealthCheckConditionType.HttpBodyJson:
+        JsonSerializer.Serialize(writer, (HttpBodyHealthCheckCondition)value, options);
+        break;
+      case HttpHealthCheckConditionType.HttpBodyXml:
+        JsonSerializer.Serialize(writer, (HttpBodyHealthCheckCondition)value, options);
         break;
       default:
         throw new NotSupportedException(
