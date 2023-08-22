@@ -89,6 +89,10 @@ spec:
                 secretKeyRef:
                   name: sonar-agent-secrets
                   key: apiKey
+            {{- if .Values.apiConfig.apiKeyId }}
+            - name: ApiKeyId
+              value: {{ quote .Values.apiConfig.apiKeyId }}
+            {{- end }}
             - name: ENVIRONMENT
               value: k8s
             {{- if .Values.logLevel }}

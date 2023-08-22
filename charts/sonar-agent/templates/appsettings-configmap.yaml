@@ -8,6 +8,10 @@ data:
       "ApiConfig": {
         "Environment": {{ quote .Values.apiConfig.environment }},
         "BaseUrl": {{ quote .Values.apiConfig.baseUrl }}
+        "ApiKey": {{ quote .Values.apiConfig.apiKey }},
+        {{- if .Values.apiConfig.apiKeyId }}
+        "ApiKeyId": {{ quote .Values.apiConfig.apiKeyId }},
+        {{- end }}
       },
       "Prometheus": {
         {{- if .Values.prometheus.port }}
