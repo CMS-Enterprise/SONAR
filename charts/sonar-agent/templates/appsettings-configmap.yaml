@@ -7,10 +7,9 @@ data:
     {
       "ApiConfig": {
         "Environment": {{ quote .Values.apiConfig.environment }},
-        "BaseUrl": {{ quote .Values.apiConfig.baseUrl }}
-        "ApiKey": {{ quote .Values.apiConfig.apiKey }},
+        "BaseUrl": {{ quote .Values.apiConfig.baseUrl }},
         {{- if .Values.apiConfig.apiKeyId }}
-        "ApiKeyId": {{ quote .Values.apiConfig.apiKeyId }},
+        "ApiKeyId": {{ quote .Values.apiConfig.apiKeyId }}
         {{- end }}
       },
       "Prometheus": {

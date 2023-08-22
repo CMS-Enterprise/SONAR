@@ -42,6 +42,7 @@ apiConfig:
   tenant: example
   baseUrl: http://sonar.sonar.svc.cluster.local:8081
   apiKey: test+api+key+do+not+use+in+production+xxxxx=
+  apiKeyId: 00000000-0000-0000-0000-000000000000
   reportingInterval: 30
 
 prometheus:
