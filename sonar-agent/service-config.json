@@ -95,7 +95,8 @@
               }
             ]
           },
-          "type": "httpRequest"
+          "type": "httpRequest",
+          "smoothingTolerance": 2
         }
       ]
     }

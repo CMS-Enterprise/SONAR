@@ -36,7 +36,8 @@ public class LegacyControllerIntegrationTests : ApiControllerTestsBase {
       followRedirects: default,
       authorizationHeader: default,
       skipCertificateValidation: default
-    )
+    ),
+    null
   );
 
   public LegacyControllerIntegrationTests(

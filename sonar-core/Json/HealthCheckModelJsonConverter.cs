@@ -39,7 +39,7 @@ public class HealthCheckModelJsonConverter : JsonConverter<HealthCheckModel> {
         String? name = null;
         String? description = null;
         HealthCheckDefinition? definition = null;
-
+        Int16? smoothingTolerance = null;
         if (hasType &&
           element.TryGetProperty(nameof(HealthCheckModel.Definition), ignoreCase: true, out var definitionElement)) {
 
@@ -87,13 +87,27 @@ public class HealthCheckModelJsonConverter : JsonConverter<HealthCheckModel> {
           description = descriptionElement.GetString();
         }
 
+        if (element.TryGetProperty(nameof(HealthCheckModel.SmoothingTolerance), ignoreCase: true,
+          out var toleranceElement)) {
+          if (toleranceElement.IsNullOrUndefined()) {
+            smoothingTolerance = null;
+          } else if (!toleranceElement.TryGetInt16(out var toleranceVal)) {
+            throw new JsonException(
+              $"Unexpected JSON value {toleranceElement.ValueKind}. Was expecting a string for the {nameof(HealthCheckModel)}.{nameof(HealthCheckModel.SmoothingTolerance)} property."
+            );
+          } else {
+            smoothingTolerance = toleranceVal;
+          }
+        }
+
         // Intentionally disregard nullability constraints in the same way that JsonSerializer does.
         return (HealthCheckModel)Activator.CreateInstance(
           typeof(HealthCheckModel),
           name,
           description,
           type,
-          definition
+          definition,
+          smoothingTolerance
         )!;
       case JsonValueKind.Array:
       case JsonValueKind.String:
@@ -145,6 +159,7 @@ public class HealthCheckModelJsonConverter : JsonConverter<HealthCheckModel> {
     writer.WriteString(nameof(HealthCheckModel.Name).ToCamelCase(), value.Name);
     writer.WriteString(nameof(HealthCheckModel.Description).ToCamelCase(), value.Description);
     writer.WriteString(nameof(HealthCheckModel.Type).ToCamelCase(), value.Type.ToString());
+    writer.WriteNumber(nameof(HealthCheckModel.SmoothingTolerance).ToCamelCase(), value.SmoothingTolerance ?? 0);
 
     writer.WritePropertyName(nameof(HealthCheckModel.Definition).ToCamelCase());
     switch (value.Type) {

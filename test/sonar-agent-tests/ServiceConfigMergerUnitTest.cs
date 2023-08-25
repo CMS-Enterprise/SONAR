@@ -27,7 +27,8 @@ public class ServiceConfigMergerUnitTest {
       ImmutableList.Create(
         new MetricHealthCondition(HealthOperator.Equal, threshold: 9, HealthStatus.Offline)
       )
-    )
+    ),
+    null
   );
 
   private static readonly HealthCheckModel ExistingHealthCheckTwo = new(
@@ -39,7 +40,8 @@ public class ServiceConfigMergerUnitTest {
       new HttpHealthCheckCondition[] {
         new StatusCodeCondition(new UInt16[] { 200 }, HealthStatus.Online)
       }
-    )
+    ),
+    null
   );
 
   private static readonly ServiceConfiguration ExistingService = new(

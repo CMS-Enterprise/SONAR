@@ -97,7 +97,8 @@ public class HealthCheckModelLokiJsonConverterTest {
             TestLokiHealthCheckStatus
           )
         )
-      )
+      ),
+      null
     );
 
     var serializedModel = JsonSerializer.Serialize(original, DefaultOptions);

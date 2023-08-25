@@ -32,7 +32,8 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
         TimeSpan.FromMinutes(1),
         expression: "test_metric",
         ImmutableList.Create(
-          new MetricHealthCondition(HealthOperator.GreaterThan, threshold: 42.0m, HealthStatus.Offline)))
+          new MetricHealthCondition(HealthOperator.GreaterThan, threshold: 42.0m, HealthStatus.Offline))),
+      null
     );
 
   private static readonly ServiceHierarchyConfiguration TestRootOnlyConfiguration = new(

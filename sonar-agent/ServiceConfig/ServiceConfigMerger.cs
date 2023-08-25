@@ -107,7 +107,8 @@ public static class ServiceConfigMerger {
       prev.Name,
       next.Description ?? prev.Description,
       mergedType,
-      MergeDefinitions(prev, mergedType, prev.Definition, next.Definition)
+      MergeDefinitions(prev, mergedType, prev.Definition, next.Definition),
+      next.SmoothingTolerance ?? prev.SmoothingTolerance
     );
   }
 

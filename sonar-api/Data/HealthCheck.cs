@@ -19,6 +19,7 @@ public class HealthCheck {
   public String? Description { get; init; }
   public HealthCheckType Type { get; init; }
   public String Definition { get; init; }
+  public Int16? SmoothingTolerance { get; init; }
 
   public HealthCheck(
     Guid id,
@@ -26,7 +27,8 @@ public class HealthCheck {
     String name,
     String? description,
     HealthCheckType type,
-    String definition) {
+    String definition,
+    Int16? smoothingTolerance) {
 
     this.Id = id;
     this.ServiceId = serviceId;
@@ -34,6 +36,7 @@ public class HealthCheck {
     this.Description = description;
     this.Type = type;
     this.Definition = definition;
+    this.SmoothingTolerance = smoothingTolerance;
   }
 
   public HealthCheckDefinition DeserializeDefinition() {
@@ -78,6 +81,7 @@ public class HealthCheck {
     String name,
     String description,
     HealthCheckType type,
-    String definition) =>
-    new HealthCheck(Guid.Empty, serviceId, name, description, type, definition);
+    String definition,
+    Int16 smoothingTolerance) =>
+    new HealthCheck(Guid.Empty, serviceId, name, description, type, definition, smoothingTolerance);
 }

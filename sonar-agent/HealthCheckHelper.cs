@@ -52,6 +52,11 @@ public class HealthCheckHelper {
     sonarHttpClient.Timeout = TimeSpan.FromSeconds(this._agentConfig.Value.AgentInterval);
     var client = new SonarClient(this._apiConfig, sonarHttpClient);
 
+    // stateful DS for data smoothing
+    var dataSmoothingState = new Dictionary<
+      (String Service, String HealthCheck),
+      (HealthStatus CachedStatus, HealthStatus OutlierStatus, Int32? Frequency)>();
+
     while (!token.IsCancellationRequested) {
       // Configs
       var env = this._apiConfig.Value.Environment;
@@ -91,7 +96,12 @@ public class HealthCheckHelper {
         );
       }
 
-      var pendingHealthChecks = new List<(String Service, String HealthCheck, Task<HealthStatus> Status)>();
+      var pendingHealthChecks = new List<(
+        String Service,
+        String HealthCheck,
+        Task<HealthStatus> Status,
+        Int16? smoothingTolerance)>();
+
       // Iterate over each service
       if (tenantResult != null) {
         this._logger.LogDebug("Service Count: {ServiceCount}", tenantResult.Services.Count);
@@ -143,7 +153,7 @@ public class HealthCheckHelper {
                 throw new NotSupportedException("Healthcheck Type is not supported.");
             }
 
-            pendingHealthChecks.Add((service.Name, healthCheck.Name, futureStatus));
+            pendingHealthChecks.Add((service.Name, healthCheck.Name, futureStatus, healthCheck.SmoothingTolerance));
           }
         }
       }
@@ -152,27 +162,43 @@ public class HealthCheckHelper {
       // service one at a time to the SONAR API. This could be improved upon by waiting for each
       // service's health checks to complete in parallel and reporting service status as results
       // become available.
-      var healthCheckResults = new List<(String Service, String HealthCheck, HealthStatus Status)>();
-      foreach (var (service, check, futureStatus) in pendingHealthChecks) {
+      var healthCheckResults = new List<(String Service, String HealthCheck, HealthStatus Status, Int16? smoothingTolerance)>();
+      foreach (var (service, check, futureStatus, smoothingTolerance) in pendingHealthChecks) {
         healthCheckResults.Add(
-          (service, check, await futureStatus)
+          (service, check, await futureStatus, smoothingTolerance)
         );
       }
 
+      // Keep track of current service health checks for pruning
+      var currentServiceHealthChecks = new List<(String Service, String HealthCheck)>();
       foreach (var group in healthCheckResults.GroupBy(r => r.Service)) {
         // Initialize aggStatus to null
         HealthStatus? aggStatus = null;
         var checkResults = new Dictionary<String, HealthStatus>();
-        foreach (var (_, check, status) in group) {
+        foreach (var (_, check, status, smoothingTolerance) in group) {
           // If currCheck is Unknown or currCheck is worse than aggStatus (as long as aggStatus is not Unknown)
           // set aggStatus to currCheck
-          if ((status == HealthStatus.Unknown) ||
-            ((aggStatus != HealthStatus.Unknown) && (status > (aggStatus ?? 0)))) {
-            aggStatus = status;
+          var currentStatus = status;
+          // If configuration specifies that data smoothing is enabled, get smoothed status
+          if (smoothingTolerance != null && smoothingTolerance > 0) {
+            currentStatus = PerformDataSmoothing(
+              dataSmoothingState,
+              group.Key,
+              check,
+              status,
+              (Int16)smoothingTolerance);
           }
 
+          if ((currentStatus == HealthStatus.Unknown) ||
+            ((aggStatus != HealthStatus.Unknown) && (currentStatus > (aggStatus ?? 0)))) {
+            aggStatus = currentStatus;
+          }
+
+          // Add service/check to dictionary
+          currentServiceHealthChecks.Add((group.Key, check));
+
           // Set checkResults
-          checkResults.Add(check, status);
+          checkResults.Add(check, currentStatus);
         }
 
         // Send result data to SONAR API
@@ -188,6 +214,11 @@ public class HealthCheckHelper {
           );
         }
       }
+
+      // Smoothing state cleanup, remove stale service/healthcheck entries
+      dataSmoothingState.Keys.Except(currentServiceHealthChecks).ToList().ForEach(k => {
+        dataSmoothingState.Remove(k);
+      });
 
       var elapsed = DateTime.UtcNow.Subtract(startTime);
       if (elapsed > interval) {
@@ -241,5 +272,45 @@ public class HealthCheckHelper {
         this._logger.LogError(message: "HTTP request timed out attempting to record status data for {Environment} {Tenant} in SONAR API: {ExceptionMsg}", env, tenant, ex.Message);
       }
     }
+  }
+
+  private HealthStatus PerformDataSmoothing(
+    Dictionary<
+      (String Service, String HealthCheck),
+      (HealthStatus CachedStatus, HealthStatus OutlierStatus, Int32? Frequency)
+    > smoothingRecord,
+    String service,
+    String check,
+    HealthStatus currStatus,
+    Int16 tolerance) {
+
+    var key = (service, check);
+
+    // no entry exists for Service/HealthCheck tuple, create new entry
+    if (!smoothingRecord.TryGetValue(key, out var entry)) {
+      smoothingRecord.Add(key, (currStatus, currStatus, null));
+      return currStatus;
+    }
+
+    // current status is same as previous, return current status
+    if (entry.CachedStatus == currStatus) {
+      return currStatus;
+    }
+
+    // current status is different than cached status, determine if smoothing is needed
+    if (entry.Frequency != null && (entry.Frequency + 1) > tolerance) {
+      // threshold exceeded, remove and return current status
+      smoothingRecord.Remove(key);
+      return currStatus;
+    }
+
+    // threshold not met, update entry and perform smoothing, return current status
+    smoothingRecord[key] = (
+      entry.CachedStatus,
+      currStatus,
+      entry.Frequency == null ?
+        1 :
+        entry.Frequency + 1);
+    return entry.CachedStatus;
   }
 }

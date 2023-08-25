@@ -92,7 +92,8 @@ public class HealthCheckModelJsonConverterTest {
             TestPrometheusHealthCheckStatus
           )
         )
-      )
+      ),
+      null
     );
 
     var serializedModel = JsonSerializer.Serialize(original, DefaultOptions);

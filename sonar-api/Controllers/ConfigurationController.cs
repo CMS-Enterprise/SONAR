@@ -221,7 +221,8 @@ public class ConfigurationController : ControllerBase {
               hc.Name,
               hc.Description ?? String.Empty,
               hc.Type,
-              HealthCheck.SerializeDefinition(hc.Type, hc.Definition)
+              HealthCheck.SerializeDefinition(hc.Type, hc.Definition),
+              hc.SmoothingTolerance ?? 0
             )) :
             Enumerable.Empty<HealthCheck>()
         ),
@@ -506,7 +507,8 @@ public class ConfigurationController : ControllerBase {
           healthCheck.newHealthCheck.Name,
           healthCheck.newHealthCheck.Description ?? String.Empty,
           healthCheck.newHealthCheck.Type,
-          HealthCheck.SerializeDefinition(healthCheck.newHealthCheck.Type, healthCheck.newHealthCheck.Definition)
+          HealthCheck.SerializeDefinition(healthCheck.newHealthCheck.Type, healthCheck.newHealthCheck.Definition),
+          healthCheck.newHealthCheck.SmoothingTolerance ?? 0
         )),
         cancellationToken
       );
@@ -520,7 +522,8 @@ public class ConfigurationController : ControllerBase {
             hc.updatedHealthCheck.Name,
             hc.updatedHealthCheck.Description,
             hc.updatedHealthCheck.Type,
-            HealthCheck.SerializeDefinition(hc.updatedHealthCheck.Type, hc.updatedHealthCheck.Definition)
+            HealthCheck.SerializeDefinition(hc.updatedHealthCheck.Type, hc.updatedHealthCheck.Definition),
+            hc.updatedHealthCheck.SmoothingTolerance
           );
         })
       );
@@ -596,8 +599,9 @@ public class ConfigurationController : ControllerBase {
               check.Name,
               check.Description,
               check.Type,
-              check.DeserializeDefinition()
-              ))
+              check.DeserializeDefinition(),
+              check.SmoothingTolerance
+            ))
             .NullIfEmpty()
             ?.ToImmutableList(),
           serviceRelationshipsByParent[svc.Id]

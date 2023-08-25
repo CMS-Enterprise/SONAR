@@ -151,7 +151,8 @@ public class ServiceDataHelper {
       HealthCheckType.Internal,
       new InternalHealthCheckDefinition(
         description: "Checks for an Invalid Operation Exception",
-        expression: null)
+        expression: null),
+      null
       );
 
     var postgresDbTest = new HealthCheckModel(
@@ -160,7 +161,8 @@ public class ServiceDataHelper {
       HealthCheckType.Internal,
       new InternalHealthCheckDefinition(
         description: "Checks for an Postgresql Exception",
-        expression: null)
+        expression: null),
+      null
       );
 
     var postgresqlServiceConfig = new ServiceConfiguration(
@@ -180,7 +182,8 @@ public class ServiceDataHelper {
       HealthCheckType.Internal,
       new InternalHealthCheckDefinition(
         description: "Prometheus Exception upon querying",
-        expression: null)
+        expression: null),
+      null
     );
 
     var prometheusReadiness = new HealthCheckModel(
@@ -189,7 +192,8 @@ public class ServiceDataHelper {
       HealthCheckType.Internal,
       new InternalHealthCheckDefinition(
         description: "Prometheus Readiness Endpoint and checks for Http Request Exception",
-        expression: null)
+        expression: null),
+      null
     );
 
     var prometheusServiceConfig =

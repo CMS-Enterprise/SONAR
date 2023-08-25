@@ -56,7 +56,8 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
         TimeSpan.FromMinutes(1),
         expression: "test_metric",
         ImmutableList.Create(
-          new MetricHealthCondition(HealthOperator.GreaterThan, threshold: 42.0m, HealthStatus.Offline)))
+          new MetricHealthCondition(HealthOperator.GreaterThan, threshold: 42.0m, HealthStatus.Offline))),
+      null
     );
 
   private static readonly HealthCheckModel TestHttpHealthCheck =
@@ -70,7 +71,8 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
         followRedirects: false,
         authorizationHeader: "Authorization Header Value",
         skipCertificateValidation: null
-      )
+      ),
+      null
     );
 
   private static readonly ServiceHierarchyConfiguration TestRootChildConfiguration = new(

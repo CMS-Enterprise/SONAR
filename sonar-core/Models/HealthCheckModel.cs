@@ -13,12 +13,14 @@ public record HealthCheckModel {
     String name,
     String? description,
     HealthCheckType type,
-    HealthCheckDefinition definition) {
+    HealthCheckDefinition definition,
+    Int16? smoothingTolerance) {
 
     this.Name = name;
     this.Description = description;
     this.Type = type;
     this.Definition = definition;
+    this.SmoothingTolerance = smoothingTolerance;
   }
 
   [StringLength(100)]
@@ -33,4 +35,6 @@ public record HealthCheckModel {
 
   [Required]
   public HealthCheckDefinition Definition { get; init; }
+
+  public Int16? SmoothingTolerance { get; init; }
 }
