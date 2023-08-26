@@ -17,7 +17,9 @@ namespace Cms.BatCave.Sonar.Data;
 
 public class DbApiKeyRepository : IApiKeyRepository {
 
-  private static readonly ConcurrentDictionary<String, Guid?> KeyIdLookupCache = new();
+  private static readonly ConcurrentDictionary<String, Task<Guid?>> KeyIdLookupCache = new();
+  // Limit the number of concurrent ApiKey validations that can occur in the hopes that the ones that are running don't time out.
+  private static readonly SemaphoreSlim ApiKeyValidationLimit = new(initialCount: 4);
 
   private readonly DataContext _dbContext;
   private readonly DbSet<ApiKey> _apiKeysTable;
@@ -245,35 +247,34 @@ public class DbApiKeyRepository : IApiKeyRepository {
   }
 
   public async Task<ApiKey?> FindAsync(String encKey, CancellationToken cancellationToken) {
-
     using var hashAlg = SHA256.Create();
     var keyHash = Convert.ToBase64String(hashAlg.ComputeHash(Encoding.UTF8.GetBytes(encKey)));
 
-    if (KeyIdLookupCache.TryGetValue(keyHash, out var keyId)) {
-      if (keyId != null) {
-        return await this.FindAsync(keyId.Value, cancellationToken);
-      } else {
-        return null;
-      }
-    } else {
-      this._logger.LogDebug("Cache miss validating apiKey with hash code: {HashCode}", keyHash.GetHashCode());
-      var keys = await this._apiKeysTable.ToListAsync(cancellationToken);
+    var keyId =
+      await KeyIdLookupCache.GetOrAdd(keyHash, async _ => {
+        this._logger.LogDebug("Cache miss validating apiKey with hash code: {HashCode}", keyHash.GetHashCode());
+        await ApiKeyValidationLimit.WaitAsync(cancellationToken);
+        try {
+          var keys = await this._apiKeysTable.ToListAsync(cancellationToken);
 
-      ApiKey? keyFound = null;
-      foreach (var apiKey in keys) {
-        if (KeyHashHelper.ValidatePassword(encKey, apiKey.Key)) {
-          keyFound = apiKey;
-          break;
+          foreach (var apiKey in keys) {
+            if (KeyHashHelper.ValidatePassword(encKey, apiKey.Key)) {
+              return apiKey.Id;
+            }
+          }
+
+          return null;
+        } finally {
+          ApiKeyValidationLimit.Release();
         }
-      }
+      });
 
-      // Cache the fact that we found they key id
-      KeyIdLookupCache.TryAdd(keyHash, keyFound?.Id);
-
-      return keyFound;
+    if (keyId != null) {
+      return await this.FindAsync(keyId.Value, cancellationToken);
+    } else {
+      return null;
     }
   }
-
 
   private static ApiKeyConfiguration ToApiKeyConfig(
     Environment? environment,
