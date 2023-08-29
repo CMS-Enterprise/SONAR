@@ -42,6 +42,8 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
   private const String TestServiceNameDuplicated =
     "The specified list of services contained multiple services with the same name.";
 
+  private const String TestVersionCheckPath = "test/path";
+
   private static readonly JsonSerializerOptions SerializerOptions = new JsonSerializerOptions {
     Converters = { new JsonStringEnumConverter(), new ArrayTupleConverterFactory() },
     PropertyNameCaseInsensitive = true
@@ -75,6 +77,13 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       null
     );
 
+  private static readonly VersionCheckModel TestVersionCheck =
+    new(
+      VersionCheckType.FluxKustomization,
+      new FluxKustomizationVersionCheckDefinition(
+        TestVersionCheckPath)
+    );
+
   private static readonly ServiceHierarchyConfiguration TestRootChildConfiguration = new(
     ImmutableList.Create(
       new ServiceConfiguration(
@@ -83,6 +92,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
         description: null,
         url: null,
         ImmutableList.Create(TestHealthCheck),
+        ImmutableList.Create(TestVersionCheck),
         ImmutableHashSet<String>.Empty.Add(TestChildServiceName)),
       new ServiceConfiguration(
         TestChildServiceName,
@@ -153,6 +163,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
         description: null,
         url: null,
         ImmutableList.Create(TestHealthCheck),
+        ImmutableList.Create(TestVersionCheck),
         ImmutableHashSet<String>.Empty.Add(TestChildServiceName))
     ),
     ImmutableHashSet<String>.Empty.Add(TestRootServiceName)
@@ -166,6 +177,7 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
         description: null,
         url: null,
         ImmutableList.Create(TestHealthCheck),
+        ImmutableList.Create(TestVersionCheck),
         ImmutableHashSet<String>.Empty.Add(TestChildServiceName)),
       new ServiceConfiguration(
         TestChildServiceName,
@@ -208,6 +220,20 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
         description: null,
         url: null,
         ImmutableList.Create(TestHttpHealthCheck),
+        ImmutableList.Create(TestVersionCheck),
+        children: null)
+    ),
+    ImmutableHashSet<String>.Empty.Add(TestHttpServiceName)
+  );
+
+  private static readonly ServiceHierarchyConfiguration TestConfigurationWithoutVersionChecks = new(
+    ImmutableList.Create(
+      new ServiceConfiguration(
+        TestHttpServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        healthChecks: ImmutableList.Create(TestHttpHealthCheck),
         children: null)
     ),
     ImmutableHashSet<String>.Empty.Add(TestHttpServiceName)
@@ -891,6 +917,52 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       actual: httpDefinition.AuthorizationHeader
     );
   }
+
+  #region Version Check Configuration Tests
+
+  // Version Check Scenarios
+  //    Successfully create service configuration with version check
+  //    Create service configuration with no version check, proving backward compatibility
+
+  [Fact]
+  public async Task CreateVersionCheckConfiguration_Success() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestHttpConditionAuthConfiguration);
+
+    var getConfigResponse = await
+      this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    var body = await getConfigResponse.Content.ReadFromJsonAsync<ServiceHierarchyConfiguration>(
+      SerializerOptions);
+
+    Assert.NotNull(body);
+    var services = Assert.Single(body.Services);
+    var versionCheck = Assert.Single(services.VersionChecks);
+    var versionCheckDefinition = (FluxKustomizationVersionCheckDefinition)Assert.Single(new[] { versionCheck.Definition });
+    Assert.Equal(TestVersionCheckPath, versionCheckDefinition.Path);
+  }
+
+  [Fact]
+  public async Task CreateConfigurationWithoutVersionChecks_Success() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestConfigurationWithoutVersionChecks);
+
+    var getConfigResponse = await
+      this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    var body = await getConfigResponse.Content.ReadFromJsonAsync<ServiceHierarchyConfiguration>(
+      SerializerOptions);
+
+    Assert.NotNull(body);
+    var services = Assert.Single(body.Services);
+    Assert.Null(services.VersionChecks);
+  }
+
+  #endregion
 
   #region Authentication and Authorization Tests
 

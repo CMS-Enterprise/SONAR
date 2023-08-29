@@ -78,6 +78,7 @@ public static class ServiceConfigMerger {
       nextService.Description ?? prevService.Description,
       nextService.Url ?? prevService.Url,
       MergeHealthCheckLists(prevService.HealthChecks, nextService.HealthChecks),
+      MergeVersionCheckLists(prevService.VersionChecks, nextService.VersionChecks),
       NullableSetUnion(prevService.Children, nextService.Children)
     );
   }
@@ -192,6 +193,69 @@ public static class ServiceConfigMerger {
             nameof(mergedType),
             mergedType,
             $"Unexpected {nameof(HealthCheckType)}: {(Int32)mergedType}"
+          );
+      }
+    }
+  }
+
+  private static IImmutableList<VersionCheckModel>? MergeVersionCheckLists(
+    IImmutableList<VersionCheckModel>? prevVersionChecks,
+    IImmutableList<VersionCheckModel>? nextVersionChecks) {
+
+    if (prevVersionChecks == null) {
+      return nextVersionChecks;
+    } else if (nextVersionChecks == null) {
+      return prevVersionChecks;
+    } else {
+      return MergeBy(
+        prevVersionChecks,
+        nextVersionChecks,
+        match: (hc1, hc2) =>
+          String.Equals(hc1.VersionCheckType.ToString(), hc2.VersionCheckType.ToString(), StringComparison.OrdinalIgnoreCase),
+        MergeVersionChecks
+      );
+    }
+  }
+
+  private static VersionCheckModel MergeVersionChecks(VersionCheckModel prev, VersionCheckModel next) {
+    var mergedType = next.VersionCheckType == default ? prev.VersionCheckType : next.VersionCheckType;
+    return new VersionCheckModel(
+      prev.VersionCheckType,
+      MergeVersionCheckDefinitions(prev, mergedType, prev.Definition, next.Definition));
+  }
+
+  private static VersionCheckDefinition MergeVersionCheckDefinitions(
+    VersionCheckModel parent,
+    VersionCheckType mergedType,
+    VersionCheckDefinition prevDefinition,
+    VersionCheckDefinition? nextDefinition) {
+
+    if (nextDefinition == null) {
+      // TODO: add incompatible merge logic here when there is another VersionCheckType
+      return prevDefinition;
+    } else {
+      switch (mergedType) {
+        case VersionCheckType.FluxKustomization:
+          if (nextDefinition is FluxKustomizationVersionCheckDefinition nextFluxVersionCheckDefinition) {
+            if (prevDefinition is FluxKustomizationVersionCheckDefinition prevFluxVersionCheckDefinition) {
+              return new FluxKustomizationVersionCheckDefinition(
+                nextFluxVersionCheckDefinition.Path ?? prevFluxVersionCheckDefinition.Path);
+            } else {
+              return nextDefinition;
+            }
+          } else {
+            // This should not happen because the deserializer cannot deserialize a
+            // VersionCheckDefinition that isn't compatible with the specified VersionCheckType.
+            throw new InvalidOperationException(
+              "The specified version check definition is not compatible with the expected version check type."
+            );
+          }
+
+        default:
+          throw new ArgumentOutOfRangeException(
+            nameof(mergedType),
+            mergedType,
+            $"Unexpected {nameof(VersionCheckType)}: {(Int32)mergedType}"
           );
       }
     }

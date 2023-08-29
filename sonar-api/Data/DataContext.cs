@@ -82,6 +82,12 @@ public class DataContext : DbContext {
           .HasForeignKey(hc => hc.ServiceId)
           .OnDelete(DeleteBehavior.Cascade);
       })
+      .Entity<VersionCheck>(entity => {
+        entity.HasOne<Service>()
+          .WithMany()
+          .HasForeignKey(vc => vc.ServiceId)
+          .OnDelete(DeleteBehavior.Cascade);
+      })
       .Entity<ApiKey>(entity => {
         entity.HasOne<Tenant>()
           .WithMany()

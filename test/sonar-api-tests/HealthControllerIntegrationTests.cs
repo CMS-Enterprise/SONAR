@@ -36,6 +36,13 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
       null
     );
 
+  private static readonly VersionCheckModel TestVersionCheck =
+    new(
+      VersionCheckType.FluxKustomization,
+      new FluxKustomizationVersionCheckDefinition(
+        "test/path")
+    );
+
   private static readonly ServiceHierarchyConfiguration TestRootOnlyConfiguration = new(
     ImmutableList.Create(
       new ServiceConfiguration(
@@ -57,6 +64,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
         description: null,
         url: null,
         ImmutableList.Create(HealthControllerIntegrationTests.TestHealthCheck),
+        ImmutableList.Create(TestVersionCheck),
         ImmutableHashSet<String>.Empty.Add(HealthControllerIntegrationTests.TestChildServiceName)),
       new ServiceConfiguration(
         HealthControllerIntegrationTests.TestChildServiceName,

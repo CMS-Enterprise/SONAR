@@ -35,6 +35,7 @@ public class ConfigurationController : ControllerBase {
   private readonly DbSet<Service> _servicesTable;
   private readonly DbSet<ServiceRelationship> _relationshipsTable;
   private readonly DbSet<HealthCheck> _healthsTable;
+  private readonly DbSet<VersionCheck> _versionChecksTable;
   private readonly ServiceDataHelper _serviceDataHelper;
   private readonly ApiKeyDataHelper _apiKeyDataHelper;
   private readonly TenantDataHelper _tenantDataHelper;
@@ -47,6 +48,7 @@ public class ConfigurationController : ControllerBase {
     DbSet<Service> servicesTable,
     DbSet<ServiceRelationship> relationshipsTable,
     DbSet<HealthCheck> healthsTable,
+    DbSet<VersionCheck> versionChecksTable,
     ServiceDataHelper serviceDataHelper,
     ApiKeyDataHelper apiKeyDataHelper,
     TenantDataHelper tenantDataHelper,
@@ -58,6 +60,7 @@ public class ConfigurationController : ControllerBase {
     this._servicesTable = servicesTable;
     this._relationshipsTable = relationshipsTable;
     this._healthsTable = healthsTable;
+    this._versionChecksTable = versionChecksTable;
     this._serviceDataHelper = serviceDataHelper;
     this._apiKeyDataHelper = apiKeyDataHelper;
     this._tenantDataHelper = tenantDataHelper;
@@ -107,7 +110,15 @@ public class ConfigurationController : ControllerBase {
       (await this._serviceDataHelper.FetchExistingHealthChecks(serviceMap.Keys, cancellationToken))
       .ToLookup(hc => hc.ServiceId);
 
-    var serviceHierarchy = CreateServiceHierarchy(serviceMap, healthCheckByService, serviceRelationshipsByParent);
+    var versionCheckByService =
+      (await this._serviceDataHelper.FetchExistingVersionChecks(serviceMap.Keys, cancellationToken))
+      .ToLookup(vc => vc.ServiceId);
+
+    var serviceHierarchy = CreateServiceHierarchy(
+      serviceMap,
+      healthCheckByService,
+      versionCheckByService,
+      serviceRelationshipsByParent);
 
     if (!isAuthorized) {
       serviceHierarchy = ServiceDataHelper.Redact(serviceHierarchy);
@@ -229,6 +240,19 @@ public class ConfigurationController : ControllerBase {
         cancellationToken
       );
 
+      var createdVersionChecks = await this._versionChecksTable.AddAllAsync(
+        hierarchy.Services.SelectMany(svc =>
+          svc.VersionChecks != null ?
+            svc.VersionChecks.Select(vc => VersionCheck.New(
+              servicesByName[svc.Name].Id,
+              vc.VersionCheckType,
+              VersionCheck.SerializeDefinition(vc.VersionCheckType, vc.Definition)
+            )) :
+            Enumerable.Empty<VersionCheck>()
+        ),
+        cancellationToken
+      );
+
       // Create the service_relationships based on children lists
       var createdRelationships = await this._relationshipsTable.AddAllAsync(
         hierarchy.Services.SelectMany(svc =>
@@ -249,6 +273,7 @@ public class ConfigurationController : ControllerBase {
         CreateServiceHierarchy(
           servicesByName.Values.ToImmutableDictionary(svc => svc.Id),
           createdHealthChecks.ToLookup(hc => hc.ServiceId),
+          createdVersionChecks.ToLookup(vc => vc.ServiceId),
           createdRelationships.ToLookup(rel => rel.ParentServiceId)
         )
       );
@@ -538,12 +563,15 @@ public class ConfigurationController : ControllerBase {
         await this._serviceDataHelper.FetchExistingConfiguration(environment, tenant, cancellationToken);
       var updatedHealthChecks =
         await this._serviceDataHelper.FetchExistingHealthChecks(updatedServiceMap.Keys, cancellationToken);
+      var updatedVersionChecks =
+        await this._serviceDataHelper.FetchExistingVersionChecks(updatedServiceMap.Keys, cancellationToken);
       var updatedRelationships =
         await this._serviceDataHelper.FetchExistingRelationships(updatedServiceMap.Keys, cancellationToken);
 
       response = this.Ok(CreateServiceHierarchy(
         updatedServiceMap,
         updatedHealthChecks.ToLookup(hc => hc.ServiceId),
+        updatedVersionChecks.ToLookup(vc => vc.ServiceId),
         updatedRelationships.ToLookup(rel => rel.ParentServiceId)
       ));
 
@@ -586,6 +614,7 @@ public class ConfigurationController : ControllerBase {
   private static ServiceHierarchyConfiguration CreateServiceHierarchy(
     IImmutableDictionary<Guid, Service> serviceMap,
     ILookup<Guid, HealthCheck> healthCheckByService,
+    ILookup<Guid, VersionCheck> versionCheckByService,
     ILookup<Guid, ServiceRelationship> serviceRelationshipsByParent) {
     return new ServiceHierarchyConfiguration(
       serviceMap.Values
@@ -604,7 +633,14 @@ public class ConfigurationController : ControllerBase {
             ))
             .NullIfEmpty()
             ?.ToImmutableList(),
-          serviceRelationshipsByParent[svc.Id]
+          versionCheckByService[svc.Id]
+            .Select(versionCheck => new VersionCheckModel(
+              versionCheck.VersionCheckType,
+              versionCheck.DeserializeDefinition()
+              ))
+            .NullIfEmpty()
+            ?.ToImmutableList(),
+    serviceRelationshipsByParent[svc.Id]
             .Select(id => serviceMap[id.ServiceId].Name)
             .NullIfEmpty()
             ?.ToImmutableHashSet()

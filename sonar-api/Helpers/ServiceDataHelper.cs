@@ -22,6 +22,7 @@ public class ServiceDataHelper {
   private readonly DbSet<Service> _servicesTable;
   private readonly DbSet<ServiceRelationship> _relationshipsTable;
   private readonly DbSet<HealthCheck> _healthChecksTable;
+  private readonly DbSet<VersionCheck> _versionChecksTable;
   private readonly Uri _prometheusUrl;
   private readonly IOptions<DatabaseConfiguration> _dbConfig;
 
@@ -31,6 +32,7 @@ public class ServiceDataHelper {
     DbSet<Service> servicesTable,
     DbSet<ServiceRelationship> relationshipsTable,
     DbSet<HealthCheck> healthChecksTable,
+    DbSet<VersionCheck> versionChecksTable,
     IOptions<PrometheusConfiguration> prometheusConfig,
     IOptions<DatabaseConfiguration> dbConfig) {
 
@@ -39,6 +41,7 @@ public class ServiceDataHelper {
     this._servicesTable = servicesTable;
     this._relationshipsTable = relationshipsTable;
     this._healthChecksTable = healthChecksTable;
+    this._versionChecksTable = versionChecksTable;
     this._prometheusUrl = new Uri(
       $"{prometheusConfig.Value.Protocol}://{prometheusConfig.Value.Host}:{prometheusConfig.Value.Port}/"
     );
@@ -140,6 +143,16 @@ public class ServiceDataHelper {
     return
       await this._healthChecksTable
         .Where(hc => serviceIds.Contains(hc.ServiceId))
+        .ToListAsync(cancellationToken);
+  }
+
+  public async Task<IList<VersionCheck>> FetchExistingVersionChecks(
+    IEnumerable<Guid> serviceIds,
+    CancellationToken cancellationToken) {
+
+    return
+      await this._versionChecksTable
+        .Where(vc => serviceIds.Contains(vc.ServiceId))
         .ToListAsync(cancellationToken);
   }
 

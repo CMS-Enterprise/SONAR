@@ -12,6 +12,7 @@ public record ServiceConfiguration {
     String? description = null,
     Uri? url = null,
     IImmutableList<HealthCheckModel>? healthChecks = null,
+    IImmutableList<VersionCheckModel>? versionChecks = null,
     IImmutableSet<String>? children = null) {
 
     this.Name = name;
@@ -19,6 +20,7 @@ public record ServiceConfiguration {
     this.Description = description;
     this.Url = url;
     this.HealthChecks = healthChecks;
+    this.VersionChecks = versionChecks;
     this.Children = children;
   }
 
@@ -35,6 +37,8 @@ public record ServiceConfiguration {
   public Uri? Url { get; init; }
 
   public IImmutableList<HealthCheckModel>? HealthChecks { get; init; }
+
+  public IImmutableList<VersionCheckModel>? VersionChecks { get; init; }
 
   public IImmutableSet<String>? Children { get; init; }
 }

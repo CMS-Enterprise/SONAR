@@ -54,6 +54,14 @@
           },
           "type": "lokiMetric"
         }
+      ],
+      "versionChecks": [
+        {
+          "versionCheckType": "FluxKustomization",
+          "definition": {
+            "path": "/test/path"
+          }
+        }
       ]
     },
     {
