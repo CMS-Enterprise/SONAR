@@ -46,6 +46,10 @@ const HealthStatusDrawer: React.FC<{
             <HealthStatusBadge theme={theme} status={healthCheckStatus} />
           </div>
 
+          <div>
+            <p><b>Description: </b>{healthCheck.description}</p>
+          </div>
+
           <h4 css={getDrawerSectionHeaderStyle}>Health Conditions&nbsp;-&nbsp;{healthCheck.type}</h4>
           <HealthMetricThresholds service={serviceConfiguration} healthCheck={healthCheck} healthCheckStatus={healthCheckStatus} />
 

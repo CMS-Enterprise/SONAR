@@ -47,8 +47,7 @@ const HealthMetricThresholds: React.FC<{
       case HealthCheckType.Internal:
         return (
           <div>
-            <b>Description</b>: <span css={DynamicTextFontStyle}>{healthCheck.description}</span> <br /><br />
-            <b>Uri</b>: <span css={DynamicTextFontStyle}>{service.url}</span> <br /><br />
+            <p><b>Uri</b>: <span css={DynamicTextFontStyle}>{service.url}</span></p>
           </div>
         )
       default:
