@@ -7,6 +7,7 @@ import {
 import { getOperatorPunctuation } from 'helpers/ServiceHierarchyHelper';
 import { IHealthCheckCondition, IHealthCheckDefinition, IHealthCheckHttpCondition } from 'types';
 import { DynamicTextFontStyle } from 'App.Style'
+import ExternalLinkIcon from 'components/Icons/ExternalLinkIcon';
 
 const HealthMetricThresholds: React.FC<{
   service: ServiceConfiguration,
@@ -19,6 +20,16 @@ const HealthMetricThresholds: React.FC<{
       case HealthCheckType.HttpRequest:
         return (
           <div>
+            {definition?.url && (
+              <p>
+                <b>Uri: </b>
+                <a target='_blank' rel="noreferrer" href={definition.url}>
+                  {definition.url}&nbsp;
+                  <ExternalLinkIcon className='ds-u-font-size--sm ds-u-valign--top'/>
+                </a>
+              </p>
+            )}
+
             {definition?.conditions.map((c: IHealthCheckHttpCondition, index: number) =>
               <div key={healthCheck.name + '-httpCondition-' + index}>
                 {c.type === 'HttpStatusCode' &&
