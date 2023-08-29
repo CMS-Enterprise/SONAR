@@ -2,6 +2,8 @@ nameOverride: null
 
 image:
   repository: artifactory.cloud.cms.gov/batcave-docker/ado-repositories/oit/waynetech/sonar-agent
+  # override to specify a specific image tag, defaults to the appVersion of the chart
+  # tag: latest
   pullPolicy: IfNotPresent
 
 networkPolicies:
