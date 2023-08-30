@@ -3,11 +3,15 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Security;
+using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml;
 using Cms.BatCave.Sonar.Agent.Configuration;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Models;
+using Json.Path;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -98,7 +102,6 @@ public class HttpHealthCheckEvaluator : IHealthCheckEvaluator<HttpHealthCheckDef
             statusCondition.Status,
             healthCheck
           );
-
           currCheck = statusCondition.Status;
           conditionMet = true;
         }
@@ -111,12 +114,11 @@ public class HttpHealthCheckEvaluator : IHealthCheckEvaluator<HttpHealthCheckDef
           statusCode,
           healthCheck
         );
-
         return HealthStatus.Offline;
       }
 
       // Evaluate response time conditions. These conditions will only have an effect if the
-      // corresponding status is more sever than that based on status code.
+      // corresponding status is more severe than that based on status code.
       var responseTimeConditions =
         definition.Conditions.Where(c => c.Type == HttpHealthCheckConditionType.HttpResponseTime);
       foreach (var condition in responseTimeConditions) {
@@ -127,8 +129,69 @@ public class HttpHealthCheckEvaluator : IHealthCheckEvaluator<HttpHealthCheckDef
             responseCondition.ResponseTime,
             healthCheck
           );
-
           currCheck = responseCondition.Status;
+        }
+      }
+
+      var responseJsonConditions =
+        definition.Conditions.Where(c => (c.Type == HttpHealthCheckConditionType.HttpBodyJson));
+      //If there are more conditions to be met reset status to unknown
+      if (responseJsonConditions.Any()) {
+        currCheck = HealthStatus.Unknown;
+      }
+      foreach (var conditionBody in responseJsonConditions) {
+        var condition = (HttpBodyHealthCheckCondition)conditionBody;
+        if (condition.Type == HttpHealthCheckConditionType.HttpBodyJson) {
+          var jsonString = await response.Content.ReadAsStringAsync(cancellationToken);
+          JsonNode rootNode = JsonNode.Parse(jsonString)!;
+
+          var success = JsonPath.TryParse(condition.Path, out JsonPath? path);
+          if (success) {
+            var pathResult = path?.Evaluate(rootNode);
+            var node = pathResult?.Matches?.FirstOrDefault();
+            if ((node != null) && (node.Value != null)) {
+              var rg = new Regex(condition.ValueRegex);
+              if (rg.IsMatch(node.Value.ToString())) {
+                currCheck = condition.Status;
+                this._logger.LogDebug("{HealthCheck} path: {path} value: {value} status: {status}", healthCheck, condition.Path, node.Value, condition.Status);
+              }
+            } else {
+              this._logger.LogError("{HealthCheck} no value at path {path}", healthCheck, path);
+              currCheck = HealthStatus.Unknown;
+            }
+          } else {
+            this._logger.LogError("{HealthCheck} Invalid path {path}", healthCheck, path);
+            currCheck = HealthStatus.Unknown;
+          }
+        }
+      }
+
+      var responseXmlConditions =
+        definition.Conditions.Where(c => (c.Type == HttpHealthCheckConditionType.HttpBodyXml));
+      //If there are more conditions to be met reset status to unknown
+      if (responseXmlConditions.Any()) {
+        currCheck = HealthStatus.Unknown;
+      }
+      foreach (var conditionBody in responseXmlConditions) {
+        var condition = (HttpBodyHealthCheckCondition)conditionBody;
+        try {
+          var xml = await response.Content.ReadAsStringAsync(cancellationToken);
+          XmlDocument doc = new XmlDocument();
+          doc.LoadXml(xml);
+          XmlNode? xNode = doc.SelectSingleNode(condition.Path);
+          if (xNode != null) {
+            var rg = new Regex(condition.ValueRegex);
+            if (rg.IsMatch(xNode.InnerText)) {
+              this._logger.LogDebug("{HealthCheck} path: {path} value: {value} status: {status}", healthCheck, condition.Path, xNode.InnerText, condition.Status);
+              currCheck = condition.Status;
+            }
+          } else {
+            this._logger.LogError("{HealthCheck} No value at Path {path}", healthCheck, condition.Path);
+            currCheck = HealthStatus.Unknown;
+          }
+        } catch (Exception ex) {
+          this._logger.LogError("{HealthCheck} Invalid XML {message}", healthCheck, ex.Message);
+          currCheck = HealthStatus.Unknown;
         }
       }
 

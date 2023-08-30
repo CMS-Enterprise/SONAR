@@ -72,7 +72,7 @@
       "children": null,
       "healthChecks": [
         {
-          "name": "exampleHttpTest",
+          "name": "HttpReadyTest",
           "description": "Check to see if request contains failed status code and/or request duration greater than specified threshold.",
           "definition": {
             "url": "http://localhost:8082/api/ready",
@@ -88,17 +88,79 @@
                 "status": "Degraded",
                 "responseTime": "00:00:02",
                 "type": "HttpResponseTime"
+              }
+            ]
+          },
+          "type": "httpRequest"
+        },
+        {
+          "name": "HttpJsonTest",
+          "description": "Check response status code, duration of request greater than specified threshold, and Json status",
+          "definition": {
+            "url": "http://localhost:8082/api/ready/status/json",
+            "followRedirects": true,
+            "authorizationHeader": "test-header",
+            "conditions": [
+              {
+                "status": "Online",
+                "statusCodes": [200],
+                "type": "HttpStatusCode"
               },
               {
                 "status": "Online",
-                "path": "/path1/path2",
-                "value": "Yes",
+                "path": "$.status",
+                "ValueRegex": "OK",
+                "type": "HttpBodyJson"
+              },
+              {
+                "status": "Offline",
+                "path": "$.status",
+                "ValueRegex": "Down",
                 "type": "HttpBodyJson"
               },
               {
                 "status": "Degraded",
-                "path": "/path1/path",
-                "value": "Yes",
+                "path": "$.status",
+                "ValueRegex": "(Iffy|Down)",
+                "type": "HttpBodyJson"
+              },
+              {
+                "status": "Unknown",
+                "path": "$.status",
+                "ValueRegex": "^e...$r",
+                "type": "HttpBodyJson"
+              },
+              {
+                "status": "Degraded",
+                "responseTime": "00:00:02",
+                "type": "HttpResponseTime"
+              }
+            ]
+          },
+          "type": "httpRequest"
+        },
+        {
+          "name": "HttpXmlTest",
+          "description": "Check response status code, duration of request greater than specified threshold, and Xml status",
+          "definition": {
+            "url": "http://localhost:8082/api/ready/status/xml",
+            "followRedirects": true,
+            "authorizationHeader": "test-header",
+            "conditions": [
+              {
+                "status": "Online",
+                "statusCodes": [200],
+                "type": "HttpStatusCode"
+              },
+              {
+                "status": "Degraded",
+                "responseTime": "00:00:02",
+                "type": "HttpResponseTime"
+              },
+              {
+                "status": "Online",
+                "path": "GetSystemCheckResponse/status",
+                "ValueRegex": "success",
                 "type": "HttpBodyXml"
               }
             ]
