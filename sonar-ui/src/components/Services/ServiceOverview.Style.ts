@@ -15,11 +15,17 @@ export const ServiceOverviewHeaderStyle: CSSObject = {
   fontWeight: 500
 }
 
+export const ServiceOverviewContentStyle: CSSObject = {
+  paddingLeft: 10,
+  display: "flex",
+  alignItems: "center"
+}
 export function getSubContainerStyle(theme: Theme) {
   return css({
     height: "40px",
     lineHeight: "40px",
     borderRadius: 20,
+    paddingLeft: 10,
     "&:hover": {
       backgroundColor: theme.highlightColor
     }

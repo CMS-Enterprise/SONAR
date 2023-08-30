@@ -108,6 +108,7 @@ const Service = () => {
         environmentName: environmentName,
         tenantName: tenantName,
         serviceConfiguration: serviceConfigLookup[serviceName],
+        serviceHierarchyConfiguration: hierarchyConfigQuery.data,
         serviceHierarchyHealth: currentServiceHealth,
         selectedHealthCheck,
         setSelectedHealthCheck
