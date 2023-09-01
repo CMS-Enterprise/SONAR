@@ -29,6 +29,7 @@ public class Dependencies {
     builder.Services.AddScoped<TenantDataHelper>();
     builder.Services.AddScoped<ApiKeyDataHelper>();
     builder.Services.AddScoped<HealthDataHelper>();
+    builder.Services.AddScoped<VersionDataHelper>();
     builder.Services.AddScoped<CacheHelper>();
     builder.Services.AddScoped<IApiKeyRepository, DbApiKeyRepository>();
     builder.Services.AddScoped<IPermissionsRepository, DbPermissionRepository>();

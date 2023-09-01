@@ -471,6 +471,63 @@ public class ConfigurationController : ControllerBase {
         }
       }
 
+      // update version checks
+      var versionChecksToAdd = new List<(String serviceName, VersionCheckModel newVersionCheck)>();
+      var versionChecksToRemove = new List<VersionCheck>();
+      var versionChecksToUpdate =
+        new List<(VersionCheck existingVersionCheck, VersionCheckModel updatedVersionCheck)>();
+
+      // Transform new services collection into a Dictionary to be able to search by name of services for list of version checks.
+      var newVersionCheck =
+        hierarchy.Services.ToImmutableDictionary(
+          svc => svc.Name,
+          svc => svc.VersionChecks?.ToImmutableList() ?? ImmutableList<VersionCheckModel>.Empty);
+
+      // Fetch all of existing verion checks and
+      var existingVersionChecks =
+        await this._serviceDataHelper.FetchExistingVersionChecks(serviceMap.Keys, cancellationToken);
+
+      // Allow for lookup by name
+      var existingVersionCheckLookup =
+        existingVersionChecks.ToLookup(
+          hc => serviceMap[hc.ServiceId].Name,
+          StringComparer.OrdinalIgnoreCase);
+
+      foreach (var serviceVersionChecks in existingVersionCheckLookup) {
+        if (newVersionCheck.TryGetValue(serviceVersionChecks.Key, out var newVersionChecks)) {
+          var existingChecks = serviceVersionChecks.ToImmutableList();
+          foreach (var existingCheck in existingChecks) {
+            var newCheck = newVersionChecks.Find(
+              newVc =>
+                (newVc.VersionCheckType.ToString().Equals(existingCheck.VersionCheckType.ToString(), StringComparison.OrdinalIgnoreCase)));
+            if (newCheck != null) {
+              versionChecksToUpdate.Add((existingCheck, newCheck));
+            } else {
+              versionChecksToRemove.Add(existingCheck);
+            }
+          }
+        } else {
+          versionChecksToRemove.AddRange(serviceVersionChecks);
+        }
+      }
+
+      // for each version check in payload, if does not existing in existing lookup, then add
+      foreach (var newVersionChecks in newVersionCheck) {
+        if (!existingVersionCheckLookup.Contains(newVersionChecks.Key)) {
+          versionChecksToAdd.AddRange(newVersionChecks.Value.Select(vcm => (newVersionChecks.Key, vcm)));
+        } else {
+          foreach (var check in newVersionChecks.Value) {
+            if (!existingVersionCheckLookup[newVersionChecks.Key].Any(
+              existingCheck => existingCheck.VersionCheckType
+                .ToString()
+                .Equals(check.VersionCheckType.ToString(), StringComparison.OrdinalIgnoreCase))
+            ) {
+              versionChecksToAdd.Add((newVersionChecks.Key, check));
+            }
+          }
+        }
+      }
+
       // Insert servicesToAdd services into the DB
 
       var createdServices = await this._servicesTable.AddAllAsync(
@@ -525,6 +582,9 @@ public class ConfigurationController : ControllerBase {
       //Apply changes to health checks to tables.
       this._healthsTable.RemoveRange(healthChecksToRemove);
 
+      // Apply changes to version checks table
+      this._versionChecksTable.RemoveRange(versionChecksToRemove);
+
       // Add relationshipsToAdd
       await this._healthsTable.AddAllAsync(
         healthChecksToAdd.Select(healthCheck => HealthCheck.New(
@@ -535,6 +595,16 @@ public class ConfigurationController : ControllerBase {
           HealthCheck.SerializeDefinition(healthCheck.newHealthCheck.Type, healthCheck.newHealthCheck.Definition),
           healthCheck.newHealthCheck.SmoothingTolerance ?? 0
         )),
+        cancellationToken
+      );
+
+      // Add version checks
+      await this._versionChecksTable.AddAllAsync(
+        versionChecksToAdd.Select(versionCheck => VersionCheck.New(
+          existingServicesByName[versionCheck.serviceName].Id,
+          versionCheck.newVersionCheck.VersionCheckType,
+          VersionCheck.SerializeDefinition(versionCheck.newVersionCheck.VersionCheckType,
+            versionCheck.newVersionCheck.Definition))),
         cancellationToken
       );
 
@@ -552,6 +622,16 @@ public class ConfigurationController : ControllerBase {
           );
         })
       );
+
+      this._versionChecksTable.UpdateRange(
+        versionChecksToUpdate.Select(vc => {
+          return new VersionCheck(
+            vc.existingVersionCheck.Id,
+            vc.existingVersionCheck.ServiceId,
+            vc.updatedVersionCheck.VersionCheckType,
+            VersionCheck.SerializeDefinition(vc.updatedVersionCheck.VersionCheckType,
+              vc.updatedVersionCheck.Definition));
+        }));
 
       // Delete servicesToDelete
       this._servicesTable.RemoveRange(servicesToDelete);

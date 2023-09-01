@@ -270,7 +270,7 @@ public class HealthDataHelper {
     );
   }
 
-  private async Task<T> GetLatestValuePrometheusQuery<T>(
+  public async Task<T> GetLatestValuePrometheusQuery<T>(
     IPrometheusClient prometheusClient,
     String promQuery,
     Func<QueryResults, T> processResult,
