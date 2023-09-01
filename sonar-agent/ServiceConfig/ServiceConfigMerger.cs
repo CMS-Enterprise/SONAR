@@ -251,6 +251,28 @@ public static class ServiceConfigMerger {
             );
           }
 
+        case VersionCheckType.HttpResponseBody:
+          if (nextDefinition is HttpResponseBodyVersionCheckDefinition nextHttpVersionCheckDefinition) {
+            if (prevDefinition is HttpResponseBodyVersionCheckDefinition prevHttpVersionCheckDefinition) {
+              var mergedBodyType = nextHttpVersionCheckDefinition.BodyType == default
+                ? prevHttpVersionCheckDefinition.BodyType
+                : nextHttpVersionCheckDefinition.BodyType;
+
+              return new HttpResponseBodyVersionCheckDefinition(
+                nextHttpVersionCheckDefinition.Url ?? prevHttpVersionCheckDefinition.Url,
+                nextHttpVersionCheckDefinition.Path ?? prevHttpVersionCheckDefinition.Path,
+                mergedBodyType);
+            } else {
+              return nextDefinition;
+            }
+          } else {
+            // This should not happen because the deserializer cannot deserialize a
+            // VersionCheckDefinition that isn't compatible with the specified VersionCheckType.
+            throw new InvalidOperationException(
+              "The specified version check definition is not compatible with the expected version check type."
+            );
+          }
+
         default:
           throw new ArgumentOutOfRangeException(
             nameof(mergedType),

@@ -1,0 +1,25 @@
+{
+  "services": [
+    {
+      "name": "test-service-1",
+      "displayName": "Test Service 1",
+      "versionChecks": [
+        {
+          "versionCheckType": "HttpResponseBody",
+          "definition": {
+            "url": "https://base.host",
+            "path": "$.httpresponsebody.base.path",
+            "bodyType": "Json"
+          }
+        },
+        {
+          "versionCheckType": "FluxKustomization",
+          "definition": {
+            "path": "$.fluxkustomization.base.path"
+          }
+        }
+      ]
+    }
+  ],
+  "rootServices": [ "test-service-1" ]
+}

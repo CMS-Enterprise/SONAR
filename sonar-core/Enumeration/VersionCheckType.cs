@@ -1,5 +1,6 @@
 namespace Cms.BatCave.Sonar.Enumeration;
 
 public enum VersionCheckType {
-  FluxKustomization = 0
+  FluxKustomization = 0,
+  HttpResponseBody,
 }

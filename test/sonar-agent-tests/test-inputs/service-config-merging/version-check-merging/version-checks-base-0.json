@@ -1,0 +1,9 @@
+{
+  "services": [
+    {
+      "name": "test-service-1",
+      "displayName": "Test Service 1"
+    }
+  ],
+  "rootServices": [ "test-service-1" ]
+}

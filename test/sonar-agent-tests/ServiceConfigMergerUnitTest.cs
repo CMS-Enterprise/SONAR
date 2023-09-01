@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text.Json;
+using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Agent.ServiceConfig;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
@@ -420,7 +422,87 @@ public class ServiceConfigMergerUnitTest {
     Assert.Equal(BaseConfig.RootServices.Union(rootServices), result.RootServices);
   }
 
+  [Theory]
+  [InlineData(
+    "test-inputs/service-config-merging/version-check-merging/version-checks-base-0.json",
+    "test-inputs/service-config-merging/version-check-merging/version-checks-overlay-0.json")]
+  [InlineData(
+    "test-inputs/service-config-merging/version-check-merging/version-checks-base-0.json",
+    "test-inputs/service-config-merging/version-check-merging/version-checks-overlay-1.json")]
+  [InlineData(
+    "test-inputs/service-config-merging/version-check-merging/version-checks-base-0.json",
+    "test-inputs/service-config-merging/version-check-merging/version-checks-overlay-0.json",
+    "test-inputs/service-config-merging/version-check-merging/version-checks-overlay-1.json")]
+  public async Task MergeConfigurations_AddsNewVersionChecks(String baseFile, params String[] overlayFiles) {
+    var baseConfig = await LoadConfigFromFileAsync(baseFile);
+    var overlayConfigs = overlayFiles.Select(LoadConfigFromFileAsync).Select(t => t.Result).ToArray();
+
+    Assert.Null(baseConfig.Services.Single().VersionChecks);
+    foreach (var overlayConfig in overlayConfigs) {
+      Assert.Single(overlayConfig.Services.Single().VersionChecks!);
+    }
+
+    var mergedConfigs = overlayConfigs.Aggregate(baseConfig, ServiceConfigMerger.MergeConfigurations);
+
+    Assert.NotEmpty(mergedConfigs.Services.Single().VersionChecks!);
+    foreach (var overlayConfig in overlayConfigs) {
+      Assert.Contains(
+        overlayConfig.Services.Single().VersionChecks!.Single(),
+        mergedConfigs.Services.Single().VersionChecks!);
+    }
+  }
+
+  [Theory]
+  [InlineData(
+    "test-inputs/service-config-merging/version-check-merging/version-checks-base-1.json",
+    "test-inputs/service-config-merging/version-check-merging/version-checks-overlay-0.json",
+    "test-inputs/service-config-merging/version-check-merging/version-checks-overlay-1.json")]
+  public async Task MergedConfigurations_ReplacesExistingVersionChecks(String baseFile, params String[] overlayFiles) {
+    var baseConfig = await LoadConfigFromFileAsync(baseFile);
+    var overlayConfigs = overlayFiles.Select(LoadConfigFromFileAsync).Select(t => t.Result).ToArray();
+
+    Assert.Equal(expected: 2, baseConfig.Services.Single().VersionChecks!.Count);
+    foreach (var overlayConfig in overlayConfigs) {
+      Assert.DoesNotContain(
+        overlayConfig.Services.Single().VersionChecks!.Single(),
+        baseConfig.Services.Single().VersionChecks!);
+    }
+
+    var mergedConfigs = overlayConfigs.Aggregate(baseConfig, ServiceConfigMerger.MergeConfigurations);
+
+    foreach (var baseVersionCheck in baseConfig.Services.Single().VersionChecks!) {
+      Assert.DoesNotContain(
+        baseVersionCheck,
+        mergedConfigs.Services.Single().VersionChecks!);
+    }
+
+    foreach (var overlayConfig in overlayConfigs) {
+      Assert.Contains(
+        overlayConfig.Services.Single().VersionChecks!.Single(),
+        mergedConfigs.Services.Single().VersionChecks!);
+    }
+  }
+
   private static String SerializeConfigObject(Object config) {
     return JsonSerializer.Serialize(config, JsonServiceConfigSerializer.ConfigSerializerOptions);
+  }
+
+  private static async Task<ServiceHierarchyConfiguration> LoadConfigFromFileAsync(String serviceConfigFilePath) {
+    var configSource = new LocalFileServiceConfigSource(tenant: "test", filePaths: new[] { serviceConfigFilePath });
+    var config = await configSource.GetConfigurationLayersAsync(tenant: "test", cancellationToken: default)
+      .SingleAsync();
+
+    try {
+      ServiceConfigValidator.ValidateServiceConfig(config);
+    } catch (InvalidConfigurationException e) {
+      if (e.Data?["errors"] is List<ValidationResult> errors) {
+        throw new InvalidConfigurationException(
+          e.Message + "\nValidation errors:\n" + String.Join(separator: '\n', errors.Select(error => error.ToString())),
+          InvalidConfigurationErrorType.DataValidationError);
+      }
+      throw;
+    }
+
+    return config;
   }
 }

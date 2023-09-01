@@ -21,22 +21,19 @@ public class VersionCheckModelJsonConverter : JsonConverter<VersionCheckModel> {
       case JsonValueKind.Null:
         return null;
       case JsonValueKind.Object:
-        // Get the type
-        var hasType = TryParseVersionCheckType(element, out var type);
-
+        var type = ParseVersionCheckType(element);
         VersionCheckDefinition? definition = null;
-        if (hasType &&
-          element.TryGetProperty(nameof(VersionCheckModel.Definition), ignoreCase: true, out var definitionElement)) {
 
-          switch (type) {
-            case VersionCheckType.FluxKustomization:
-              definition = definitionElement.Deserialize<FluxKustomizationVersionCheckDefinition>(options);
-
-              break;
-            // TODO: Add case for HTTP version check here
-            default:
-              throw new ArgumentOutOfRangeException();
-          }
+        if (element.TryGetProperty(nameof(VersionCheckModel.Definition), ignoreCase: true, out var definitionElement)) {
+          definition = type switch {
+            VersionCheckType.FluxKustomization =>
+              definitionElement.Deserialize<FluxKustomizationVersionCheckDefinition>(options),
+            VersionCheckType.HttpResponseBody =>
+              definitionElement.Deserialize<HttpResponseBodyVersionCheckDefinition>(options),
+            _ =>
+              throw new NotSupportedException($"Unable to deserialize {nameof(VersionCheckModel)}, " +
+                $"unsupported {nameof(VersionCheckType)}: {type}")
+          };
         }
 
         return (VersionCheckModel)Activator.CreateInstance(
@@ -51,35 +48,30 @@ public class VersionCheckModelJsonConverter : JsonConverter<VersionCheckModel> {
       case JsonValueKind.False:
       default:
         throw new JsonException(
-          $"Expected object attempting tp parse {nameof(HealthCheckModel)} but found {element.ValueKind}"
+          $"Expected object attempting to parse {nameof(VersionCheckModel)} but found {element.ValueKind}"
         );
     }
   }
 
-  /// <summary>
-  ///   Attempts to parse the type property of a JsonElement representing a <see cref="VersionCheckModel" />.
-  /// </summary>
-  private static Boolean TryParseVersionCheckType(JsonElement element, out VersionCheckType type) {
-    if (!element.TryGetProperty(nameof(VersionCheckModel.VersionCheckType), ignoreCase: true, out var typeValue) ||
-      typeValue.IsNullOrUndefined()) {
+  private static VersionCheckType ParseVersionCheckType(JsonElement modelElement) {
+    const String propertyName = nameof(VersionCheckModel.VersionCheckType);
 
-      type = default;
-      return false;
+    if (!modelElement.TryGetProperty(propertyName, ignoreCase: true, out var propertyElement) ||
+      propertyElement.IsNullOrUndefined()) {
+      throw new JsonException($"The {propertyName} field is required.");
     }
 
-    if (typeValue.ValueKind != JsonValueKind.String) {
-      throw new JsonException(
-        $"Unexpected JSON value {typeValue.ValueKind}. Was expecting a string for the {nameof(HealthCheckModel)}.{nameof(HealthCheckModel.Type)} property."
-      );
+    if (propertyElement.ValueKind != JsonValueKind.String) {
+      throw new JsonException($"Expected string attempting to parse {propertyName} " +
+        $"but found {propertyElement.ValueKind}");
     }
 
-    if (!Enum.TryParse(typeValue.GetString(), ignoreCase: true, out type)) {
-      throw new JsonException(
-        $"Invalid value for property {nameof(HealthCheckModel)}.{nameof(HealthCheckModel.Type)}: {typeValue.GetString()}."
-      );
+    if (Enum.TryParse(propertyElement.GetString(), ignoreCase: true, out VersionCheckType enumValue)) {
+      return enumValue;
     }
 
-    return true;
+    throw new JsonException($"Invalid value for {propertyName}: {propertyElement.GetString()}.");
+
   }
 
   /// <summary>
@@ -98,9 +90,12 @@ public class VersionCheckModelJsonConverter : JsonConverter<VersionCheckModel> {
       case VersionCheckType.FluxKustomization:
         JsonSerializer.Serialize(writer, (FluxKustomizationVersionCheckDefinition)value.Definition, options);
         break;
+      case VersionCheckType.HttpResponseBody:
+        JsonSerializer.Serialize(writer, (HttpResponseBodyVersionCheckDefinition)value.Definition, options);
+        break;
       default:
-        throw new NotSupportedException(
-          $"Unable to deserialize definition. Unsupported health check type: {value.VersionCheckType}");
+        throw new NotSupportedException($"Unable to serialize {nameof(VersionCheckModel)}, " +
+          $"unsupported {nameof(VersionCheckType)}: {value.VersionCheckType}");
     }
 
     writer.WriteEndObject();

@@ -1,0 +1,17 @@
+{
+  "services": [
+    {
+      "name": "test-service-1",
+      "displayName": "Test Service 1",
+      "versionChecks": [
+        {
+          "versionCheckType": "FluxKustomization",
+          "definition": {
+            "path": "$.fluxkustomization.overlay.path"
+          }
+        }
+      ]
+    }
+  ],
+  "rootServices": [ "test-service-1" ]
+}
