@@ -1,4 +1,6 @@
 using System.Reflection;
+using System.Net;
+using System.Xml;
 using Microsoft.AspNetCore.Mvc;
 
 namespace http_metric_test_app.Controllers;
@@ -45,5 +47,69 @@ public class ApiReadinessController : ControllerBase {
           Type = "test 404"
         });
     }
+  }
+
+  [HttpGet("statusxml", Name = "GetXmlStatus")]
+  [ProducesResponseType(typeof(String), statusCode: 200)]
+  [ProducesResponseType(typeof(ProblemDetails), statusCode: 400)]
+  [ProducesResponseType(typeof(ProblemDetails), statusCode: 401)]
+  [ProducesResponseType(500)]
+  public Task<ContentResult> GetXMLStatus(CancellationToken cancellationToken = default) {
+
+    String resultString = """
+              <?xml version="1.0" encoding="UTF-8"?>
+               <GetSystemCheckResponse>
+                <status>success</status>
+                <code>100</code>
+                <messages/>
+                <subsystem1Status>Yes</subsystem1Status>
+                <subsystem2Status>Yes</subsystem2Status>
+                <subsystem3Status>Yes</subsystem3Status>
+               </GetSystemCheckResponse>
+              """;
+
+    return Task.FromResult<ContentResult>(
+          new ContentResult {
+            Content = resultString,
+            ContentType = "application/xml",
+            StatusCode = (Int32)HttpStatusCode.OK
+          }
+      );
+  }
+
+  [HttpGet("statusjson", Name = "GetJsonStatus")]
+  [ProducesResponseType(typeof(String), statusCode: 200)]
+  [ProducesResponseType(typeof(ProblemDetails), statusCode: 400)]
+  [ProducesResponseType(typeof(ProblemDetails), statusCode: 401)]
+  [ProducesResponseType(500)]
+  public Task<ContentResult> GetJsonStatus(CancellationToken cancellationToken = default) {
+
+    String resultString = """
+          {
+          "responseHeader":
+          {
+          "zkConnected":null,
+          "status":0,
+          "QTime":0,
+          "params":
+          {
+          "q":"{!lucene}*:*",
+          "distrib":"false",
+          "df":"text",
+          "rows":"10",
+          "echoParams":"all",
+          "rid":"-195846"
+          }
+          },
+          "status":"OK"
+          }
+          """;
+
+    return Task.FromResult<ContentResult>(
+      new ContentResult {
+        Content = resultString,
+        ContentType = "application/json",
+        StatusCode = (Int32)HttpStatusCode.OK
+      });
   }
 }
