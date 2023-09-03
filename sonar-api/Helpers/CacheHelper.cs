@@ -42,86 +42,19 @@ public class CacheHelper {
     ImmutableDictionary<String, HealthStatus> healthChecks,
     CancellationToken cancellationToken) {
 
-    var existingCachedValues = await this._serviceHealthCacheTable
-      .Where(e => (e.Environment == environment) &&
-        (e.Tenant == tenant) &&
-        (e.Service == service))
-      .LeftJoin(
-        this._healthCheckCacheTable,
-        leftKeySelector: sh => sh.Id,
-        rightKeySelector: hc => hc.ServiceHealthId,
-        resultSelector: (serviceHealthCache, healthCheckCache) => new {
-          ServiceHealthCache = serviceHealthCache,
-          HealthCheckCache = healthCheckCache
-        })
-      .ToArrayAsync(cancellationToken);
-
-    // initialize db transaction
-    await using var tx =
-      await this._dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
-
     try {
-      // cache for this service doesn't exist, create
-      if (existingCachedValues.Length == 0) {
-        var createdServiceCache = await this._serviceHealthCacheTable.AddAsync(
-          new ServiceHealthCache(
-            Guid.Empty,
-            environment,
-            tenant,
-            service,
-            value.Timestamp,
-            value.AggregateStatus),
+      var serviceCacheId = this._dbContext.Database.SqlQuery<Guid>(
+        $"insert into service_health_cache (id, environment, tenant, service, timestamp, aggregate_status) values ({Guid.NewGuid()}, {environment}, {tenant}, {service}, {value.Timestamp}, {value.AggregateStatus}) on conflict (environment, tenant, service) do update set timestamp = {value.Timestamp}, aggregate_status = {value.AggregateStatus} returning id"
+      ).AsEnumerable().Single();
+
+      foreach (var hc in healthChecks) {
+        await this._dbContext.Database.ExecuteSqlInterpolatedAsync(
+          $"insert into health_check_cache (id, service_health_id, health_check, status) values ({Guid.NewGuid()}, {serviceCacheId}, {hc.Key}, {hc.Value}) on conflict (service_health_id, health_check) do update set status = {value.AggregateStatus}",
           cancellationToken
-        );
-
-        // create healthCheckCache using newly created serviceHealthCache
-        await this._healthCheckCacheTable.AddAllAsync(
-          healthChecks.Select(
-            hc => new HealthCheckCache(
-              Guid.Empty,
-              createdServiceCache.Entity.Id,
-              hc.Key,
-              hc.Value)),
-          cancellationToken
-        );
-      } else {
-        // cache for this service exists, update
-        var id = existingCachedValues[0].ServiceHealthCache.Id;
-
-        // remove outdated healthCheckCache entries
-        var healthChecksToRemove =
-          existingCachedValues.Select(obj => obj.HealthCheckCache)
-            .Where(hcc => hcc != null)
-            .Cast<HealthCheckCache>()
-            .ToList();
-        this._healthCheckCacheTable.RemoveRange(healthChecksToRemove);
-
-        // add new healthCheckCache entries
-        await this._healthCheckCacheTable.AddAllAsync(
-          healthChecks.Select(
-            hc => new HealthCheckCache(
-              Guid.Empty,
-              id,
-              hc.Key,
-              hc.Value)),
-          cancellationToken: cancellationToken
-        );
-
-        // update serviceHealthCache entry
-        this._serviceHealthCacheTable.Update(new ServiceHealthCache(
-          id,
-          environment,
-          tenant,
-          service,
-          value.Timestamp,
-          value.AggregateStatus)
         );
       }
-
-      await this._dbContext.SaveChangesAsync(cancellationToken);
-      await tx.CommitAsync(cancellationToken);
     } catch (DbUpdateException dbException) {
-      this._logger.LogError(
+      this._logger.LogWarning(
         message: "Error occurred while updating cache: {Message}",
         dbException.Message
       );
