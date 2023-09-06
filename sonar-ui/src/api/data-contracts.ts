@@ -79,6 +79,8 @@ export interface HealthCheckModel {
   description?: string | null;
   type: HealthCheckType;
   definition: HealthCheckDefinition;
+  /** @format int32 */
+  smoothingTolerance?: number | null;
 }
 
 export enum HealthCheckType {
@@ -145,6 +147,7 @@ export interface ServiceConfiguration {
   /** @format uri */
   url?: string | null;
   healthChecks?: HealthCheckModel[] | null;
+  versionChecks?: VersionCheckModel[] | null;
   children?: string[] | null;
 }
 
@@ -193,6 +196,20 @@ export interface ServiceHierarchyHealthHistory {
   url?: string | null;
   aggregateStatus?: DateTimeHealthStatusValueTuple[] | null;
   children?: ServiceHierarchyHealthHistory[] | null;
+}
+
+export interface ServiceVersion {
+  /** @format date-time */
+  timestamp: string;
+  versionChecks: Record<string, string>;
+}
+
+export interface ServiceVersionDetails {
+  versionType: VersionCheckType;
+  /** @minLength 1 */
+  version: string;
+  /** @format date-time */
+  timestamp: string;
 }
 
 export interface TenantHealth {
@@ -252,4 +269,16 @@ export interface UptimeModel {
 
 export interface UserPermissionsView {
   permissionTree?: Record<string, string[]>;
+}
+
+export type VersionCheckDefinition = object;
+
+export interface VersionCheckModel {
+  versionCheckType: VersionCheckType;
+  definition: VersionCheckDefinition;
+}
+
+export enum VersionCheckType {
+  FluxKustomization = "FluxKustomization",
+  HttpResponseBody = "HttpResponseBody",
 }

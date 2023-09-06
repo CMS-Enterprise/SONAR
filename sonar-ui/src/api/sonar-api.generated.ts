@@ -24,6 +24,8 @@ import {
   ServiceHierarchyConfiguration,
   ServiceHierarchyHealth,
   ServiceHierarchyHealthHistory,
+  ServiceVersion,
+  ServiceVersionDetails,
   TenantHealth,
   UptimeModel,
   UserPermissionsView,
@@ -565,6 +567,47 @@ tenant, service, and health check in Prometheus. Filters out samples outside of 
   getCurrentUser = (params: RequestParams = {}) =>
     this.request<PermissionConfiguration[], ProblemDetails | void>({
       path: `/api/v2/permissions/me`,
+      method: "GET",
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags Version
+   * @name RecordServiceVersion
+   * @summary Records a single version for the specified service.
+   * @request POST:/api/v2/version/{environment}/tenants/{tenant}/services/{service}
+   */
+  recordServiceVersion = (
+    environment: string,
+    tenant: string,
+    service: string,
+    data: ServiceVersion,
+    params: RequestParams = {},
+  ) =>
+    this.request<void, ProblemDetails | void>({
+      path: `/api/v2/version/${environment}/tenants/${tenant}/services/${service}`,
+      method: "POST",
+      body: data,
+      type: ContentType.Json,
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags Version
+   * @name GetSpecificServiceVersionDetails
+   * @request GET:/api/v2/version/{environment}/tenants/{tenant}/services/{servicePath}
+   */
+  getSpecificServiceVersionDetails = (
+    environment: string,
+    tenant: string,
+    servicePath: string,
+    params: RequestParams = {},
+  ) =>
+    this.request<ServiceVersionDetails[], ProblemDetails | void>({
+      path: `/api/v2/version/${environment}/tenants/${tenant}/services/${servicePath}`,
       method: "GET",
       format: "json",
       ...params,

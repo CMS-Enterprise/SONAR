@@ -1,16 +1,18 @@
 import { useTheme } from '@emotion/react';
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
 import {
   DateTimeHealthStatusValueTuple,
   ServiceConfiguration,
   ServiceHierarchyHealth,
+  ServiceVersionDetails,
+  VersionCheckType,
 } from 'api/data-contracts';
+import ExternalLinkIcon from 'components/Icons/ExternalLinkIcon';
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { DynamicTextFontStyle } from '../../App.Style';
 import HealthStatusBadge from '../Badges/HealthStatusBadge';
 import { getBadgeSpanStyle } from '../Badges/HealthStatusBadge.Style';
 import Breadcrumbs from './Breadcrumbs/Breadcrumbs';
-import StatusHistoryModule from './StatusHistory/StatusHistoryModule';
 import HealthCheckList from './HealthStatus/HealthCheckList';
 import {
   getServiceOverviewStyle,
@@ -19,7 +21,22 @@ import {
   ServiceOverviewContentStyle,
   ServiceOverviewHeaderStyle
 } from './ServiceOverview.Style';
-import ExternalLinkIcon from 'components/Icons/ExternalLinkIcon';
+import ServiceVersionModule from './ServiceVersion/ServiceVersionModule';
+import StatusHistoryModule from './StatusHistory/StatusHistoryModule';
+
+const versionData: ServiceVersionDetails[] = [
+  {
+    versionType: VersionCheckType.FluxKustomization,
+    version: "6eb253dsgfdg",
+    timestamp: "2023-09-05T23:12:31Z"
+
+  },
+  {
+    versionType: VersionCheckType.HttpResponseBody,
+    version: "1.1.1",
+    timestamp: "2023-09-05T23:12:31Z"
+  }
+];
 
 const ServiceOverview: React.FC<{
   environmentName: string,
@@ -49,6 +66,11 @@ const ServiceOverview: React.FC<{
           environmentName={environmentName}
           tenantName={tenantName}
         />
+        <div>
+          { versionData && (
+            <ServiceVersionModule serviceVersionDetails={versionData} />
+          )}
+        </div>
         <div>
           { serviceHealth && (
             <StatusHistoryModule
@@ -81,7 +103,6 @@ const ServiceOverview: React.FC<{
                 </div>
               )}
             </>
-
           )}
         </div>
         <div>
