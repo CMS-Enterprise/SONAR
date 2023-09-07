@@ -72,6 +72,7 @@ public class HealthController : ControllerBase {
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 400)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 500)]
+  [ProducesResponseType(typeof(ProblemDetails), statusCode: 503)]
   public async Task<IActionResult> RecordStatus(
     [FromRoute] String environment,
     [FromRoute] String tenant,
@@ -95,7 +96,7 @@ public class HealthController : ControllerBase {
             canonicalHeathStatusDictionary.ToImmutableDictionary(),
             cancellationToken);
       } catch (Exception e) {
-        this._logger.LogError(
+        this._logger.LogWarning(
           message: "Unexpected error occurred during caching process: {Message}",
           e.Message
         );
@@ -148,28 +149,34 @@ public class HealthController : ControllerBase {
     var prometheusTask = this._remoteWriteClient.RemoteWriteRequest(writeData, cancellationToken);
 
     try {
-      await Task.WhenAll(new[] { cachingTask, prometheusTask });
-    } catch (AggregateException e) {
-      foreach (var ie in e.InnerExceptions) {
-        this._logger.LogError(
-          message: "Unexpected error ({ExceptionType}): {Message}",
-          ie.GetType(),
-          ie.Message
-        );
-      }
+      await Task.WhenAll(cachingTask, prometheusTask);
+    } catch (Exception) {
+      // ignore
     }
 
-    ProblemDetails? problem = await prometheusTask;
+    // This will throw if the prometheus write has an issue
+    try {
+      var problem = await prometheusTask;
 
-    if (problem == null) {
+      if (problem == null) {
+        return this.NoContent();
+      }
+
+      if (problem.Status == (Int32)HttpStatusCode.BadRequest) {
+        problem.Type = ProblemTypes.InvalidData;
+      }
+
+      return this.StatusCode(problem.Status ?? (Int32)HttpStatusCode.InternalServerError, problem);
+    } catch (Exception ex) {
+      this._logger.LogError(
+        ex,
+        "An unhandled exception was raised by Prometheus while attempting to write service status: {Message}",
+        ex.Message
+      );
+
+      // This type of failure should be invisible to the agent since we also cache the status
       return this.NoContent();
     }
-
-    if (problem.Status == (Int32)HttpStatusCode.BadRequest) {
-      problem.Type = ProblemTypes.InvalidData;
-    }
-
-    return this.StatusCode(problem.Status ?? (Int32)HttpStatusCode.InternalServerError, problem);
   }
 
   [HttpGet("{environment}/tenants/sonar", Name = "GetSonarHealth")]
