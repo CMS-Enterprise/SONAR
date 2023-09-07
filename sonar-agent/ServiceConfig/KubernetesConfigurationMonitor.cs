@@ -20,8 +20,8 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
   private readonly String _environment;
   private readonly ConfigurationHelper _configHelper;
   private readonly IKubernetes _kubeClient;
-  private readonly Watcher<V1Namespace> _nsWatcher;
-  private readonly Watcher<V1ConfigMap> _cmWatcher;
+  private Watcher<V1Namespace> _nsWatcher;
+  private Watcher<V1ConfigMap> _cmWatcher;
   private readonly TimeSpan _retryDelay;
 
   private readonly ConcurrentDictionary<String, Watcher<V1Secret>> _secretWatchers = new();
@@ -80,7 +80,9 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
   }
 
   private void OnClosedNamespace() {
-    this._logger.LogDebug("Namespace watcher - service connection closed");
+    this._logger.LogDebug("Namespace watcher - service connection closed, reconnecting...");
+    this._nsWatcher.Dispose();
+    this._nsWatcher = this.CreateNamespaceWatcher();
   }
 
   private void OnErrorNamespace(Exception error) {
@@ -187,7 +189,9 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
   }
 
   private void OnClosedConfigMap() {
-    this._logger.LogDebug("ConfigMap watcher - service connection closed");
+    this._logger.LogDebug("ConfigMap watcher - service connection closed, reconnecting...");
+    this._cmWatcher.Dispose();
+    this._cmWatcher = this.CreateConfigMapWatcher();
   }
 
   private void OnErrorConfigMap(Exception error) {
@@ -293,6 +297,7 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
 
   private void OnClosedSecret() {
     this._logger.LogDebug("Secret watcher - service connection closed");
+
   }
 
   private ServiceHierarchyConfiguration GetTenantServicesHierarchy(
