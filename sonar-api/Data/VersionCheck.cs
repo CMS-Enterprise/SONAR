@@ -33,7 +33,15 @@ public class VersionCheck {
   public VersionCheckDefinition DeserializeDefinition() {
     return this.VersionCheckType switch {
       VersionCheckType.FluxKustomization =>
-        JsonSerializer.Deserialize<FluxKustomizationVersionCheckDefinition>(this.Definition, DefinitionSerializerOptions) ??
+        JsonSerializer.Deserialize<FluxKustomizationVersionCheckDefinition>(
+          this.Definition,
+          DefinitionSerializerOptions) ??
+        throw new InvalidOperationException("Definition deserialized to null."),
+
+      VersionCheckType.HttpResponseBody =>
+        JsonSerializer.Deserialize<HttpResponseBodyVersionCheckDefinition>(
+          this.Definition,
+          DefinitionSerializerOptions) ??
         throw new InvalidOperationException("Definition deserialized to null."),
 
       _ => throw new NotSupportedException(
@@ -43,8 +51,14 @@ public class VersionCheck {
 
   public static String SerializeDefinition(VersionCheckType type, VersionCheckDefinition def) {
     return type switch {
-      VersionCheckType.FluxKustomization => JsonSerializer.Serialize((FluxKustomizationVersionCheckDefinition)def, DefinitionSerializerOptions),
-
+      VersionCheckType.FluxKustomization =>
+        JsonSerializer.Serialize(
+          (FluxKustomizationVersionCheckDefinition)def,
+          DefinitionSerializerOptions),
+      VersionCheckType.HttpResponseBody =>
+        JsonSerializer.Serialize(
+          (HttpResponseBodyVersionCheckDefinition)def,
+          DefinitionSerializerOptions),
       _ => throw new ArgumentOutOfRangeException(nameof(type), type, $"Invalid value for {nameof(HealthCheckType)}")
     };
   }

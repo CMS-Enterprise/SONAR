@@ -70,6 +70,16 @@
       "description": "A test application that has one endpoint to simulate different HTTP status codes.",
       "url": "http://localhost:8082/api/ready",
       "children": null,
+      "versionChecks": [
+        {
+          "versionCheckType": "HttpResponseBody",
+          "definition": {
+            "url": "http://localhost:8082/api/version",
+            "path": "/version",
+            "bodyType": "json"
+          }
+        }
+      ],
       "healthChecks": [
         {
           "name": "HttpReadyTest",
