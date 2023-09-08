@@ -141,6 +141,16 @@ public class DataContext : DbContext {
           .WithMany()
           .HasForeignKey(hcc => hcc.ServiceHealthId)
           .OnDelete(DeleteBehavior.Cascade);
+      })
+      .Entity<ErrorDetail>(entity => {
+        entity.HasOne<Environment>()
+          .WithMany()
+          .HasForeignKey(k => k.EnvironmentId)
+          .OnDelete(DeleteBehavior.Cascade);
+        entity.HasOne<Tenant>()
+          .WithMany()
+          .HasForeignKey(k => k.TenantId)
+          .OnDelete(DeleteBehavior.Cascade);
       });
   }
 }
