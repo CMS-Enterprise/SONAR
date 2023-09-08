@@ -97,7 +97,7 @@
           "versionCheckType": "HttpResponseBody",
           "definition": {
             "url": "http://http-metric-test-app:8082/api/version",
-            "path": "/version",
+            "path": "$.version",
             "bodyType": "json"
           }
         }
