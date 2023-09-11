@@ -3,6 +3,7 @@ using System;
 using Cms.BatCave.Sonar.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cms.BatCave.Sonar.Data.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20230907221719_AddServiceVersionCacheEntity")]
+    partial class AddServiceVersionCacheEntity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -94,71 +97,6 @@ namespace Cms.BatCave.Sonar.Data.Migrations
                         .HasDatabaseName("ix_environment_name");
 
                     b.ToTable("environment", (string)null);
-                });
-
-            modelBuilder.Entity("Cms.BatCave.Sonar.Data.ErrorDetail", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("Configuration")
-                        .HasColumnType("text")
-                        .HasColumnName("configuration")
-                        .UseCollation("ci_collation");
-
-                    b.Property<Guid>("EnvironmentId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("environment_id");
-
-                    b.Property<string>("HealthCheckName")
-                        .HasColumnType("text")
-                        .HasColumnName("health_check_name")
-                        .UseCollation("ci_collation");
-
-                    b.Property<int>("Level")
-                        .HasColumnType("integer")
-                        .HasColumnName("level");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("message")
-                        .UseCollation("ci_collation");
-
-                    b.Property<string>("ServiceName")
-                        .HasColumnType("text")
-                        .HasColumnName("service_name")
-                        .UseCollation("ci_collation");
-
-                    b.Property<string>("StackTrace")
-                        .HasColumnType("text")
-                        .HasColumnName("stack_trace")
-                        .UseCollation("ci_collation");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("timestamp");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("integer")
-                        .HasColumnName("type");
-
-                    b.HasKey("Id")
-                        .HasName("pk_error_detail");
-
-                    b.HasIndex("EnvironmentId")
-                        .HasDatabaseName("ix_error_detail_environment_id");
-
-                    b.HasIndex("TenantId")
-                        .HasDatabaseName("ix_error_detail_tenant_id");
-
-                    b.ToTable("error_detail", (string)null);
                 });
 
             modelBuilder.Entity("Cms.BatCave.Sonar.Data.HealthCheck", b =>
@@ -548,22 +486,6 @@ namespace Cms.BatCave.Sonar.Data.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("fk_api_key_tenant_tenant_id");
-                });
-
-            modelBuilder.Entity("Cms.BatCave.Sonar.Data.ErrorDetail", b =>
-                {
-                    b.HasOne("Cms.BatCave.Sonar.Data.Environment", null)
-                        .WithMany()
-                        .HasForeignKey("EnvironmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_error_detail_environment_environment_id");
-
-                    b.HasOne("Cms.BatCave.Sonar.Data.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .HasConstraintName("fk_error_detail_tenant_tenant_id");
                 });
 
             modelBuilder.Entity("Cms.BatCave.Sonar.Data.HealthCheck", b =>

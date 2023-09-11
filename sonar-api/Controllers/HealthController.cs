@@ -30,21 +30,18 @@ public class HealthController : ControllerBase {
   private readonly PrometheusRemoteWriteClient _remoteWriteClient;
   private readonly ILogger<HealthController> _logger;
   private readonly ServiceDataHelper _serviceDataHelper;
-  private readonly ApiKeyDataHelper _apiKeyDataHelper;
   private readonly HealthDataHelper _healthDataHelper;
-  private readonly CacheHelper _cacheHelper;
+  private readonly ServiceHealthCacheHelper _cacheHelper;
   private readonly String _sonarEnvironment;
 
   public HealthController(
     ServiceDataHelper serviceDataHelper,
-    ApiKeyDataHelper apiKeyDataHelper,
     HealthDataHelper healthDataHelper,
-    CacheHelper cacheHelper,
+    ServiceHealthCacheHelper cacheHelper,
     PrometheusRemoteWriteClient remoteWriteClient,
     IOptions<SonarHealthCheckConfiguration> sonarHealthConfig,
     ILogger<HealthController> logger) {
     this._serviceDataHelper = serviceDataHelper;
-    this._apiKeyDataHelper = apiKeyDataHelper;
     this._healthDataHelper = healthDataHelper;
     this._cacheHelper = cacheHelper;
     this._remoteWriteClient = remoteWriteClient;

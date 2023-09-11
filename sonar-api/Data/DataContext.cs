@@ -151,6 +151,7 @@ public class DataContext : DbContext {
           .WithMany()
           .HasForeignKey(k => k.TenantId)
           .OnDelete(DeleteBehavior.Cascade);
-      });
+      })
+      .Entity<ServiceVersionCache>();
   }
 }

@@ -30,7 +30,7 @@ public class HealthDataHelper {
   // this the services health status will be unknown.
   private static readonly TimeSpan MaximumServiceHealthAge = TimeSpan.FromHours(1);
 
-  private readonly CacheHelper _cacheHelper;
+  private readonly ServiceHealthCacheHelper _cacheHelper;
   private readonly ServiceDataHelper _serviceDataHelper;
   private readonly IPrometheusClient _prometheusClient;
   private readonly Uri _prometheusUrl;
@@ -40,7 +40,7 @@ public class HealthDataHelper {
 
   public HealthDataHelper(
     DataContext dbContext,
-    CacheHelper cacheHelper,
+    ServiceHealthCacheHelper cacheHelper,
     ServiceDataHelper serviceDataHelper,
     IPrometheusClient prometheusClient,
     IOptions<PrometheusConfiguration> prometheusConfig,

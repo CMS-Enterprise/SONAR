@@ -28,16 +28,19 @@ public class VersionController : ControllerBase {
   private readonly ILogger<HealthController> _logger;
   private readonly ServiceDataHelper _serviceDataHelper;
   private readonly VersionDataHelper _versionDataHelper;
+  private readonly ServiceVersionCacheHelper _versionCacheHelper;
 
   public VersionController(
     ServiceDataHelper serviceDataHelper,
     VersionDataHelper versionDataHelper,
     PrometheusRemoteWriteClient remoteWriteClient,
-    ILogger<HealthController> logger) {
+    ILogger<HealthController> logger,
+    ServiceVersionCacheHelper versionCacheHelper) {
     this._serviceDataHelper = serviceDataHelper;
     this._versionDataHelper = versionDataHelper;
     this._remoteWriteClient = remoteWriteClient;
     this._logger = logger;
+    this._versionCacheHelper = versionCacheHelper;
   }
 
   /// <summary>
@@ -64,7 +67,22 @@ public class VersionController : ControllerBase {
     // validation
     await ValidateVersionData(environment, tenant, service, value, cancellationToken);
 
-    // TODO: Add caching
+    async Task CachingTaskExceptionHandling() {
+      try {
+        await this._versionCacheHelper
+          .CreateUpdateVersionCache(
+            environment,
+            tenant,
+            service,
+            value,
+            cancellationToken);
+      } catch (Exception e) {
+        this._logger.LogWarning(
+          message: "Unexpected error occurred during version caching process: {Message}",
+          e.Message
+        );
+      }
+    }
 
     // construct write data
     var writeData =
@@ -94,31 +112,39 @@ public class VersionController : ControllerBase {
         )
       );
 
+    var cachingTask = CachingTaskExceptionHandling();
     var prometheusTask = this._remoteWriteClient.RemoteWriteRequest(writeData, cancellationToken);
 
     try {
-      await Task.WhenAll(new[] { prometheusTask });
-    } catch (AggregateException e) {
-      foreach (var ie in e.InnerExceptions) {
-        this._logger.LogError(
-          message: "Unexpected error ({ExceptionType}): {Message}",
-          ie.GetType(),
-          ie.Message
-        );
-      }
+      await Task.WhenAll(cachingTask, prometheusTask);
+    } catch (Exception) {
+      // ignore
     }
 
-    ProblemDetails? problem = await prometheusTask;
+    // This will throw if the prometheus write has an issue
+    try {
+      var problem = await prometheusTask;
 
-    if (problem == null) {
+      if (problem == null) {
+        return this.NoContent();
+      }
+
+      if (problem.Status == (Int32)HttpStatusCode.BadRequest) {
+        problem.Type = ProblemTypes.InvalidData;
+      }
+
+      return this.StatusCode(problem.Status ?? (Int32)HttpStatusCode.InternalServerError, problem);
+    } catch (Exception ex) {
+      this._logger.LogError(
+        ex,
+        "An unhandled exception was raised by Prometheus while attempting to write service version: {Message}",
+        ex.Message
+      );
+
+      // This type of failure should be invisible to the agent since we also cache the status
       return this.NoContent();
     }
 
-    if (problem.Status == (Int32)HttpStatusCode.BadRequest) {
-      problem.Type = ProblemTypes.InvalidData;
-    }
-
-    return this.StatusCode(problem.Status ?? (Int32)HttpStatusCode.InternalServerError, problem);
   }
 
   [HttpGet("{environment}/tenants/{tenant}/services/{*servicePath}", Name = "GetSpecificServiceVersionDetails")]

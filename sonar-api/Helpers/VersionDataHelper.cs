@@ -18,14 +18,17 @@ public class VersionDataHelper {
   private readonly HealthDataHelper _healthDataHelper;
   private readonly IPrometheusClient _prometheusClient;
   private readonly ILogger<VersionDataHelper> _logger;
+  private readonly ServiceVersionCacheHelper _versionCacheHelper;
 
   public VersionDataHelper(
     HealthDataHelper healthDataHelper,
     IPrometheusClient prometheusClient,
-    ILogger<VersionDataHelper> logger) {
+    ILogger<VersionDataHelper> logger,
+    ServiceVersionCacheHelper versionCacheHelper) {
     this._healthDataHelper = healthDataHelper;
     this._prometheusClient = prometheusClient;
     this._logger = logger;
+    this._versionCacheHelper = versionCacheHelper;
   }
 
   public async Task<List<ServiceVersionDetails>> GetVersionDetailsForService(
@@ -82,10 +85,14 @@ public class VersionDataHelper {
         cancellationToken);
     } catch (Exception e) {
       this._logger.LogError(
-        message: "Error querying Prometheus: {Message}. Using cached values",
+        message: "Error querying Prometheus: {Message}. Using cached service version values",
         e.Message
       );
-      result = new List<ServiceVersionDetails>();
+      result = await this._versionCacheHelper.FetchServiceVersionCache(
+        environment,
+        tenant,
+        service,
+        cancellationToken);
     }
 
     return result;

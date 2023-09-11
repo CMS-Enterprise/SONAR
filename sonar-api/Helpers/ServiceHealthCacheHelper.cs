@@ -16,17 +16,17 @@ using String = System.String;
 
 namespace Cms.BatCave.Sonar.Helpers;
 
-public class CacheHelper {
+public class ServiceHealthCacheHelper {
   private readonly DataContext _dbContext;
   private readonly DbSet<ServiceHealthCache> _serviceHealthCacheTable;
   private readonly DbSet<HealthCheckCache> _healthCheckCacheTable;
-  private readonly ILogger<CacheHelper> _logger;
+  private readonly ILogger<ServiceHealthCacheHelper> _logger;
 
-  public CacheHelper(
+  public ServiceHealthCacheHelper(
     DataContext dbContext,
     DbSet<ServiceHealthCache> serviceHealthCacheTable,
     DbSet<HealthCheckCache> healthCheckCacheTable,
-    ILogger<CacheHelper> logger) {
+    ILogger<ServiceHealthCacheHelper> logger) {
 
     this._dbContext = dbContext;
     this._serviceHealthCacheTable = serviceHealthCacheTable;
@@ -55,7 +55,7 @@ public class CacheHelper {
       }
     } catch (DbUpdateException dbException) {
       this._logger.LogWarning(
-        message: "Error occurred while updating cache: {Message}",
+        message: "Error occurred while updating service health cache: {Message}",
         dbException.Message
       );
     }
