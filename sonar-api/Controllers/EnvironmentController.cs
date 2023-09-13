@@ -83,7 +83,7 @@ public class EnvironmentController : ControllerBase {
     var environments = await this._environmentDataHelper.FetchAllExistingEnvAsync(cancellationToken);
 
     foreach (var environment in environments) {
-      var tenantsHealth = await this._tenantDataHelper.GetTenantsHealth(environment, cancellationToken);
+      var tenantsHealth = await this._tenantDataHelper.GetTenantsInfo(environment, cancellationToken);
       environmentList.Add(ToEnvironmentHealth(tenantsHealth, environment));
     }
 
@@ -102,7 +102,7 @@ public class EnvironmentController : ControllerBase {
     var existing =
       await this._environmentDataHelper.FetchExistingEnvAsync(environment, cancellationToken);
 
-    var tenantsHealth = await this._tenantDataHelper.GetTenantsHealth(existing, cancellationToken);
+    var tenantsHealth = await this._tenantDataHelper.GetTenantsInfo(existing, cancellationToken);
     return this.Ok(ToEnvironmentHealth(tenantsHealth, existing));
   }
 
@@ -139,7 +139,7 @@ public class EnvironmentController : ControllerBase {
   }
 
   private static EnvironmentHealth ToEnvironmentHealth(
-    IList<TenantHealth> tenantsHealths,
+    IList<TenantInfo> tenantsHealths,
     Environment environment
   ) {
     HealthStatus? aggregateStatus = HealthStatus.Unknown;

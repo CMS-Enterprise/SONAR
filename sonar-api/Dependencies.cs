@@ -28,6 +28,7 @@ public class Dependencies {
     builder.Services.AddScoped<EnvironmentDataHelper>();
     builder.Services.AddScoped<TenantDataHelper>();
     builder.Services.AddScoped<ApiKeyDataHelper>();
+    builder.Services.AddScoped<PrometheusQueryHelper>();
     builder.Services.AddScoped<HealthDataHelper>();
     builder.Services.AddScoped<VersionDataHelper>();
     builder.Services.AddScoped<ServiceHealthCacheHelper>();

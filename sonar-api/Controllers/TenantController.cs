@@ -26,15 +26,15 @@ public class TenantController : ControllerBase {
   }
 
   [HttpGet(Name = "GetTenants")]
-  [ProducesResponseType(typeof(TenantHealth[]), statusCode: 200)]
+  [ProducesResponseType(typeof(TenantInfo[]), statusCode: 200)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
   public async Task<ActionResult> GetTenants(
     CancellationToken cancellationToken = default) {
-    var tenantList = new List<TenantHealth>();
+    var tenantList = new List<TenantInfo>();
     var environments = await this._environmentDataHelper.FetchAllExistingEnvAsync(cancellationToken);
 
     foreach (var e in environments) {
-      var res = await this._tenantDataHelper.GetTenantsHealth(e, cancellationToken);
+      var res = await this._tenantDataHelper.GetTenantsInfo(e, cancellationToken);
       tenantList.AddRange(res);
     }
 

@@ -32,6 +32,7 @@ public class HealthDataHelper {
 
   private readonly ServiceHealthCacheHelper _cacheHelper;
   private readonly ServiceDataHelper _serviceDataHelper;
+  private readonly PrometheusQueryHelper _prometheusQueryHelper;
   private readonly IPrometheusClient _prometheusClient;
   private readonly Uri _prometheusUrl;
   private readonly DataContext _dbContext;
@@ -42,6 +43,7 @@ public class HealthDataHelper {
     DataContext dbContext,
     ServiceHealthCacheHelper cacheHelper,
     ServiceDataHelper serviceDataHelper,
+    PrometheusQueryHelper prometheusQueryHelper,
     IPrometheusClient prometheusClient,
     IOptions<PrometheusConfiguration> prometheusConfig,
     IOptions<DatabaseConfiguration> dbConfig,
@@ -49,6 +51,7 @@ public class HealthDataHelper {
 
     this._cacheHelper = cacheHelper;
     this._serviceDataHelper = serviceDataHelper;
+    this._prometheusQueryHelper = prometheusQueryHelper;
     this._prometheusClient = prometheusClient;
     this._prometheusUrl = new Uri(
       $"{prometheusConfig.Value.Protocol}://{prometheusConfig.Value.Host}:{prometheusConfig.Value.Port}/"
@@ -65,9 +68,9 @@ public class HealthDataHelper {
 
     Dictionary<String, (DateTime Timestamp, HealthStatus Status)> serviceStatuses;
     try {
-      serviceStatuses = await this.GetLatestValuePrometheusQuery(
-        this._prometheusClient,
+      serviceStatuses = await this._prometheusQueryHelper.GetLatestValuePrometheusQuery(
         $"{HealthDataHelper.ServiceHealthAggregateMetricName}{{environment=\"{environment}\", tenant=\"{tenant}\"}}",
+        MaximumServiceHealthAge,
         processResult: results => {
           // StateSet metrics are split into separate metric per-state
           // This code groups all the metrics for a given service and then determines which state is currently set.
@@ -127,9 +130,9 @@ public class HealthDataHelper {
     Dictionary<(String Service, String HealthCheck), (DateTime Timestamp, HealthStatus Status)> healthCheckStatus;
     try {
       healthCheckStatus =
-        await this.GetLatestValuePrometheusQuery(
-          this._prometheusClient,
+        await this._prometheusQueryHelper.GetLatestValuePrometheusQuery(
           $"{HealthDataHelper.ServiceHealthCheckMetricName}{{environment=\"{environment}\", tenant=\"{tenant}\"}}",
+          MaximumServiceHealthAge,
           processResult: results => {
             // StateSet metrics are split into separate metric per-state
             // This code groups all the metrics for a given state.
@@ -268,45 +271,6 @@ public class HealthDataHelper {
       ),
       children
     );
-  }
-
-  public async Task<T> GetLatestValuePrometheusQuery<T>(
-    IPrometheusClient prometheusClient,
-    String promQuery,
-    Func<QueryResults, T> processResult,
-    CancellationToken cancellationToken) {
-
-    var response = await prometheusClient.QueryAsync(
-      // metric{tag="value"}[time_window]
-      $"{promQuery}[{PrometheusClient.ToPrometheusDuration(HealthDataHelper.MaximumServiceHealthAge)}]",
-      DateTime.UtcNow,
-      cancellationToken: cancellationToken
-    );
-
-    if (response.Status != ResponseStatus.Success) {
-      this._logger.LogError(
-        message: "Unexpected error querying service health status from Prometheus ({ErrorType}): {ErrorMessage}",
-        response.ErrorType,
-        response.Error
-      );
-      throw new InternalServerErrorException(
-        errorType: "PrometheusApiError",
-        message: "Error querying service health status."
-      );
-    }
-
-    if (response.Data == null) {
-      this._logger.LogError(
-        message: "Prometheus unexpectedly returned null data for query {Query}",
-        promQuery
-      );
-      throw new InternalServerErrorException(
-        errorType: "PrometheusApiError",
-        message: "Error querying service health status."
-      );
-    }
-
-    return processResult(response.Data);
   }
 
   public async Task<T>

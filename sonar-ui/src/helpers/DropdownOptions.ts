@@ -2,7 +2,7 @@ import { DropdownOptions, DropdownValue } from '@cmsgov/design-system/dist/types
 import {
   EnvironmentHealth,
   PermissionConfiguration,
-  TenantHealth
+  TenantInfo
 } from '../api/data-contracts';
 import { UsersByEmail } from '../pages/UserPermissions.Hooks';
 
@@ -68,7 +68,7 @@ export function getEnvironmentOptions(
 }
 
 export function getTenantOptions(
-  allTenants: TenantHealth[],
+  allTenants: TenantInfo[],
   selectedEnvironment: DropdownValue
 ) {
   const tenantOptions = allTenants

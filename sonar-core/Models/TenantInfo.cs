@@ -6,14 +6,14 @@ using Cms.BatCave.Sonar.Enumeration;
 
 namespace Cms.BatCave.Sonar.Models;
 
-public record TenantHealth {
+public record TenantInfo {
 
-  public TenantHealth(
+  public TenantInfo(
     String environmentName,
     String tenantName,
     DateTime? timestamp = null,
     HealthStatus? aggregateStatus = null,
-    ServiceHierarchyHealth?[]? rootServices = null) {
+    ServiceHierarchyInfo[]? rootServices = null) {
 
     this.EnvironmentName = environmentName;
     this.TenantName = tenantName;
@@ -32,5 +32,5 @@ public record TenantHealth {
 
   public HealthStatus? AggregateStatus { get; init; }
 
-  public ServiceHierarchyHealth?[]? RootServices { get; init; }
+  public ServiceHierarchyInfo[]? RootServices { get; init; }
 }

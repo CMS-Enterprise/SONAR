@@ -198,6 +198,22 @@ export interface ServiceHierarchyHealthHistory {
   children?: ServiceHierarchyHealthHistory[] | null;
 }
 
+export interface ServiceHierarchyInfo {
+  /** @minLength 1 */
+  name: string;
+  /** @minLength 1 */
+  displayName: string;
+  description?: string | null;
+  /** @format uri */
+  url?: string | null;
+  /** @format date-time */
+  timestamp?: string | null;
+  aggregateStatus?: HealthStatus;
+  versions?: Record<string, string>;
+  healthChecks?: Record<string, DateTimeHealthStatusValueTuple>;
+  children?: ServiceHierarchyInfo[] | null;
+}
+
 export interface ServiceVersion {
   /** @format date-time */
   timestamp: string;
@@ -212,7 +228,7 @@ export interface ServiceVersionDetails {
   timestamp: string;
 }
 
-export interface TenantHealth {
+export interface TenantInfo {
   /** @minLength 1 */
   environmentName: string;
   /** @minLength 1 */
@@ -220,7 +236,7 @@ export interface TenantHealth {
   /** @format date-time */
   timestamp?: string | null;
   aggregateStatus?: HealthStatus;
-  rootServices?: ServiceHierarchyHealth[] | null;
+  rootServices?: ServiceHierarchyInfo[] | null;
 }
 
 export interface TimeSpan {

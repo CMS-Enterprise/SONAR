@@ -26,7 +26,7 @@ import {
   ServiceHierarchyHealthHistory,
   ServiceVersion,
   ServiceVersionDetails,
-  TenantHealth,
+  TenantInfo,
   UptimeModel,
   UserPermissionsView,
 } from "./data-contracts";
@@ -420,7 +420,7 @@ tenant, service, and health check in Prometheus. Filters out samples outside of 
    * @request GET:/api/v2/tenants
    */
   getTenants = (params: RequestParams = {}) =>
-    this.request<TenantHealth[], ProblemDetails>({
+    this.request<TenantInfo[], ProblemDetails>({
       path: `/api/v2/tenants`,
       method: "GET",
       format: "json",

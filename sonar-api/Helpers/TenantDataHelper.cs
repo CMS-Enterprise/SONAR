@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,6 +23,7 @@ public class TenantDataHelper {
   private readonly DbSet<Tenant> _tenantsTable;
   private readonly HealthDataHelper _healthDataHelper;
   private readonly ServiceDataHelper _serviceDataHelper;
+  private readonly VersionDataHelper _versionDataHelper;
   private readonly String _sonarEnvironment;
 
   public TenantDataHelper(
@@ -29,11 +31,14 @@ public class TenantDataHelper {
     DbSet<Tenant> tenantsTable,
     HealthDataHelper healthDataHelper,
     ServiceDataHelper serviceDataHelper,
+    VersionDataHelper versionDataHelper,
     IOptions<SonarHealthCheckConfiguration> sonarHealthConfig) {
+
     this._environmentsTable = environmentsTable;
     this._tenantsTable = tenantsTable;
     this._healthDataHelper = healthDataHelper;
     this._serviceDataHelper = serviceDataHelper;
+    this._versionDataHelper = versionDataHelper;
     this._sonarEnvironment = sonarHealthConfig.Value.SonarEnvironment;
   }
 
@@ -94,7 +99,7 @@ public class TenantDataHelper {
     return envTenantTree;
   }
 
-  public async Task<IList<TenantHealth>> GetTenantsHealth(
+  public async Task<IList<TenantInfo>> GetTenantsInfo(
     Environment environment,
     CancellationToken cancellationToken) {
 
@@ -102,7 +107,7 @@ public class TenantDataHelper {
       this._tenantsTable.Where(t => t.EnvironmentId == environment.Id)
         .ToListAsync(cancellationToken);
 
-    var tenantList = new List<TenantHealth>();
+    var tenantList = new List<TenantInfo>();
     foreach (var tenant in tenants) {
       var (_, _, services) =
         await this._serviceDataHelper.FetchExistingConfiguration(environment.Name, tenant.Name, cancellationToken);
@@ -115,6 +120,8 @@ public class TenantDataHelper {
 
       var serviceChildIdsLookup = await this._serviceDataHelper.GetServiceChildIdsLookup(services, cancellationToken);
       var healthChecksByService = await this._healthDataHelper.GetHealthChecksByService(services, cancellationToken);
+      var serviceVersionLookup =
+        await this._versionDataHelper.GetServiceVersionLookup(environment.Name, tenant.Name, cancellationToken);
 
       //All root services for tenant
       var rootServiceHealth = services.Values.Where(svc => svc.IsRootService)
@@ -122,13 +129,15 @@ public class TenantDataHelper {
           svc, services, serviceStatuses, serviceChildIdsLookup, healthChecksByService, healthCheckStatus)
         ).ToArray();
 
-      tenantList.Add(ToTenantHealth(tenant.Name, environment.Name, rootServiceHealth));
+      tenantList.Add(ToTenantInfo(tenant.Name, environment.Name, serviceVersionLookup, rootServiceHealth));
     }
 
     if (environment.Name == this._sonarEnvironment) {
-      tenantList.Add(ToTenantHealth(
+      tenantList.Add(ToTenantInfo(
         SonarTenantName,
         environment.Name,
+        // Note: we could fetch version information for our built in dependencies
+        ImmutableDictionary<String, IImmutableList<ServiceVersionDetails>>.Empty,
         (await this._healthDataHelper.CheckSonarHealth(cancellationToken)).ToArray()
       ));
     }
@@ -136,37 +145,29 @@ public class TenantDataHelper {
     return tenantList;
   }
 
-  private static TenantHealth ToTenantHealth(
+  private static TenantInfo ToTenantInfo(
     String tenantName,
     String environmentName,
-    ServiceHierarchyHealth?[] rootServiceHealth
-) {
+    IImmutableDictionary<String, IImmutableList<ServiceVersionDetails>> serviceVersionLookup,
+    ServiceHierarchyHealth[] rootServiceHealth
+  ) {
     HealthStatus? aggregateStatus = HealthStatus.Unknown;
     DateTime? statusTimestamp = null;
 
     foreach (var rs in rootServiceHealth) {
-      if (rs != null) {
+      if (rs.AggregateStatus.HasValue) {
+        if ((aggregateStatus == null) ||
+          (aggregateStatus < rs.AggregateStatus) ||
+          (rs.AggregateStatus == HealthStatus.Unknown)) {
+          aggregateStatus = rs.AggregateStatus;
+        }
 
-        if (rs.AggregateStatus.HasValue) {
-          if ((aggregateStatus == null) ||
-            (aggregateStatus < rs.AggregateStatus) ||
-            (rs.AggregateStatus == HealthStatus.Unknown)) {
-            aggregateStatus = rs.AggregateStatus;
-          }
-
-          // The child service should always have a timestamp here, but double check anyway
-          if (rs.Timestamp.HasValue &&
-            (!statusTimestamp.HasValue || (rs.Timestamp.Value < statusTimestamp.Value))) {
-            // The status timestamp should always be the *oldest* of the
-            // recorded status data points.
-            statusTimestamp = rs.Timestamp.Value;
-          }
-        } else {
-          // One of the child services has an "unknown" status, that means
-          // this service will also have the "unknown" status.
-          aggregateStatus = null;
-          statusTimestamp = null;
-          break;
+        // The child service should always have a timestamp here, but double check anyway
+        if (rs.Timestamp.HasValue &&
+          (!statusTimestamp.HasValue || (rs.Timestamp.Value < statusTimestamp.Value))) {
+          // The status timestamp should always be the *oldest* of the
+          // recorded status data points.
+          statusTimestamp = rs.Timestamp.Value;
         }
       } else {
         // One of the child services has an "unknown" status, that means
@@ -177,6 +178,31 @@ public class TenantDataHelper {
       }
     }
 
-    return new TenantHealth(environmentName, tenantName, statusTimestamp, aggregateStatus, rootServiceHealth);
+    return new TenantInfo(
+      environmentName,
+      tenantName,
+      statusTimestamp,
+      aggregateStatus,
+      AddVersionInfo(rootServiceHealth, serviceVersionLookup).ToArray()
+    );
+  }
+
+  private static IEnumerable<ServiceHierarchyInfo> AddVersionInfo(
+    IEnumerable<ServiceHierarchyHealth> serviceHealth,
+    IImmutableDictionary<String, IImmutableList<ServiceVersionDetails>> serviceVersionLookup) {
+    foreach (var svc in serviceHealth) {
+      yield return new ServiceHierarchyInfo(
+        svc.Name,
+        svc.DisplayName,
+        svc.Description,
+        svc.Url,
+        svc.Timestamp,
+        svc.AggregateStatus,
+        serviceVersionLookup.TryGetValue(svc.Name, out var versionDetailsList) ?
+          versionDetailsList.ToImmutableDictionary(v => v.VersionType, v => v.Version) : null,
+        svc.HealthChecks,
+        svc.Children != null ? AddVersionInfo(svc.Children, serviceVersionLookup).ToImmutableHashSet() : null
+      );
+    }
   }
 }
