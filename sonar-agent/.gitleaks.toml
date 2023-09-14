@@ -1,0 +1,27 @@
+title = "sonar-agent configuration overrides."
+
+[extend]
+# https://github.com/gitleaks/gitleaks/blob/master/config/gitleaks.toml
+useDefault = true
+
+# global allowlist
+[allowlist]
+description = "global allow list"
+paths = [
+  '''\.gitleaks\.toml''',
+  # Don't look for secrets in markdown files.
+  '''(.*?)\.md$''',
+  # Gitleaks, you suck
+  # Exclude everything except sonar-agent, k8s, and chart folders
+  '''\.git''',
+  '''\.gitlab-ci''',
+  '''config''',
+  '''docs''',
+  '''lib''',
+  '''samples''',
+  '''scripts''',
+  '''sonar-api''',
+  '''sonar-core''',
+  '''sonar-ui''',
+  '''test'''
+]

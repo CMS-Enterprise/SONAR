@@ -7,7 +7,7 @@ stages:
   stage: deploy
   trigger:
     include:
-      - project: devops-pipelines/pipeline-triggers
+      - project: $PIPELINE_TRIGGERS_PROJECT
         ref: $PIPELINE_TRIGGERS_VERSION
         file: deployment.yaml
     strategy: depend

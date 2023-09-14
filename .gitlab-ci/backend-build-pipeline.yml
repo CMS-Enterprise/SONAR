@@ -62,12 +62,13 @@ lint:
         APP_IMAGE_SRC: $AGENT_APP_IMAGE_SRC
   trigger:
     include:
-      - project: devops-pipelines/pipeline-triggers
+      - project: $PIPELINE_TRIGGERS_PROJECT
         ref: $PIPELINE_TRIGGERS_VERSION
         file: sast.yaml
     strategy: depend
 
 sast-dev:
+  needs: []
   extends: .sast
   rules:
     - if: $CI_COMMIT_BRANCH == $MAIN_BRANCH_NAME && $CI_COMMIT_TAG == null
@@ -94,7 +95,7 @@ sast-release:
         GATECHECK_DD_PRODUCT: $AGENT_PROJECT_NAME
   trigger:
     include:
-      - project: devops-pipelines/pipeline-triggers
+      - project: $PIPELINE_TRIGGERS_PROJECT
         ref: $PIPELINE_TRIGGERS_VERSION
         file: delivery.yaml
     strategy: depend

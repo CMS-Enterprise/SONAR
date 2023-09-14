@@ -1,0 +1,31 @@
+# Title for the gitleaks configuration file.
+title = "sonar-api configuration overrides."
+
+[extend]
+# https://github.com/gitleaks/gitleaks/blob/master/config/gitleaks.toml
+useDefault = true
+
+# global allowlist
+[allowlist]
+description = "global allow list"
+paths = [
+  '''\.gitleaks\.toml''',
+  # Don't look for secrets in markdown files.
+  '''(.*?)\.md$''',
+  # Gitleaks, you suck
+  # Ignore folders handled by other gitleaks runs
+  '''\.git''',
+  '''\.gitlab-ci''',
+  '''charts''',
+  '''k8s''',
+  '''lib''',
+  '''sonar-agent''',
+  '''sonar-ui'''
+]
+
+regexTarget = "line"
+regexes = [
+  '''AuthorizationServerId''',
+  '''Audience''',
+  '''OktaDomain'''
+]

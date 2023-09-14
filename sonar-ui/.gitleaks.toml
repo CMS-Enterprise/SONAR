@@ -1,0 +1,36 @@
+title = "sonar-ui configuration overrides."
+
+[extend]
+# https://github.com/gitleaks/gitleaks/blob/master/config/gitleaks.toml
+useDefault = true
+
+# global allowlist
+[allowlist]
+description = "global allow list"
+paths = [
+  '''\.gitleaks\.toml''',
+  # Don't look for secrets in markdown files.
+  '''(.*?)\.md$''',
+  # Gitleaks, you suck
+  # Exclude everyhing except sonar-ui folder
+  '''\.git''',
+  '''\.gitlab-ci''',
+  '''charts''',
+  '''config''',
+  '''docs''',
+  '''k8s''',
+  '''lib''',
+  '''samples''',
+  '''scripts''',
+  '''sonar-agent''',
+  '''sonar-api''',
+  '''sonar-core''',
+  '''test'''
+]
+
+regexTarget = "line"
+regexes = [
+  '''OKTA_CLIENTID''',
+  '''OKTA_ISSUER''',
+  '''.*clientId: .*'''
+]
