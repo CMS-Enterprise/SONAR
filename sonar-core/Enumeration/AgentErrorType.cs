@@ -1,6 +1,6 @@
 namespace Cms.BatCave.Sonar.Enumeration;
 
-public enum ErrorType {
+public enum AgentErrorType {
   Deserialization = 0,
   Validation,
   SaveConfiguration,

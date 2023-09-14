@@ -9,6 +9,21 @@
  * ---------------------------------------------------------------
  */
 
+export enum AgentErrorLevel {
+  Fatal = "Fatal",
+  Error = "Error",
+  Warning = "Warning",
+}
+
+export enum AgentErrorType {
+  Deserialization = "Deserialization",
+  Validation = "Validation",
+  SaveConfiguration = "SaveConfiguration",
+  FetchConfiguration = "FetchConfiguration",
+  Execution = "Execution",
+  Unknown = "Unknown",
+}
+
 export interface ApiKeyConfiguration {
   /** @format uuid */
   id?: string;
@@ -65,6 +80,20 @@ export interface EnvironmentModel {
    * @pattern ^[0-9a-zA-Z_-]+$
    */
   name: string;
+}
+
+export interface ErrorReportDetails {
+  /** @format date-time */
+  timestamp: string;
+  tenant?: string | null;
+  service?: string | null;
+  healthCheckName?: string | null;
+  level: AgentErrorLevel;
+  type: AgentErrorType;
+  /** @minLength 1 */
+  message: string;
+  configuration?: string | null;
+  stackTrace?: string | null;
 }
 
 export type HealthCheckDefinition = object;

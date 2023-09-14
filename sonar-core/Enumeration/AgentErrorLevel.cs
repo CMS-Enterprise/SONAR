@@ -1,6 +1,6 @@
 namespace Cms.BatCave.Sonar.Enumeration;
 
-public enum ErrorLevel {
+public enum AgentErrorLevel {
   Fatal = 0,
   Error,
   Warning

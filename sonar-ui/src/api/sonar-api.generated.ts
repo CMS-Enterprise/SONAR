@@ -10,11 +10,13 @@
  */
 
 import {
+  AgentErrorType,
   ApiKeyConfiguration,
   ApiKeyDetails,
   CurrentUserView,
   EnvironmentHealth,
   EnvironmentModel,
+  ErrorReportDetails,
   MetricDataCollection,
   PermissionConfiguration,
   PermissionDetails,
@@ -206,6 +208,49 @@ export class Api<SecurityDataType = unknown> extends HttpClient<SecurityDataType
     this.request<void, ProblemDetails>({
       path: `/api/v2/environments/${environment}`,
       method: "DELETE",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags ErrorReports
+   * @name CreateErrorReport
+   * @request POST:/api/v2/error-reports/{environment}
+   */
+  createErrorReport = (environment: string, data: ErrorReportDetails, params: RequestParams = {}) =>
+    this.request<ErrorReportDetails, ProblemDetails>({
+      path: `/api/v2/error-reports/${environment}`,
+      method: "POST",
+      body: data,
+      type: ContentType.Json,
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags ErrorReports
+   * @name ListErrorReport
+   * @request GET:/api/v2/error-reports/{environment}
+   */
+  listErrorReport = (
+    environment: string,
+    query?: {
+      serviceName?: string;
+      healthCheckName?: string;
+      errorType?: AgentErrorType;
+      /** @format date-time */
+      start?: string;
+      /** @format date-time */
+      end?: string;
+    },
+    params: RequestParams = {},
+  ) =>
+    this.request<ErrorReportDetails[], ProblemDetails | void>({
+      path: `/api/v2/error-reports/${environment}`,
+      method: "GET",
+      query: query,
+      format: "json",
       ...params,
     });
   /**

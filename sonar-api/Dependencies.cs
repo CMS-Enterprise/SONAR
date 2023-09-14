@@ -36,6 +36,7 @@ public class Dependencies {
     builder.Services.AddScoped<IApiKeyRepository, DbApiKeyRepository>();
     builder.Services.AddScoped<IPermissionsRepository, DbPermissionRepository>();
     builder.Services.AddScoped<KeyHashHelper>();
+    builder.Services.AddScoped<ErrorReportsDataHelper>();
 
     builder.Services.AddHttpClient<IPrometheusRemoteProtocolClient, PrometheusRemoteProtocolClient>((provider, client) => {
       var config = provider.GetRequiredService<IOptions<PrometheusConfiguration>>().Value;

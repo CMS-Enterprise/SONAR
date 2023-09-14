@@ -142,7 +142,7 @@ public class DataContext : DbContext {
           .HasForeignKey(hcc => hcc.ServiceHealthId)
           .OnDelete(DeleteBehavior.Cascade);
       })
-      .Entity<ErrorDetail>(entity => {
+      .Entity<ErrorReport>(entity => {
         entity.HasOne<Environment>()
           .WithMany()
           .HasForeignKey(k => k.EnvironmentId)

@@ -9,7 +9,8 @@
   "codeGenerators": {
     "openApiToCSharpClient": {
       "additionalNamespaceUsages": [
-        "Cms.BatCave.Sonar.Models"
+        "Cms.BatCave.Sonar.Models",
+        "Cms.BatCave.Sonar.Enumeration"
       ],
       "namespace": "Cms.BatCave.Sonar.Agent",
       "className": "SonarClient",
