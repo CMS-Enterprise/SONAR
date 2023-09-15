@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Threading;
 using Cms.BatCave.Sonar.Models;
 
@@ -29,12 +30,25 @@ public class LocalFileServiceConfigSource : IServiceConfigSource {
     [EnumeratorCancellation] CancellationToken cancellationToken) {
 
     if (tenant == this._tenant) {
+      Int32 num = 0;
       foreach (var file in this._filePaths) {
-        await using var inputStream = new FileStream(file, FileMode.Open, FileAccess.Read);
-        using var reader = new StreamReader(inputStream);
-        var fileContent = await reader.ReadToEndAsync(cancellationToken);
+        ServiceHierarchyConfiguration config;
+          await using var inputStream = new FileStream(file, FileMode.Open, FileAccess.Read);
+          using var reader = new StreamReader(inputStream);
+          var fileContent = await reader.ReadToEndAsync(cancellationToken);
+        try {
+          config = JsonServiceConfigSerializer.Deserialize(fileContent);
+        } catch (JsonException ex) {
+          throw new ServiceConfigSourceException {
+            InnerException = ex,
+            LayerDescription = file,
+            LayerNumber = num,
+            RawConfig = fileContent
+          };
+        }
 
-        yield return JsonServiceConfigSerializer.Deserialize(fileContent);
+        yield return config;
+        num++;
       }
     }
   }

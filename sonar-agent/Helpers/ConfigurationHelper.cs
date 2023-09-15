@@ -1,12 +1,17 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Net;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Agent.ServiceConfig;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Models;
+using CommandLine;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Cms.BatCave.Sonar.Agent;
@@ -32,6 +37,7 @@ public class ConfigurationHelper {
   ///   Load Service Configuration from both local files and the Kubernetes API according to command line
   ///   options.
   /// </summary>
+  /// <param name="environment"></param>
   /// <param name="cancellationToken">Cancellation token</param>
   /// <returns>
   ///   A dictionary of tenant names to <see cref="ServiceHierarchyConfiguration" /> for that tenant.
@@ -43,28 +49,79 @@ public class ConfigurationHelper {
     String environment,
     CancellationToken cancellationToken) {
 
+    var (conn, client) = this._sonarClientFactory();
     var configurationByTenant =
       new Dictionary<String, ServiceHierarchyConfiguration>(StringComparer.OrdinalIgnoreCase);
 
-    await foreach (var tenant in this._serviceConfigSource.GetTenantsAsync(cancellationToken)) {
-      var layers =
-        await this._serviceConfigSource.GetConfigurationLayersAsync(tenant, cancellationToken)
-          .ToListAsync(cancellationToken);
-
-      if (layers.Count > 0) {
-        var mergedConfiguration = layers.Aggregate(ServiceConfigMerger.MergeConfigurations);
-
+    //Check for Deserialization and Merging
+    try {
+      await foreach (var tenant in this._serviceConfigSource.GetTenantsAsync(cancellationToken)) {
+        ServiceHierarchyConfiguration? mergedConfiguration = null;
         try {
-          ServiceConfigValidator.ValidateServiceConfig(mergedConfiguration);
-          configurationByTenant.Add(tenant, mergedConfiguration);
-        } catch (InvalidConfigurationException e) {
+          var layers =
+            await this._serviceConfigSource.GetConfigurationLayersAsync(tenant, cancellationToken)
+              .ToListAsync(cancellationToken);
+
+          if (layers.Count > 0) {
+            mergedConfiguration = layers.Aggregate(ServiceConfigMerger.MergeConfigurations);
+
+            try {
+              ServiceConfigValidator.ValidateServiceConfig(mergedConfiguration);
+              configurationByTenant.Add(tenant, mergedConfiguration);
+
+            } catch (InvalidConfigurationException e) {
+              this._logger.LogError(e,
+                message: "Tenant service configuration is invalid, skipping initial load: {tenant}.",
+                tenant);
+
+              //Create Error Report for Validation
+              var data = (List<ValidationResult>)e.Data["errors"]!;
+              var errorReport = new ErrorReportDetails(
+                timestamp: DateTime.UtcNow,
+                tenant: tenant,
+                service: null,
+                healthCheckName: null,
+                level: AgentErrorLevel.Error,
+                type: AgentErrorType.Validation,
+                message: data
+                  .Select(em => em.ErrorMessage)
+                  .Aggregate("", (current, next) => current + ' ' + next),
+                configuration: null,
+                stackTrace: e.StackTrace
+              );
+              await client.CreateErrorReportAsync(environment, errorReport, cancellationToken);
+            }
+          } else {
+            configurationByTenant.Add(tenant, ServiceHierarchyConfiguration.Empty);
+          }
+        } catch (Exception e) when (e is InvalidConfigurationException or ServiceConfigSourceException) {
           this._logger.LogError(e,
-            message: "Tenant service configuration is invalid, skipping initial load: {tenant}.",
+            message: "An error occurred reading or deserializing service configuration, skipping initial load: {tenant}.",
             tenant);
+
+          String? config = null;
+          if (mergedConfiguration != null) {
+            config = "serialize the config object";
+          } else if (e is ServiceConfigSourceException svcConfigEx) {
+            config = svcConfigEx.RawConfig;
+          }
+          // Create Error Report for Deserialization and Merging
+          var errorReport = new ErrorReportDetails(
+            timestamp: DateTime.UtcNow,
+            tenant: tenant,
+            service: null,
+            healthCheckName: null,
+            level: AgentErrorLevel.Error,
+            type: AgentErrorType.Deserialization,
+            message: e.Message,
+            configuration: config,
+            stackTrace: e.StackTrace
+          );
+          await client.CreateErrorReportAsync(environment, errorReport, cancellationToken);
         }
-      } else {
-        configurationByTenant.Add(tenant, ServiceHierarchyConfiguration.Empty);
       }
+    } finally {
+      conn.Dispose();
     }
 
     return configurationByTenant;

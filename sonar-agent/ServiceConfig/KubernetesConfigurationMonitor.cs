@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net.Http;
@@ -344,30 +345,72 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
     String tenantName,
     Boolean includeSecrets) {
 
-    // get all configmaps and secrets for associated namespace
-    var configMaps = this._kubeClient.CoreV1.ListNamespacedConfigMap(namespaceName).Items;
-    var secrets =
-      includeSecrets ?
-        this._kubeClient.CoreV1.ListNamespacedSecret(namespaceName).Items :
-        Enumerable.Empty<V1Secret>();
+      // get all configmaps and secrets for associated namespace
+      var configMaps = this._kubeClient.CoreV1.ListNamespacedConfigMap(namespaceName).Items;
+      var secrets =
+        includeSecrets ?
+          this._kubeClient.CoreV1.ListNamespacedSecret(namespaceName).Items :
+          Enumerable.Empty<V1Secret>();
 
-    // select and order those configmaps and secrets that contain SONAR service configuration
-    var configLayers =
-      KubernetesConfigSource
-        .GetServiceConfigurationLayers(tenantName, configMaps, secrets, this._logger)
-        .ToImmutableList();
+      // select and order those configmaps and secrets that contain SONAR service configuration
+      var configLayers =
+        KubernetesConfigSource
+          .GetServiceConfigurationLayers(tenantName, configMaps, secrets, this._logger)
+          .ToImmutableList();
 
-    // Ignore the tenant if it has no service configuration
-    if (configLayers.Any()) {
-      // Merge and validate the configuration
-      var mergedConfig = configLayers.Aggregate(ServiceConfigMerger.MergeConfigurations);
+      try {
+        // Ignore the tenant if it has no service configuration
+        if (configLayers.Any()) {
+          // Merge and validate the configuration
+          var mergedConfig = configLayers.Aggregate(ServiceConfigMerger.MergeConfigurations);
 
-      ServiceConfigValidator.ValidateServiceConfig(mergedConfig);
+          try {
+            ServiceConfigValidator.ValidateServiceConfig(mergedConfig);
+            return mergedConfig;
 
-      return mergedConfig;
-    } else {
+          } catch (InvalidConfigurationException e) {
+            var data = (List<ValidationResult>)e.Data["errors"]!;
+            var errorReport = new ErrorReportDetails(
+              timestamp: DateTime.UtcNow,
+              tenant: null,
+              service: null,
+              healthCheckName: null,
+              level: AgentErrorLevel.Error,
+              type: AgentErrorType.Validation,
+              message: data
+                .Select(em => em.ErrorMessage)
+                .Aggregate("", (current, next) => current + ' ' + next),
+              configuration: null,
+              stackTrace: e.StackTrace
+            );
+            await this._errorReportsHelper.CreateErrorReport(
+              this._environment,
+              errorReport,
+              token);
+
+          }
+        }
+      } catch (InvalidConfigurationException e) {
+        var data = (List<ValidationResult>)e.Data["errors"]!;
+        var errorReport = new ErrorReportDetails(
+          timestamp: DateTime.UtcNow,
+          tenant: null,
+          service: null,
+          healthCheckName: null,
+          level: AgentErrorLevel.Error,
+          type: AgentErrorType.Deserialization,
+          message: e.Message,
+          configuration: null,
+          stackTrace: e.StackTrace
+        );
+
+        await this._errorReportsHelper.CreateErrorReport(
+          this._environment,
+          errorReport,
+          token);
+      }
+
       return ServiceHierarchyConfiguration.Empty;
-    }
   }
 
   private async Task DeleteServicesAsyncWrapper(
