@@ -5,10 +5,15 @@ namespace Cms.BatCave.Sonar.Models;
 
 public sealed record FluxKustomizationVersionCheckDefinition : VersionCheckDefinition {
   public FluxKustomizationVersionCheckDefinition(
-    String path) {
-    this.Path = path;
+    String k8sNamespace,
+    String kustomization) {
+    this.K8sNamespace = k8sNamespace;
+    this.Kustomization = kustomization;
   }
 
   [Required]
-  public String Path { get; init; }
+  public String K8sNamespace { get; init; }
+
+  [Required]
+  public String Kustomization { get; init; }
 };

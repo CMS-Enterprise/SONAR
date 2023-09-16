@@ -7,7 +7,8 @@
         {
           "versionCheckType": "FluxKustomization",
           "definition": {
-            "path": "$.fluxkustomization.overlay.path"
+            "k8sNamespace": "overlay-k8s-namespace",
+            "kustomization": "overlay-kustomization"
           }
         }
       ]

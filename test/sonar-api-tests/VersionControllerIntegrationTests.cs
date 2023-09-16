@@ -39,8 +39,7 @@ public class VersionControllerIntegrationTests : ApiControllerTestsBase {
   private static readonly VersionCheckModel TestVersionCheck =
     new(
       TestFluxVersionCheckType,
-      new FluxKustomizationVersionCheckDefinition(
-        "test/path")
+      new FluxKustomizationVersionCheckDefinition(k8sNamespace: "test", kustomization: "test")
     );
 
   private static readonly ServiceHierarchyConfiguration TestRootOnlyConfiguration = new(

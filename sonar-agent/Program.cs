@@ -12,6 +12,7 @@ using Cms.BatCave.Sonar.Agent.HealthChecks.Metrics;
 using Cms.BatCave.Sonar.Agent.Options;
 using Cms.BatCave.Sonar.Logger;
 using Cms.BatCave.Sonar.Agent.ServiceConfig;
+using Cms.BatCave.Sonar.Agent.VersionChecks;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Loki;
@@ -286,7 +287,34 @@ internal class Program {
       loggerFactory, apiConfig, agentConfig, httpHealthCheckQueue, prometheusHealthCheckQueue, lokiHealthCheckQueue);
     var tasks = new List<Task>();
 
-    // Run task that calls Health Check function for every tenant
+    // Create Version Check Queue Processors
+
+    using var versionCheckQueueProcessor = new VersionCheckQueueProcessor(agentConfig);
+
+    // Always start the HTTP Version Check processing task.
+    using var versionRequesterHttpClient = new HttpClient();
+    versionRequesterHttpClient.Timeout = TimeSpan.FromSeconds(agentConfig.Value.AgentInterval);
+    var httpVersionRequester = new HttpResponseBodyVersionRequester(versionRequesterHttpClient);
+    tasks.Add(versionCheckQueueProcessor.StartAsync(httpVersionRequester, token));
+
+    // TODO Start the Flux Version Check processing task if we are in K8s.
+    // if (opts.KubernetesConfigurationOption) {
+    //   var fluxVersionRequester = new FluxKustomizationVersionRequester(
+    //     agentConfig,
+    //     loggerFactory.CreateLogger<FluxKustomizationVersionRequester>());
+    //   tasks.Add(versionCheckQueueProcessor.StartAsync(fluxVersionRequester, token));
+    // }
+
+    using var sonarHttpClient = new HttpClient();
+    sonarHttpClient.Timeout = TimeSpan.FromSeconds(agentConfig.Value.AgentInterval);
+    var versionCheckHelper = new VersionCheckHelper(
+      loggerFactory.CreateLogger<VersionCheckHelper>(),
+      agentConfig,
+      apiConfig,
+      versionCheckQueueProcessor,
+      new SonarClient(apiConfig, sonarHttpClient));
+
+    // Run task that calls Health Check and Version Check function for every tenant
     if (opts.KubernetesConfigurationOption) {
       var kubeClient = CreateKubeClient();
       var k8sWatcher = new KubernetesConfigurationMonitor(
@@ -300,6 +328,7 @@ internal class Program {
 
       k8sWatcher.TenantCreated += (sender, args) => {
         tasks.Add(healthCheckHelper.RunScheduledHealthCheck(args.Tenant, token));
+        tasks.Add(versionCheckHelper.RunScheduledVersionChecks(args.Tenant, token));
       };
 
       // The namespace watcher will automatically start threads for existing tenants configured via
@@ -308,16 +337,14 @@ internal class Program {
         // We don't monitor local files for changes, so if there aren't any services configured,
         // there is no need to start a thread.
         if (services.Services.Count > 0) {
-          tasks.Add(
-            healthCheckHelper.RunScheduledHealthCheck(
-              agentConfig.Value.DefaultTenant,
-              token
-            ));
+          tasks.Add(healthCheckHelper.RunScheduledHealthCheck(agentConfig.Value.DefaultTenant, token));
+          tasks.Add(versionCheckHelper.RunScheduledVersionChecks(agentConfig.Value.DefaultTenant, token));
         }
       }
     } else {
       foreach (var kvp in servicesHierarchy.ToList()) {
         tasks.Add(healthCheckHelper.RunScheduledHealthCheck(kvp.Key, token));
+        tasks.Add(versionCheckHelper.RunScheduledVersionChecks(kvp.Key, token));
       }
     }
 

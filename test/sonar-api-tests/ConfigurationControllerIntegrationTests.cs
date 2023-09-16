@@ -42,7 +42,8 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
   private const String TestServiceNameDuplicated =
     "The specified list of services contained multiple services with the same name.";
 
-  private const String TestVersionCheckPath = "test/path";
+  private const String TestFluxKustomizationVersionCheckK8sNamespace = "test";
+  private const String TestFluxKustomizationVersionCheckKustomization = "test";
 
   private static readonly JsonSerializerOptions SerializerOptions = new JsonSerializerOptions {
     Converters = { new JsonStringEnumConverter(), new ArrayTupleConverterFactory() },
@@ -81,7 +82,8 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
     new(
       VersionCheckType.FluxKustomization,
       new FluxKustomizationVersionCheckDefinition(
-        TestVersionCheckPath)
+        TestFluxKustomizationVersionCheckK8sNamespace,
+        TestFluxKustomizationVersionCheckKustomization)
     );
 
   private static readonly ServiceHierarchyConfiguration TestRootChildConfiguration = new(
@@ -941,7 +943,8 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
     var services = Assert.Single(body.Services);
     var versionCheck = Assert.Single(services.VersionChecks);
     var versionCheckDefinition = (FluxKustomizationVersionCheckDefinition)Assert.Single(new[] { versionCheck.Definition });
-    Assert.Equal(TestVersionCheckPath, versionCheckDefinition.Path);
+    Assert.Equal(TestFluxKustomizationVersionCheckK8sNamespace, versionCheckDefinition.K8sNamespace);
+    Assert.Equal(TestFluxKustomizationVersionCheckKustomization, versionCheckDefinition.Kustomization);
   }
 
   [Fact]

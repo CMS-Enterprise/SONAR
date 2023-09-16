@@ -59,7 +59,8 @@
         {
           "versionCheckType": "FluxKustomization",
           "definition": {
-            "path": "/test/path"
+            "k8sNamespace": "test",
+            "kustomization": "test"
           }
         }
       ]

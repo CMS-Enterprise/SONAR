@@ -43,8 +43,7 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
   private static readonly VersionCheckModel TestVersionCheck =
     new(
       VersionCheckType.FluxKustomization,
-      new FluxKustomizationVersionCheckDefinition(
-        "test/path")
+      new FluxKustomizationVersionCheckDefinition(k8sNamespace: "test", kustomization: "test")
     );
 
   private static readonly ServiceHierarchyConfiguration TestRootOnlyConfiguration = new(

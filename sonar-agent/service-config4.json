@@ -1,0 +1,50 @@
+{
+  "services": [
+    {
+      "name": "test-metric-app",
+      "displayName": "Test Application",
+      "versionChecks": [
+        {
+          "versionCheckType": "FluxKustomization",
+          "definition": {
+            "k8sNamespace": "test",
+            "kustomization": "test"
+          }
+        }
+      ]
+    },
+    {
+      "name": "http-metric-test-app",
+      "displayName": "Test Application for HTTP Health Check",
+      "versionChecks": [
+        {
+          "versionCheckType": "HttpResponseBody",
+          "definition": {
+            "url": "http://localhost:8082/api/version",
+            "path": "$.version",
+            "bodyType": "json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "http-metric-test-app-2",
+      "displayName": "Test Application 2 for HTTP Health Check",
+      "versionChecks": [
+        {
+          "versionCheckType": "HttpResponseBody",
+          "definition": {
+            "url": "http://localhost:8082/api/version",
+            "path": "$.version",
+            "bodyType": "json"
+          }
+        }
+      ]
+    }
+  ],
+  "rootServices": [
+    "test-metric-app",
+    "http-metric-test-app",
+    "http-metric-test-app-2"
+  ]
+}

@@ -15,7 +15,8 @@
         {
           "versionCheckType": "FluxKustomization",
           "definition": {
-            "path": "$.fluxkustomization.base.path"
+            "k8sNamespace": "base-k8s-namespace",
+            "kustomization": "base-kustomization"
           }
         }
       ]

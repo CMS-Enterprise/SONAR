@@ -239,7 +239,8 @@ public static class ServiceConfigMerger {
           if (nextDefinition is FluxKustomizationVersionCheckDefinition nextFluxVersionCheckDefinition) {
             if (prevDefinition is FluxKustomizationVersionCheckDefinition prevFluxVersionCheckDefinition) {
               return new FluxKustomizationVersionCheckDefinition(
-                nextFluxVersionCheckDefinition.Path ?? prevFluxVersionCheckDefinition.Path);
+                nextFluxVersionCheckDefinition.K8sNamespace ?? prevFluxVersionCheckDefinition.K8sNamespace,
+                nextFluxVersionCheckDefinition.Kustomization ?? prevFluxVersionCheckDefinition.Kustomization);
             } else {
               return nextDefinition;
             }
