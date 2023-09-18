@@ -3,7 +3,7 @@ import {
   HealthCheckModel,
   ServiceConfiguration,
   ServiceHierarchyConfiguration,
-  ServiceHierarchyHealth
+  ServiceHierarchyHealth, ServiceVersionDetails
 } from 'api/data-contracts';
 import ServiceOverview from 'components/Services/ServiceOverview';
 import { StatusHistoryView } from 'interfaces/global_interfaces';
@@ -14,6 +14,7 @@ import StatusHistoryDrawer from '../components/Services/StatusHistory/StatusHist
 import { ServiceOverviewContext } from 'components/Services/ServiceOverviewContext';
 import HealthStatusDrawer from 'components/Services/HealthStatus/HealthStatusDrawer';
 import { useSonarApi } from 'components/AppContext/AppContextProvider';
+import { useGetServiceVersion } from '../components/Services/Services.Hooks';
 
 const Service = () => {
   const sonarClient = useSonarApi();
@@ -82,6 +83,8 @@ const Service = () => {
     () => sonarClient.getTenant(environmentName, tenantName).then((res) => res.data)
   );
 
+  const serviceVersionDetails = useGetServiceVersion(environmentName, tenantName, serviceName);
+
   if (hierarchyConfigQuery.data && hierarchyHealthQuery.data) {
     const serviceConfigLookup =
       hierarchyConfigQuery.data.services.reduce(
@@ -103,47 +106,41 @@ const Service = () => {
       });
     }
 
-    return (
-      <ServiceOverviewContext.Provider value={{
-        environmentName: environmentName,
-        tenantName: tenantName,
-        serviceConfiguration: serviceConfigLookup[serviceName],
-        serviceHierarchyConfiguration: hierarchyConfigQuery.data,
-        serviceHierarchyHealth: currentServiceHealth,
-        selectedHealthCheck,
-        setSelectedHealthCheck
-      }}>
-        <section className="ds-l-container">
-          {showDrawer && (
-            <StatusHistoryDrawer
-              statusHistoryViewData={statusHistoryViewData}
-              closeDrawer={closeDrawer}
-              environment={environmentName}
-              tenant={tenantName}
-              showDate={dataHasDifferentDates}
-            />
-          )}
 
-          { selectedHealthCheck && (
-            <HealthStatusDrawer onCloseClick={() => setSelectedHealthCheck(null)} />
-          )}
+    return <ServiceOverviewContext.Provider value={{
+      environmentName: environmentName,
+      tenantName: tenantName,
+      serviceConfiguration: serviceConfigLookup[serviceName],
+      serviceHierarchyConfiguration: hierarchyConfigQuery.data,
+      serviceHierarchyHealth: currentServiceHealth,
+      serviceVersionDetails: serviceVersionDetails.data as ServiceVersionDetails[],
+      selectedHealthCheck,
+      setSelectedHealthCheck
+    }}>
+      <section className="ds-l-container">
+        {showDrawer && (
+          <StatusHistoryDrawer
+            statusHistoryViewData={statusHistoryViewData}
+            closeDrawer={closeDrawer}
+            showDate={dataHasDifferentDates}
+          />
+        )}
 
-          <div>
-            <ServiceOverview
-              environmentName={environmentName}
-              tenantName={tenantName}
-              serviceConfig={serviceConfigLookup[serviceName]}
-              serviceHealth={currentServiceHealth}
-              servicePath={servicePath}
-              addTimestamp={addTimestamp}
-              closeDrawer={closeDrawer}
-              selectedTileId={selectedTileId}
-            />
-          </div>
-        </section>
-      </ServiceOverviewContext.Provider>
+        { selectedHealthCheck && (
+          <HealthStatusDrawer onCloseClick={() => setSelectedHealthCheck(null)} />
+        )}
 
-    );
+        <div>
+          <ServiceOverview
+            serviceHealth={currentServiceHealth}
+            servicePath={servicePath}
+            addTimestamp={addTimestamp}
+            closeDrawer={closeDrawer}
+            selectedTileId={selectedTileId}
+          />
+        </div>
+      </section>
+    </ServiceOverviewContext.Provider>;
   } else if (hierarchyHealthQuery.error || hierarchyConfigQuery.error) {
     return (
       <section className="ds-l-container">

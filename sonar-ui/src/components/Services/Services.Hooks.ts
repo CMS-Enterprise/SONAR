@@ -40,3 +40,18 @@ export const useGetServiceHealthHistory = (
         })
   });
 }
+
+export const useGetServiceVersion = (
+  envName: string,
+  tenantName: string,
+  servicePath: string
+) => {
+  const sonarClient = useSonarApi();
+  return useQuery({
+    queryKey: ['ServiceVersion', envName, tenantName, servicePath],
+    queryFn: () => {
+      return sonarClient.getSpecificServiceVersionDetails(envName, tenantName, servicePath)
+        .then((res) => (res.data || []).sort((v1, v2) => v1.versionType.localeCompare(v2.versionType)))
+    }
+  });
+}

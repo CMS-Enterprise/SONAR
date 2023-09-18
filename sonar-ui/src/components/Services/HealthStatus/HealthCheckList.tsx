@@ -1,9 +1,6 @@
 import { useTheme } from '@emotion/react';
 import React, { useContext } from 'react';
-import {
-  DateTimeHealthStatusValueTuple,
-  HealthStatus,
-  ServiceConfiguration } from 'api/data-contracts';
+import { DateTimeHealthStatusValueTuple,  HealthStatus, } from 'api/data-contracts';
 import { DynamicTextFontStyle } from '../../../App.Style';
 import HealthStatusBadge from '../../Badges/HealthStatusBadge';
 import { getBadgeSpanStyle } from '../../Badges/HealthStatusBadge.Style';
@@ -15,20 +12,20 @@ import {
 import { ServiceOverviewContext } from '../ServiceOverviewContext';
 
 const HealthCheckList: React.FC<{
-  serviceConfig: ServiceConfiguration,
   healthCheckStatuses: Record<string, DateTimeHealthStatusValueTuple> | undefined
 }> =
-  ({ serviceConfig, healthCheckStatuses }) => {
+  ({ healthCheckStatuses }) => {
     const theme = useTheme();
     const context = useContext(ServiceOverviewContext)!;
+    const serviceConfiguration = context.serviceConfiguration;
 
-    if (serviceConfig.healthChecks?.length) {
+    if (serviceConfiguration.healthChecks?.length) {
       return (
         <>
           <div css={ServiceOverviewHeaderStyle}>
             Health Checks
           </div>
-          {serviceConfig.healthChecks.map((healthCheck, i) => {
+          {serviceConfiguration.healthChecks.map((healthCheck, i) => {
             const healthCheckStatusData: DateTimeHealthStatusValueTuple =
               (healthCheckStatuses ?
                 healthCheckStatuses[healthCheck.name] :

@@ -1,4 +1,4 @@
-import { HealthCheckModel, ServiceConfiguration, ServiceHierarchyConfiguration, ServiceHierarchyHealth } from "api/data-contracts";
+import { HealthCheckModel, ServiceConfiguration, ServiceHierarchyConfiguration, ServiceHierarchyHealth, ServiceVersionDetails} from 'api/data-contracts';
 import { createContext } from "react";
 
 interface ServiceOverviewContextType {
@@ -7,6 +7,7 @@ interface ServiceOverviewContextType {
   serviceConfiguration: ServiceConfiguration,
   serviceHierarchyConfiguration: ServiceHierarchyConfiguration,
   serviceHierarchyHealth: ServiceHierarchyHealth,
+  serviceVersionDetails: ServiceVersionDetails[],
   selectedHealthCheck: HealthCheckModel | null | undefined,
   setSelectedHealthCheck: React.Dispatch<React.SetStateAction<HealthCheckModel | null | undefined>>
 }

@@ -1,13 +1,7 @@
 import { useTheme } from '@emotion/react';
-import {
-  DateTimeHealthStatusValueTuple,
-  ServiceConfiguration,
-  ServiceHierarchyHealth,
-  ServiceVersionDetails,
-  VersionCheckType,
-} from 'api/data-contracts';
+import {  DateTimeHealthStatusValueTuple, ServiceHierarchyHealth} from 'api/data-contracts';
 import ExternalLinkIcon from 'components/Icons/ExternalLinkIcon';
-import React from 'react';
+import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { DynamicTextFontStyle } from '../../App.Style';
 import HealthStatusBadge from '../Badges/HealthStatusBadge';
@@ -23,25 +17,9 @@ import {
 } from './ServiceOverview.Style';
 import ServiceVersionModule from './ServiceVersion/ServiceVersionModule';
 import StatusHistoryModule from './StatusHistory/StatusHistoryModule';
-
-const versionData: ServiceVersionDetails[] = [
-  {
-    versionType: VersionCheckType.FluxKustomization,
-    version: "6eb253dsgfdg",
-    timestamp: "2023-09-05T23:12:31Z"
-
-  },
-  {
-    versionType: VersionCheckType.HttpResponseBody,
-    version: "1.1.1",
-    timestamp: "2023-09-05T23:12:31Z"
-  }
-];
+import { ServiceOverviewContext } from './ServiceOverviewContext';
 
 const ServiceOverview: React.FC<{
-  environmentName: string,
-  tenantName: string,
-  serviceConfig: ServiceConfiguration,
   serviceHealth: ServiceHierarchyHealth,
   servicePath: string,
   addTimestamp: (tupleData: DateTimeHealthStatusValueTuple, tileId: string, serviceData: ServiceHierarchyHealth) => void,
@@ -49,26 +27,25 @@ const ServiceOverview: React.FC<{
   selectedTileId: string
 }> =
   ({
-    environmentName,
-    tenantName,
-    serviceConfig,
     serviceHealth,
     servicePath,
     addTimestamp,
     closeDrawer,
     selectedTileId
   }) => {
+    const context = useContext(ServiceOverviewContext)!;
+    const serviceConfiguration = context.serviceConfiguration;
     const location = useLocation();
     const theme = useTheme();
     return (
       <div css={getServiceOverviewStyle(theme)}>
         <Breadcrumbs
-          environmentName={environmentName}
-          tenantName={tenantName}
+          environmentName={context.environmentName}
+          tenantName={context.tenantName}
         />
         <div>
-          { versionData && (
-            <ServiceVersionModule serviceVersionDetails={versionData} />
+          { ((context.serviceVersionDetails != null) && (context.serviceVersionDetails.length >= 1) &&
+            <ServiceVersionModule/>
           )}
         </div>
         <div>
@@ -79,25 +56,23 @@ const ServiceOverview: React.FC<{
               selectedTileId={selectedTileId}
               servicePath={servicePath}
               serviceHealth={serviceHealth}
-              environmentName={environmentName}
-              tenantName={tenantName}
             />
           )}
         </div>
         <div>
-          { serviceConfig && (
+          { serviceConfiguration && (
             <>
-              { serviceConfig.description && (
+              { serviceConfiguration.description && (
                 <div>
                   <div css={ServiceOverviewHeaderStyle}> Description </div>
-                  <span css={ServiceOverviewContentStyle}> {serviceConfig.description} </span>
+                  <span css={ServiceOverviewContentStyle}> {serviceConfiguration.description} </span>
                 </div>
               )}
-              {serviceConfig.url && (
+              {serviceConfiguration.url && (
                 <div>
                   <div css={ServiceOverviewHeaderStyle}> Uri </div>
-                  <a css={ServiceOverviewContentStyle} target='_blank' rel="noreferrer" href={serviceConfig.url}>
-                    {serviceConfig.url}&nbsp;
+                  <a css={ServiceOverviewContentStyle} target='_blank' rel="noreferrer" href={ serviceConfiguration.url}>
+                    {serviceConfiguration.url}&nbsp;
                     <ExternalLinkIcon className='ds-u-font-size--sm'/>
                   </a>
                 </div>
@@ -106,19 +81,18 @@ const ServiceOverview: React.FC<{
           )}
         </div>
         <div>
-          { serviceConfig && serviceHealth && (
+          { serviceConfiguration && serviceHealth && (
             <HealthCheckList
-              serviceConfig={serviceConfig}
               healthCheckStatuses={serviceHealth.healthChecks}
             />
           )}
         </div>
-        { serviceConfig && serviceConfig.children && serviceConfig.children.length > 0 ?
+        { serviceConfiguration && serviceConfiguration.children && serviceConfiguration.children.length > 0 ?
           <>
             <div css={ServiceOverviewHeaderStyle}>
               Services
             </div>
-            {serviceConfig.children.map(child => {
+            { serviceConfiguration.children.map(child => {
               const childSvcHealth = serviceHealth?.children?.find(
                 childObj => childObj.name === child);
               return (

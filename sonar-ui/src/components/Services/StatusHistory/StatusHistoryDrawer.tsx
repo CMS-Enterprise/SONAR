@@ -14,10 +14,8 @@ import { convertUtcTimestampToLocal } from '../../../helpers/StatusHistoryHelper
 const StatusHistoryDrawer: React.FC<{
   statusHistoryViewData: StatusHistoryView | null,
   closeDrawer: () => void,
-  environment: string,
-  tenant: string,
   showDate: boolean
-}> = ({ statusHistoryViewData, closeDrawer, environment, tenant , showDate}) => {
+}> = ({ statusHistoryViewData, closeDrawer, showDate}) => {
   const theme = useTheme();
 
   const utcDateTimestamp = statusHistoryViewData?.statusTimestampTuple[0];

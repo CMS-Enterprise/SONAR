@@ -1,10 +1,8 @@
 import { Spinner } from '@cmsgov/design-system';
-import React, { useEffect, useState } from 'react';
-import {
-  DateTimeHealthStatusValueTuple,
-  ServiceHierarchyHealth,
-} from 'api/data-contracts';
+import React, { useContext, useEffect, useState } from 'react';
+import {  DateTimeHealthStatusValueTuple,  ServiceHierarchyHealth,} from 'api/data-contracts';
 import { ServiceOverviewHeaderStyle } from '../ServiceOverview.Style';
+import { ServiceOverviewContext } from '../ServiceOverviewContext';
 import { useGetServiceHealthHistory } from '../Services.Hooks';
 import StatusHistoryTile from './StatusHistoryTile';
 import { StatusHistoryTileContainerStyle } from './StatusHistory.Style';
@@ -14,9 +12,7 @@ const StatusHistoryModule: React.FC<{
   closeDrawer: () => void,
   selectedTileId: string,
   servicePath: string,
-  serviceHealth: ServiceHierarchyHealth,
-  environmentName: string,
-  tenantName: string
+  serviceHealth: ServiceHierarchyHealth
 }> =
   ({
     addTimestamp,
@@ -24,12 +20,14 @@ const StatusHistoryModule: React.FC<{
     selectedTileId,
     servicePath,
     serviceHealth,
-    environmentName,
-    tenantName
   }) => {
+    const context = useContext(ServiceOverviewContext)!;
     const [diffDates, setDiffDates] = useState(false);
     const { isLoading, data } =
-      useGetServiceHealthHistory(environmentName, tenantName, servicePath);
+      useGetServiceHealthHistory(
+        context.environmentName,
+        context.tenantName,
+        servicePath);
 
     useEffect(() => {
       let currDate = '';
