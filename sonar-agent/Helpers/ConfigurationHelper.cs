@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Agent.ServiceConfig;
+using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.Extensions.Logging;
@@ -14,15 +15,17 @@ public class ConfigurationHelper {
   private readonly IServiceConfigSource _serviceConfigSource;
   private readonly Func<(IDisposable, ISonarClient)> _sonarClientFactory;
   private readonly ILogger<ConfigurationHelper> _logger;
-
+  private readonly ErrorReportsHelper _errorReportsHelper;
   public ConfigurationHelper(
     IServiceConfigSource serviceConfigSource,
     Func<(IDisposable, ISonarClient)> sonarClientFactory,
-    ILogger<ConfigurationHelper> logger) {
+    ILogger<ConfigurationHelper> logger,
+    ErrorReportsHelper errorReportsHelper) {
 
     this._serviceConfigSource = serviceConfigSource;
     this._sonarClientFactory = sonarClientFactory;
     this._logger = logger;
+    this._errorReportsHelper = errorReportsHelper;
   }
 
   /// <summary>
@@ -37,6 +40,7 @@ public class ConfigurationHelper {
   ///   Thrown when no tenant configuration is found.
   /// </exception>
   public async Task<IDictionary<String, ServiceHierarchyConfiguration>> LoadAndValidateJsonServiceConfigAsync(
+    String environment,
     CancellationToken cancellationToken) {
 
     var configurationByTenant =
@@ -94,6 +98,8 @@ public class ConfigurationHelper {
             // Updating service configuration for existing environment and tenant
             await client.UpdateTenantAsync(
               environment, tenant, servicesHierarchy, token);
+          } else {
+            throw;
           }
         }
       }
@@ -119,6 +125,21 @@ public class ConfigurationHelper {
         e.StatusCode,
         e.Message
       );
+
+      // create error report
+      await this._errorReportsHelper.CreateErrorReport(
+        environment,
+        new ErrorReportDetails(
+          DateTime.UtcNow,
+          tenant,
+          null,
+          null,
+          AgentErrorLevel.Error,
+          AgentErrorType.SaveConfiguration,
+          e.Message,
+          null,
+          null),
+        token);
     } finally {
       conn.Dispose();
     }

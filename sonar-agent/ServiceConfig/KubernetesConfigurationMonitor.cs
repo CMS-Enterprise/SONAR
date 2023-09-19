@@ -7,6 +7,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Models;
 using k8s;
@@ -23,6 +24,7 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
   private Watcher<V1Namespace> _nsWatcher;
   private Watcher<V1ConfigMap> _cmWatcher;
   private readonly TimeSpan _retryDelay;
+  private readonly ErrorReportsHelper _errorReportsHelper;
 
   private readonly ConcurrentDictionary<String, Watcher<V1Secret>> _secretWatchers = new();
 
@@ -38,9 +40,11 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
     String environment,
     ConfigurationHelper configHelper,
     IKubernetes kubeClient,
-    ILogger<KubernetesConfigurationMonitor> logger) {
+    ILogger<KubernetesConfigurationMonitor> logger,
+    ErrorReportsHelper errorReportsHelper) {
 
     this._logger = logger;
+    this._errorReportsHelper = errorReportsHelper;
     this._environment = environment;
     this._configHelper = configHelper;
     this._kubeClient = kubeClient;
@@ -244,13 +248,30 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
           String.Join(", ", servicesHierarchy.Services.Select(svc => svc.Name))
         );
 
-        // create or update new Tenant service configuration
-        await this.ConfigureServicesAsyncWrapper(
-          tenant,
-          eventType,
-          new Dictionary<String, ServiceHierarchyConfiguration> {
-            [tenant] = servicesHierarchy
-          });
+        try {
+          // create or update new Tenant service configuration
+          await this.ConfigureServicesAsyncWrapper(
+            tenant,
+            eventType,
+            new Dictionary<String, ServiceHierarchyConfiguration> {
+              [tenant] = servicesHierarchy
+            });
+        } catch (ApiException ex) {
+          // create error report
+          await this._errorReportsHelper.CreateErrorReport(
+            this._environment,
+            new ErrorReportDetails(
+              DateTime.UtcNow,
+              tenant,
+              null,
+              null,
+              AgentErrorLevel.Error,
+              AgentErrorType.SaveConfiguration,
+              ex.Message,
+              null,
+              null),
+            token);
+        }
 
         if (this._knownNamespaceTenants.TryAdd(resourceNamespace, tenant)) {
           // We weren't previously monitoring this tenant, begin the monitoring thread
@@ -267,13 +288,31 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
             tenant,
             String.Join(", ", servicesHierarchy.Services.Select(svc => svc.Name))
           );
-          // update existing Tenant service configuration
-          await this.ConfigureServicesAsyncWrapper(
-            tenant,
-            WatchEventType.Modified,
-            new Dictionary<String, ServiceHierarchyConfiguration> {
-              [tenant] = servicesHierarchy
-            });
+
+          try {
+            // update existing Tenant service configuration
+            await this.ConfigureServicesAsyncWrapper(
+              tenant,
+              WatchEventType.Modified,
+              new Dictionary<String, ServiceHierarchyConfiguration> {
+                [tenant] = servicesHierarchy
+              });
+          } catch (ApiException ex) {
+            // create error report
+            await this._errorReportsHelper.CreateErrorReport(
+              this._environment,
+              new ErrorReportDetails(
+                DateTime.UtcNow,
+                tenant,
+                null,
+                null,
+                AgentErrorLevel.Error,
+                AgentErrorType.SaveConfiguration,
+                ex.Message,
+                null,
+                null),
+              token);
+          }
         }
 
         break;

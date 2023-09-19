@@ -20,14 +20,18 @@ public class ConfigurationHelperTests {
   [Fact]
   public async Task GetServiceHierarchyConfigurationFromJson_ValidConfiguration_ReturnsConfigurationObject() {
     const String jsonFilePath = "test-inputs/valid-service-config-1.json";
-
+    var errorReportsHelper = new ErrorReportsHelper(() => (Mock.Of<IDisposable>(), Mock.Of<ISonarClient>()),
+      Mock.Of<ILogger<ErrorReportsHelper>>());
     var configHelper = new ConfigurationHelper(
       new LocalFileServiceConfigSource("test", new[] { jsonFilePath }),
       () => (Mock.Of<IDisposable>(), Mock.Of<ISonarClient>()),
-      Mock.Of<ILogger<ConfigurationHelper>>()
+      Mock.Of<ILogger<ConfigurationHelper>>(),
+      errorReportsHelper
     );
 
-    var configuration = await configHelper.LoadAndValidateJsonServiceConfigAsync(CancellationToken.None);
+    var configuration = await configHelper.LoadAndValidateJsonServiceConfigAsync(
+      "testEnv",
+      CancellationToken.None);
 
     Assert.True(configuration.TryGetValue("test", out var tenantConfig));
 
@@ -51,13 +55,18 @@ public class ConfigurationHelperTests {
     GetServiceHierarchyConfigurationFromJson_PostSerializationValidationError_ThrowsInvalidConfigurationException(
       String testInputFilePath) {
 
+    var errorReportsHelper = new ErrorReportsHelper(() => (Mock.Of<IDisposable>(), Mock.Of<ISonarClient>()),
+      Mock.Of<ILogger<ErrorReportsHelper>>());
     var configHelper = new ConfigurationHelper(
       new LocalFileServiceConfigSource("test", new[] { testInputFilePath }),
       () => (Mock.Of<IDisposable>(), Mock.Of<ISonarClient>()),
-      Mock.Of<ILogger<ConfigurationHelper>>()
+      Mock.Of<ILogger<ConfigurationHelper>>(),
+      errorReportsHelper
     );
 
-    var configuration = await configHelper.LoadAndValidateJsonServiceConfigAsync(CancellationToken.None);
+    var configuration = await configHelper.LoadAndValidateJsonServiceConfigAsync(
+      "testEnv",
+      CancellationToken.None);
 
     Assert.Equal(expected: 0, configuration.Count);
     Assert.False(configuration.TryGetValue("test", out var tenantConfig));
@@ -77,14 +86,19 @@ public class ConfigurationHelperTests {
       String testInputFilePath,
       InvalidConfigurationErrorType expectedExceptionType) {
 
+    var errorReportsHelper = new ErrorReportsHelper(() => (Mock.Of<IDisposable>(), Mock.Of<ISonarClient>()),
+      Mock.Of<ILogger<ErrorReportsHelper>>());
     var configHelper = new ConfigurationHelper(
       new LocalFileServiceConfigSource("test", new[] { testInputFilePath }),
       () => (Mock.Of<IDisposable>(), Mock.Of<ISonarClient>()),
-      Mock.Of<ILogger<ConfigurationHelper>>()
+      Mock.Of<ILogger<ConfigurationHelper>>(),
+      errorReportsHelper
     );
 
     var exception = await Assert.ThrowsAsync<InvalidConfigurationException>(() =>
-      configHelper.LoadAndValidateJsonServiceConfigAsync(CancellationToken.None)
+      configHelper.LoadAndValidateJsonServiceConfigAsync(
+        "test",
+        CancellationToken.None)
     );
 
     Assert.Equal(expectedExceptionType, exception.ErrorType);

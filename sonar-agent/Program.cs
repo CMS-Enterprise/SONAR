@@ -14,6 +14,7 @@ using Cms.BatCave.Sonar.Logger;
 using Cms.BatCave.Sonar.Agent.ServiceConfig;
 using Cms.BatCave.Sonar.Agent.VersionChecks;
 using Cms.BatCave.Sonar.Configuration;
+using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Loki;
 using Cms.BatCave.Sonar.Models;
@@ -154,16 +155,23 @@ internal class Program {
       return (http, new SonarClient(apiConfig, http));
     }
 
+    var errorReportsHelper = new ErrorReportsHelper(
+      SonarClientFactory,
+      loggerFactory.CreateLogger<ErrorReportsHelper>());
+
     var configurationHelper = new ConfigurationHelper(
       new AggregateServiceConfigSource(configSources),
       SonarClientFactory,
-      loggerFactory.CreateLogger<ConfigurationHelper>()
+      loggerFactory.CreateLogger<ConfigurationHelper>(),
+      errorReportsHelper
     );
 
     IDictionary<String, ServiceHierarchyConfiguration> servicesHierarchy;
     try {
       // Load and merge configs
-      servicesHierarchy = await configurationHelper.LoadAndValidateJsonServiceConfigAsync(token);
+      servicesHierarchy = await configurationHelper.LoadAndValidateJsonServiceConfigAsync(
+        apiConfig.Value.Environment,
+        token);
     } catch (Exception ex) when (ex is InvalidConfigurationException or ArgumentException) {
       logger.LogError(ex, "Invalid Service Configuration: {Message}", ex.Message);
       return 1;
@@ -182,17 +190,44 @@ internal class Program {
         isSuccess = true;
         break;
       } catch (HttpRequestException ex) {
+        var errMessage = $"HTTP Request Exception Code {ex.StatusCode}: {ex.Message}";
         logger.LogError(ex,
-          "HTTP Request Exception Code {Code}: {Message}",
-          ex.StatusCode,
-          ex.Message);
+          errMessage);
+      } catch (ApiException ex) {
+        // create error report
+        await errorReportsHelper.CreateErrorReport(
+          apiConfig.Value.Environment,
+          new ErrorReportDetails(
+            DateTime.UtcNow,
+            null,
+            null,
+            null,
+            AgentErrorLevel.Error,
+            AgentErrorType.SaveConfiguration,
+            ex.Message,
+            null,
+            null),
+          token);
       }
 
       await Task.Delay(retryDelay, token);
     }
 
     if (!isSuccess) {
-      logger.LogError("Maximum number of attempts reached for configuration saving.");
+      var maxConfigSavingErrMessage = "Maximum number of attempts reached for configuration saving.";
+      logger.LogError(maxConfigSavingErrMessage);
+      await errorReportsHelper.CreateErrorReport(apiConfig.Value.Environment,
+        new ErrorReportDetails(
+          DateTime.UtcNow,
+          null,
+          null,
+          null,
+          AgentErrorLevel.Fatal,
+          AgentErrorType.SaveConfiguration,
+          maxConfigSavingErrMessage,
+          null,
+          null),
+        token);
       return 1;
     }
 
@@ -321,7 +356,8 @@ internal class Program {
         apiConfig.Value.Environment,
         configurationHelper,
         kubeClient,
-        loggerFactory.CreateLogger<KubernetesConfigurationMonitor>());
+        loggerFactory.CreateLogger<KubernetesConfigurationMonitor>(),
+        errorReportsHelper);
 
       disposables.Add(kubeClient);
       disposables.Add(k8sWatcher);
