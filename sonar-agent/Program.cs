@@ -319,7 +319,13 @@ internal class Program {
     var lokiQueueProcessorTask = lokiHealthCheckQueue.Run(token);
 
     var healthCheckHelper = new HealthCheckHelper(
-      loggerFactory, apiConfig, agentConfig, httpHealthCheckQueue, prometheusHealthCheckQueue, lokiHealthCheckQueue);
+      loggerFactory,
+      apiConfig,
+      agentConfig,
+      httpHealthCheckQueue,
+      prometheusHealthCheckQueue,
+      lokiHealthCheckQueue,
+      errorReportsHelper);
     var tasks = new List<Task>();
 
     // Create Version Check Queue Processors

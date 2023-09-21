@@ -24,6 +24,7 @@ public class HealthCheckHelper {
   private readonly HealthCheckQueueProcessor<HttpHealthCheckDefinition> _httpHealthCheckQueue;
   private readonly HealthCheckQueueProcessor<MetricHealthCheckDefinition> _prometheusHealthCheckQueue;
   private readonly HealthCheckQueueProcessor<MetricHealthCheckDefinition> _lokiHealthCheckQueue;
+  private readonly ErrorReportsHelper _errorReportsHelper;
 
   public HealthCheckHelper(
     ILoggerFactory loggerFactory,
@@ -31,7 +32,8 @@ public class HealthCheckHelper {
     INotifyOptionsChanged<AgentConfiguration> agentConfig,
     HealthCheckQueueProcessor<HttpHealthCheckDefinition> httpHealthCheckQueue,
     HealthCheckQueueProcessor<MetricHealthCheckDefinition> prometheusHealthCheckQueue,
-    HealthCheckQueueProcessor<MetricHealthCheckDefinition> lokiHealthCheckQueue) {
+    HealthCheckQueueProcessor<MetricHealthCheckDefinition> lokiHealthCheckQueue,
+    ErrorReportsHelper errorReportsHelper) {
     this._loggerFactory = loggerFactory;
     this._logger = loggerFactory.CreateLogger<HealthCheckHelper>();
     this._apiConfig = apiConfig;
@@ -39,6 +41,7 @@ public class HealthCheckHelper {
     this._httpHealthCheckQueue = httpHealthCheckQueue;
     this._prometheusHealthCheckQueue = prometheusHealthCheckQueue;
     this._lokiHealthCheckQueue = lokiHealthCheckQueue;
+    this._errorReportsHelper = errorReportsHelper;
   }
 
   public async Task RunScheduledHealthCheck(
@@ -76,24 +79,59 @@ public class HealthCheckHelper {
           );
           break;
         }
-        this._logger.LogError(
-          message: "SONAR API reports Tenant {Tenant} an API error has occurred {Status} {ErrorMessage}",
-          tenant,
-          ex.StatusCode,
-          ex.Message
-        );
+
+        var errMessage = $"SONAR API reports Tenant {tenant} an API error has occurred {ex.StatusCode} {ex.Message}";
+        this._logger.LogError(errMessage);
+        await this._errorReportsHelper.CreateErrorReport(
+          env,
+          new ErrorReportDetails(
+            DateTime.UtcNow,
+            tenant,
+            null,
+            null,
+            AgentErrorLevel.Error,
+            AgentErrorType.Execution,
+            errMessage,
+            null,
+            null
+          ),
+          token);
       } catch (HttpRequestException ex) {
-        this._logger.LogError(
-          message: "An network error occurred attempting to get tenant information {Tenant} from SONAR API: {ExceptionMsg}",
-          tenant,
-          ex.Message
-        );
+        var errMessage =
+          $"A network error occurred attempting to get tenant information {tenant} from SONAR API: {ex.Message}";
+        this._logger.LogError(errMessage);
+        await this._errorReportsHelper.CreateErrorReport(
+          env,
+          new ErrorReportDetails(
+            DateTime.UtcNow,
+            tenant,
+            null,
+            null,
+            AgentErrorLevel.Error,
+            AgentErrorType.Execution,
+            errMessage,
+            null,
+            null
+          ),
+          token);
       } catch (TaskCanceledException ex) {
-        this._logger.LogError(
-          message: "HTTP request timed out attempting get tenant information {Tenant} from SONAR API: {ExceptionMsg}",
-          tenant,
-          ex.Message
-        );
+        var errMessage =
+          $"HTTP request timed out attempting get tenant information {tenant} from SONAR API: {ex.Message}";
+        this._logger.LogError(errMessage);
+        await this._errorReportsHelper.CreateErrorReport(
+          env,
+          new ErrorReportDetails(
+            DateTime.UtcNow,
+            tenant,
+            null,
+            null,
+            AgentErrorLevel.Error,
+            AgentErrorType.Execution,
+            errMessage,
+            null,
+            null
+          ),
+          token);
       }
 
       var pendingHealthChecks = new List<(
@@ -150,6 +188,19 @@ public class HealthCheckHelper {
                 );
                 break;
               default:
+                await this._errorReportsHelper.CreateErrorReport(env,
+                  new ErrorReportDetails(
+                    DateTime.UtcNow,
+                    tenant,
+                    service.Name,
+                    healthCheck.Type.ToString(),
+                    AgentErrorLevel.Error,
+                    AgentErrorType.Execution,
+                    $"Healthcheck Type {healthCheck.Type} is not supported.",
+                    null,
+                    null
+                  ),
+                  token);
                 throw new NotSupportedException("Healthcheck Type is not supported.");
             }
 
@@ -256,21 +307,66 @@ public class HealthCheckHelper {
     try {
       await client.RecordStatusAsync(env, tenant, service, body, token);
     } catch (ApiException e) {
-      this._logger.LogError(
-        e,
-        "Failed to send status data to SONAR API, Code: {StatusCode}, Message: {Message}",
-        e.StatusCode,
-        e.Message
-      );
+      var errMessage = $"Failed to send status data to SONAR API, Code: {e.StatusCode}, Message: {e.Message}";
+      this._logger.LogError(errMessage);
+      await this._errorReportsHelper.CreateErrorReport(
+        env,
+        new ErrorReportDetails(
+          DateTime.UtcNow,
+          tenant,
+          service,
+          null,
+          AgentErrorLevel.Error,
+          AgentErrorType.Execution,
+          errMessage,
+          null,
+          null
+        ),
+        token);
     } catch (HttpRequestException ex) {
-      this._logger.LogError(message: "An network error occurred attempting to record status data for {Environment} {Tenant} in SONAR API: {ExceptionMsg}", env, tenant, ex.Message);
+      var errMessage =
+        $"A network error occurred attempting to record status data for {env} {tenant} in SONAR API: {ex.Message}";
+      this._logger.LogError(errMessage);
+      await this._errorReportsHelper.CreateErrorReport(
+        env,
+        new ErrorReportDetails(
+          DateTime.UtcNow,
+          tenant,
+          service,
+          null,
+          AgentErrorLevel.Error,
+          AgentErrorType.Execution,
+          errMessage,
+          null,
+          null
+        ),
+        token);
     } catch (TaskCanceledException ex) {
       //First check to make sure this is not a local cancellation
+      String errMessage;
       if (token.IsCancellationRequested) {
-        this._logger.LogError(message: "Local client has cancelled the request to record status data for {Environment} {Tenant} in SONAR API: {ExceptionMsg}", env, tenant, ex.Message);
+        errMessage =
+          $"Local client has cancelled the request to record status data for {env} {tenant} in SONAR API: {ex.Message}";
       } else {
-        this._logger.LogError(message: "HTTP request timed out attempting to record status data for {Environment} {Tenant} in SONAR API: {ExceptionMsg}", env, tenant, ex.Message);
+        errMessage =
+          $"HTTP request timed out attempting to record status data for {env} {tenant} in SONAR API: {ex.Message}";
       }
+      this._logger.LogError(errMessage);
+      // create error report
+      await this._errorReportsHelper.CreateErrorReport(
+        env,
+        new ErrorReportDetails(
+          DateTime.UtcNow,
+          tenant,
+          service,
+          null,
+          AgentErrorLevel.Error,
+          AgentErrorType.Execution,
+          errMessage,
+          null,
+          null
+        ),
+        token);
     }
   }
 
