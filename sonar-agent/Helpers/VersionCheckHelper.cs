@@ -35,47 +35,64 @@ public class VersionCheckHelper {
     this._sonarClient = sonarClient;
   }
 
-  public async Task RunScheduledVersionChecks(String tenant, CancellationToken cancellationToken) {
-    var environment = this._apiConfig.Value.Environment;
+  public async Task RunScheduledVersionChecks(
+    String tenant,
+    CancellationTokenSource cancellationSource,
+    CancellationToken cancellationToken) {
 
-    while (!cancellationToken.IsCancellationRequested) {
-      var interval = TimeSpan.FromSeconds(this._agentConfig.Value.AgentInterval);
-      var startTime = DateTime.UtcNow;
+    try {
+      var environment = this._apiConfig.Value.Environment;
 
-      ServiceHierarchyConfiguration? tenantConfig = null;
+      while (!cancellationToken.IsCancellationRequested) {
+        var interval = TimeSpan.FromSeconds(this._agentConfig.Value.AgentInterval);
+        var startTime = DateTime.UtcNow;
 
-      try {
-        tenantConfig = await this._sonarClient.GetTenantAsync(environment, tenant, cancellationToken);
-      } catch (ApiException e) when (e is { StatusCode: 404 }) {
-        this._logger.LogInformation(
-          message: "SONAR API reports Tenant {Tenant} does not exist, version check worker exiting",
-          tenant);
-        break;
-      } catch (Exception e) {
-        this._logger.LogError(
-          exception: e,
-          message: "Failed to retrieve service hierarchy configuration for Tenant: {tenant}",
-          tenant);
-      }
+        ServiceHierarchyConfiguration? tenantConfig = null;
 
-      if (tenantConfig != null) {
-        var completedChecks = await this.RequestVersions(tenant, tenantConfig);
-        await this.RecordVersions(environment, tenant, completedChecks);
-      }
-
-      var elapsed = DateTime.UtcNow - startTime;
-      if (elapsed < interval) {
         try {
-          await Task.Delay(interval - elapsed, cancellationToken);
-        } catch (TaskCanceledException) {
-          // ignore
+          tenantConfig = await this._sonarClient.GetTenantAsync(environment, tenant, cancellationToken);
+        } catch (ApiException e) when (e is { StatusCode: 404 }) {
+          this._logger.LogInformation(
+            message: "SONAR API reports Tenant {Tenant} does not exist, version check worker exiting",
+            tenant);
+          break;
+        } catch (OperationCanceledException ex) when (ex.CancellationToken == cancellationToken) {
+          // Don't log if cancellation was requested
+          throw;
+        } catch (Exception e) {
+          this._logger.LogError(
+            exception: e,
+            message: "Failed to retrieve service hierarchy configuration for Tenant: {tenant}",
+            tenant);
         }
-      } else {
-        this._logger.LogWarning(
-          message: "Performing version checks took longer than the allotted interval (Interval: {Interval}, Elapsed Time: {Elapsed})",
-          interval,
-          elapsed);
+
+        if (tenantConfig != null) {
+          var completedChecks = await this.RequestVersions(tenant, tenantConfig);
+          await this.RecordVersions(environment, tenant, completedChecks);
+        }
+
+        var elapsed = DateTime.UtcNow - startTime;
+        if (elapsed < interval) {
+          try {
+            await Task.Delay(interval - elapsed, cancellationToken);
+          } catch (TaskCanceledException) {
+            // ignore
+          }
+        } else {
+          this._logger.LogWarning(
+            message:
+            "Performing version checks took longer than the allotted interval (Interval: {Interval}, Elapsed Time: {Elapsed})",
+            interval,
+            elapsed);
+        }
       }
+    } catch (OperationCanceledException ex) when (ex.CancellationToken == cancellationToken) {
+      // Cancellation has already been requested
+      throw;
+    } catch (Exception) {
+      // Signal the main thread that we need to shut down due to an unhandled exception
+      cancellationSource.Cancel();
+      throw;
     }
   }
 
@@ -83,7 +100,8 @@ public class VersionCheckHelper {
     String tenant,
     ServiceHierarchyConfiguration tenantConfig) {
 
-    this._logger.LogDebug(message: "Requesting service versions for Tenant: {tenant}, Time: {now}", tenant, DateTime.UtcNow);
+    this._logger.LogDebug(message: "Requesting service versions for Tenant: {tenant}, Time: {now}", tenant,
+      DateTime.UtcNow);
 
     var checks = tenantConfig.Services.SelectMany(service =>
         service.VersionChecks?.Select(model =>

@@ -30,9 +30,15 @@ public class ErrorReportsHelper {
         reportDetails,
         cancellationToken);
     } catch (ApiException e) {
-      this._logger.LogError(e,
-        "Failed to create error report in SONAR API, Code: {StatusCode}, Message: {Message}",
+      this._logger.LogWarning(e,
+        "Failed to create error report in SONAR API, Code: {StatusCode}, Message: {_Message}",
         e.StatusCode,
+        e.Message);
+    } catch (Exception e) when (e is not OperationCanceledException or OutOfMemoryException) {
+      // Handle all exceptions raised when attempting to report errors to SONAR API so that we do
+      // not mask the underlying error
+      this._logger.LogWarning(e,
+        "Unexpected error reporting error to SONAR API, Message: {_Message}",
         e.Message);
     } finally {
       conn.Dispose();

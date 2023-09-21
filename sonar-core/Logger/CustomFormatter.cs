@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -9,6 +11,16 @@ using Microsoft.Extensions.Options;
 namespace Cms.BatCave.Sonar.Logger;
 
 public sealed class CustomFormatter : ConsoleFormatter, IDisposable {
+
+  private static readonly ImmutableHashSet<String> ReservedKeys = ImmutableHashSet.Create<String>(
+    StringComparer.OrdinalIgnoreCase,
+    "level",
+    "category",
+    "eventId",
+    "message",
+    "exception",
+    "{OriginalFormat}"
+  );
 
   private readonly IDisposable? _optionsReloadToken;
   private LoggingCustomOptions _formatterOptions;
@@ -44,6 +56,14 @@ public sealed class CustomFormatter : ConsoleFormatter, IDisposable {
 
     if (logEntry.Formatter != null) {
       sb.Append($" message=\"{CustomFormatter.EscapeString(logEntry.Formatter(logEntry.State, logEntry.Exception))}\"");
+
+      if (logEntry.State is IEnumerable<KeyValuePair<String, Object?>> data) {
+        foreach (var kvp in data) {
+          if (!ReservedKeys.Contains(kvp.Key) && !kvp.Key.StartsWith("_") && (kvp.Value != null)) {
+            sb.Append($" {kvp.Key.Replace(' ', '_')}=\"{CustomFormatter.EscapeString(kvp.Value.ToString()!)}\"");
+          }
+        }
+      }
     }
 
     if (logEntry.Exception != null) {

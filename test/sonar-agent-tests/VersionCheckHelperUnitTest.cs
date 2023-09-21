@@ -94,7 +94,7 @@ public class VersionCheckHelperUnitTest {
 
     this._cts.CancelAfter(TimeSpan.FromSeconds(1));
 
-    await helper.RunScheduledVersionChecks(tenant: "test", this._cts.Token);
+    await helper.RunScheduledVersionChecks(tenant: "test", this._cts, this._cts.Token);
 
     var totalVersionChecks = tenantConfig.Services.Select(service => service.VersionChecks?.Count ?? 0).Sum();
     Assert.Equal(totalVersionChecks, reportedServiceVersions.Count);
@@ -147,7 +147,7 @@ public class VersionCheckHelperUnitTest {
 
     this._cts.CancelAfter(TimeSpan.FromSeconds(1));
 
-    await helper.RunScheduledVersionChecks(tenant: "test", this._cts.Token);
+    await helper.RunScheduledVersionChecks(tenant: "test", this._cts, this._cts.Token);
 
     var totalVersionChecks = tenantConfig.Services.Select(service => service.VersionChecks?.Count ?? 0).Sum();
     Assert.Equal(totalVersionChecks - 1, reportedServiceVersions.Count);

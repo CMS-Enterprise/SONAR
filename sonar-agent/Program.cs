@@ -29,7 +29,7 @@ using KubernetesConfigurationMonitor = Cms.BatCave.Sonar.Agent.ServiceConfig.Kub
 namespace Cms.BatCave.Sonar.Agent;
 
 internal class Program {
-  private static Task Main(String[] args) {
+  private static Task<Int32> Main(String[] args) {
     // Command Line Parsing
     var parser = new Parser(settings => {
       // Assume that unknown arguments will be handled by the dotnet Command-line configuration
@@ -106,7 +106,7 @@ internal class Program {
       httpHealthCheckConfiguration = Dependencies.CreateRecordOptions<HealthCheckQueueProcessorConfiguration>(
         configuration, "HttpHealthChecks", loggerFactory);
     } catch (RecordBindingException ex) {
-      logger.LogError(ex, "Invalid sonar-agent configuration. {Detail}", ex.Message);
+      logger.LogError(ex, "Invalid sonar-agent configuration. {_Message}", ex.Message);
       return 1;
     }
 
@@ -174,27 +174,46 @@ internal class Program {
         apiConfig.Value.Environment,
         token);
     } catch (Exception ex) when (ex is InvalidConfigurationException or ArgumentException) {
-      logger.LogError(ex, "Invalid Service Configuration: {Message}", ex.Message);
+      logger.LogError(ex, "Invalid Service Configuration: {_Message}", ex.Message);
       return 1;
     }
 
     // Configure service hierarchy
     logger.LogInformation("Configuring services....");
 
-    Int32 threshold = 10;
-    Boolean isSuccess = false;
-    TimeSpan retryDelay = TimeSpan.FromSeconds(30);
-    for (Int32 attempts = 0; attempts <= threshold; attempts++) {
-      logger.LogInformation($"Saving configuration, attempt {attempts}.");
+    const Int32 threshold = 10;
+    var isSuccess = false;
+    var retryDelay = TimeSpan.FromSeconds(30);
+    for (var attempts = 0; attempts <= threshold; attempts++) {
+      logger.LogInformation("Saving configuration, attempt {Attempts}", attempts);
       try {
         await configurationHelper.ConfigureServicesAsync(apiConfig.Value.Environment, servicesHierarchy, token);
         isSuccess = true;
         break;
       } catch (HttpRequestException ex) {
-        var errMessage = $"HTTP Request Exception Code {ex.StatusCode}: {ex.Message}";
         logger.LogError(ex,
-          errMessage);
+          "HTTP Request Exception Code {StatusCode}: {_Message}",
+          ex.StatusCode,
+          ex.Message);
+        // create error report
+        await errorReportsHelper.CreateErrorReport(
+          apiConfig.Value.Environment,
+          new ErrorReportDetails(
+            DateTime.UtcNow,
+            null,
+            null,
+            null,
+            AgentErrorLevel.Error,
+            AgentErrorType.SaveConfiguration,
+            ex.Message,
+            null,
+            null),
+          token);
       } catch (ApiException ex) {
+        logger.LogError(ex,
+          "SONAR API Returned an Error {StatusCode}: {_Message}",
+          ex.StatusCode,
+          ex.Message);
         // create error report
         await errorReportsHelper.CreateErrorReport(
           apiConfig.Value.Environment,
@@ -215,7 +234,7 @@ internal class Program {
     }
 
     if (!isSuccess) {
-      var maxConfigSavingErrMessage = "Maximum number of attempts reached for configuration saving.";
+      var maxConfigSavingErrMessage = "Maximum number of attempts reached for configuration saving";
       logger.LogError(maxConfigSavingErrMessage);
       await errorReportsHelper.CreateErrorReport(apiConfig.Value.Environment,
         new ErrorReportDetails(
@@ -233,7 +252,6 @@ internal class Program {
     }
 
     logger.LogInformation("Initializing SONAR Agent...");
-
 
     // Create HealthCheck Queue Processors
 
@@ -315,10 +333,6 @@ internal class Program {
       loggerFactory.CreateLogger<HealthCheckQueueProcessor<MetricHealthCheckDefinition>>()
     );
 
-    var httpQueueProcessorTask = httpHealthCheckQueue.Run(token);
-    var prometheusQueueProcessorTask = prometheusHealthCheckQueue.Run(token);
-    var lokiQueueProcessorTask = lokiHealthCheckQueue.Run(token);
-
     var healthCheckHelper = new HealthCheckHelper(
       loggerFactory,
       apiConfig,
@@ -327,7 +341,12 @@ internal class Program {
       prometheusHealthCheckQueue,
       lokiHealthCheckQueue,
       errorReportsHelper);
-    var tasks = new List<Task>();
+
+    var tasks = new List<(Task Task, String Description, String? Tenant)>(new (Task, String, String?)[] {
+      (httpHealthCheckQueue.Run(token), "Http Health Check Queue Processor", null),
+      (prometheusHealthCheckQueue.Run(token), "Prometheus Health Check Queue Processor", null),
+      (lokiHealthCheckQueue.Run(token), "Loki Health Check Queue Processor", null),
+    });
 
     // Create Version Check Queue Processors
 
@@ -337,7 +356,7 @@ internal class Program {
     using var versionRequesterHttpClient = new HttpClient();
     versionRequesterHttpClient.Timeout = TimeSpan.FromSeconds(agentConfig.Value.AgentInterval);
     var httpVersionRequester = new HttpResponseBodyVersionRequester(versionRequesterHttpClient);
-    tasks.Add(versionCheckQueueProcessor.StartAsync(httpVersionRequester, token));
+    tasks.Add((versionCheckQueueProcessor.StartAsync(httpVersionRequester, token), "Http Version Check Processor", null));
 
     using var sonarHttpClient = new HttpClient();
     sonarHttpClient.Timeout = TimeSpan.FromSeconds(agentConfig.Value.AgentInterval);
@@ -360,46 +379,83 @@ internal class Program {
 
       // Start the Kustomization Version Check processing task
       var kustomizationVersionRequester = new FluxKustomizationVersionRequester(kubeClient);
-      tasks.Add(versionCheckQueueProcessor.StartAsync(kustomizationVersionRequester, token));
+      tasks.Add((
+        versionCheckQueueProcessor.StartAsync(kustomizationVersionRequester, token),
+        "FluxKustomization Version Check Processor",
+        null
+      ));
 
       disposables.Add(kubeClient);
       disposables.Add(k8sWatcher);
 
       k8sWatcher.TenantCreated += (sender, args) => {
-        tasks.Add(healthCheckHelper.RunScheduledHealthCheck(args.Tenant, token));
-        tasks.Add(versionCheckHelper.RunScheduledVersionChecks(args.Tenant, token));
+        tasks.Add((
+          healthCheckHelper.RunScheduledHealthCheck(args.Tenant, source, token),
+          "Health Check Executor",
+          args.Tenant
+        ));
+        tasks.Add((
+          versionCheckHelper.RunScheduledVersionChecks(args.Tenant, source, token),
+          "Version Check Executor",
+          args.Tenant
+        ));
       };
+    }
 
-      // The namespace watcher will automatically start threads for existing tenants configured via
-      // Kubernetes, but we have to manually start the default tenant if it exists.
-      if (servicesHierarchy.TryGetValue(agentConfig.Value.DefaultTenant, out var services)) {
-        // We don't monitor local files for changes, so if there aren't any services configured,
-        // there is no need to start a thread.
-        if (services.Services.Count > 0) {
-          tasks.Add(healthCheckHelper.RunScheduledHealthCheck(agentConfig.Value.DefaultTenant, token));
-          tasks.Add(versionCheckHelper.RunScheduledVersionChecks(agentConfig.Value.DefaultTenant, token));
-        }
-      }
-    } else {
-      foreach (var kvp in servicesHierarchy.ToList()) {
-        tasks.Add(healthCheckHelper.RunScheduledHealthCheck(kvp.Key, token));
-        tasks.Add(versionCheckHelper.RunScheduledVersionChecks(kvp.Key, token));
+    // The namespace watcher will automatically start threads for existing tenants configured via
+    // Kubernetes, but we have to manually start the default tenant if it exists.
+    if (servicesHierarchy.TryGetValue(agentConfig.Value.DefaultTenant, out var services)) {
+      // We don't monitor local files for changes, so if there aren't any services configured,
+      // there is no need to start a thread.
+      if (services.Services.Count > 0) {
+        tasks.Add((
+          healthCheckHelper.RunScheduledHealthCheck(agentConfig.Value.DefaultTenant, source, token),
+          "Health Check Executor",
+          agentConfig.Value.DefaultTenant
+        ));
+        tasks.Add((
+          versionCheckHelper.RunScheduledVersionChecks(agentConfig.Value.DefaultTenant, source, token),
+          "Version Check Executor",
+          agentConfig.Value.DefaultTenant
+        ));
       }
     }
 
-    // Wait until user requests cancellation
+    // Wait until user, or one of the processor threads requests cancellation
     try {
       await Task.Delay(Timeout.Infinite, token);
     } catch (OperationCanceledException) {
       // User request cancellation
     }
 
-    await Task.WhenAll(tasks);
+    logger.LogDebug("SONAR Agent process cancelled");
+
+    var error = false;
+    // This should wait for completion and raise exceptions that occurred on worker threads
+    foreach (var (task, desc, tenant) in tasks) {
+      try {
+        if (tenant != null) {
+          logger.LogDebug("Awaiting Task: {_Description} (Tenant: {Tenant}, Status: {Status})", desc, tenant, task.Status);
+        } else {
+          logger.LogDebug("Awaiting Task: {_Description} (Status: {Status})", desc, task.Status);
+        }
+        await task;
+      } catch (OperationCanceledException) {
+        // Ignore user requested cancellation errors
+      } catch (Exception ex) {
+        if (tenant != null) {
+          logger.LogError(ex, "Task '{_Description}' raised an unhandled exception (Tenant: {Tenant})", desc, tenant);
+        } else {
+          logger.LogError(ex, "Task '{_Description}' raised an unhandled exception", desc);
+        }
+        error = true;
+      }
+    }
 
     foreach (var watcher in disposables) {
       watcher.Dispose();
     }
 
-    return 0;
+    return error ? 1 : 0;
   }
 }
