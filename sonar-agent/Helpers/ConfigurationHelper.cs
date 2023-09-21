@@ -2,16 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Net;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Cms.BatCave.Sonar.Agent.Helpers;
 using Cms.BatCave.Sonar.Agent.ServiceConfig;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Models;
-using CommandLine;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Cms.BatCave.Sonar.Agent;
@@ -20,12 +18,12 @@ public class ConfigurationHelper {
   private readonly IServiceConfigSource _serviceConfigSource;
   private readonly Func<(IDisposable, ISonarClient)> _sonarClientFactory;
   private readonly ILogger<ConfigurationHelper> _logger;
-  private readonly ErrorReportsHelper _errorReportsHelper;
+  private readonly IErrorReportsHelper _errorReportsHelper;
   public ConfigurationHelper(
     IServiceConfigSource serviceConfigSource,
     Func<(IDisposable, ISonarClient)> sonarClientFactory,
     ILogger<ConfigurationHelper> logger,
-    ErrorReportsHelper errorReportsHelper) {
+    IErrorReportsHelper errorReportsHelper) {
 
     this._serviceConfigSource = serviceConfigSource;
     this._sonarClientFactory = sonarClientFactory;
@@ -37,7 +35,7 @@ public class ConfigurationHelper {
   ///   Load Service Configuration from both local files and the Kubernetes API according to command line
   ///   options.
   /// </summary>
-  /// <param name="environment"></param>
+  /// <param name="environment">The name of the environment.</param>
   /// <param name="cancellationToken">Cancellation token</param>
   /// <returns>
   ///   A dictionary of tenant names to <see cref="ServiceHierarchyConfiguration" /> for that tenant.
@@ -49,79 +47,89 @@ public class ConfigurationHelper {
     String environment,
     CancellationToken cancellationToken) {
 
-    var (conn, client) = this._sonarClientFactory();
     var configurationByTenant =
       new Dictionary<String, ServiceHierarchyConfiguration>(StringComparer.OrdinalIgnoreCase);
 
-    //Check for Deserialization and Merging
-    try {
-      await foreach (var tenant in this._serviceConfigSource.GetTenantsAsync(cancellationToken)) {
-        ServiceHierarchyConfiguration? mergedConfiguration = null;
+    // Check for Deserialization and Merging
+    await foreach (var tenant in this._serviceConfigSource.GetTenantsAsync(cancellationToken)) {
+      ServiceHierarchyConfiguration? mergedConfiguration = null;
+
+      try {
+        var layers =
+          await this._serviceConfigSource.GetConfigurationLayersAsync(tenant, cancellationToken)
+            .ToListAsync(cancellationToken);
+
+        if (layers.Count > 0) {
+          mergedConfiguration = layers.Aggregate(ServiceConfigMerger.MergeConfigurations);
+          ServiceConfigValidator.ValidateServiceConfig(mergedConfiguration);
+          configurationByTenant.Add(tenant, mergedConfiguration);
+        } else {
+          configurationByTenant.Add(tenant, ServiceHierarchyConfiguration.Empty);
+        }
+      } catch (InvalidConfigurationException cfgEx) {
+        ErrorReportDetails errorReport;
+
         try {
-          var layers =
-            await this._serviceConfigSource.GetConfigurationLayersAsync(tenant, cancellationToken)
-              .ToListAsync(cancellationToken);
-
-          if (layers.Count > 0) {
-            mergedConfiguration = layers.Aggregate(ServiceConfigMerger.MergeConfigurations);
-
-            try {
-              ServiceConfigValidator.ValidateServiceConfig(mergedConfiguration);
-              configurationByTenant.Add(tenant, mergedConfiguration);
-
-            } catch (InvalidConfigurationException e) {
-              this._logger.LogError(e,
-                message: "Tenant service configuration is invalid, skipping initial load: {tenant}.",
-                tenant);
-
-              //Create Error Report for Validation
-              var data = (List<ValidationResult>)e.Data["errors"]!;
-              var errorReport = new ErrorReportDetails(
-                timestamp: DateTime.UtcNow,
-                tenant: tenant,
-                service: null,
-                healthCheckName: null,
-                level: AgentErrorLevel.Error,
-                type: AgentErrorType.Validation,
-                message: data
-                  .Select(em => em.ErrorMessage)
-                  .Aggregate("", (current, next) => current + ' ' + next),
-                configuration: null,
-                stackTrace: e.StackTrace
-              );
-              await client.CreateErrorReportAsync(environment, errorReport, cancellationToken);
-            }
-          } else {
-            configurationByTenant.Add(tenant, ServiceHierarchyConfiguration.Empty);
-          }
-        } catch (Exception e) when (e is InvalidConfigurationException or ServiceConfigSourceException) {
-          this._logger.LogError(e,
-            message: "An error occurred reading or deserializing service configuration, skipping initial load: {tenant}.",
-            tenant);
-
           String? config = null;
           if (mergedConfiguration != null) {
-            config = "serialize the config object";
-          } else if (e is ServiceConfigSourceException svcConfigEx) {
-            config = svcConfigEx.RawConfig;
+            config = JsonSerializer.Serialize(mergedConfiguration);
+          } else {
+            config = cfgEx.RawConfig;
           }
-          // Create Error Report for Deserialization and Merging
-          var errorReport = new ErrorReportDetails(
+
+          if ((cfgEx.ErrorType == InvalidConfigurationErrorType.InvalidJson) ||
+            (cfgEx.ErrorType == InvalidConfigurationErrorType.TopLevelNull)) {
+            this._logger.LogError(cfgEx,
+              message:
+              "An error occurred reading or deserializing service configuration, skipping initial load: {tenant}.",
+              tenant);
+
+            // Create Error Report for Deserialization and Merging
+            errorReport = new ErrorReportDetails(
+              timestamp: DateTime.UtcNow,
+              tenant: tenant,
+              service: null,
+              healthCheckName: null,
+              level: AgentErrorLevel.Error,
+              type: AgentErrorType.Deserialization,
+              message: cfgEx.Message,
+              configuration: config,
+              stackTrace: cfgEx.StackTrace);
+          } else {
+            this._logger.LogError(cfgEx,
+              message: "Tenant service configuration is invalid, skipping initial load: {tenant}.",
+              tenant);
+
+            // Create Error Report for Validation
+            var data = (List<ValidationResult>)cfgEx.Data["errors"]!;
+            errorReport = new ErrorReportDetails(
+              timestamp: DateTime.UtcNow,
+              tenant: tenant,
+              service: null,
+              healthCheckName: null,
+              level: AgentErrorLevel.Error,
+              type: AgentErrorType.Validation,
+              message: String.Join(" ", data.Select(e => e.ErrorMessage)),
+              configuration: config,
+              stackTrace: cfgEx.StackTrace);
+          }
+          await this._errorReportsHelper.CreateErrorReport(environment, errorReport, cancellationToken);
+
+        } catch (NotSupportedException nse) {
+          // Error upon serializing ServiceHierarchyConfig due to invalid HealthCheckType
+          errorReport = new ErrorReportDetails(
             timestamp: DateTime.UtcNow,
             tenant: tenant,
             service: null,
             healthCheckName: null,
             level: AgentErrorLevel.Error,
-            type: AgentErrorType.Deserialization,
-            message: e.Message,
-            configuration: config,
-            stackTrace: e.StackTrace
-          );
-          await client.CreateErrorReportAsync(environment, errorReport, cancellationToken);
+            type: AgentErrorType.Validation,
+            message: nse.Message,
+            configuration: null,
+            stackTrace: nse.StackTrace);
+          await this._errorReportsHelper.CreateErrorReport(environment, errorReport, cancellationToken);
         }
       }
-    } finally {
-      conn.Dispose();
     }
 
     return configurationByTenant;

@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Agent.Configuration;
 using Cms.BatCave.Sonar.Agent.HealthChecks;
+using Cms.BatCave.Sonar.Agent.Helpers;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Models;
@@ -22,7 +23,7 @@ public class HealthCheckHelper {
   private readonly HealthCheckQueueProcessor<HttpHealthCheckDefinition> _httpHealthCheckQueue;
   private readonly HealthCheckQueueProcessor<MetricHealthCheckDefinition> _prometheusHealthCheckQueue;
   private readonly HealthCheckQueueProcessor<MetricHealthCheckDefinition> _lokiHealthCheckQueue;
-  private readonly ErrorReportsHelper _errorReportsHelper;
+  private readonly IErrorReportsHelper _errorReportsHelper;
 
   public HealthCheckHelper(
     ILoggerFactory loggerFactory,
@@ -31,7 +32,7 @@ public class HealthCheckHelper {
     HealthCheckQueueProcessor<HttpHealthCheckDefinition> httpHealthCheckQueue,
     HealthCheckQueueProcessor<MetricHealthCheckDefinition> prometheusHealthCheckQueue,
     HealthCheckQueueProcessor<MetricHealthCheckDefinition> lokiHealthCheckQueue,
-    ErrorReportsHelper errorReportsHelper) {
+    IErrorReportsHelper errorReportsHelper) {
 
     this._logger = loggerFactory.CreateLogger<HealthCheckHelper>();
     this._apiConfig = apiConfig;

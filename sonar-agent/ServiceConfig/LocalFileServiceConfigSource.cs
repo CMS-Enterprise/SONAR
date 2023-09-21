@@ -4,8 +4,8 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text.Json;
 using System.Threading;
+using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Models;
 
 namespace Cms.BatCave.Sonar.Agent.ServiceConfig;
@@ -33,18 +33,22 @@ public class LocalFileServiceConfigSource : IServiceConfigSource {
       Int32 num = 0;
       foreach (var file in this._filePaths) {
         ServiceHierarchyConfiguration config;
+        String fileContent = "";
+
+        try {
           await using var inputStream = new FileStream(file, FileMode.Open, FileAccess.Read);
           using var reader = new StreamReader(inputStream);
-          var fileContent = await reader.ReadToEndAsync(cancellationToken);
-        try {
+          fileContent = await reader.ReadToEndAsync(cancellationToken);
           config = JsonServiceConfigSerializer.Deserialize(fileContent);
-        } catch (JsonException ex) {
-          throw new ServiceConfigSourceException {
-            InnerException = ex,
-            LayerDescription = file,
-            LayerNumber = num,
-            RawConfig = fileContent
-          };
+        } catch (InvalidConfigurationException e) {
+          throw new InvalidConfigurationException(
+            file,
+            num,
+            fileContent,
+            "Error Deserializing: " + file + " Order: " + num + " " + e.Message,
+            e.ErrorType,
+            e
+          );
         }
 
         yield return config;

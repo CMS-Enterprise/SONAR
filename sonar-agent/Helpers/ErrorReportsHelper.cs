@@ -1,12 +1,13 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Cms.BatCave.Sonar.Agent.Helpers;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.Extensions.Logging;
 
 namespace Cms.BatCave.Sonar.Agent;
 
-public class ErrorReportsHelper {
+public class ErrorReportsHelper : IErrorReportsHelper {
   private readonly Func<(IDisposable, ISonarClient)> _sonarClientFactory;
   private readonly ILogger<ErrorReportsHelper> _logger;
 

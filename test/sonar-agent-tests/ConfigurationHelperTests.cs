@@ -1,14 +1,12 @@
 using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Cms.BatCave.Sonar.Agent.Configuration;
+using Cms.BatCave.Sonar.Agent.Helpers;
 using Cms.BatCave.Sonar.Agent.ServiceConfig;
-using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Json;
+using Cms.BatCave.Sonar.Models;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -76,29 +74,52 @@ public class ConfigurationHelperTests {
   /// Some of our validation errors in the agent will occur _during_ deserialization, manifested by an exception thrown
   /// from one of the custom JsonConverters (<see cref="HealthCheckModelJsonConverter"/>, <see cref="HttpHealthCheckConditionJsonConverter"/>).
   /// These result in the object not actually getting deserialized, and we want to make sure our deserialization helper
+  /// catches these errors, and generates an <see cref="ErrorReportDetails"/>.
+  /// </summary>
+  [Theory]
+  [InlineData("test-inputs/invalid-service-config-json-format.json")]
+  public async Task
+    GetServiceHierarchyConfigurationFromJson_DuringSerializationValidationError_ThrowsInvalidConfigurationException(
+      String testInputFilePath) {
+
+    var errorReportsHelper = new Mock<IErrorReportsHelper>(MockBehavior.Loose);
+    errorReportsHelper.Setup(er =>
+      er.CreateErrorReport("test", It.IsAny<ErrorReportDetails>(), It.IsAny<CancellationToken>()));
+
+    var configHelper = new ConfigurationHelper(
+      new LocalFileServiceConfigSource("test", new[] { testInputFilePath }),
+      () => (Mock.Of<IDisposable>(), Mock.Of<ISonarClient>()),
+      Mock.Of<ILogger<ConfigurationHelper>>(),
+      errorReportsHelper.Object);
+
+    var validatedConfig = await configHelper.LoadAndValidateJsonServiceConfigAsync(
+      "test",
+      CancellationToken.None);
+
+    Assert.Empty(validatedConfig);
+    errorReportsHelper.Verify(er => er.CreateErrorReport("test", It.IsAny<ErrorReportDetails>(), It.IsAny<CancellationToken>()));
+  }
+
+  /// <summary>
+  /// Some of our validation errors in the agent will occur _during_ deserialization, manifested by an exception thrown
+  /// from one of the custom JsonConverters (<see cref="JsonServiceConfigSerializer"/>).
+  /// These result in the object not actually getting deserialized, and we want to make sure our deserialization helper
   /// catches these errors, and converts them to <see cref="InvalidConfigurationException"/>s.
   /// </summary>
   [Theory]
   [InlineData("test-inputs/invalid-service-config-json-format.json",
     InvalidConfigurationErrorType.InvalidJson)]
   public async Task
-    GetServiceHierarchyConfigurationFromJson_DuringSerializationValidationError_ThrowsInvalidConfigurationException(
+    GetServiceHierarchyConfigurationFromJson_DuringDeserializationLocalFileError_ThrowsInvalidConfigurationException(
       String testInputFilePath,
       InvalidConfigurationErrorType expectedExceptionType) {
 
-    var errorReportsHelper = new ErrorReportsHelper(() => (Mock.Of<IDisposable>(), Mock.Of<ISonarClient>()),
-      Mock.Of<ILogger<ErrorReportsHelper>>());
-    var configHelper = new ConfigurationHelper(
-      new LocalFileServiceConfigSource("test", new[] { testInputFilePath }),
-      () => (Mock.Of<IDisposable>(), Mock.Of<ISonarClient>()),
-      Mock.Of<ILogger<ConfigurationHelper>>(),
-      errorReportsHelper
-    );
+    var configSource = new LocalFileServiceConfigSource(tenant: "test", filePaths: new[] {
+      testInputFilePath
+    });
 
-    var exception = await Assert.ThrowsAsync<InvalidConfigurationException>(() =>
-      configHelper.LoadAndValidateJsonServiceConfigAsync(
-        "test",
-        CancellationToken.None)
+    var exception = await Assert.ThrowsAsync<InvalidConfigurationException>(async () =>
+      await configSource.GetConfigurationLayersAsync(tenant: "test", CancellationToken.None).SingleAsync()
     );
 
     Assert.Equal(expectedExceptionType, exception.ErrorType);

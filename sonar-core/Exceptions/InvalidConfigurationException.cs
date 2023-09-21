@@ -12,6 +12,10 @@ public class InvalidConfigurationException : Exception {
 
   private readonly ImmutableDictionary<String, Object?>? _data;
 
+  public String? LayerDescription { get; init; }
+  public Int32 LayerNumber { get; init; }
+  public String? RawConfig { get; init; }
+
   public InvalidConfigurationException(String message, InvalidConfigurationErrorType errorType)
     : base(message) {
     this.ErrorType = errorType;
@@ -23,6 +27,21 @@ public class InvalidConfigurationException : Exception {
     Exception innerException)
     : base(message, innerException) {
 
+    this.ErrorType = errorType;
+  }
+
+  public InvalidConfigurationException(
+    String layerDescription,
+    Int32 layerNumber,
+    String rawConfig,
+    String message,
+    InvalidConfigurationErrorType errorType,
+    Exception innerException)
+    : base(message, innerException) {
+
+    this.LayerDescription = layerDescription;
+    this.LayerNumber = layerNumber;
+    this.RawConfig = rawConfig;
     this.ErrorType = errorType;
   }
 
@@ -57,6 +76,9 @@ public class InvalidConfigurationException : Exception {
     base.GetObjectData(info, context);
 
     info.AddValue(nameof(InvalidConfigurationException.ErrorType), (Int32)this.ErrorType);
+    info.AddValue(nameof(this.LayerDescription), this.LayerDescription);
+    info.AddValue(nameof(this.LayerNumber), this.LayerNumber);
+    info.AddValue(nameof(this.RawConfig), this.RawConfig);
   }
 
   public override IDictionary Data => this._data ?? ImmutableDictionary<String, Object?>.Empty;

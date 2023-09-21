@@ -226,10 +226,11 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
     ServiceHierarchyConfiguration servicesHierarchy;
 
     try {
-      servicesHierarchy = this.GetTenantServicesHierarchy(
+      servicesHierarchy = await this.GetTenantServicesHierarchy(
         resourceNamespace,
         tenant,
-        KubernetesConfigSource.SecretsEnabled(namespaceConfig.Result.Metadata.Labels)
+        KubernetesConfigSource.SecretsEnabled(namespaceConfig.Result.Metadata.Labels),
+        token
       );
     } catch (InvalidConfigurationException e) {
       this._logger.LogError(
@@ -340,77 +341,69 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
 
   }
 
-  private ServiceHierarchyConfiguration GetTenantServicesHierarchy(
+  private async Task<ServiceHierarchyConfiguration> GetTenantServicesHierarchy(
     String namespaceName,
     String tenantName,
-    Boolean includeSecrets) {
+    Boolean includeSecrets,
+    CancellationToken token) {
 
-      // get all configmaps and secrets for associated namespace
-      var configMaps = this._kubeClient.CoreV1.ListNamespacedConfigMap(namespaceName).Items;
-      var secrets =
-        includeSecrets ?
-          this._kubeClient.CoreV1.ListNamespacedSecret(namespaceName).Items :
-          Enumerable.Empty<V1Secret>();
+    // get all configmaps and secrets for associated namespace
+    var configMaps = this._kubeClient.CoreV1.ListNamespacedConfigMap(namespaceName).Items;
+    var secrets =
+      includeSecrets ?
+        this._kubeClient.CoreV1.ListNamespacedSecret(namespaceName).Items :
+        Enumerable.Empty<V1Secret>();
 
-      // select and order those configmaps and secrets that contain SONAR service configuration
-      var configLayers =
-        KubernetesConfigSource
-          .GetServiceConfigurationLayers(tenantName, configMaps, secrets, this._logger)
-          .ToImmutableList();
+    // select and order those configmaps and secrets that contain SONAR service configuration
+    var configLayers =
+      KubernetesConfigSource
+        .GetServiceConfigurationLayers(tenantName, configMaps, secrets, this._logger)
+        .ToImmutableList();
 
-      try {
-        // Ignore the tenant if it has no service configuration
-        if (configLayers.Any()) {
-          // Merge and validate the configuration
-          var mergedConfig = configLayers.Aggregate(ServiceConfigMerger.MergeConfigurations);
+    try {
+      // Ignore the tenant if it has no service configuration
+      if (configLayers.Any()) {
+        // Merge and validate the configuration
+        var mergedConfig = configLayers.Aggregate(ServiceConfigMerger.MergeConfigurations);
 
-          try {
-            ServiceConfigValidator.ValidateServiceConfig(mergedConfig);
-            return mergedConfig;
+        try {
+          ServiceConfigValidator.ValidateServiceConfig(mergedConfig);
+          return mergedConfig;
 
-          } catch (InvalidConfigurationException e) {
-            var data = (List<ValidationResult>)e.Data["errors"]!;
-            var errorReport = new ErrorReportDetails(
-              timestamp: DateTime.UtcNow,
-              tenant: null,
-              service: null,
-              healthCheckName: null,
-              level: AgentErrorLevel.Error,
-              type: AgentErrorType.Validation,
-              message: data
-                .Select(em => em.ErrorMessage)
-                .Aggregate("", (current, next) => current + ' ' + next),
-              configuration: null,
-              stackTrace: e.StackTrace
-            );
-            await this._errorReportsHelper.CreateErrorReport(
-              this._environment,
-              errorReport,
-              token);
+        } catch (InvalidConfigurationException e) {
+          var data = (List<ValidationResult>)e.Data["errors"]!;
+          var errorReport = new ErrorReportDetails(
+            timestamp: DateTime.UtcNow,
+            tenant: null,
+            service: null,
+            healthCheckName: null,
+            level: AgentErrorLevel.Error,
+            type: AgentErrorType.Validation,
+            message: String.Join(" ", data.Select(e => e.ErrorMessage)),
+            configuration: null,
+            stackTrace: e.StackTrace
+          );
 
-          }
+          await this._errorReportsHelper.CreateErrorReport(this._environment, errorReport, token);
         }
-      } catch (InvalidConfigurationException e) {
-        var data = (List<ValidationResult>)e.Data["errors"]!;
-        var errorReport = new ErrorReportDetails(
-          timestamp: DateTime.UtcNow,
-          tenant: null,
-          service: null,
-          healthCheckName: null,
-          level: AgentErrorLevel.Error,
-          type: AgentErrorType.Deserialization,
-          message: e.Message,
-          configuration: null,
-          stackTrace: e.StackTrace
-        );
-
-        await this._errorReportsHelper.CreateErrorReport(
-          this._environment,
-          errorReport,
-          token);
       }
+    } catch (InvalidConfigurationException e) {
+      var errorReport = new ErrorReportDetails(
+        timestamp: DateTime.UtcNow,
+        tenant: null,
+        service: null,
+        healthCheckName: null,
+        level: AgentErrorLevel.Error,
+        type: AgentErrorType.Deserialization,
+        message: e.Message,
+        configuration: null,
+        stackTrace: e.StackTrace
+      );
 
-      return ServiceHierarchyConfiguration.Empty;
+      await this._errorReportsHelper.CreateErrorReport(this._environment, errorReport, token);
+    }
+
+    return ServiceHierarchyConfiguration.Empty;
   }
 
   private async Task DeleteServicesAsyncWrapper(

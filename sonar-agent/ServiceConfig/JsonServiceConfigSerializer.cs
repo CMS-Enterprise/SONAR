@@ -13,18 +13,10 @@ public static class JsonServiceConfigSerializer {
   };
 
   public static ServiceHierarchyConfiguration Deserialize(String data) {
+    ServiceHierarchyConfiguration? configuration;
     try {
-      var configuration =
+      configuration =
         JsonSerializer.Deserialize<ServiceHierarchyConfiguration>(data, ConfigSerializerOptions);
-
-      if (configuration == null) {
-        throw new InvalidConfigurationException(
-          "Invalid JSON service configuration: Deserialized object is null.",
-          InvalidConfigurationErrorType.TopLevelNull
-        );
-      }
-
-      return configuration;
     } catch (Exception e) when (e is JsonException or NotSupportedException) {
       throw new InvalidConfigurationException(
         message: $"Invalid JSON service configuration: {e.Message}",
@@ -32,5 +24,14 @@ public static class JsonServiceConfigSerializer {
         e
       );
     }
+
+    if (configuration == null) {
+      throw new InvalidConfigurationException(
+        "Invalid JSON service configuration: Deserialized object is null.",
+        InvalidConfigurationErrorType.TopLevelNull
+      );
+    }
+
+    return configuration;
   }
 }

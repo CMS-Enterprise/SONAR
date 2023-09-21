@@ -216,26 +216,10 @@ export class Api<SecurityDataType = unknown> extends HttpClient<SecurityDataType
    *
    * @tags ErrorReports
    * @name CreateErrorReport
-   * @request POST:/api/v2/error-report/{environment}
+   * @request POST:/api/v2/error-reports/{environment}
    */
   createErrorReport = (environment: string, data: ErrorReportDetails, params: RequestParams = {}) =>
     this.request<ErrorReportDetails, ProblemDetails>({
-      path: `/api/v2/error-report/${environment}`,
-      method: "POST",
-      body: data,
-      type: ContentType.Json,
-      format: "json",
-      ...params,
-    });
-  /**
-   * No description
-   *
-   * @tags ErrorReports
-   * @name CreateErrorReports
-   * @request POST:/api/v2/error-reports/{environment}
-   */
-  createErrorReports = (environment: string, data: ErrorReportDetails[], params: RequestParams = {}) =>
-    this.request<ErrorReportDetails[], ProblemDetails>({
       path: `/api/v2/error-reports/${environment}`,
       method: "POST",
       body: data,
