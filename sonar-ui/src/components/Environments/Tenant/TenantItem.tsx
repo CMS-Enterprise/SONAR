@@ -30,9 +30,12 @@ const TenantItem: React.FC<{
                 {tenant.tenantName}: {rs.displayName}
               </Link>
             </span>
-            <span css={getBadgeSpanStyle(theme)} data-test="env-view-tenant">
-              <VersionInfo versions={rs.versions}/>
-            </span>
+            {
+              rs.versions && rs.versions.length &&
+              <span css={getBadgeSpanStyle(theme)} data-test="env-view-tenant">
+                <VersionInfo versions={rs.versions} />
+              </span>
+            }
           </div>
         )}
       </div>

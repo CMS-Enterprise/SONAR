@@ -5,7 +5,7 @@ const VersionInfo: React.FC<{
 }> =
   ({ versions}) => {
 
-    let version = 'undefined';
+    let version;
 
     if((versions != null) && (Object.keys(versions).length > 0)) {
       const sorted = [];
@@ -16,10 +16,12 @@ const VersionInfo: React.FC<{
       version = sorted[0];
     }
 
-    return (
+    return version ? (
       <span>
         ({version})
       </span>
+    ) : (
+      <></>
     );
   };
 
