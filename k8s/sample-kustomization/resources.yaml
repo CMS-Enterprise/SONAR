@@ -1,0 +1,31 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: sonar
+spec:
+  interval: 1m0s
+  url: https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar.git
+  ref:
+    branch: feature-387-extract-kustomization-version-info
+  secretRef:
+    name: basic-access-auth
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: sample-kustomization
+spec:
+  interval: 1m0s
+  path: "./k8s/sample-kustomization/"
+  sourceRef:
+    kind: GitRepository
+    name: sonar
+    namespace: sample-kustomization
+  prune: true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sample-configmap
+data:
+  foo: bar

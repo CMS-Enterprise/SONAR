@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Agent.Configuration;
+using Cms.BatCave.Sonar.Agent.K8sCustomResources;
 using Cms.BatCave.Sonar.Agent.HealthChecks;
 using Cms.BatCave.Sonar.Agent.HealthChecks.Metrics;
 using Cms.BatCave.Sonar.Agent.Options;
@@ -338,14 +339,6 @@ internal class Program {
     var httpVersionRequester = new HttpResponseBodyVersionRequester(versionRequesterHttpClient);
     tasks.Add(versionCheckQueueProcessor.StartAsync(httpVersionRequester, token));
 
-    // TODO Start the Flux Version Check processing task if we are in K8s.
-    // if (opts.KubernetesConfigurationOption) {
-    //   var fluxVersionRequester = new FluxKustomizationVersionRequester(
-    //     agentConfig,
-    //     loggerFactory.CreateLogger<FluxKustomizationVersionRequester>());
-    //   tasks.Add(versionCheckQueueProcessor.StartAsync(fluxVersionRequester, token));
-    // }
-
     using var sonarHttpClient = new HttpClient();
     sonarHttpClient.Timeout = TimeSpan.FromSeconds(agentConfig.Value.AgentInterval);
     var versionCheckHelper = new VersionCheckHelper(
@@ -364,6 +357,10 @@ internal class Program {
         kubeClient,
         loggerFactory.CreateLogger<KubernetesConfigurationMonitor>(),
         errorReportsHelper);
+
+      // Start the Kustomization Version Check processing task
+      var kustomizationVersionRequester = new FluxKustomizationVersionRequester(kubeClient);
+      tasks.Add(versionCheckQueueProcessor.StartAsync(kustomizationVersionRequester, token));
 
       disposables.Add(kubeClient);
       disposables.Add(k8sWatcher);

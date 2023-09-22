@@ -59,8 +59,8 @@
         {
           "versionCheckType": "FluxKustomization",
           "definition": {
-            "k8sNamespace": "test",
-            "kustomization": "test"
+            "k8sNamespace": "sample-kustomization",
+            "kustomization": "sample-kustomization"
           }
         }
       ]

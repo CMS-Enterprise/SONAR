@@ -1,0 +1,133 @@
+{
+  "apiVersion": "kustomize.toolkit.fluxcd.io/v1beta2",
+  "items": [
+    {
+      "apiVersion": "kustomize.toolkit.fluxcd.io/v1beta2",
+      "kind": "Kustomization",
+      "metadata": {
+        "creationTimestamp": "2023-09-20T20:42:34Z",
+        "finalizers": [
+          "finalizers.fluxcd.io"
+        ],
+        "generation": 1,
+        "labels": {
+          "kustomize.toolkit.fluxcd.io/name": "sample-kustomization",
+          "kustomize.toolkit.fluxcd.io/namespace": "sample-kustomization"
+        },
+        "managedFields": [
+          {
+            "apiVersion": "kustomize.toolkit.fluxcd.io/v1",
+            "fieldsType": "FieldsV1",
+            "fieldsV1": {
+              "f:metadata": {
+                "f:labels": {
+                  "f:kustomize.toolkit.fluxcd.io/name": {},
+                  "f:kustomize.toolkit.fluxcd.io/namespace": {}
+                }
+              },
+              "f:spec": {
+                "f:interval": {},
+                "f:path": {},
+                "f:prune": {},
+                "f:sourceRef": {
+                  "f:kind": {},
+                  "f:name": {},
+                  "f:namespace": {}
+                }
+              }
+            },
+            "manager": "kustomize-controller",
+            "operation": "Apply",
+            "time": "2023-09-20T20:44:15Z"
+          },
+          {
+            "apiVersion": "kustomize.toolkit.fluxcd.io/v1",
+            "fieldsType": "FieldsV1",
+            "fieldsV1": {
+              "f:metadata": {
+                "f:finalizers": {
+                  ".": {},
+                  "v:\"finalizers.fluxcd.io\"": {}
+                }
+              }
+            },
+            "manager": "gotk-kustomize-controller",
+            "operation": "Update",
+            "time": "2023-09-20T20:42:34Z"
+          },
+          {
+            "apiVersion": "kustomize.toolkit.fluxcd.io/v1",
+            "fieldsType": "FieldsV1",
+            "fieldsV1": {
+              "f:status": {
+                "f:conditions": {},
+                "f:inventory": {
+                  ".": {},
+                  "f:entries": {}
+                },
+                "f:lastAppliedRevision": {},
+                "f:lastAttemptedRevision": {},
+                "f:observedGeneration": {}
+              }
+            },
+            "manager": "gotk-kustomize-controller",
+            "operation": "Update",
+            "subresource": "status",
+            "time": "2023-09-20T23:05:30Z"
+          }
+        ],
+        "name": "sample-kustomization",
+        "namespace": "sample-kustomization",
+        "resourceVersion": "11200",
+        "uid": "fa8d351b-736c-48af-9c6c-c59dce015cc4"
+      },
+      "spec": {
+        "force": false,
+        "interval": "1m0s",
+        "path": "./k8s/sample-kustomization/",
+        "prune": true,
+        "sourceRef": {
+          "kind": "GitRepository",
+          "name": "sonar",
+          "namespace": "sample-kustomization"
+        }
+      },
+      "status": {
+        "conditions": [
+          {
+            "lastTransitionTime": "2023-09-20T23:05:30Z",
+            "message": "Applied revision: feature-branch-name@commit-hash",
+            "observedGeneration": 1,
+            "reason": "ReconciliationSucceeded",
+            "status": "True",
+            "type": "Ready"
+          }
+        ],
+        "inventory": {
+          "entries": [
+            {
+              "id": "sample-kustomization_sample-configmap__ConfigMap",
+              "v": "v1"
+            },
+            {
+              "id": "sample-kustomization_sample-kustomization_kustomize.toolkit.fluxcd.io_Kustomization",
+              "v": "v1"
+            },
+            {
+              "id": "sample-kustomization_sonar_source.toolkit.fluxcd.io_GitRepository",
+              "v": "v1"
+            }
+          ]
+        },
+        "lastAppliedRevision": "feature-branch-name@commit-hash",
+        "lastAttemptedRevision": "feature-branch-name@commit-hash",
+        "observedGeneration": 1
+      }
+    }
+  ],
+  "kind": "KustomizationList",
+  "metadata": {
+    "continue": "",
+    "resourceVersion": "11241"
+  }
+}
