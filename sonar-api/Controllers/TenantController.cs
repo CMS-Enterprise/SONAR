@@ -1,11 +1,17 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Asp.Versioning;
+using Cms.BatCave.Sonar.Data;
+using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
 using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
 
 namespace Cms.BatCave.Sonar.Controllers;
@@ -29,7 +35,14 @@ public class TenantController : ControllerBase {
   [ProducesResponseType(typeof(TenantInfo[]), statusCode: 200)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
   public async Task<ActionResult> GetTenants(
+    [FromQuery(Name = "environment")] String environmentName = "",
+    [FromQuery(Name = "tenant")] String tenantName = "",
     CancellationToken cancellationToken = default) {
+
+    if ((!environmentName.IsNullOrEmpty()) || (!tenantName.IsNullOrEmpty())) {
+      return await GetTenantDetails(environmentName, tenantName, cancellationToken);
+    }
+
     var tenantList = new List<TenantInfo>();
     var environments = await this._environmentDataHelper.FetchAllExistingEnvAsync(cancellationToken);
 
@@ -38,6 +51,27 @@ public class TenantController : ControllerBase {
       tenantList.AddRange(res);
     }
 
+    return this.Ok(tenantList);
+  }
+
+  public async Task<ActionResult> GetTenantDetails(String environmentName, String tenantName, CancellationToken cancelToken) {
+    var tenantList = new List<TenantInfo>();
+
+    var env = await this._environmentDataHelper.FetchExistingEnvAsync(environmentName, cancelToken);
+    var tenantsInfo = await this._tenantDataHelper.GetTenantsInfo(env, cancelToken);
+
+    if (tenantName.IsNullOrEmpty()) {
+      //Get all tenants details for the environment
+      tenantList = tenantsInfo as List<TenantInfo>;
+    } else {
+      //Get a single tenant details for the environment
+      var tenantInfo = tenantsInfo.FirstOrDefault(t => t.TenantName == tenantName);
+      if (tenantInfo != null) {
+        tenantList.Add(tenantInfo);
+      } else {
+        throw new ResourceNotFoundException(nameof(Tenant), tenantName);
+      }
+    }
     return this.Ok(tenantList);
   }
 }
