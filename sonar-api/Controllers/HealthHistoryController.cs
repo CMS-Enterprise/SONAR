@@ -167,6 +167,34 @@ public class HealthHistoryController : ControllerBase {
     );
   }
 
+  [HttpGet("{environment}/tenants/{tenant}/services/{service}/health-check-results",
+    Name = "GetHistoricalHealthCheckResultsForService")]
+  [ProducesResponseType(typeof(Dictionary<String, (DateTime Timestamp, HealthStatus Status)>), statusCode: 200)]
+  [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
+  [ProducesResponseType(typeof(ProblemDetails), statusCode: 400)]
+  [ProducesResponseType(500)]
+  public async Task<IActionResult> GetHistoricalHealthCheckResultsForService(
+    [FromRoute] String environment,
+    [FromRoute] String tenant,
+    [FromRoute] String service,
+    [FromQuery] DateTime? timeQuery,
+    CancellationToken cancellationToken) {
+
+    var timestamp = timeQuery ?? DateTime.UtcNow;
+    if (timestamp.Kind != DateTimeKind.Utc) {
+      return this.BadRequest("Invalid timestamp");
+    }
+
+    var result = await this._healthDataHelper.GetHistoricalHealthCheckResultsForService(
+      environment,
+      tenant,
+      service,
+      timestamp,
+      cancellationToken);
+
+    return this.Ok(result);
+  }
+
   private ServiceHierarchyHealthHistory GetSonarHealthHierarchy(
     String servicePath,
     CancellationToken cancellationToken) {

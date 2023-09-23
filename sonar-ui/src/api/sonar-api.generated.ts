@@ -14,6 +14,7 @@ import {
   ApiKeyConfiguration,
   ApiKeyDetails,
   CurrentUserView,
+  DateTimeHealthStatusValueTuple,
   EnvironmentHealth,
   EnvironmentModel,
   ErrorReportDetails,
@@ -452,6 +453,30 @@ tenant, service, and health check in Prometheus. Filters out samples outside of 
   ) =>
     this.request<ServiceHierarchyHealthHistory, ProblemDetails | void>({
       path: `/api/v2/health-history/${environment}/tenants/${tenant}/services/${servicePath}`,
+      method: "GET",
+      query: query,
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags HealthHistory
+   * @name GetHistoricalHealthCheckResultsForService
+   * @request GET:/api/v2/health-history/{environment}/tenants/{tenant}/services/{service}/health-check-results
+   */
+  getHistoricalHealthCheckResultsForService = (
+    environment: string,
+    tenant: string,
+    service: string,
+    query?: {
+      /** @format date-time */
+      timeQuery?: string;
+    },
+    params: RequestParams = {},
+  ) =>
+    this.request<Record<string, DateTimeHealthStatusValueTuple>, ProblemDetails | void>({
+      path: `/api/v2/health-history/${environment}/tenants/${tenant}/services/${service}/health-check-results`,
       method: "GET",
       query: query,
       format: "json",

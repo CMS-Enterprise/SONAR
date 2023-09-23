@@ -57,4 +57,43 @@ public class PrometheusQueryHelper {
 
     return processResult(response.Data);
   }
+
+  public async Task<T> GetInstantaneousValuePromQuery<T>(
+    String promQuery,
+    DateTime timeQuery,
+    Func<QueryResults, T> processResult,
+    CancellationToken cancellationToken) {
+
+    var response = await this._prometheusClient.QueryAsync(
+      // query={value}?time=timestamp
+      $"{promQuery}",
+      timeQuery,
+      cancellationToken: cancellationToken
+    );
+
+    if (response.Status != ResponseStatus.Success) {
+      this._logger.LogError(
+        message: "Unexpected error querying data from Prometheus ({ErrorType}): {ErrorMessage}",
+        response.ErrorType,
+        response.Error
+      );
+      throw new InternalServerErrorException(
+        errorType: "PrometheusApiError",
+        message: "Error querying data."
+      );
+    }
+
+    if (response.Data == null) {
+      this._logger.LogError(
+        message: "Prometheus unexpectedly returned null data for query {Query}",
+        promQuery
+      );
+      throw new InternalServerErrorException(
+        errorType: "PrometheusApiError",
+        message: "Error querying data."
+      );
+    }
+
+    return processResult(response.Data);
+  }
 }

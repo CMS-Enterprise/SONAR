@@ -55,3 +55,25 @@ export const useGetServiceVersion = (
     }
   });
 }
+
+export const useGetHistoricalHealthCheckResults = (
+  env: string,
+  tenant: string,
+  service: string,
+  timestamp: string
+) => {
+  const sonarClient = useSonarApi();
+  return useQuery({
+    queryKey: ['HealthCheckHistory', env, tenant, service, timestamp],
+    queryFn: () => {
+      return sonarClient.getHistoricalHealthCheckResultsForService(
+        env,
+        tenant,
+        service,
+        {
+          timeQuery: timestamp
+        })
+        .then(res => res.data);
+    },
+  })
+}

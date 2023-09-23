@@ -1,7 +1,9 @@
 import { useTheme } from '@emotion/react';
-import { Drawer } from '@cmsgov/design-system';
-import React from 'react';
+import { Drawer, Spinner } from '@cmsgov/design-system';
+import React, { useContext } from 'react';
 import { StatusHistoryView } from 'interfaces/global_interfaces';
+import { ServiceOverviewContext } from '../ServiceOverviewContext';
+import { useGetHistoricalHealthCheckResults } from '../Services.Hooks';
 import StatusHistoryHealthCheckList from './StatusHistoryHealthCheckList';
 import { StatusHistoryDrawerSubsectionStyle } from './StatusHistory.Style';
 import HealthStatusBadge from '../../Badges/HealthStatusBadge';
@@ -17,10 +19,17 @@ const StatusHistoryDrawer: React.FC<{
   showDate: boolean
 }> = ({ statusHistoryViewData, closeDrawer, showDate}) => {
   const theme = useTheme();
-
+  const context = useContext(ServiceOverviewContext)!;
   const utcDateTimestamp = statusHistoryViewData?.statusTimestampTuple[0];
   const convertedTimestamp = convertUtcTimestampToLocal(utcDateTimestamp!, showDate);
   const dateTimestampStatus = statusHistoryViewData?.statusTimestampTuple[1] as HealthStatus;
+  console.log(utcDateTimestamp);
+  const {isLoading, data} = useGetHistoricalHealthCheckResults(
+    context.environmentName,
+    context.tenantName,
+    statusHistoryViewData?.serviceData.name as string,
+    utcDateTimestamp as string
+  );
 
   return (
     <Drawer css={getDrawerStyle} heading={"Selected Timestamps"} headingLevel="3" onCloseClick={closeDrawer}>
@@ -35,9 +44,11 @@ const StatusHistoryDrawer: React.FC<{
             </span>
             <span css={[getBadgeSpanNoLinkStyle(theme), DynamicTextFontStyle]}>{convertedTimestamp}</span>
           </div>
-          {statusHistoryViewData.serviceData.healthChecks ? (
-            <StatusHistoryHealthCheckList healthChecks={statusHistoryViewData.serviceData.healthChecks} />) :
-            null}
+          {
+            isLoading ? (<Spinner />) :
+              data ? (<StatusHistoryHealthCheckList healthChecks={data} />) :
+                null
+          }
         </>
 
       )}

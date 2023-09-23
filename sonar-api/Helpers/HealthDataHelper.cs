@@ -461,6 +461,75 @@ public class HealthDataHelper {
     );
   }
 
+  public async Task<Dictionary<String, (DateTime Timestamp, HealthStatus Status)>> GetHistoricalHealthCheckResultsForService(
+    String environment,
+    String tenant,
+    String service,
+    DateTime timeQuery,
+    CancellationToken token) {
+
+    Dictionary<String, (DateTime Timestamp, HealthStatus Status)> result;
+    try {
+
+      result = await this._prometheusQueryHelper.GetInstantaneousValuePromQuery(
+        $"{ServiceHealthCheckMetricName}{{environment=\"{environment}\", tenant=\"{tenant}\", service=\"{service}\"}}",
+        timeQuery,
+        processResult: results => {
+          // StateSet metrics are split into separate metric per-state
+          // This code groups all the metrics for a given state.
+          var metricByHealthCheck =
+            results.Result
+              .Where(metric => metric.Value.HasValue)
+              .Select(metric => (metric.Labels, metric.Value))
+              .ToLookup(
+                keySelector: metric => this.GetHealthCheckKey(metric.Labels),
+                TupleComparer.From(StringComparer.OrdinalIgnoreCase, StringComparer.OrdinalIgnoreCase)
+              );
+
+          var healthMapping =
+            new Dictionary<String, (DateTime Timestamp, HealthStatus Status)>();
+          foreach (var group in metricByHealthCheck) {
+            if ((group.Key.Item1 == null) || (group.Key.Item2 == null)) {
+              // invalid metric that is missing labels, ignore
+              continue;
+            }
+
+            (DateTime Timestamp, HealthStatus Status)? effectiveStatusTuple = null;
+            foreach (var hcResult in group) {
+              if ((hcResult.Value?.Value == "1") &&
+                hcResult.Labels.TryGetValue(HealthDataHelper.ServiceHealthCheckMetricName, out var statusStr) &&
+                Enum.TryParse<HealthStatus>(statusStr, out var status)) {
+
+                if (effectiveStatusTuple == null) {
+                  effectiveStatusTuple = (this.ConvertDecimalTimestampToDateTime(hcResult.Value.Value.Timestamp), status);
+                }
+              }
+            }
+
+            if (effectiveStatusTuple != null) {
+              healthMapping.Add(group.Key.Item2, ((DateTime Timestamp, HealthStatus Status))effectiveStatusTuple);
+            }
+          }
+
+          return healthMapping;
+        },
+        token
+      );
+    } catch (Exception e) {
+      this._logger.LogError(
+        message: "Error querying Prometheus: {Message}",
+        e.Message
+      );
+      result = new Dictionary<String, (DateTime Timestamp, HealthStatus Status)>();
+    }
+
+    return result;
+  }
+
+  private DateTime ConvertDecimalTimestampToDateTime(Decimal timestamp) {
+    return DateTime.UnixEpoch.AddMilliseconds((Int64)(timestamp * 1000));
+  }
+
   public class MetricLabelKeys {
     public const String Environment = "environment";
     public const String Tenant = "tenant";
