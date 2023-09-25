@@ -1,5 +1,6 @@
 using System;
 using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using PrometheusQuerySdk;
@@ -33,8 +34,14 @@ public class PrometheusMetricQueryRunner : MetricQueryRunnerBase {
     } catch (HttpRequestException e) {
       this.Logger.LogError(
         e,
-        "HTTP error querying Prometheus ({StatusCode}): {Message}",
+        "HTTP error querying Prometheus ({StatusCode}): {_Message}",
         e.StatusCode,
+        e.Message
+      );
+    } catch (JsonException e) {
+      this.Logger.LogError(
+        e,
+        "Prometheus query returned invalid JSON: {_Message}",
         e.Message
       );
     } catch (TaskCanceledException) {
@@ -44,7 +51,7 @@ public class PrometheusMetricQueryRunner : MetricQueryRunnerBase {
         this.Logger.LogError("Prometheus query request timed out");
       }
     } catch (InvalidOperationException e) {
-      this.Logger.LogError(e, "Unexpected error querying Prometheus: {Message}", e.Message);
+      this.Logger.LogError(e, "Unexpected error querying Prometheus: {_Message}", e.Message);
     }
 
     return qrResult;
