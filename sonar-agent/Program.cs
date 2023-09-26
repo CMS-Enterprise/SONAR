@@ -167,6 +167,11 @@ internal class Program {
       errorReportsHelper
     );
 
+    AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
+      UnhandledExceptionErrorReportHandler(e.ExceptionObject, logger, errorReportsHelper,
+        apiConfig.Value.Environment,
+        token).Wait();
+
     IDictionary<String, ServiceHierarchyConfiguration> servicesHierarchy;
     try {
       // Load and merge configs
@@ -457,5 +462,29 @@ internal class Program {
     }
 
     return error ? 1 : 0;
+  }
+
+  static async Task UnhandledExceptionErrorReportHandler(
+    Object exceptionObj,
+    ILogger<Program> logger,
+    ErrorReportsHelper errorReportsHelper,
+    String env,
+    CancellationToken token) {
+    var e = (Exception)exceptionObj;
+
+    // create error report
+    await errorReportsHelper.CreateErrorReport(env,
+      new ErrorReportDetails(
+        DateTime.UtcNow,
+        null,
+        null,
+        null,
+        AgentErrorLevel.Fatal,
+        AgentErrorType.Unknown,
+        $"Unhandled exception occured with following message: {e.Message}",
+        null,
+        null),
+      token);
+    logger.LogError(e, "Unhandled exception occured with following message: {_Message}", e.Message);
   }
 }
