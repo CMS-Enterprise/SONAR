@@ -54,7 +54,7 @@ public class TenantController : ControllerBase {
     return this.Ok(tenantList);
   }
 
-  public async Task<ActionResult> GetTenantDetails(String environmentName, String tenantName, CancellationToken cancelToken) {
+  private async Task<ActionResult> GetTenantDetails(String environmentName, String tenantName, CancellationToken cancelToken) {
     var tenantList = new List<TenantInfo>();
 
     var env = await this._environmentDataHelper.FetchExistingEnvAsync(environmentName, cancelToken);

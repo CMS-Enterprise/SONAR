@@ -489,10 +489,19 @@ tenant, service, and health check in Prometheus. Filters out samples outside of 
    * @name GetTenants
    * @request GET:/api/v2/tenants
    */
-  getTenants = (params: RequestParams = {}) =>
+  getTenants = (
+    query?: {
+      /** @default "" */
+      environment?: string;
+      /** @default "" */
+      tenant?: string;
+    },
+    params: RequestParams = {},
+  ) =>
     this.request<TenantInfo[], ProblemDetails>({
       path: `/api/v2/tenants`,
       method: "GET",
+      query: query,
       format: "json",
       ...params,
     });
