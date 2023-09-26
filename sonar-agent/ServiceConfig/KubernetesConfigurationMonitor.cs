@@ -111,7 +111,14 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
     if (eventType == WatchEventType.Added) {
       // occurs when a new namespace with "sonar-monitoring" == "enabled" added or the value of the
       // "sonar-monitoring" label is changed to "enabled"
+
       // NOTE: health check for tenant not scheduled until tenant has service configuration
+      // Trigger a configuration reload in case there are already ConfigMaps in this namespace.
+      await this.HandleConfigResourceEventAsync(
+        eventType,
+        resource.Metadata.Name,
+        CancellationToken.None
+      );
 
       // If SONAR config secrets are enabled, begin watching secrets
       if (KubernetesConfigSource.SecretsEnabled(resource.Metadata.Labels)) {
