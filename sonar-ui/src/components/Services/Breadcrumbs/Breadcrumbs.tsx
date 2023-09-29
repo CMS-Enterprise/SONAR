@@ -1,6 +1,5 @@
 import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-
 import { DynamicTextFontStyle } from '../../../App.Style';
 import { ServiceOverviewContext } from '../ServiceOverviewContext';
 import {
@@ -34,12 +33,18 @@ const Breadcrumbs: React.FC<{
         let displaySpan;
 
         if (index === environmentIndex) {
-          displaySpan = <span key={crumb} css={crumbStyle}>Environment: {crumb}</span>;
+          displaySpan = <span key={crumb} css={crumbStyle}>Environment:
+            <Link to={currentServiceLink}> {crumb}</Link>
+          </span>;
         } else if (index === tenantIndex) {
-          displaySpan = <span key={crumb} css={crumbStyle}>Tenant: {crumb}</span>;
+          displaySpan = <span key={crumb} css={crumbStyle}>Tenant:
+            <Link to={currentServiceLink}> {crumb}</Link>
+          </span>;
         } else if (index >= serviceIndexStart) {
           if (index === (array.length - 1)) {
-            displaySpan = <span key={crumb} css={crumbStyle}>{displayName}</span>;
+            displaySpan = <span key={crumb} css={crumbStyle}>
+              <Link to={currentServiceLink}>{crumb}</Link>
+            </span>;
           } else {
             displaySpan = (
               <span key={crumb} css={crumbStyle}>
