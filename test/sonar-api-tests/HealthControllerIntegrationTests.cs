@@ -429,6 +429,42 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
     );
   }
 
+  [Fact]
+  public async Task RecordServiceHealth_InvalidFutureTimestamp() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(HealthControllerIntegrationTests.TestRootOnlyConfiguration);
+
+    var timestamp = DateTime.UtcNow.AddHours(1);
+
+    // Record health status
+    var response = await
+      this.Fixture.CreateAdminRequest(
+          $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{HealthControllerIntegrationTests.TestRootServiceName}")
+        .And(req => {
+          req.Content = JsonContent.Create(new ServiceHealth(
+            timestamp,
+            HealthStatus.Online,
+            ImmutableDictionary<String, HealthStatus>.Empty
+              .Add(HealthControllerIntegrationTests.TestHealthCheckName, HealthStatus.Online)
+          ));
+        })
+        .PostAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.BadRequest,
+      actual: response.StatusCode);
+
+    var body = await response.Content.ReadFromJsonAsync<ProblemDetails>(
+      HealthControllerIntegrationTests.SerializerOptions
+    );
+
+    Assert.NotNull(body);
+    Assert.Equal(
+      expected: ProblemTypes.InvalidData,
+      actual: body.Type
+    );
+  }
+
   // GetServiceHierarchyHealth scenarios
   //    Missing Environment - 404
   //    Missing Tenant - 404

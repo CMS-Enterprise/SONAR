@@ -258,6 +258,29 @@ public class VersionControllerIntegrationTests : ApiControllerTestsBase {
       actual: response.StatusCode);
   }
 
+  [Fact]
+  public async Task RecordServiceVersion_InvalidFutureTimestamp() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestRootOnlyConfiguration);
+
+    var timestamp = DateTime.UtcNow.AddHours(1);
+
+    var response = await
+      this.Fixture
+        .CreateAdminRequest($"/api/v2/version/{testEnvironment}/tenants/{testTenant}/services/{TestRootServiceName}")
+        .AddHeader(name: "Accept", value: "application/json")
+        .And(req => {
+          req.Content = JsonContent.Create(new ServiceVersion(
+            timestamp,
+            ImmutableDictionary<VersionCheckType, String>.Empty
+              .Add(VersionCheckType.FluxKustomization, TestVersion1Value)));
+        })
+        .PostAsync();
+
+    Assert.Equal(expected: HttpStatusCode.BadRequest,
+      actual: response.StatusCode);
+  }
+
   /// <summary>
   ///   This test validates that the GetSpecificServiceVersionDetails endpoint is properly selecting
   ///   the most recent version for a service

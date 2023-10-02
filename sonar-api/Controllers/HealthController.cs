@@ -33,6 +33,7 @@ public class HealthController : ControllerBase {
   private readonly HealthDataHelper _healthDataHelper;
   private readonly ServiceHealthCacheHelper _cacheHelper;
   private readonly String _sonarEnvironment;
+  private readonly ValidationHelper _validationHelper;
 
   public HealthController(
     ServiceDataHelper serviceDataHelper,
@@ -40,13 +41,15 @@ public class HealthController : ControllerBase {
     ServiceHealthCacheHelper cacheHelper,
     PrometheusRemoteWriteClient remoteWriteClient,
     IOptions<SonarHealthCheckConfiguration> sonarHealthConfig,
-    ILogger<HealthController> logger) {
+    ILogger<HealthController> logger,
+    ValidationHelper validationHelper) {
     this._serviceDataHelper = serviceDataHelper;
     this._healthDataHelper = healthDataHelper;
     this._cacheHelper = cacheHelper;
     this._remoteWriteClient = remoteWriteClient;
     this._sonarEnvironment = sonarHealthConfig.Value.SonarEnvironment;
     this._logger = logger;
+    this._validationHelper = validationHelper;
   }
 
   /// <summary>
@@ -77,9 +80,12 @@ public class HealthController : ControllerBase {
     [FromBody] ServiceHealth value,
     CancellationToken cancellationToken = default) {
 
-    //Validation
+    // health status validation
     var canonicalHeathStatusDictionary =
       await ValidateHealthStatus(environment, tenant, service, value, cancellationToken);
+
+    // sample timestamp validation
+    ValidationHelper.ValidateTimestamp(value.Timestamp);
 
     // local function to handle exception handling for caching
     async Task CachingTaskExceptionHandling() {

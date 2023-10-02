@@ -25,15 +25,15 @@ public class HealthCheckDataController : ControllerBase {
 
   private readonly ILogger<HealthCheckDataController> _logger;
   private readonly IPrometheusService _prometheusService;
-  private readonly ApiKeyDataHelper _apiKeyDataHelper;
+  private readonly ValidationHelper _validationHelper;
 
   public HealthCheckDataController(
     ILogger<HealthCheckDataController> logger,
     IPrometheusService prometheusService,
-    ApiKeyDataHelper apiKeyDataHelper) {
+    ValidationHelper validationHelper) {
     this._logger = logger;
     this._prometheusService = prometheusService;
-    this._apiKeyDataHelper = apiKeyDataHelper;
+    this._validationHelper = validationHelper;
   }
 
   /// <summary>
@@ -70,6 +70,11 @@ public class HealthCheckDataController : ControllerBase {
     foreach (var (healthCheck, samples) in data.HealthCheckSamples) {
       if ((samples == null) || (samples.Count == 0)) {
         throw new BadRequestException($"No samples provided for '{healthCheck}'.");
+      }
+
+      // validate sample timestamp
+      foreach (var sample in samples) {
+        ValidationHelper.ValidateTimestamp(sample.Timestamp);
       }
     }
 

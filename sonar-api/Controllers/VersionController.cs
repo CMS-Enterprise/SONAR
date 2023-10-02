@@ -29,18 +29,20 @@ public class VersionController : ControllerBase {
   private readonly ServiceDataHelper _serviceDataHelper;
   private readonly VersionDataHelper _versionDataHelper;
   private readonly ServiceVersionCacheHelper _versionCacheHelper;
-
+  private readonly ValidationHelper _validationHelper;
   public VersionController(
     ServiceDataHelper serviceDataHelper,
     VersionDataHelper versionDataHelper,
     PrometheusRemoteWriteClient remoteWriteClient,
     ILogger<HealthController> logger,
-    ServiceVersionCacheHelper versionCacheHelper) {
+    ServiceVersionCacheHelper versionCacheHelper,
+    ValidationHelper validationHelper) {
     this._serviceDataHelper = serviceDataHelper;
     this._versionDataHelper = versionDataHelper;
     this._remoteWriteClient = remoteWriteClient;
     this._logger = logger;
     this._versionCacheHelper = versionCacheHelper;
+    this._validationHelper = validationHelper;
   }
 
   /// <summary>
@@ -64,8 +66,11 @@ public class VersionController : ControllerBase {
     [FromBody] ServiceVersion value,
     CancellationToken cancellationToken = default) {
 
-    // validation
+    // version data validation
     await ValidateVersionData(environment, tenant, service, value, cancellationToken);
+
+    // sample timestamp validation
+    ValidationHelper.ValidateTimestamp(value.Timestamp);
 
     async Task CachingTaskExceptionHandling() {
       try {
