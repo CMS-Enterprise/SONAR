@@ -1,15 +1,21 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using Cms.BatCave.Sonar.Enumeration;
 
 namespace Cms.BatCave.Sonar.Models;
 
 public record HttpBodyHealthCheckCondition : HttpHealthCheckCondition {
 
-  public HttpBodyHealthCheckCondition(HealthStatus status, HttpHealthCheckConditionType type, String path, String valueRegex)
+  public HttpBodyHealthCheckCondition(
+    HealthStatus status,
+    HttpHealthCheckConditionType type,
+    String path,
+    String value)
     : base(status, type) {
+
     this.Path = path;
-    this.ValueRegex = valueRegex;
+    this.Value = value;
     this.Type = type;
   }
 
@@ -17,7 +23,8 @@ public record HttpBodyHealthCheckCondition : HttpHealthCheckCondition {
   public String Path { get; init; }
 
   [Required]
-  public String ValueRegex { get; init; }
+  public String Value { get; init; }
+
 
 }
 

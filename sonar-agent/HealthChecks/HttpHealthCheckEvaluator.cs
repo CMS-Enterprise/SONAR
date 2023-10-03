@@ -150,7 +150,7 @@ public class HttpHealthCheckEvaluator : IHealthCheckEvaluator<HttpHealthCheckDef
             var pathResult = path?.Evaluate(rootNode);
             var node = pathResult?.Matches?.FirstOrDefault();
             if ((node != null) && (node.Value != null)) {
-              var rg = new Regex(condition.ValueRegex);
+              var rg = new Regex(condition.Value);
               if (rg.IsMatch(node.Value.ToString())) {
                 currCheck = condition.Status;
                 this._logger.LogDebug("{HealthCheck} path: {path} value: {value} status: {status}", healthCheck, condition.Path, node.Value, condition.Status);
@@ -180,7 +180,7 @@ public class HttpHealthCheckEvaluator : IHealthCheckEvaluator<HttpHealthCheckDef
           doc.LoadXml(xml);
           XmlNode? xNode = doc.SelectSingleNode(condition.Path);
           if (xNode != null) {
-            var rg = new Regex(condition.ValueRegex);
+            var rg = new Regex(condition.Value);
             if (rg.IsMatch(xNode.InnerText)) {
               this._logger.LogDebug("{HealthCheck} path: {path} value: {value} status: {status}", healthCheck, condition.Path, xNode.InnerText, condition.Status);
               currCheck = condition.Status;

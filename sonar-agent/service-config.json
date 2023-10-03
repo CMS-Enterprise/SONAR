@@ -120,25 +120,25 @@
               {
                 "status": "Online",
                 "path": "$.status",
-                "ValueRegex": "OK",
+                "value": "OK",
                 "type": "HttpBodyJson"
               },
               {
                 "status": "Offline",
                 "path": "$.status",
-                "ValueRegex": "Down",
+                "value": "Down",
                 "type": "HttpBodyJson"
               },
               {
                 "status": "Degraded",
                 "path": "$.status",
-                "ValueRegex": "(Iffy|Down)",
+                "value": "(Iffy|Down)",
                 "type": "HttpBodyJson"
               },
               {
                 "status": "Unknown",
                 "path": "$.status",
-                "ValueRegex": "^e...$r",
+                "value": "^e...$r",
                 "type": "HttpBodyJson"
               },
               {
@@ -171,7 +171,7 @@
               {
                 "status": "Online",
                 "path": "GetSystemCheckResponse/status",
-                "ValueRegex": "success",
+                "value": "success",
                 "type": "HttpBodyXml"
               }
             ]
