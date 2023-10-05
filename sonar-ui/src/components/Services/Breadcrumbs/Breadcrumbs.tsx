@@ -29,7 +29,7 @@ const Breadcrumbs: React.FC = () => {
         } else if (index === tenantIndex) {
           breadcrumbLink = <Link key={'tnt:' + crumb} to={currentServiceLink}>Tenant: {crumb}</Link>;
         } else if (index >= serviceIndexStart) {
-          breadcrumbLink = <Link key={'svc:' + crumb} to={currentServiceLink}> {displayName}</Link>;
+          breadcrumbLink = <Link key={'svc:' + crumb} to={currentServiceLink}>{displayName}</Link>;
         }
 
         return breadcrumbLink;

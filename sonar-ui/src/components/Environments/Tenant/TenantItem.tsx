@@ -33,7 +33,7 @@ function renderServiceList(theme: Theme, tenant: TenantInfo, flattenServices?: b
   } else if (flattenServices) {
     return <>
       {
-        Array.from(traverse(tenant.rootServices)).map(({ service, path }) =>
+        Array.from(traverse(tenant.rootServices)).map(({ service, displayPath, path }) =>
           <div css={getTenantItemStyle(theme)} key={service.name}>
             <span>
               <HealthStatusBadge theme={theme} status={service.aggregateStatus} />
@@ -42,8 +42,8 @@ function renderServiceList(theme: Theme, tenant: TenantInfo, flattenServices?: b
             <span
               css={getBadgeSpanStyle(theme)}
               data-test="env-view-tenant">
-              <Link to={'/' + tenant.environmentName + '/tenants/' + tenant.tenantName + '/services/' + service.name}>
-                {path.length ? path + ' / ' + service.displayName : service.displayName}
+              <Link to={'/' + tenant.environmentName + '/tenants/' + tenant.tenantName + '/services/' + (path.length ? path + '/' : '') + service.name}>
+                {displayPath.length ? displayPath + ' / ' + service.displayName : service.displayName}
               </Link>
             </span>
             {
@@ -86,14 +86,20 @@ function renderServiceList(theme: Theme, tenant: TenantInfo, flattenServices?: b
 }
 
 function* traverse(services: ServiceHierarchyInfo[]) {
-  const queue = Array.from(services.map(svc => ({ service: svc, path: '' })));
+  const queue = Array.from(services.map(svc => ({ service: svc, path: '', displayPath: '' })));
   while (queue.length > 0) {
-    const { service, path } = queue.shift()!;
-    yield ({ service, path: path });
+    const { service, path, displayPath } = queue.shift()!;
+    yield ({ service, path, displayPath });
     if (service.children?.length) {
-      queue.unshift(...service.children.map(svc => ({
+      const sortedServices =
+        Array.from(service.children)
+          .sort((svc1, svc2) =>
+            svc1.displayName < svc2.displayName ? -1 : (svc1.displayName > svc2.displayName ? 1 : 0)
+          );
+      queue.unshift(...sortedServices.map(svc => ({
         service: svc,
-        path: path.length ? path + ' / ' + service.displayName : service.displayName
+        path: path.length ? path + '/' + service.name : service.name,
+        displayPath: displayPath.length ? displayPath + ' / ' + service.displayName : service.displayName
       })))
     }
   }
