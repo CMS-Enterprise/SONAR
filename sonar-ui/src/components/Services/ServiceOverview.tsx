@@ -6,7 +6,6 @@ import { Link, useLocation } from 'react-router-dom';
 import { DynamicTextFontStyle } from '../../App.Style';
 import HealthStatusBadge from '../Badges/HealthStatusBadge';
 import { getBadgeSpanStyle } from '../Badges/HealthStatusBadge.Style';
-import Breadcrumbs from './Breadcrumbs/Breadcrumbs';
 import HealthCheckList from './HealthStatus/HealthCheckList';
 import {
   getServiceOverviewStyle,
@@ -39,10 +38,6 @@ const ServiceOverview: React.FC<{
     const theme = useTheme();
     return (
       <div css={getServiceOverviewStyle(theme)}>
-        <Breadcrumbs
-          environmentName={context.environmentName}
-          tenantName={context.tenantName}
-        />
         <div>
           { ((context.serviceVersionDetails != null) && (context.serviceVersionDetails.length >= 1) &&
             <ServiceVersionModule/>
@@ -106,7 +101,7 @@ const ServiceOverview: React.FC<{
                   {childSvcHealth && (
                     <span css={childSvcHealth && getBadgeSpanStyle}>
                       <Link to={location.pathname + "/" + child}>
-                        { childSvcHealth.displayName }
+                        { childSvcHealth.displayName}
                       </Link>
                     </span>
                   )}

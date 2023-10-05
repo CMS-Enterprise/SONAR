@@ -11,14 +11,15 @@ export function getBreadcrumbsStyle(theme: Theme) {
 }
 
 export const crumbStyle = css({
-  fontSize: 18,
-  fontWeight: 600,
-  ":after": {
+  fontSize: 20,
+  fontWeight: 400,
+  marginBottom: 20,
+  "> :not(:first-of-type):before": {
     content: '"/"',
     marginLeft: 5,
     marginRight: 5
   },
   ":last-child:after": {
-    display:"none"
+    display:"none",
   }
 })

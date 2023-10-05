@@ -1,17 +1,9 @@
 import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { DynamicTextFontStyle } from '../../../App.Style';
 import { ServiceOverviewContext } from '../ServiceOverviewContext';
-import {
-  getBreadcrumbsStyle,
-  crumbStyle
-} from './Breadcrumbs.Style'
+import { crumbStyle } from './Breadcrumbs.Style'
 
-const Breadcrumbs: React.FC<{
-  environmentName: string,
-  tenantName: string
-}> =
-  ({ environmentName, tenantName }) => {
+const Breadcrumbs: React.FC = () => {
     const serviceContext  = useContext(ServiceOverviewContext);
     const location = useLocation()
 
@@ -23,44 +15,29 @@ const Breadcrumbs: React.FC<{
     const serviceCrumbs = location.pathname.split(`/`)
       .filter(crumb => (crumb !== ''))
       .map((crumb, index, array) => {
-        const displayName = serviceContext!.serviceHierarchyConfiguration.services.filter(svc => crumb === svc.name)
-          ?.map(svc => {
+        const displayName = serviceContext ? serviceContext.serviceHierarchyConfiguration.services.filter(svc => crumb === svc.name)
+          .map(svc => {
             return svc.displayName
-          })
+          }) : null
 
         currentServiceLink += `/${crumb}`;
 
-        let displaySpan;
+        let breadcrumbLink;
 
         if (index === environmentIndex) {
-          displaySpan = <span key={crumb} css={crumbStyle}>Environment:
-            <Link to={currentServiceLink}> {crumb}</Link>
-          </span>;
+          breadcrumbLink = <Link key={'env:' + crumb} to={currentServiceLink}>{crumb}</Link>;
         } else if (index === tenantIndex) {
-          displaySpan = <span key={crumb} css={crumbStyle}>Tenant:
-            <Link to={currentServiceLink}> {crumb}</Link>
-          </span>;
+          breadcrumbLink = <Link key={'tnt:' + crumb} to={currentServiceLink}>Tenant: {crumb}</Link>;
         } else if (index >= serviceIndexStart) {
-          if (index === (array.length - 1)) {
-            displaySpan = <span key={crumb} css={crumbStyle}>
-              <Link to={currentServiceLink}>{crumb}</Link>
-            </span>;
-          } else {
-            displaySpan = (
-              <span key={crumb} css={crumbStyle}>
-                <Link to={currentServiceLink}>{displayName}</Link>
-              </span>
-            );
-          }
+          breadcrumbLink = <Link key={'svc:' + crumb} to={currentServiceLink}> {displayName}</Link>;
         }
-        return displaySpan;
+
+        return breadcrumbLink;
       })
 
     return (
-      <div
-        css={[getBreadcrumbsStyle, DynamicTextFontStyle]}
-        data-test="breadcrumbs"
-      >
+      <div css={crumbStyle}>
+        <Link to={'/'}>Environments</Link>
         {serviceCrumbs}
       </div>
     )

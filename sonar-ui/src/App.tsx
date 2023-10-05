@@ -35,19 +35,19 @@ function App() {
         <AppContextProvider>
           <main css={mainStyle} data-test="app-main">
             <Header enableDarkTheme={enableDarkTheme} setEnableDarkTheme={setEnableDarkTheme} />
-              <Routes>
-                <Route path="/" element={<Environments />} />
-                <Route path="/:environment" element={<Environment />} />
-                <Route path="/:environment/tenants/:tenant" element={<Tenant />} />
-                <Route path="/:environment/tenants/:tenant/services/*" element={<Service />} />
-                <Route path="/login/callback" element={<LoginCallback />} />
-                <Route path="/api-keys" element={<ProtectedRoute />}>
-                  <Route path="" element={<ApiKeys />} />
-                </Route>
-                <Route path="/user-permissions" element={<ProtectedRoute />}>
-                  <Route path="" element={<UserPermissions />}>
-                    <Route index={true} element={<EnvironmentUsersTable />} />
-                    <Route path="environments/:environmentName" element={<UserPermissionsTable />}>
+            <Routes>
+              <Route path="/" element={<Environments />} />
+              <Route path="/:environment" element={<Environment />} />
+              <Route path="/:environment/tenants/:tenant" element={<Tenant />} />
+              <Route path="/:environment/tenants/:tenant/services/*" element={<Service />} />
+              <Route path="/login/callback" element={<LoginCallback />} />
+              <Route path="/api-keys" element={<ProtectedRoute />}>
+                <Route path="" element={<ApiKeys />} />
+              </Route>
+              <Route path="/user-permissions" element={<ProtectedRoute />}>
+                <Route path="" element={<UserPermissions />}>
+                  <Route index={true} element={<EnvironmentUsersTable />} />
+                  <Route path="environments/:environmentName" element={<UserPermissionsTable />}>
                     <Route path=":permissionId/delete" element={<DeletePermissionModal />}/>
                   </Route>
                 </Route>

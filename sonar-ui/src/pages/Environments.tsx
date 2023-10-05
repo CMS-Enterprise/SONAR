@@ -50,7 +50,8 @@ const Environments = () => {
 
   return (
     <section className="ds-l-container">
-      <AccordionToggleAllButton allPanelsOpen={allPanelsOpen} handleToggle={handleToggleAll} />
+      <AccordionToggleAllButton allPanelsOpen={allPanelsOpen} handleToggle={handleToggleAll}>
+      </AccordionToggleAllButton>
       <div className="ds-l-row">
         {isLoading ? (<Spinner />) :
           data?.map(e => (

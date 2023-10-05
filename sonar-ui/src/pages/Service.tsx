@@ -7,9 +7,10 @@ import {
 } from 'api/data-contracts';
 import ServiceOverview from 'components/Services/ServiceOverview';
 import { StatusHistoryView } from 'interfaces/global_interfaces';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery } from 'react-query';
 import { useParams } from 'react-router-dom';
+import Breadcrumbs from '../components/Services/Breadcrumbs/Breadcrumbs';
 import StatusHistoryDrawer from '../components/Services/StatusHistory/StatusHistoryDrawer';
 import { ServiceOverviewContext } from 'components/Services/ServiceOverviewContext';
 import HealthStatusDrawer from 'components/Services/HealthStatus/HealthStatusDrawer';
@@ -105,8 +106,6 @@ const Service = () => {
         ) as ServiceHierarchyHealth;
       });
     }
-
-
     return <ServiceOverviewContext.Provider value={{
       environmentName: environmentName,
       tenantName: tenantName,
@@ -130,6 +129,9 @@ const Service = () => {
           <HealthStatusDrawer onCloseClick={() => setSelectedHealthCheck(null)} />
         )}
 
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>
+            <Breadcrumbs/>
+        </div>
         <div>
           <ServiceOverview
             serviceHealth={currentServiceHealth}

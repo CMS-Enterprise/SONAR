@@ -15,7 +15,7 @@ export function getTenantItemStyle(theme: Theme) {
     whiteSpace: "nowrap",
     overflow: "hidden",
     textOverflow: "ellipsis",
-    padding: "5px 5px 10px 10px",
+    padding: "5px 0px 0px 10px",
     ":hover": {
       backgroundColor: theme.highlightColor,
       borderRadius: 15

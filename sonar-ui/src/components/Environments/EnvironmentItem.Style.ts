@@ -8,9 +8,12 @@ export function getEnvironmentStatusStyle(theme: Theme) {
     "--accordion__background-color--hover": theme.highlightColor,
     boxShadow: "rgba(50, 50, 93, 0.25) 0px 30px 60px -12px, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px",
     borderRadius: 40,
-    padding: 15,
+    padding: "15px 15px 15px 15px",
     "& .ds-c-accordion__button": {
       color: theme.textColor,
+      fontSize: "22px",
+      fontWeight: "600",
+      padding: "3px 20px 2px 20px",
       borderRadius: 40,
       ":focus": {
         boxShadow: "none"
@@ -21,13 +24,20 @@ export function getEnvironmentStatusStyle(theme: Theme) {
     },
     "& .ds-c-accordion__content": {
       border: "none",
+      fontSize: "15px",
+      fontWeight: "400",
+      padding: "0px 20px 5px 20px",
       borderRadius: 40,
     },
+    "& .ds-c-accordion__content h3": {
+      marginTop: "15px",
+      marginBottom: "10px",
+    }
   });
 }
 
 export const EnvironmentItemContainerStyle = css({
-  marginTop: 10,
+  marginTop: 5,
   marginBottom: 10,
 })
 
