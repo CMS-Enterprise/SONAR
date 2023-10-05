@@ -1,0 +1,22 @@
+{
+  "services": [
+    {
+      "name": "asp-clfs-legacy",
+      "displayName": "ASP CLFS legacy",
+      "children": ["asp-clfs-legacy-frontend" ]
+    },
+    {
+      "name": "asp-clfs-legacy-frontend",
+      "displayName": "ASP CLFS legacy frontend",
+      "healthChecks": [
+        {
+          "name": "asp-clfs-legacy-backend",
+          "description": "Check that the asp clfs legacy frontend is responding to HTTP requests",
+          "type": "httpRequest",
+          "definition": {}
+        }
+      ]
+    }
+  ],
+  "rootServices": [ "asp-clfs-legacy" ]
+}

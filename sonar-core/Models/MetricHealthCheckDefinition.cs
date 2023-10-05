@@ -30,7 +30,10 @@ public sealed record MetricHealthCheckDefinition : HealthCheckDefinition {
     return other is not null &&
       Object.Equals(this.Duration, other.Duration) &&
       String.Equals(this.Expression, other.Expression) &&
-      this.Conditions.Zip(other.Conditions, Object.Equals).All(x => x);
+      // JsonSerializer does not respect null constraints
+      ((this.Conditions == null && other.Conditions == null) ||
+        (this.Conditions != null && other.Conditions != null &&
+          this.Conditions.Zip(other.Conditions, Object.Equals).All(x => x)));
   }
 
   public override Int32 GetHashCode() {

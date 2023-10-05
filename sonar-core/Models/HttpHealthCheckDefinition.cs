@@ -38,7 +38,10 @@ public sealed record HttpHealthCheckDefinition : HealthCheckDefinition {
       String.Equals(this.FollowRedirects, other.FollowRedirects) &&
       String.Equals(this.AuthorizationHeader, other.AuthorizationHeader) &&
       String.Equals(this.SkipCertificateValidation, other.SkipCertificateValidation) &&
-      this.Conditions.Zip(other.Conditions, Object.Equals).All(x => x);
+      // JsonSerializer does not respect null constraints
+      ((this.Conditions == null && other.Conditions == null) ||
+        (this.Conditions != null && other.Conditions != null &&
+          this.Conditions.Zip(other.Conditions, Object.Equals).All(x => x)));
   }
 
   public override Int32 GetHashCode() {
@@ -47,6 +50,9 @@ public sealed record HttpHealthCheckDefinition : HealthCheckDefinition {
       this.FollowRedirects,
       this.AuthorizationHeader,
       this.SkipCertificateValidation,
-      HashCodes.From(this.Conditions));
+      // JsonSerializer does not respect null constraints
+      this.Conditions != null ?
+        (Object)HashCodes.From(this.Conditions) :
+        null);
   }
 }
