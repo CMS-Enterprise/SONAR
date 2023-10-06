@@ -71,6 +71,7 @@ services:
       - "sonar-api"
     command: ["-f", "/sonar/config/service-config.json"]
     restart: unless-stopped
+    ports: ["1234:2020"]
     environment:
       ENVIRONMENT: "DockerCompose"
     volumes:

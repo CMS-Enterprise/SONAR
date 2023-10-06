@@ -9,3 +9,14 @@ scrape_configs:
     - test-metric-app
     type: A
     port: 2020
+- job_name: sonar-agent
+  dns_sd_configs:
+    - names:
+        - sonar-agent
+      type: A
+      port: 2020
+# Uncomment to scrape sonar-agent running on host machine
+# - job_name: "sonar-agent"
+#   scrape_interval: 10s
+#   static_configs:
+#     - targets: ["host.docker.internal:1234"]

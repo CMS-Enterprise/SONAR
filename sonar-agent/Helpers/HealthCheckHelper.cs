@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
@@ -24,6 +26,21 @@ public class HealthCheckHelper {
   private readonly HealthCheckQueueProcessor<MetricHealthCheckDefinition> _prometheusHealthCheckQueue;
   private readonly HealthCheckQueueProcessor<MetricHealthCheckDefinition> _lokiHealthCheckQueue;
   private readonly IErrorReportsHelper _errorReportsHelper;
+  private static readonly Meter HealthStatusMeter = new("Sonar.HealthStatus");
+
+  static HealthCheckHelper() {
+    HealthStatusMeter.CreateObservableGauge(
+      "agent_sonar_service_status",
+      GetServiceHealthMetric,
+      description: "A StateSet metric indicating the latest status of all monitored services."
+    );
+
+    HealthStatusMeter.CreateObservableGauge(
+      "agent_sonar_service_health_check_status",
+      GetHealthCheckResultMetric,
+      description: "A StateSet metric indicating the latest status of all health checks."
+    );
+  }
 
   public HealthCheckHelper(
     ILoggerFactory loggerFactory,
@@ -323,6 +340,10 @@ public class HealthCheckHelper {
       body.AggregateStatus
     );
 
+    // update metrics for scraping
+    SetServiceHealthMetric(env, tenant, service, aggStatus);
+    SetHealthCheckResultMetric(env, tenant, service, healthChecks);
+
     try {
       await client.RecordStatusAsync(env, tenant, service, body, token);
     } catch (ApiException e) {
@@ -431,5 +452,67 @@ public class HealthCheckHelper {
         1 :
         entry.Frequency + 1);
     return entry.CachedStatus;
+  }
+
+  private static readonly ConcurrentDictionary<(String Environment, String Tenant, String Service, String HealthCheck), HealthStatus> LatestHealthCheckStatus =
+    new();
+  private static readonly ConcurrentDictionary<(String Environment, String Tenant, String Service), HealthStatus> LatestServiceStatus =
+    new();
+
+  private static IEnumerable<Measurement<Int32>> GetHealthCheckResultMetric() {
+    // Snapshot the latest health check status dictionary
+    foreach (var kvp in LatestHealthCheckStatus.ToList()) {
+      foreach (HealthStatus status in Enum.GetValues(typeof(HealthStatus))) {
+        yield return new Measurement<Int32>(
+          kvp.Value == status ? 1 : 0,
+          new("environment", kvp.Key.Environment),
+          new("tenant", kvp.Key.Tenant),
+          new("service", kvp.Key.Service),
+          new("check", kvp.Key.HealthCheck),
+          new("agent_sonar_service_health_check_status", status.ToString()));
+      }
+    }
+  }
+
+  private static IEnumerable<Measurement<Int32>> GetServiceHealthMetric() {
+    // Snapshot the latest service status dictionary
+    foreach (var kvp in LatestServiceStatus.ToList()) {
+      foreach (HealthStatus status in Enum.GetValues(typeof(HealthStatus))) {
+        yield return new Measurement<Int32>(
+          kvp.Value == status ? 1 : 0,
+          new("environment", kvp.Key.Environment),
+          new("tenant", kvp.Key.Tenant),
+          new("service", kvp.Key.Service),
+          new("agent_sonar_service_status", status.ToString()));
+      }
+    }
+  }
+
+  private static void SetServiceHealthMetric(
+    String env,
+    String tenant,
+    String service,
+    HealthStatus aggStatus) {
+
+    LatestServiceStatus.AddOrUpdate(
+      (env, tenant, service),
+      aggStatus,
+      (_, _) => aggStatus
+    );
+  }
+
+  private static void SetHealthCheckResultMetric(
+    String env,
+    String tenant,
+    String service,
+    ReadOnlyDictionary<String, HealthStatus> results) {
+
+    foreach (var (check, status) in results) {
+      LatestHealthCheckStatus.AddOrUpdate(
+        (env, tenant, service, check),
+        status,
+        (_, _) => status
+      );
+    }
   }
 }

@@ -7,12 +7,12 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Agent.Configuration;
-using Cms.BatCave.Sonar.Agent.K8sCustomResources;
 using Cms.BatCave.Sonar.Agent.HealthChecks;
 using Cms.BatCave.Sonar.Agent.HealthChecks.Metrics;
 using Cms.BatCave.Sonar.Agent.Options;
 using Cms.BatCave.Sonar.Logger;
 using Cms.BatCave.Sonar.Agent.ServiceConfig;
+using Cms.BatCave.Sonar.Agent.Telemetry;
 using Cms.BatCave.Sonar.Agent.VersionChecks;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Enumeration;
@@ -24,6 +24,8 @@ using CommandLine;
 using k8s;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using OpenTelemetry;
+using OpenTelemetry.Metrics;
 using KubernetesConfigurationMonitor = Cms.BatCave.Sonar.Agent.ServiceConfig.KubernetesConfigurationMonitor;
 
 namespace Cms.BatCave.Sonar.Agent;
@@ -94,6 +96,7 @@ internal class Program {
     RecordOptionsManager<LokiConfiguration> lokiConfig;
     RecordOptionsManager<AgentConfiguration> agentConfig;
     RecordOptionsManager<HealthCheckQueueProcessorConfiguration> httpHealthCheckConfiguration;
+    RecordOptionsManager<MetricServerConfiguration> metricsConfig;
     try {
       apiConfig = Dependencies.CreateRecordOptions<ApiConfiguration>(
         configuration, "ApiConfig", loggerFactory);
@@ -105,10 +108,25 @@ internal class Program {
         configuration, "AgentConfig", loggerFactory);
       httpHealthCheckConfiguration = Dependencies.CreateRecordOptions<HealthCheckQueueProcessorConfiguration>(
         configuration, "HttpHealthChecks", loggerFactory);
+      metricsConfig = Dependencies.CreateRecordOptions<MetricServerConfiguration>(
+        configuration, "MetricServer", loggerFactory);
     } catch (RecordBindingException ex) {
       logger.LogError(ex, "Invalid sonar-agent configuration. {_Message}", ex.Message);
       return 1;
     }
+
+    using var meterProvider = Sdk.CreateMeterProviderBuilder()
+      .AddMeter("Sonar.HealthStatus")
+      .AddMeter("System.Runtime")
+      .AddRuntimeInstrumentation()
+      .AddPrometheusHttpListener(options => {
+        options.UriPrefixes = new[] {
+          $"http://*:{metricsConfig.Value.Port}/"
+        };
+      })
+      .Build();
+
+    using var listener = new RuntimeCounterEventListener();
 
     // Create cancellation source, token, new task
     using var source = new CancellationTokenSource();
