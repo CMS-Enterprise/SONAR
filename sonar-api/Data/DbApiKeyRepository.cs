@@ -232,6 +232,39 @@ public class DbApiKeyRepository : IApiKeyRepository {
         .ToListAsync(cancelToken);
   }
 
+  public async Task<ApiKey?> FindAsync(Guid targetKeyId, String targetKey, CancellationToken cancellationToken) {
+    var keyHash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(targetKey)));
+
+    var cachedKeyId =
+      await KeyIdLookupCache.GetOrAdd(keyHash, async _ => {
+        this._logger.LogDebug("Cache miss validating apiKey with hash code: {HashCode}", keyHash.GetHashCode());
+        await ApiKeyValidationLimit.WaitAsync(cancellationToken);
+        try {
+          var foundKey = await this._apiKeysTable.FindAsync(
+            keyValues: new Object?[] { targetKeyId },
+            cancellationToken: cancellationToken);
+
+          if ((foundKey != null) && KeyHashHelper.ValidatePassword(targetKey, foundKey.Key)) {
+            return foundKey.Id;
+          }
+
+          return null;
+        } finally {
+          ApiKeyValidationLimit.Release();
+        }
+      });
+
+    if (!targetKeyId.Equals(cachedKeyId)) {
+      throw new UnauthorizedException("Unauthorized");
+    }
+
+    if (cachedKeyId.HasValue) {
+      return await this.FindAsync(cachedKeyId.Value, cancellationToken);
+    } else {
+      return null;
+    }
+  }
+
   public async Task<ApiKey> FindAsync(Guid keyId, CancellationToken cancellationToken) {
 
     var result =

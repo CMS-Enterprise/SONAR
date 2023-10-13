@@ -1,13 +1,10 @@
 using System;
-using System.Diagnostics.Eventing.Reader;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -35,15 +32,11 @@ public class ApiKeyDataHelper {
         if (apiKeyId == Guid.Empty) {
           return this.MatchDefaultApiKey(apiKeyHeaderParts[1]);
         } else {
-          var apiKeyDb = await this._apiKeyRepository.FindAsync(apiKeyId, cancellationToken);
-          if (KeyHashHelper.ValidatePassword(apiKeyHeaderParts[1], apiKeyDb.Key)) {
-            return apiKeyDb;
-          }
+          return await this._apiKeyRepository.FindAsync(apiKeyId, apiKeyHeaderParts[1], cancellationToken);
         }
       } catch (FormatException) {
         throw new BadRequestException("Invalid Guid. Guid should contain 32 hex-characters with 4 dashes (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx).");
       }
-      return null;
     }
 
     // Legacy/Deprecated ApiKey Header support (Prefer Authorization: ApiKey xxx)
