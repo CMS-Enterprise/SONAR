@@ -113,11 +113,8 @@ public class ErrorReportsController : ControllerBase {
     DateTime endVal = now;
     DateTime startVal = endVal.Subtract(defaultSpan);
 
-    if (start == null && end != null) {
-      endVal = now;
-      startVal = now - defaultSpan;
-    } else if (start != null && end == null) {
-      endVal = now;
+    if (start != null && end == null) {
+      startVal = DateTime.SpecifyKind((DateTime)start, DateTimeKind.Utc);
     } else if (start != null && end != null) {
       startVal = DateTime.SpecifyKind((DateTime)start, DateTimeKind.Utc);
       endVal = DateTime.SpecifyKind((DateTime)end, DateTimeKind.Utc);
