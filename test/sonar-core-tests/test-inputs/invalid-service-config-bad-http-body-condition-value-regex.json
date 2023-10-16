@@ -1,0 +1,34 @@
+{
+  "services": [
+    {
+      "name": "test-service",
+      "displayName": "Test Application",
+      "healthChecks": [
+        {
+          "type": "httpRequest",
+          "name": "test-http-health-check",
+          "definition": {
+            "url": "https://test.host/test-path",
+            "conditions": [
+              {
+                "type": "HttpBodyJson",
+                "status": "Online",
+                "path": "$.valid.test.path",
+                "value": "*?"
+              },
+              {
+                "type": "HttpBodyXml",
+                "status": "Online",
+                "path": "/valid/test/path",
+                "value": "?*"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "rootServices": [
+    "test-service"
+  ]
+}

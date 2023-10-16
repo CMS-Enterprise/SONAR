@@ -4,5 +4,6 @@ public enum InvalidConfigurationErrorType {
   TopLevelNull,
   InvalidJson,
   IncompatibleHealthCheckType,
-  DataValidationError
+  DataValidationError,
+  IncompatibleHttpHealthCheckConditionType
 }

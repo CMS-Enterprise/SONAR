@@ -54,6 +54,15 @@ public class RecursivePropertyValidatorTests {
     "Services[2].HealthChecks[0].Name: The field Name must be a string with a maximum length of 100.",
     "Services[2].HealthChecks[0].Name: The field Name must match the regular expression '^[0-9a-zA-Z_-]+$'."
   })]
+  [InlineData("test-inputs/invalid-service-config-bad-http-body-condition-value-regex.json", new[] {
+    "Services[0].HealthChecks[0].Definition.Conditions[0].Value: Regular expression is not valid: Invalid pattern '*?' at offset 1. Quantifier '*' following nothing.",
+    "Services[0].HealthChecks[0].Definition.Conditions[1].Value: Regular expression is not valid: Invalid pattern '?*' at offset 1. Quantifier '?' following nothing."
+  })]
+  [InlineData("test-inputs/invalid-service-config-bad-http-body-condition-json-and-xml-paths.json", new[] {
+    "Services[0].HealthChecks[0].Definition.Conditions[0].Path: JsonPath expression is not valid: Path must start with '$'",
+    "Services[0].HealthChecks[0].Definition.Conditions[1].Path: JsonPath expression is not valid: Could not find any valid selectors.",
+    "Services[0].HealthChecks[0].Definition.Conditions[2].Path: XPath expression is not valid: 'invalid xpath 1' has an invalid token."
+  })]
   public async Task TryValidateObjectProperties_InvalidServiceHierarchyConfiguration_AllErrorsAreReported(
     String testInputFilePath,
     String[] expectedValidationErrors) {
