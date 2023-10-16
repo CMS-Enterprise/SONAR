@@ -130,6 +130,13 @@
                 "type": "HttpBodyJson"
               },
               {
+                "status": "Online",
+                "path": "$.badPath",
+                "value": "Up",
+                "type": "HttpBodyJson",
+                "NoMatchStatus": "Degraded"
+              },
+              {
                 "status": "Degraded",
                 "path": "$.status",
                 "value": "(Iffy|Down)",

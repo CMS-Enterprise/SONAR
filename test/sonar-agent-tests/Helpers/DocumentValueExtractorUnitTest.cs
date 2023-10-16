@@ -50,7 +50,8 @@ public class DocumentValueExtractorUnitTest {
   [Theory]
   [InlineData("""{"version":null}""", "$.version")]
   [InlineData("""{"version":1.0}""", "$.version")]
-  [InlineData("""{"version":[1.0]}""", "$.version[0]")]
+  [InlineData("""{"version":[2.0]}""", "$.version[0]")]
+  [InlineData("""{"version":true}""", "$.version")]
   public void GetStringValueFromJson_SelectedElementIsNotString_ThrowsException(String json, String jsonPath) {
     var exception = Assert.Throws<DocumentValueExtractorException>(() =>
       DocumentValueExtractor.GetStringValueFromJson(json, jsonPath));
@@ -66,6 +67,17 @@ public class DocumentValueExtractorUnitTest {
       DocumentValueExtractor.GetStringValueFromJson(json, jsonPath));
     Assert.Null(exception.InnerException);
     this._output.WriteLine(exception.Message);
+  }
+
+  [Theory]
+  [InlineData("""{"version":1.0}""", "$.version", "1.0")]
+  [InlineData("""{"version":[2.0]}""", "$.version[0]", "2.0")]
+  [InlineData("""{"version":"1.0"}""", "$.version", "1.0")]
+  [InlineData("""{"version":["1.0"]}""", "$.version[0]", "1.0")]
+  [InlineData("""{"active":true}""", "$.active", "true")]
+  [InlineData("""[{"app":"a","version":"1.0"},{"app":"b","version":"2.0"}]""", "$[?@.app=='b'].version", "2.0")]
+  public void GetValueAsStringFromJson_ValidCases(String json, String jsonPath, String expectedVersion) {
+    Assert.Equal(expectedVersion, DocumentValueExtractor.GetValueAsStringFromJson(json, jsonPath));
   }
 
   [Theory]

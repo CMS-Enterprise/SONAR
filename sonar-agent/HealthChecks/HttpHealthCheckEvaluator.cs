@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -9,6 +10,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using Cms.BatCave.Sonar.Agent.Configuration;
+using Cms.BatCave.Sonar.Agent.Exceptions;
+using Cms.BatCave.Sonar.Agent.Helpers;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Models;
 using Json.Path;
@@ -75,8 +78,31 @@ public class HttpHealthCheckEvaluator : IHealthCheckEvaluator<HttpHealthCheckDef
         }
       }
 
+      var responseJsonConditions =
+        definition.Conditions
+          .Where(c => c.Type == HttpHealthCheckConditionType.HttpBodyJson)
+          .Cast<HttpBodyHealthCheckCondition>()
+          .ToList();
+
+      var responseXmlConditions =
+        definition.Conditions.Where(c => c.Type == HttpHealthCheckConditionType.HttpBodyXml)
+          .Cast<HttpBodyHealthCheckCondition>()
+          .ToList();
+      if ((responseJsonConditions.Count > 0) && (responseXmlConditions.Count > 0)) {
+        this._logger.LogError(
+          "Unable to evaluate conditions for {HealthCheck}: both XML and JSON response body conditions are specified",
+          healthCheck
+        );
+        return HealthStatus.Unknown;
+      } else if (responseJsonConditions.Count > 0) {
+        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+      } else if (responseXmlConditions.Count > 0) {
+        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("text/xml"));
+        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));
+      }
+
       // Start out offline
-      var currCheck = HealthStatus.Offline;
+      var currCheck = HealthStatus.Unknown;
 
       // Send request to url specified in definition, calculate duration of request
       var now = DateTime.Now;
@@ -104,6 +130,7 @@ public class HttpHealthCheckEvaluator : IHealthCheckEvaluator<HttpHealthCheckDef
           );
           currCheck = statusCondition.Status;
           conditionMet = true;
+          break;
         }
       }
 
@@ -133,69 +160,27 @@ public class HttpHealthCheckEvaluator : IHealthCheckEvaluator<HttpHealthCheckDef
         }
       }
 
-      var responseJsonConditions =
-        definition.Conditions.Where(c => (c.Type == HttpHealthCheckConditionType.HttpBodyJson));
-      //If there are more conditions to be met reset status to unknown
-      if (responseJsonConditions.Any()) {
+      //Get content from response.
+      var contentString = await response.Content.ReadAsStringAsync(cancellationToken);
+
+      //If there are conditions to be checked, initialize currentCondition to unKnown
+      //If no conditions are met - the status will remain unknown.
+      if ((responseJsonConditions.Count > 0) || (responseXmlConditions.Count > 0)) {
         currCheck = HealthStatus.Unknown;
       }
-      foreach (var conditionBody in responseJsonConditions) {
-        var condition = (HttpBodyHealthCheckCondition)conditionBody;
-        if (condition.Type == HttpHealthCheckConditionType.HttpBodyJson) {
-          var jsonString = await response.Content.ReadAsStringAsync(cancellationToken);
-          JsonNode rootNode = JsonNode.Parse(jsonString)!;
 
-          var success = JsonPath.TryParse(condition.Path, out JsonPath? path);
-          if (success) {
-            var pathResult = path?.Evaluate(rootNode);
-            var node = pathResult?.Matches?.FirstOrDefault();
-            if ((node != null) && (node.Value != null)) {
-              var rg = new Regex(condition.Value);
-              if (rg.IsMatch(node.Value.ToString())) {
-                currCheck = condition.Status;
-                this._logger.LogDebug("{HealthCheck} path: {path} value: {value} status: {status}", healthCheck, condition.Path, node.Value, condition.Status);
-              }
-            } else {
-              this._logger.LogError("{HealthCheck} no value at path {path}", healthCheck, path);
-              currCheck = HealthStatus.Unknown;
-            }
-          } else {
-            this._logger.LogError("{HealthCheck} Invalid path {path}", healthCheck, path);
-            currCheck = HealthStatus.Unknown;
-          }
-        }
+      //Evaluate JsonConditions
+      foreach (var condition in responseJsonConditions) {
+        currCheck = EvaluateCondition(healthCheck, currCheck, HttpBodyType.Json, contentString, condition);
       }
 
-      var responseXmlConditions =
-        definition.Conditions.Where(c => (c.Type == HttpHealthCheckConditionType.HttpBodyXml));
-      //If there are more conditions to be met reset status to unknown
-      if (responseXmlConditions.Any()) {
-        currCheck = HealthStatus.Unknown;
-      }
-      foreach (var conditionBody in responseXmlConditions) {
-        var condition = (HttpBodyHealthCheckCondition)conditionBody;
-        try {
-          var xml = await response.Content.ReadAsStringAsync(cancellationToken);
-          XmlDocument doc = new XmlDocument();
-          doc.LoadXml(xml);
-          XmlNode? xNode = doc.SelectSingleNode(condition.Path);
-          if (xNode != null) {
-            var rg = new Regex(condition.Value);
-            if (rg.IsMatch(xNode.InnerText)) {
-              this._logger.LogDebug("{HealthCheck} path: {path} value: {value} status: {status}", healthCheck, condition.Path, xNode.InnerText, condition.Status);
-              currCheck = condition.Status;
-            }
-          } else {
-            this._logger.LogError("{HealthCheck} No value at Path {path}", healthCheck, condition.Path);
-            currCheck = HealthStatus.Unknown;
-          }
-        } catch (Exception ex) {
-          this._logger.LogError("{HealthCheck} Invalid XML {message}", healthCheck, ex.Message);
-          currCheck = HealthStatus.Unknown;
-        }
+      //Evaluate xml conditions
+      foreach (var condition in responseXmlConditions) {
+        currCheck = EvaluateCondition(healthCheck, currCheck, HttpBodyType.Xml, contentString, condition);
       }
 
       return currCheck;
+
     } catch (HttpRequestException e) {
       // Request failed, set currCheck to offline and return.
       this._logger.LogDebug(
@@ -232,4 +217,44 @@ public class HttpHealthCheckEvaluator : IHealthCheckEvaluator<HttpHealthCheckDef
       }
     }
   }
+
+  public HealthStatus EvaluateCondition(
+    HealthCheckIdentifier healthCheckIdentifier,
+    HealthStatus currCheck,
+    HttpBodyType httpBodyType,
+    String contentString,
+    HttpBodyHealthCheckCondition condition) {
+
+    var result = String.Empty;
+    if (currCheck == HealthStatus.Offline) { return currCheck; }
+    try {
+      result = DocumentValueExtractor.GetStringValue(httpBodyType, contentString, condition.Path);
+    } catch (DocumentValueExtractorException dve) {
+      this._logger.LogError("{HealthCheck}  {message}", healthCheckIdentifier, dve.Message);
+    } catch (Exception e) {
+      this._logger.LogError("{HealthCheck}  {message}", healthCheckIdentifier, e.Message);
+    }
+
+    var regex = new Regex(condition.Value);
+    if (!String.IsNullOrEmpty(result) && regex.IsMatch(result)) {
+      if (condition.Status > currCheck) {
+        currCheck = condition.Status;
+        this._logger.LogDebug("{HealthCheck} path: {path} value: {value} status: {status}", healthCheckIdentifier,
+          condition.Path, result, condition.Status);
+      }
+    } else {
+      this._logger.LogError("{HealthCheck} no value match at path {path} expected value {value}", healthCheckIdentifier, condition.Path, condition.Value);
+      //if condition not met check use the nonMatch value if it exists.
+      if (
+           (condition.NoMatchStatus != null)
+           && ((condition.NoMatchStatus.Value == HealthStatus.Unknown) || (condition.NoMatchStatus.Value > currCheck))
+         ) {
+        currCheck = condition.NoMatchStatus.Value;
+        this._logger.LogDebug("{HealthCheck} Using the noMatch value {value}", healthCheckIdentifier, condition.NoMatchStatus);
+      }
+    }
+
+    return currCheck;
+  }
+
 }

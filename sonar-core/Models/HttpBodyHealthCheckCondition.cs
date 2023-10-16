@@ -25,6 +25,8 @@ public record HttpBodyHealthCheckCondition : HttpHealthCheckCondition {
   [Required]
   public String Value { get; init; }
 
+  public HealthStatus? NoMatchStatus { get; init; }
+
 
 }
 
