@@ -10,6 +10,7 @@
  */
 
 import {
+  AgentErrorLevel,
   AgentErrorType,
   ApiKeyConfiguration,
   ApiKeyDetails,
@@ -231,14 +232,15 @@ export class Api<SecurityDataType = unknown> extends HttpClient<SecurityDataType
    * No description
    *
    * @tags ErrorReports
-   * @name ListErrorReport
+   * @name ListErrorReports
    * @request GET:/api/v2/error-reports/{environment}
    */
-  listErrorReport = (
+  listErrorReports = (
     environment: string,
     query?: {
       serviceName?: string;
       healthCheckName?: string;
+      errorLevel?: AgentErrorLevel;
       errorType?: AgentErrorType;
       /** @format date-time */
       start?: string;
@@ -249,6 +251,35 @@ export class Api<SecurityDataType = unknown> extends HttpClient<SecurityDataType
   ) =>
     this.request<ErrorReportDetails[], ProblemDetails | void>({
       path: `/api/v2/error-reports/${environment}`,
+      method: "GET",
+      query: query,
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags ErrorReports
+   * @name ListErrorReportsForTenant
+   * @request GET:/api/v2/error-reports/{environment}/tenants/{tenant}
+   */
+  listErrorReportsForTenant = (
+    environment: string,
+    tenant: string,
+    query?: {
+      serviceName?: string;
+      healthCheckName?: string;
+      errorLevel?: AgentErrorLevel;
+      errorType?: AgentErrorType;
+      /** @format date-time */
+      start?: string;
+      /** @format date-time */
+      end?: string;
+    },
+    params: RequestParams = {},
+  ) =>
+    this.request<ErrorReportDetails[], ProblemDetails | void>({
+      path: `/api/v2/error-reports/${environment}/tenants/${tenant}`,
       method: "GET",
       query: query,
       format: "json",

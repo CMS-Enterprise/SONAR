@@ -90,14 +90,15 @@ public class ErrorReportsController : ControllerBase {
         entity.StackTrace));
   }
 
-  [HttpGet("{environment}", Name = "ListErrorReport")]
+  [HttpGet("{environment}", Name = "ListErrorReports")]
   [ProducesResponseType(typeof(List<ErrorReportDetails>), statusCode: 200)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
   [ProducesResponseType(500)]
-  public async Task<IActionResult> ListErrorReport(
+  public async Task<IActionResult> ListErrorReports(
     [FromRoute] String environment,
     [FromQuery] String? serviceName,
     [FromQuery] String? healthCheckName,
+    [FromQuery] AgentErrorLevel? errorLevel,
     [FromQuery] AgentErrorType? errorType,
     [FromQuery] DateTime? start,
     [FromQuery] DateTime? end,
@@ -107,17 +108,80 @@ public class ErrorReportsController : ControllerBase {
     var existingEnvironment = await this._environmentDataHelper
       .FetchExistingEnvAsync(environment, cancellationToken);
 
+    var (endVal, startVal) = ResolveTimeRange(start, end);
+
+    var results = await this._errorReportsDataHelper.GetFilteredErrorReportDetailsByEnvironment(
+      existingEnvironment.Id,
+      tenantId: null,
+      serviceName,
+      healthCheckName,
+      errorLevel,
+      errorType,
+      startVal,
+      endVal,
+      cancellationToken);
+
+    return this.Ok(results);
+  }
+
+  [HttpGet("{environment}/tenants/{tenant}", Name = "ListErrorReportsForTenant")]
+  [ProducesResponseType(typeof(List<ErrorReportDetails>), statusCode: 200)]
+  [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
+  [ProducesResponseType(500)]
+  public async Task<IActionResult> ListErrorReportsForTenant(
+    [FromRoute] String environment,
+    [FromRoute] String tenant,
+    [FromQuery] String? serviceName,
+    [FromQuery] String? healthCheckName,
+    [FromQuery] AgentErrorLevel? errorLevel,
+    [FromQuery] AgentErrorType? errorType,
+    [FromQuery] DateTime? start,
+    [FromQuery] DateTime? end,
+    CancellationToken cancellationToken = default) {
+
+    // validate environment
+    var existingEnvironment = await this._environmentDataHelper
+      .FetchExistingEnvAsync(environment, cancellationToken);
+
+    var existingTenant = await this._tenantDataHelper
+      .FetchExistingTenantAsync(environment, tenant, cancellationToken);
+
+    var (endVal, startVal) = ResolveTimeRange(start, end);
+
+    var results = await this._errorReportsDataHelper.GetFilteredErrorReportDetailsByEnvironment(
+      existingEnvironment.Id,
+      existingTenant.Id,
+      serviceName,
+      healthCheckName,
+      errorLevel,
+      errorType,
+      startVal,
+      endVal,
+      cancellationToken);
+
+    return this.Ok(results);
+  }
+
+  private static (DateTime endVal, DateTime startVal) ResolveTimeRange(DateTime? start, DateTime? end) {
     var maxSpan = TimeSpan.FromDays(5);
     var defaultSpan = TimeSpan.FromDays(1);
-    var now = DateTime.UtcNow;
-    DateTime endVal = now;
-    DateTime startVal = endVal.Subtract(defaultSpan);
 
-    if (start != null && end == null) {
+    // Default to the last 24 hours
+    var endVal = DateTime.UtcNow;
+    var startVal = endVal.Subtract(defaultSpan);
+
+    // Check for start and end date overrides
+    if (start != null) {
       startVal = DateTime.SpecifyKind((DateTime)start, DateTimeKind.Utc);
-    } else if (start != null && end != null) {
-      startVal = DateTime.SpecifyKind((DateTime)start, DateTimeKind.Utc);
+    }
+
+    if (end != null) {
       endVal = DateTime.SpecifyKind((DateTime)end, DateTimeKind.Utc);
+
+      if (start == null) {
+        // If an end date is specified, but no start, use the default span of 24 hours
+        startVal = endVal.Subtract(defaultSpan);
+      }
     }
 
     if (DateTime.Compare(startVal, endVal) > 0) {
@@ -128,16 +192,7 @@ public class ErrorReportsController : ControllerBase {
       throw new BadRequestException("Invalid Dates: Difference between timestamps exceeds max query span.");
     }
 
-    var results = await this._errorReportsDataHelper.GetFilteredErrorReportDetailsByEnvironment(
-      existingEnvironment.Id,
-      serviceName,
-      healthCheckName,
-      errorType,
-      startVal,
-      endVal,
-      cancellationToken);
-
-    return this.Ok(results);
+    return (endVal, startVal);
   }
 
   private async Task<(Environment Environment, Tenant? ExistingTenant, Service? ExistingService)> ValidateReportData(

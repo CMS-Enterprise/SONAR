@@ -44,8 +44,10 @@ public class ErrorReportsDataHelper {
 
   public async Task<List<ErrorReportDetails>> GetFilteredErrorReportDetailsByEnvironment(
     Guid environmentId,
+    Guid? tenantId,
     String? serviceName,
     String? healthCheckName,
+    AgentErrorLevel? level,
     AgentErrorType? errorType,
     DateTime start,
     DateTime end,
@@ -62,14 +64,21 @@ public class ErrorReportsDataHelper {
       .Where(r =>
         r.ErrorReport.Timestamp > start && r.ErrorReport.Timestamp <= end);
 
-
     // build query with optional params
+    if (tenantId != null) {
+      query = query.Where(r => r.ErrorReport.TenantId == tenantId);
+    }
+
     if (!String.IsNullOrEmpty(serviceName)) {
       query = query.Where(r => r.ErrorReport.ServiceName == serviceName);
     }
 
     if (!String.IsNullOrEmpty(healthCheckName)) {
       query = query.Where(r => r.ErrorReport.HealthCheckName == healthCheckName);
+    }
+
+    if (level != null) {
+      query = query.Where(r => r.ErrorReport.Level == level);
     }
 
     if (errorType != null) {
