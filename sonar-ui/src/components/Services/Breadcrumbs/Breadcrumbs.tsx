@@ -1,46 +1,53 @@
 import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ServiceOverviewContext } from '../ServiceOverviewContext';
 import { crumbStyle } from './Breadcrumbs.Style'
+import { BreadcrumbContext } from './BreadcrumbContext';
 
 const Breadcrumbs: React.FC = () => {
-    const serviceContext  = useContext(ServiceOverviewContext);
-    const location = useLocation()
+  const breadcrumbContext = useContext(BreadcrumbContext);
+  const location = useLocation();
 
-    let currentServiceLink = ``
+  const pageIsErrorReports = location.pathname.includes('error-reports');
 
-    const environmentIndex = 0;
-    const tenantIndex = 2;
-    const serviceIndexStart = 4;
-    const serviceCrumbs = location.pathname.split(`/`)
-      .filter(crumb => (crumb !== ''))
-      .map((crumb, index, array) => {
-        const displayName = serviceContext ? serviceContext.serviceHierarchyConfiguration.services.filter(svc => crumb === svc.name)
-          .map(svc => {
-            return svc.displayName
-          }) : null
+  const hierarchyPath = location.pathname.includes('environments') ?
+    location.pathname.split('environments/')[1] :
+    location.pathname;
 
-        currentServiceLink += `/${crumb}`;
+  let currentServiceLink = ``
 
-        let breadcrumbLink;
+  const environmentIndex = 0;
+  const tenantIndex = 2;
+  const serviceIndexStart = 4;
+  const serviceCrumbs = hierarchyPath.split(`/`)
+    .filter(crumb => (crumb !== ''))
+    .map((crumb, index, array) => {
+      const displayName = breadcrumbContext ? breadcrumbContext.serviceHierarchyConfiguration.services.filter(svc => crumb === svc.name)
+        .map(svc => {
+          return svc.displayName
+        }) : null
 
-        if (index === environmentIndex) {
-          breadcrumbLink = <Link key={'env:' + crumb} to={currentServiceLink}>{crumb}</Link>;
-        } else if (index === tenantIndex) {
-          breadcrumbLink = <Link key={'tnt:' + crumb} to={currentServiceLink}>Tenant: {crumb}</Link>;
-        } else if (index >= serviceIndexStart) {
-          breadcrumbLink = <Link key={'svc:' + crumb} to={currentServiceLink}>{displayName}</Link>;
-        }
+      currentServiceLink += `/${crumb}`;
 
-        return breadcrumbLink;
-      })
+      let breadcrumbLink;
 
-    return (
-      <div css={crumbStyle}>
-        <Link to={'/'}>Environments</Link>
-        {serviceCrumbs}
-      </div>
-    )
-  };
+      if (index === environmentIndex) {
+        breadcrumbLink = <Link key={'env:' + crumb} to={currentServiceLink}>{crumb}</Link>;
+      } else if (index === tenantIndex) {
+        breadcrumbLink = <Link key={'tnt:' + crumb} to={currentServiceLink}>Tenant: {crumb}</Link>;
+      } else if (index >= serviceIndexStart) {
+        breadcrumbLink = <Link key={'svc:' + crumb} to={currentServiceLink}> {displayName}</Link>;
+      }
+
+      return breadcrumbLink;
+    })
+
+  return (
+    <div css={crumbStyle}>
+      <Link to={'/'}>Environments</Link>
+      {serviceCrumbs}
+      { pageIsErrorReports ? ' / Error Reports' : null}
+    </div>
+  )
+};
 
 export default Breadcrumbs;

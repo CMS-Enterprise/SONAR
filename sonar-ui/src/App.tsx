@@ -10,6 +10,8 @@ import ApiKeys from './pages/ApiKeys';
 import Environments from './pages/Environments';
 import Service from './pages/Service';
 import Tenant from './pages/Tenant';
+import ErrorReports from './pages/ErrorReports';
+import ErrorReportsForTenant from './pages/ErrorReportsForTenant';
 import { LightTheme, DarkTheme } from './themes';
 import { oktaAuthOptions } from './config';
 import UserPermissions from 'pages/UserPermissions';
@@ -51,6 +53,11 @@ function App() {
                     <Route path=":permissionId/delete" element={<DeletePermissionModal />}/>
                   </Route>
                 </Route>
+              </Route>
+              <Route path="/error-reports" element={<ProtectedRoute />}>
+                <Route path="environments/:environment" element={<ErrorReports />}/>
+                <Route path="environments/:environment/tenants/:tenant" element={<ErrorReportsForTenant />}/>
+                <Route path="environments/:environment/tenants/:tenant/services/*" element={<ErrorReportsForTenant />}/>
               </Route>
             </Routes>
           </main>

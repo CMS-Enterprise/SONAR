@@ -2,7 +2,6 @@ import {
   DateTimeHealthStatusValueTuple,
   HealthCheckModel,
   ServiceConfiguration,
-  ServiceHierarchyConfiguration,
   ServiceHierarchyHealth, ServiceVersionDetails
 } from 'api/data-contracts';
 import ServiceOverview from 'components/Services/ServiceOverview';
@@ -11,11 +10,16 @@ import React, { useEffect, useState } from 'react';
 import { useQuery } from 'react-query';
 import { useParams } from 'react-router-dom';
 import Breadcrumbs from '../components/Services/Breadcrumbs/Breadcrumbs';
+import { BreadcrumbContext } from 'components/Services/Breadcrumbs/BreadcrumbContext';
 import StatusHistoryDrawer from '../components/Services/StatusHistory/StatusHistoryDrawer';
 import { ServiceOverviewContext } from 'components/Services/ServiceOverviewContext';
 import HealthStatusDrawer from 'components/Services/HealthStatus/HealthStatusDrawer';
 import { useSonarApi } from 'components/AppContext/AppContextProvider';
-import { useGetServiceVersion } from '../components/Services/Services.Hooks';
+import {
+  useGetServiceVersion,
+  useMaybeGetHierarchyConfigQuery
+} from '../components/Services/Services.Hooks';
+import { getServiceRootStatusAndName } from 'helpers/ServiceHelper';
 
 const Service = () => {
   const sonarClient = useSonarApi();
@@ -25,9 +29,7 @@ const Service = () => {
 
   const servicePath = params['*'] || '';
   const serviceList = servicePath.split('/');
-  const currentServiceIsRoot = (serviceList.length === 1) ? true : false;
-  const serviceName : string = currentServiceIsRoot ?
-    servicePath.split('/')[0] : servicePath.split('/').pop()!;
+  const { currentServiceIsRoot, serviceName } = getServiceRootStatusAndName(servicePath);
 
   const [showDrawer, setShowDrawer] = useState(false);
   const [selectedTileId, setSelectedTileId] = useState<string>('');
@@ -79,10 +81,7 @@ const Service = () => {
     () => sonarClient.getServiceHierarchyHealth(environmentName, tenantName).then((res) => res.data)
   );
 
-  const hierarchyConfigQuery = useQuery<ServiceHierarchyConfiguration, Error>(
-    ['ServiceHierarchyConfig', environmentName, tenantName],
-    () => sonarClient.getTenant(environmentName, tenantName).then((res) => res.data)
-  );
+  const hierarchyConfigQuery = useMaybeGetHierarchyConfigQuery(environmentName, tenantName);
 
   const serviceVersionDetails = useGetServiceVersion(environmentName, tenantName, servicePath);
 
@@ -130,7 +129,11 @@ const Service = () => {
         )}
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>
+          <BreadcrumbContext.Provider value={{
+            serviceHierarchyConfiguration: hierarchyConfigQuery.data
+          }}>
             <Breadcrumbs/>
+          </BreadcrumbContext.Provider>
         </div>
         <div>
           <ServiceOverview

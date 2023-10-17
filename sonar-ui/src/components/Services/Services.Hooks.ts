@@ -1,5 +1,8 @@
 import { useQuery } from 'react-query';
-import { HealthCheckModel } from '../../api/data-contracts';
+import {
+  HealthCheckModel,
+  ServiceHierarchyConfiguration
+} from '../../api/data-contracts';
 import { calculateHistoryRange } from '../../helpers/StatusHistoryHelper';
 import { useSonarApi } from '../AppContext/AppContextProvider';
 
@@ -76,4 +79,24 @@ export const useGetHistoricalHealthCheckResults = (
         .then(res => res.data);
     },
   })
+}
+
+// Fetches the configuration hierarchy for a tenant, if one is specified.
+// Otherwise, returns a Promise that resolves to undefined.
+export const useMaybeGetHierarchyConfigQuery = (
+  environmentName: string,
+  tenantName?: string
+) => {
+  const sonarClient = useSonarApi();
+  return useQuery<ServiceHierarchyConfiguration | undefined, Error>(
+    ['ServiceHierarchyConfig', environmentName, tenantName],
+    async () => {
+      if (tenantName != null) {
+        const res = await sonarClient.getTenant(environmentName, tenantName);
+        return res.data;
+      } else {
+        return undefined;
+      }
+    }
+  );
 }
