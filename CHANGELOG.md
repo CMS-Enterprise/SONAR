@@ -1,3 +1,864 @@
+## 0.4.0
+
+### Fail-fast validation for HttpBodyHealthCheckCondition
+
+* [view commit b11a0b4](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/b11a0b49371fe0f3b74d04a95d77102a738277f3)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Mon, 16 Oct 2023 23:06:47 +0000
+
+```
+* Adds Path and Value validation for HttpBodyHealthCheckCondition so we can fail on these types of issues during the early validation process, not during health check evaluation
+```
+
+### BATAPI-442Updated http body condition checking for more flexibility
+
+* [view commit cd9008e](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/cd9008eca2d7d3db400de7a43a7dd3bb47497145)
+* Author (Committer): Dale O'Neill (Dale O'Neill)
+* Date: Mon, 16 Oct 2023 22:30:27 +0000
+
+```
+Closes BATAPI-442
+
+## Description:
+* Updated http body condition checking.
+```
+
+### Implemented support for fetching error reports for a specific tenant.
+
+* [view commit 1626e94](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/1626e94ec3591a3b839e610b6ff318ff51cf7367)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Sun, 15 Oct 2023 23:55:09 -1000
+
+
+
+### simplify logic for start/end date params, fix bug
+
+* [view commit c866957](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/c8669577c5ada49103bdd5b58a5dea563210ffc8)
+* Author (Committer): btakushi (Paul Wheeler)
+* Date: Fri, 13 Oct 2023 12:05:10 -1000
+
+
+
+### Resolve BATAPI-446 "K8s prometheus scraping"
+
+* [view commit 74e2470](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/74e247038e92172135a9babb9a28f812af384685)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Mon, 16 Oct 2023 18:59:08 +0000
+
+```
+Closes BATAPI-446
+
+## Description:
+
+update chart to allow Prometheus to scrape our metrics endpoint exposed by sonar-agent
+
+## Security Impact Analysis Questionnaire
+
+### Submitter Checklist
+-  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
+-  [ ] Is there an impact on Authentication procedures or capabilities?
+-  [ ] Is there an impact on Authorization procedures or capabilities?
+-  [ ] Is there an impact on Communication Security procedures or capabilities?
+-  [ ] Is there an impact on Cryptography procedures or capabilities?
+-  [ ] Is there an impact on Sensitive Data procedures or capabilities?
+-  [ ] Is there an impact on any other security-related procedures or capabilities?
+-  [ ] No security impacts identified.
+
+## Security Risks Identified:
+
+<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
+
+Closes BATAPI-446
+```
+
+### BATAPI-443 Call expensive BCrypt verify operation less often
+
+* [view commit 6e5298a](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/6e5298ad9cc76fc1656b7cc0564867f8d8195cd7)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Fri, 13 Oct 2023 15:57:30 +0000
+
+```
+* Adds caching find-and-validate API key by Id method so we don't call BCrypt verify every time we get an API key with Id
+```
+
+### Fixed some minor issues with the flattened service list in the Tenant page.
+
+* [view commit c65544c](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/c65544cae54fcdcd5be155277bd7ff7c92926b3b)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Thu, 5 Oct 2023 11:08:12 -1000
+
+
+
+### OM endpoint via OpenTelemetry
+
+* [view commit 083af98](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/083af983e893b2af13189864862f62a4e76465f2)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Fri, 6 Oct 2023 02:45:43 +0000
+
+```
+Closes BATAPI-445
+
+## Description:
+
+Exposes OM endpoint via OpenTelemetry
+
+## Security Impact Analysis Questionnaire
+
+### Submitter Checklist
+-  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
+-  [ ] Is there an impact on Authentication procedures or capabilities?
+-  [ ] Is there an impact on Authorization procedures or capabilities?
+-  [ ] Is there an impact on Communication Security procedures or capabilities?
+-  [ ] Is there an impact on Cryptography procedures or capabilities?
+-  [ ] Is there an impact on Sensitive Data procedures or capabilities?
+-  [ ] Is there an impact on any other security-related procedures or capabilities?
+-  [x] No security impacts identified.
+
+## Security Risks Identified:
+
+<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
+
+Closes BATAPI-445
+```
+
+### BATAPI-457 Guard around null conditions in health check definitions Equals and GetHashCode
+
+* [view commit 869bc1b](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/869bc1b5728ca26d77a088dd04ed32f8bba8db4e)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Thu, 5 Oct 2023 18:32:18 +0000
+
+```
+* Adds null guards around conditions field in Equals and GetHashCode methods of health check definition classes
+```
+
+### BATAPI-431 Environment and Tenant page, Bread Crumbs
+
+* [view commit bf11f86](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/bf11f86f0f85be77c5fb5bedbea7c55904e946b2)
+* Author (Committer): Dale O'Neill (Dale O'Neill)
+* Date: Thu, 5 Oct 2023 16:32:13 +0000
+
+```
+Closes BATAPI-431
+
+## Description:
+
+* Update Breadcrumbs and implement environment and Tenant page
+
+* update routes to environment and tenant page
+
+```
+
+### Reverted change to HttpBodyHealthCheckCondition.Value property in order to maintain backward compatibility.
+
+* [view commit 23731c5](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/23731c5e2f09c973bd5d7fc96c0ad69b9687c065)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Tue, 3 Oct 2023 09:33:42 -1000
+
+
+
+### add validation for timestamps
+
+* [view commit 57c0647](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/57c06473a247a799f24c3535aad107b972b260cd)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Mon, 2 Oct 2023 21:41:42 +0000
+
+```
+## Description:
+
+* add validation for timestamps
+
+## Security Impact Analysis Questionnaire
+
+### Submitter Checklist
+-  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
+-  [ ] Is there an impact on Authentication procedures or capabilities?
+-  [ ] Is there an impact on Authorization procedures or capabilities?
+-  [ ] Is there an impact on Communication Security procedures or capabilities?
+-  [ ] Is there an impact on Cryptography procedures or capabilities?
+-  [ ] Is there an impact on Sensitive Data procedures or capabilities?
+-  [ ] Is there an impact on any other security-related procedures or capabilities?
+-  [x] No security impacts identified.
+
+Closes BATAPI-441
+```
+
+### Update bread Crumbs with links to new routes Environment and Tenant Pages
+
+* [view commit 48f4261](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/48f4261e3f74523933784a1307ff270c1a94d995)
+* Author (Committer): Dale O'Neill (Paul Wheeler)
+* Date: Fri, 29 Sep 2023 22:45:34 +0000
+
+```
+Closes BATAPI-272
+```
+
+### Enable cascading delete of ErrorReport when the associated Tenant or Environment is deleted.
+
+* [view commit 27add87](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/27add87cf9b6d8631bedb5aa7d18228f1c476f07)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Tue, 26 Sep 2023 17:00:08 -1000
+
+
+
+### Fixed issue where sonar-agent fails to begin monitoring a namespace.
+
+* [view commit 0ff9a56](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/0ff9a56076e160daf5e09eabf29759fe57e09e55)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Mon, 25 Sep 2023 16:13:02 -1000
+
+```
+When an existing namespace already has ConfigMaps with the
+sonar-config: "true" label, and the namespace is modified to have the
+sonar-monitoring: "enabled" label, SONAR Agent fails to begin monitoring
+for that namespace.
+```
+
+### Fix swagger-typescript-api generation and generate latest API client
+
+* [view commit e30e51d](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/e30e51dbf1e6ac95a801386371269ce9e1636b51)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Tue, 26 Sep 2023 22:51:46 +0000
+
+
+
+### Update remove configSourceException and move into invalidConfigSource. Pass raw config into error exception. Add test for deserialize error Catch Exception due to invalid HealthCheckType
+
+* [view commit de923f6](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/de923f6f672240769cf4beea767c9d2851ede01a)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Wed, 20 Sep 2023 23:06:25 -0700
+
+
+
+### Create basic error report for validation and serialization. Updates to configurationHelper.cs
+
+* [view commit 04f8a48](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/04f8a48134cdbedc7bf88fe87c8b59b00501839f)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Fri, 15 Sep 2023 08:30:31 -0700
+
+
+
+### implement unhandled exception handler
+
+* [view commit b3ef9fc](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/b3ef9fc9d654bc920900c5b9e113e0c095011ff0)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Tue, 26 Sep 2023 03:42:44 +0000
+
+```
+Closes BATAPI-409
+
+## Description:
+
+* implement unhandled exception handler
+
+## Security Impact Analysis Questionnaire
+
+### Submitter Checklist
+-  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
+-  [ ] Is there an impact on Authentication procedures or capabilities?
+-  [ ] Is there an impact on Authorization procedures or capabilities?
+-  [ ] Is there an impact on Communication Security procedures or capabilities?
+-  [ ] Is there an impact on Cryptography procedures or capabilities?
+-  [ ] Is there an impact on Sensitive Data procedures or capabilities?
+-  [ ] Is there an impact on any other security-related procedures or capabilities?
+-  [ ] No security impacts identified.
+
+## Security Risks Identified:
+
+<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
+
+Closes BATAPI-409
+```
+
+### Added handling for invalid JSON returned from Prometheus query request.
+
+* [view commit 47dc1ae](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/47dc1aee9cf56798284c61854c8a88f94880dbd0)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Mon, 25 Sep 2023 01:55:45 -1000
+
+
+
+### sonar-agent: Added better logging for unhandled exceptions occurring in worker threads.
+
+* [view commit 81dfaf5](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/81dfaf5877c1cfc9d39f7d7c1c66938b1f1b60ad)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Thu, 21 Sep 2023 10:24:04 -1000
+
+
+
+### BATAPI-430 New action tenant controller
+
+* [view commit e5ef673](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/e5ef6734158e11a913448bfee5468d08e0195831)
+* Author (Committer): Dale O'Neill (Dale O'Neill)
+* Date: Sat, 23 Sep 2023 15:00:22 +0000
+
+```
+BATAPI-430 Added an additional action to the tenant controller.
+
+Closes BATAPI-430
+
+## Description:
+
+* Add action to tenant controller.  Gets all tenants or one tenant for an environment.
+```
+
+### Historical health check data (UI and new endpoint)
+
+* [view commit e3a85b1](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/e3a85b18d222c572062919e6d4ca0afaf0f11ce3)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Sat, 23 Sep 2023 02:22:29 +0000
+
+```
+Closes BATAPI-426
+
+## Description:
+
+Adds an endpoint that returns historical health check results at a given timestamp for a service. I chose to add an endpoint instead of appending this data to the ServiceHierarchyHealthHistory model to help performance, as we really only need to query this data when the status history drawer is opened by a user/a different Status History Tile is selected. Makes corresponding changes in the UI.
+
+## Security Impact Analysis Questionnaire
+
+### Submitter Checklist
+-  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
+-  [ ] Is there an impact on Authentication procedures or capabilities?
+-  [ ] Is there an impact on Authorization procedures or capabilities?
+-  [ ] Is there an impact on Communication Security procedures or capabilities?
+-  [ ] Is there an impact on Cryptography procedures or capabilities?
+-  [ ] Is there an impact on Sensitive Data procedures or capabilities?
+-  [ ] Is there an impact on any other security-related procedures or capabilities?
+-  [x] No security impacts identified.
+
+## Security Risks Identified:
+
+<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
+
+Closes BATAPI-426
+```
+
+### Eliminate unnecessary 'undefined' version display in the UI.
+
+* [view commit 00d5d7a](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/00d5d7a56c394fc7c0bfaea472c2aa001215139f)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Fri, 22 Sep 2023 01:00:57 -1000
+
+
+
+### BATAPI-387: Confirm ability to extract version information of deployed application
+
+* [view commit 17fded0](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/17fded0e845ab25ff2797552e2706c0872fe4ea2)
+* Author (Committer): Teresa Tran (Teresa Tran)
+* Date: Fri, 22 Sep 2023 16:22:29 +0000
+
+```
+## Description:
+
+* Added `sample-kustomization` folder inside the `k8s` folder, where it contains sample CRDs for GitRepository and Flux Kustomization along with a README on how to view the version check information for SONAR in a local K3D cluster.
+* Added implementation of the IVersionRequester for Flux Kustomization version info.
+* Added wiring of Flux Kustomization version info implementation into the version check loop.
+* Added unit test for Flux Kustomization version info getter.
+```
+
+### add error reporting in HealthCheckHelper
+
+* [view commit 1f5a234](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/1f5a234569711bf519f008e77dd53cd5318603fc)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Thu, 21 Sep 2023 02:27:33 +0000
+
+```
+Closes BATAPI-408
+
+## Description:
+
+* add error reporting in HealthCheckHelper
+
+## Security Impact Analysis Questionnaire
+
+### Submitter Checklist
+-  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
+-  [ ] Is there an impact on Authentication procedures or capabilities?
+-  [ ] Is there an impact on Authorization procedures or capabilities?
+-  [ ] Is there an impact on Communication Security procedures or capabilities?
+-  [ ] Is there an impact on Cryptography procedures or capabilities?
+-  [ ] Is there an impact on Sensitive Data procedures or capabilities?
+-  [ ] Is there an impact on any other security-related procedures or capabilities?
+-  [ ] No security impacts identified.
+
+## Security Risks Identified:
+
+<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
+
+Closes BATAPI-408
+```
+
+### Resolve BATAPI-407 "Config error reports"
+
+* [view commit 0ecc9d0](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/0ecc9d074c041383346fda4ce5e143d4bf94e92e)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Tue, 19 Sep 2023 23:40:43 +0000
+
+```
+Closes BATAPI-407
+
+## Description:
+
+* Implement error reporting for saving/fetching config exceptions. 
+* Moved helpers into Helpers directory
+
+## Security Impact Analysis Questionnaire
+
+### Submitter Checklist
+-  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
+-  [ ] Is there an impact on Authentication procedures or capabilities?
+-  [ ] Is there an impact on Authorization procedures or capabilities?
+-  [ ] Is there an impact on Communication Security procedures or capabilities?
+-  [ ] Is there an impact on Cryptography procedures or capabilities?
+-  [ ] Is there an impact on Sensitive Data procedures or capabilities?
+-  [ ] Is there an impact on any other security-related procedures or capabilities?
+-  [x] No security impacts identified.
+
+## Security Risks Identified:
+
+<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
+
+Closes BATAPI-407
+```
+
+### Added gitleaks configuration so that non-secret Okta configuration doesn't cause false positives.
+
+* [view commit e5bad12](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/e5bad127fca1aa8389fca3dafe29ea4e092d2768)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Thu, 14 Sep 2023 13:41:29 -1000
+
+```
+ * gitleaks runs for each of our projects: sonar-api, sonar-ui,
+   sonar-agent; so each run should ignore directories that are scanned
+   in relation the other two projects.
+ * Okta audience id, client id, and authorization server id are not
+   secrets. Including these in our repo improves the developer
+   experience because we can all test against the developer Okta
+   instance.
+ * Commit hashes aren't secrets, and generally speaking it is unlikely
+   that secrets would be accidently added to markdown files.
+```
+
+### BATAPI-423 Display Service Version and update Service page to use React context.
+
+* [view commit 07c2d81](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/07c2d81b2a1f9a7b780d0d68e687a04367cf1a16)
+* Author (Committer): Dale O'Neill (Dale O'Neill)
+* Date: Mon, 18 Sep 2023 20:35:09 +0000
+
+```
+Closes BATAPI-423
+
+## Description:
+* removed some of the properties that were being passed down via props from component to component and replaced with react context.
+
+* Display version information for each root service
+```
+
+### Sonar Agent Version Checking
+
+* [view commit e5441a2](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/e5441a26f97b6ec034a86cdedc950d2bd8befbf6)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Sat, 16 Sep 2023 00:41:26 +0000
+
+```
+* SONAR Agent version checking loop implementation
+* HTTP-type version checks implemented.
+```
+
+### Resolve BATAPI-405 "Error report controller"
+
+* [view commit 842879c](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/842879cffd1a144432d68520d9f66ec61d36a5c3)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Thu, 14 Sep 2023 05:13:42 +0000
+
+```
+Closes BATAPI-405
+
+## Description:
+
+* finish implementation
+
+* update record
+
+* wip: implement create report endpoint
+
+## Security Impact Analysis Questionnaire
+
+### Submitter Checklist
+-  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
+-  [ ] Is there an impact on Authentication procedures or capabilities?
+-  [ ] Is there an impact on Authorization procedures or capabilities?
+-  [ ] Is there an impact on Communication Security procedures or capabilities?
+-  [ ] Is there an impact on Cryptography procedures or capabilities?
+-  [ ] Is there an impact on Sensitive Data procedures or capabilities?
+-  [ ] Is there an impact on any other security-related procedures or capabilities?
+-  [x] No security impacts identified.
+
+## Security Risks Identified:
+
+<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
+
+Closes BATAPI-405
+```
+
+### Added version information to the list tenants API endpoint, and added UI to display version information in the environments list.
+
+* [view commit 2a20b36](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/2a20b364cdb03b258002aa45da57df2b02452c0d)
+* Author (Committer): Paul Wheeler (Dale O'Neill)
+* Date: Wed, 13 Sep 2023 00:11:11 +0000
+
+```
+Closes BATAPI-424
+Closes BATAPI-398
+
+## Description:
+
+* Fixed version check json path expressions in test service-configs
+
+* BATAPI-424: implemented support for including version information in the response from the tenants controller.
+
+* Added Version controller actions to the postman collection.
+
+ * Fixed issue with HttpResponseBodyVersionCheckDefinition serialization
+ * Added version check configuration and support to http-metric-test-app
+
+* Display version information for each root service
+
+* Added version information to the list tenants API endpoint.
+
+## Security Impact Analysis Questionnaire
+
+### Submitter Checklist
+-  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
+-  [ ] Is there an impact on Authentication procedures or capabilities?
+-  [ ] Is there an impact on Authorization procedures or capabilities?
+-  [ ] Is there an impact on Communication Security procedures or capabilities?
+-  [ ] Is there an impact on Cryptography procedures or capabilities?
+-  [ ] Is there an impact on Sensitive Data procedures or capabilities?
+-  [ ] Is there an impact on any other security-related procedures or capabilities?
+-  [X] No security impacts identified.
+```
+
+### Version Info Caching
+
+* [view commit 97f63a7](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/97f63a7d2e35929de759c1f03f1ee97d7114037c)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Mon, 11 Sep 2023 20:11:35 +0000
+
+```
+Closes BATAPI-415
+
+## Description:
+
+* formatting
+
+* add caching to version controller
+
+## Security Impact Analysis Questionnaire
+
+### Submitter Checklist
+-  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
+-  [ ] Is there an impact on Authentication procedures or capabilities?
+-  [ ] Is there an impact on Authorization procedures or capabilities?
+-  [ ] Is there an impact on Communication Security procedures or capabilities?
+-  [ ] Is there an impact on Cryptography procedures or capabilities?
+-  [ ] Is there an impact on Sensitive Data procedures or capabilities?
+-  [ ] Is there an impact on any other security-related procedures or capabilities?
+-  [ ] No security impacts identified.
+
+## Security Risks Identified:
+
+<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
+
+Closes BATAPI-415
+```
+
+### Update onClose methods to re-init namespace and confimap watchers on close
+
+* [view commit 5ac0472](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/5ac0472eadf10f6014d8877e9c1f28d2ba673a23)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Thu, 7 Sep 2023 13:47:12 -0700
+
+
+
+### Updates generated SONAR API client with latest changes: * Get user permission tree endpoints * Post/Get service version endpoints
+
+* [view commit 00fd0ce](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/00fd0ceb76d5280f1ea473324f6641b58bbf1467)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Fri, 8 Sep 2023 02:01:24 +0000
+
+
+
+### create new db entity for error information
+
+* [view commit e469bfd](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/e469bfdf1742a7234c917c34cfafef3184a4b3e2)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Fri, 8 Sep 2023 01:38:14 +0000
+
+```
+Closes BATAPI-390
+
+## Description:
+
+* create new db entity for error information
+
+Closes BATAPI-390
+```
+
+### Fixed version check json path expressions in test service-configs
+
+* [view commit e33976a](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/e33976a064b3d9c930e75737eac8ebbcc311c86e)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Thu, 7 Sep 2023 14:58:58 -1000
+
+
+
+### Added Version controller actions to the postman collection.
+
+* [view commit a0f8485](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/a0f8485f9c2a43039f15d13e095978150465e5d2)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Thu, 7 Sep 2023 14:28:39 -1000
+
+```
+ * Fixed issue with HttpResponseBodyVersionCheckDefinition serialization
+ * Added version check configuration and support to http-metric-test-app
+```
+
+### Make it possible to deliver dev build container images to artifactory for testing without deploying to our manifest repo.
+
+* [view commit 52df1a1](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/52df1a16e1e8b754566a66b76a274030651e0153)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Thu, 7 Sep 2023 10:54:14 -1000
+
+
+
+### Merge branch 'release-0.3.1'
+
+* [view commit 060da45](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/060da454034a4572a56f2ca8beb37798bb66e681)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Thu, 7 Sep 2023 09:23:56 -1000
+
+
+
+### implement service version detail module with static data
+
+* [view commit 71eba92](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/71eba9257526b334ba2daa4615c23455ea66dc59)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Wed, 6 Sep 2023 18:32:56 +0000
+
+```
+Closes BATAPI-397
+```
+
+### Update status cache with a single upsert instead of a transactional read and update.
+
+* [view commit dde6b70](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/dde6b70d8325c294d74a06d7f414c1477cea179c)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Sat, 2 Sep 2023 22:54:01 -1000
+
+
+
+### Fixed the performance of the API key validation cache.
+
+* [view commit 9b5d9a1](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/9b5d9a1561f31d4454ecb4becbdc8afd167c08d1)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Fri, 25 Aug 2023 23:43:23 -1000
+
+```
+ * Only one task run per API key
+ * Limited the number of concurrent API key validations
+```
+
+### BATAPI-392 HTTP version check configuration model
+
+* [view commit d846970](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/d846970839cfcfa740620fc7ba29976c5d0dc482)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Fri, 1 Sep 2023 20:37:05 +0000
+
+```
+* Adds configuration model for HTTP response body version checks
+```
+
+### Resolve BATAPI-388 "Version controller"
+
+* [view commit 0aefac7](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/0aefac733c39f90ca0ad22f38d8a5169ec51061b)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Fri, 1 Sep 2023 20:01:11 +0000
+
+```
+Closes BATAPI-388
+
+## Description:
+
+* Implemented version controller with two endpoints, RecordServiceVersion and GetSpecificServiceVersionDetails
+
+Closes BATAPI-388
+```
+
+### Add url, description, and update service name to use display name data
+
+* [view commit 6704f3a](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/6704f3a211047cb62f088ba79c827a1f2cda23b7)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Wed, 30 Aug 2023 00:48:30 -0700
+
+
+
+### BATAPI-380 New endpoints return service status in body (XML and Json)
+
+* [view commit d1a2049](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/d1a2049b707246b8742db558eb389df2eb1a0fdc)
+* Author (Committer): Dale O'Neill (Dale O'Neill)
+* Date: Fri, 1 Sep 2023 04:46:55 +0000
+
+```
+Closes BATAPI-380
+```
+
+### BATAPI-379 Add Http body conditions for XML and Json
+
+* [view commit fa562ec](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/fa562ec43e954de0113ea86816691bb3920af005)
+* Author (Committer): Dale O'Neill (Dale O'Neill)
+* Date: Wed, 30 Aug 2023 18:41:30 +0000
+
+```
+Closes BATAPI-379
+* Added HttpJsonTest and HttpXmlTest Health Checks to service-Config.json
+```
+
+### Merge branch 'main' of https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar into feature-batapi-401-http-health-check-url-display
+
+* [view commit 92b1efa](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/92b1efa98597e076144d69e087899adb45b40dbd)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Tue, 29 Aug 2023 13:43:05 -0600
+
+
+
+### Adds optional url property to IHealthCheckDefinition union type and makes duration and expression properties optional as well Adds link to health check uri for http type health checks
+
+* [view commit a8a1e9a](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/a8a1e9aa198f05a2baed1a3ca864a38a8cb87125)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Tue, 29 Aug 2023 12:41:37 -0600
+
+
+
+### Makes rendering of health check description conditional on whether description exists
+
+* [view commit 6c1254c](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/6c1254c51b13604e44b7af0c0f0c7c7661b67960)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Tue, 29 Aug 2023 12:45:54 -0600
+
+
+
+### SONAR Agent Helm Chart Release v0.3.0
+
+* [view commit 0139a09](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/0139a099daea5cd650b8870d26a2cd870af1e906)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Mon, 28 Aug 2023 15:27:43 -1000
+
+
+
+### Moves health check description to top drawer section from conditions section
+
+* [view commit cd4ddf8](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/cd4ddf80092b2d22d7cfa4bab292bc0522e88da1)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Tue, 29 Aug 2023 12:41:12 -0600
+
+
+
+### Adds external link svg icon
+
+* [view commit 0186069](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/018606937d6f0c4be0674f72943dec8d63d80dd5)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Tue, 29 Aug 2023 12:37:42 -0600
+
+
+
+### implement configuration for version checks
+
+* [view commit 6edad8c](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/6edad8cad96cad08e23e316f66be19374b909ce1)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Tue, 29 Aug 2023 02:03:05 +0000
+
+```
+Closes BATAPI-\{ISSUE_ID}
+
+## Description:
+
+* implement configuration for version checks
+
+## Security Impact Analysis Questionnaire
+
+### Submitter Checklist
+-  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
+-  [ ] Is there an impact on Authentication procedures or capabilities?
+-  [ ] Is there an impact on Authorization procedures or capabilities?
+-  [ ] Is there an impact on Communication Security procedures or capabilities?
+-  [ ] Is there an impact on Cryptography procedures or capabilities?
+-  [ ] Is there an impact on Sensitive Data procedures or capabilities?
+-  [ ] Is there an impact on any other security-related procedures or capabilities?
+-  [x] No security impacts identified.
+
+## Security Risks Identified:
+
+<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
+
+Closes BATAPI-395
+```
+
+### wip: another perf hotfix.
+
+* [view commit ae6d7b9](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/ae6d7b9bafe404b1e37c4c25bb9ebb91614e1dde)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Fri, 25 Aug 2023 23:43:23 -1000
+
+
+
+### Implement data smoothing to sonar-agent's health check evaluation
+
+* [view commit 3cdad40](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/3cdad40af82a00fd89e476579f4de2d7c06abfc6)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Fri, 25 Aug 2023 20:35:58 +0000
+
+```
+Closes BATAPI-381
+
+## Description:
+
+* initial implementation
+
+## Security Impact Analysis Questionnaire
+
+### Submitter Checklist
+-  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
+-  [ ] Is there an impact on Authentication procedures or capabilities?
+-  [ ] Is there an impact on Authorization procedures or capabilities?
+-  [ ] Is there an impact on Communication Security procedures or capabilities?
+-  [ ] Is there an impact on Cryptography procedures or capabilities?
+-  [ ] Is there an impact on Sensitive Data procedures or capabilities?
+-  [ ] Is there an impact on any other security-related procedures or capabilities?
+-  [ ] No security impacts identified.
+
+## Security Risks Identified:
+
+<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
+
+Closes BATAPI-381
+```
+
+### Add default value for ApiKeyId such that agent will use new apikey format Update environment name for double underscores Remove apiKey from base appsettings.k8s.json as apiKey is loaded from k8 secrets
+
+* [view commit 7043ba7](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/7043ba7704cd0f168cae1f72e33c036284c15fee)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Tue, 22 Aug 2023 12:05:04 -0700
+
+
+
+### Add ApiKeyId to list of env variables. If values are not stated do not add to env
+
+* [view commit 0ab6dec](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/0ab6deca84f297ce7fb70ca6c73c7bdf6de03180)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Mon, 21 Aug 2023 17:31:11 -0700
+
+
 ## 0.3.1
 
 ### Fixed issue with test database configuration not being applied everywhere.
