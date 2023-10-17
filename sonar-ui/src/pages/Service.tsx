@@ -84,7 +84,7 @@ const Service = () => {
     () => sonarClient.getTenant(environmentName, tenantName).then((res) => res.data)
   );
 
-  const serviceVersionDetails = useGetServiceVersion(environmentName, tenantName, serviceName);
+  const serviceVersionDetails = useGetServiceVersion(environmentName, tenantName, servicePath);
 
   if (hierarchyConfigQuery.data && hierarchyHealthQuery.data) {
     const serviceConfigLookup =
