@@ -378,7 +378,9 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
           return mergedConfig;
 
         } catch (InvalidConfigurationException e) {
-          var data = (List<ValidationResult>)e.Data["errors"]!;
+          var invalidConfigErrorMessage = e.ReadValidationResults();
+          this._logger.LogError(e, invalidConfigErrorMessage);
+
           var errorReport = new ErrorReportDetails(
             timestamp: DateTime.UtcNow,
             tenant: null,
@@ -386,7 +388,7 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
             healthCheckName: null,
             level: AgentErrorLevel.Error,
             type: AgentErrorType.Validation,
-            message: String.Join(" ", data.Select(e => e.ErrorMessage)),
+            message: invalidConfigErrorMessage,
             configuration: null,
             stackTrace: e.StackTrace
           );

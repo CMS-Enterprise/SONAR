@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -123,5 +124,34 @@ public class ConfigurationHelperTests {
     );
 
     Assert.Equal(expectedExceptionType, exception.ErrorType);
+  }
+
+  /// <summary>
+  /// When validation errors occur, the agent will generate an Error Report containing the type of error
+  /// and the list of validation pertaining to the configuration loaded.
+  /// </summary>
+  [Theory]
+  [InlineData("test-inputs/invalid-service-config-constraint-violations.json",
+    InvalidConfigurationErrorType.DataValidationError)]
+  public async Task
+    GetServiceHierarchyConfigurationFromJson_DuringDeserializationLocalFileError_LogAdditionalInformation(
+      String testInputFilePath,
+      InvalidConfigurationErrorType expectedExceptionType) {
+    var configSource = new LocalFileServiceConfigSource(tenant: "test", filePaths: new[] { testInputFilePath });
+    var config = await configSource.GetConfigurationLayersAsync(tenant: "test", cancellationToken: default)
+      .SingleAsync();
+
+    try {
+      ServiceConfigValidator.ValidateServiceConfig(config);
+    } catch (InvalidConfigurationException e) {
+
+      // Validate Data is not Empty
+      Assert.NotEqual(e.Data, ImmutableDictionary<String, Object?>.Empty);
+
+      // Match String
+      var expectedErrorMessage = $"{nameof(InvalidConfigurationErrorType)}: {e.ErrorType.ToString()}";
+      Assert.Contains(expectedErrorMessage, e.ReadValidationResults());
+      Assert.Equal(expectedExceptionType, e.ErrorType);
+    }
   }
 }

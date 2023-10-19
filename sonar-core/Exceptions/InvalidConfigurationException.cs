@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Runtime.Serialization;
 
@@ -83,4 +84,13 @@ public class InvalidConfigurationException : Exception {
 
   public override IDictionary Data => this._data ?? ImmutableDictionary<String, Object?>.Empty;
 
+  public String ReadValidationResults() {
+    var invalidConfigErrorMessage = $"{nameof(InvalidConfigurationErrorType)}: {this.ErrorType.ToString()}";
+    if (this.Data["errors"] is List<ValidationResult> validationErrors) {
+      invalidConfigErrorMessage += "; Validation errors: " +
+        String.Join(separator: ", ", validationErrors.Select(ve => ve.ToString()));
+    }
+
+    return invalidConfigErrorMessage;
+  }
 }

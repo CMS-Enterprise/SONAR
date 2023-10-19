@@ -100,8 +100,10 @@ public class ConfigurationHelper {
               message: "Tenant service configuration is invalid, skipping initial load: {tenant}.",
               tenant);
 
+            var invalidConfigErrorMessage = cfgEx.ReadValidationResults();
+            this._logger.LogError(cfgEx, invalidConfigErrorMessage);
+
             // Create Error Report for Validation
-            var data = (List<ValidationResult>)cfgEx.Data["errors"]!;
             errorReport = new ErrorReportDetails(
               timestamp: DateTime.UtcNow,
               tenant: tenant,
@@ -109,7 +111,7 @@ public class ConfigurationHelper {
               healthCheckName: null,
               level: AgentErrorLevel.Error,
               type: AgentErrorType.Validation,
-              message: String.Join(" ", data.Select(e => e.ErrorMessage)),
+              message: invalidConfigErrorMessage,
               configuration: config,
               stackTrace: cfgEx.StackTrace);
           }
