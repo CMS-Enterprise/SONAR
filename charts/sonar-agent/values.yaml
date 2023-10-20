@@ -12,6 +12,12 @@ networkPolicies:
   additionalEgressRules: []
   additionalIngressRules: []
 
+clusterRole:
+  additionalRules:
+    - apiGroups: ["kustomize.toolkit.fluxcd.io"]
+      resources: [ "kustomizations" ]
+      verbs: [ "get", "watch", "list" ]
+
 # Use an existing secret for pulling images from the container registry
 imagePullSecrets: []
 
