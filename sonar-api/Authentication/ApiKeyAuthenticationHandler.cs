@@ -7,7 +7,6 @@ using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Helpers;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Environment = Cms.BatCave.Sonar.Data.Environment;
@@ -21,7 +20,6 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<AuthenticationS
   private readonly IOptions<SecurityConfiguration> _securityConfiguration;
   private readonly ILoggerFactory _loggerFactory;
   private readonly KeyHashHelper _keyHashHelper;
-  private readonly IHttpContextAccessor _httpContextAccessor;
 
   public ApiKeyAuthenticationHandler(
     IOptionsMonitor<AuthenticationSchemeOptions> options,
@@ -30,13 +28,11 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<AuthenticationS
     ILoggerFactory loggerFactory,
     UrlEncoder encoder,
     ISystemClock clock,
-    KeyHashHelper keyHashHelper,
-    IHttpContextAccessor httpContextAccessor) : base(options, loggerFactory, encoder, clock) {
+    KeyHashHelper keyHashHelper) : base(options, loggerFactory, encoder, clock) {
     this._dbConfiguration = dbConfiguration;
     this._securityConfiguration = securityConfiguration;
     this._loggerFactory = loggerFactory;
     this._keyHashHelper = keyHashHelper;
-    this._httpContextAccessor = httpContextAccessor;
   }
 
   protected override async Task<AuthenticateResult> HandleAuthenticateAsync() {
@@ -82,8 +78,7 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<AuthenticationS
       new ApiKeyDataHelper(
         this._securityConfiguration,
         repository,
-        this._loggerFactory.CreateLogger<ApiKeyDataHelper>(),
-        this._httpContextAccessor
+        this._loggerFactory.CreateLogger<ApiKeyDataHelper>()
       );
     // Use a single shared transaction for reading and updating ApiKeys
     // Check if header's API key is an existing API key

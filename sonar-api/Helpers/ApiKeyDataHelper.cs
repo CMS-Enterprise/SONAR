@@ -5,7 +5,6 @@ using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -15,18 +14,15 @@ public class ApiKeyDataHelper {
   private readonly IApiKeyRepository _apiKeyRepository;
   private readonly IOptions<SecurityConfiguration> _configuration;
   private readonly ILogger<ApiKeyDataHelper> _logger;
-  private readonly IHttpContextAccessor _httpContextAccessor;
 
   public ApiKeyDataHelper(
     IOptions<SecurityConfiguration> configuration,
     IApiKeyRepository apiKeyRepository,
-    ILogger<ApiKeyDataHelper> logger,
-    IHttpContextAccessor httpContextAccessor) {
+    ILogger<ApiKeyDataHelper> logger) {
 
     this._apiKeyRepository = apiKeyRepository;
     this._configuration = configuration;
     this._logger = logger;
-    this._httpContextAccessor = httpContextAccessor;
   }
 
   public async Task<ApiKey?> TryMatchApiKeyAsync(String headerApiKey, CancellationToken cancellationToken) {
@@ -50,19 +46,13 @@ public class ApiKeyDataHelper {
     if (apiKey is not null) {
       this._logger.LogWarning(
         "Usage of valid API key with deprecated API key header format: " +
-        "ApiKeyId={ApiKeyId}, EnvironmentId={EnvironmentId}, TenantId={TenantId}, " +
-        "RequestMethod={RequestMethod}, RequestPath={RequestPath}",
+        "ApiKeyId={ApiKeyId}, EnvironmentId={EnvironmentId}, TenantId={TenantId}",
         apiKey.Id,
         apiKey.EnvironmentId,
-        apiKey.TenantId,
-        this._httpContextAccessor.HttpContext?.Request.Method,
-        this._httpContextAccessor.HttpContext?.Request.Path);
+        apiKey.TenantId);
     } else {
       this._logger.LogWarning(
-        "Usage of invalid API key with deprecated API key header format: " +
-        "RequestMethod={RequestMethod}, RequestPath={RequestPath}",
-        this._httpContextAccessor.HttpContext?.Request.Method,
-        this._httpContextAccessor.HttpContext?.Request.Path);
+        "Usage of invalid API key with deprecated API key header format!");
     }
 
     return apiKey;
