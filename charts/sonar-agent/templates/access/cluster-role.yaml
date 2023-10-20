@@ -7,7 +7,7 @@ rules:
   - apiGroups: [""]
     resources: [ "namespaces", "configmaps" ]
     verbs: [ "get", "watch", "list" ]
-  {{ - if .Values.clusterRole.additionalRules }}
+  {{- if .Values.clusterRole.additionalRules }}
 {{ .Values.clusterRole.additionalRules | toYaml | indent 2 }}
-  {{ - end }}
+  {{- end }}
 {{- end }}
