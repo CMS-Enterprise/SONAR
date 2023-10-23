@@ -1,12 +1,14 @@
 import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { crumbStyle } from './Breadcrumbs.Style'
+import { crumbStyle, crumbDelimiterStyle } from './Breadcrumbs.Style'
 import { BreadcrumbContext } from './BreadcrumbContext';
+import ErrorReportsCount from 'components/ErrorReports/ErrorReportsCount';
 
 const Breadcrumbs: React.FC = () => {
   const breadcrumbContext = useContext(BreadcrumbContext);
-  const location = useLocation();
+  const errorReportsCount = breadcrumbContext?.errorReportsCount ?? 0;
 
+  const location = useLocation();
   const pageIsErrorReports = location.pathname.includes('error-reports');
 
   const hierarchyPath = location.pathname.includes('environments') ?
@@ -21,7 +23,7 @@ const Breadcrumbs: React.FC = () => {
   const serviceCrumbs = hierarchyPath.split(`/`)
     .filter(crumb => (crumb !== ''))
     .map((crumb, index, array) => {
-      const displayName = breadcrumbContext ? breadcrumbContext.serviceHierarchyConfiguration.services.filter(svc => crumb === svc.name)
+      const displayName = breadcrumbContext ? breadcrumbContext.serviceHierarchyConfiguration?.services.filter(svc => crumb === svc.name)
         .map(svc => {
           return svc.displayName
         }) : null
@@ -43,9 +45,17 @@ const Breadcrumbs: React.FC = () => {
 
   return (
     <div css={crumbStyle}>
-      <Link to={'/'}>Environments</Link>
-      {serviceCrumbs}
-      { pageIsErrorReports ? ' / Error Reports' : null}
+      <span css={crumbDelimiterStyle}>
+        <Link to={'/'}>Environments</Link>
+        {serviceCrumbs}
+      </span>
+      { pageIsErrorReports ?
+        ' / Error Reports' :
+        <ErrorReportsCount
+          errorReportsPath={location.pathname}
+          errorReportsCount={errorReportsCount}
+        />
+      }
     </div>
   )
 };

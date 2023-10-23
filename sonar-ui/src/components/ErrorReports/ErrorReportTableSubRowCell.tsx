@@ -1,6 +1,6 @@
 import { TableCell, TableRow } from '@cmsgov/design-system';
 import React from 'react';
-import { buttonCellStyle } from './ErrorReportsCell.Style';
+import { buttonCellStyle, subRowCellDetailStyle } from './ErrorReportsCell.Style';
 
 const ErrorReportTableSubRowCell: React.FC<{
   cellDescription: string,
@@ -12,7 +12,7 @@ const ErrorReportTableSubRowCell: React.FC<{
       <TableCell>
         {cellDescription}
       </TableCell>
-      <TableCell colSpan={3}>
+      <TableCell colSpan={3} css={subRowCellDetailStyle}>
         {cellDetail}
       </TableCell>
     </TableRow>

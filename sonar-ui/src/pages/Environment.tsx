@@ -5,17 +5,22 @@ import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { EnvironmentItemContainerStyle, getEnvironmentStatusStyle} from '../components/Environments/EnvironmentItem.Style';
 import { useGetTenants } from '../components/Environments/Environments.Hooks';
+import { useListErrorReports } from 'components/ErrorReports/ErrorReports.Hooks';
 import TenantItem from '../components/Environments/Tenant/TenantItem';
 import Breadcrumbs from '../components/Services/Breadcrumbs/Breadcrumbs';
+import { BreadcrumbContext } from 'components/Services/Breadcrumbs/BreadcrumbContext';
 
 const Environment = () => {
   const params = useParams();
   const environmentName = params.environment as string;
   const theme = useTheme();
-  const { isLoading, data } = useGetTenants(true);
+  const { isLoading, data: tenantsData } = useGetTenants(true);
   const memoizedStyle = useMemo(() =>
       getEnvironmentStatusStyle(theme),
     [theme]);
+
+  const { data: errorReportsData } = useListErrorReports(environmentName);
+  const errorReportsCount = errorReportsData?.length ?? 0;
 
   return(
       <div
@@ -25,12 +30,17 @@ const Environment = () => {
       >
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>
-          <Breadcrumbs/>
+          <BreadcrumbContext.Provider value={{
+            serviceHierarchyConfiguration: null,
+            errorReportsCount: errorReportsCount
+          }}>
+            <Breadcrumbs/>
+          </BreadcrumbContext.Provider>
         </div>
 
         {
           isLoading ? (<Spinner />) :
-            data?.filter(t=> t.environmentName === environmentName)
+            tenantsData?.filter(t=> t.environmentName === environmentName)
               .map(t =>
                 <div key={t.tenantName}>
                   <Accordion bordered css={memoizedStyle}>

@@ -26,13 +26,10 @@ const ErrorReportsForTenant = () => {
     false;
 
   const [searchParams] = useSearchParams();
-  const queryStart = searchParams.get('start');
-  const queryEnd = searchParams.get('end');
-
   const query = {
-    serviceName: serviceName.length > 0 ? serviceName : undefined,
-    start: queryStart ? queryStart : undefined,
-    end: queryEnd ? queryEnd : undefined
+    serviceName: serviceName,
+    start: searchParams.get('start') ?? undefined,
+    end: searchParams.get('end') ?? undefined
   };
 
   const { isLoading, data } = useListErrorReportsForTenant(environmentName, tenantName, query);
@@ -44,7 +41,8 @@ const ErrorReportsForTenant = () => {
         { (serviceName.length > 0) ? (
             serviceIsValid ? (
                 <BreadcrumbContext.Provider value={{
-                  serviceHierarchyConfiguration: hierarchyConfigQuery.data!
+                  serviceHierarchyConfiguration: hierarchyConfigQuery.data!,
+                  errorReportsCount: errorReports.length
                 }}>
                   <Breadcrumbs/>
                 </BreadcrumbContext.Provider>) :

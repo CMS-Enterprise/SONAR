@@ -15,13 +15,9 @@ const ErrorReports = () => {
   const environmentName = params.environment as string;
 
   const [searchParams] = useSearchParams();
-  const queryStart = searchParams.get('start');
-  const queryEnd = searchParams.get('end');
-
   const query = {
-    serviceName: undefined,
-    start: queryStart ? queryStart : undefined,
-    end: queryEnd ? queryEnd : undefined
+    start: searchParams.get('start') ?? undefined,
+    end: searchParams.get('end') ?? undefined
   };
 
   const { isLoading, data } = useListErrorReports(environmentName, query);

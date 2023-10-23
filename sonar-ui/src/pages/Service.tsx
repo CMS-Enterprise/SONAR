@@ -9,6 +9,7 @@ import { StatusHistoryView } from 'interfaces/global_interfaces';
 import React, { useEffect, useState } from 'react';
 import { useQuery } from 'react-query';
 import { useParams } from 'react-router-dom';
+import { useListErrorReportsForTenant } from 'components/ErrorReports/ErrorReports.Hooks';
 import Breadcrumbs from '../components/Services/Breadcrumbs/Breadcrumbs';
 import { BreadcrumbContext } from 'components/Services/Breadcrumbs/BreadcrumbContext';
 import StatusHistoryDrawer from '../components/Services/StatusHistory/StatusHistoryDrawer';
@@ -30,6 +31,11 @@ const Service = () => {
   const servicePath = params['*'] || '';
   const serviceList = servicePath.split('/');
   const { currentServiceIsRoot, serviceName } = getServiceRootStatusAndName(servicePath);
+
+  const query = { serviceName: serviceName };
+  const { data: errorReportsData } =
+    useListErrorReportsForTenant(environmentName, tenantName, query);
+  const errorReportsCount = errorReportsData?.length ?? 0;
 
   const [showDrawer, setShowDrawer] = useState(false);
   const [selectedTileId, setSelectedTileId] = useState<string>('');
@@ -130,7 +136,8 @@ const Service = () => {
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>
           <BreadcrumbContext.Provider value={{
-            serviceHierarchyConfiguration: hierarchyConfigQuery.data
+            serviceHierarchyConfiguration: hierarchyConfigQuery.data,
+            errorReportsCount: errorReportsCount
           }}>
             <Breadcrumbs/>
           </BreadcrumbContext.Provider>

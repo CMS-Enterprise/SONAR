@@ -13,7 +13,10 @@ export function getBreadcrumbsStyle(theme: Theme) {
 export const crumbStyle = css({
   fontSize: 20,
   fontWeight: 400,
-  marginBottom: 20,
+  marginBottom: 20
+})
+
+export const crumbDelimiterStyle = css({
   "> :not(:first-of-type):before": {
     content: '"/"',
     marginLeft: 5,

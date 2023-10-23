@@ -9,14 +9,20 @@ import {
 } from '../components/Environments/EnvironmentItem.Style';
 import { useGetTenants } from '../components/Environments/Environments.Hooks';
 import TenantItem from '../components/Environments/Tenant/TenantItem';
+import { useListErrorReportsForTenant } from 'components/ErrorReports/ErrorReports.Hooks';
 import Breadcrumbs from '../components/Services/Breadcrumbs/Breadcrumbs';
+import { BreadcrumbContext } from 'components/Services/Breadcrumbs/BreadcrumbContext';
 
 const Tenant = () => {
   const params = useParams();
   const environmentName = params.environment as string;
   const tenantName = params.tenant as string;
   const theme = useTheme();
-  const { isLoading, data } = useGetTenants(true);
+  const { isLoading, data: tenantsData } = useGetTenants(true);
+
+  const { data: errorReportsData } =
+    useListErrorReportsForTenant(environmentName, tenantName);
+  const errorReportsCount = errorReportsData?.length ?? 0;
 
   const memoizedStyle = useMemo(() =>
       getEnvironmentStatusStyle(theme),
@@ -29,12 +35,17 @@ const Tenant = () => {
       data-test="env-view-accordion">
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-        <Breadcrumbs />
+        <BreadcrumbContext.Provider value={{
+          serviceHierarchyConfiguration: null,
+          errorReportsCount: errorReportsCount
+        }}>
+          <Breadcrumbs />
+        </BreadcrumbContext.Provider>
       </div>
 
       {
         isLoading ? (<Spinner />) :
-          data?.filter(t => (t.environmentName === environmentName) && (t.tenantName === tenantName))
+          tenantsData?.filter(t => (t.environmentName === environmentName) && (t.tenantName === tenantName))
             .map(t =>
               <div key={t.tenantName}>
                 <Accordion bordered css={memoizedStyle}>
