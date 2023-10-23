@@ -31,6 +31,10 @@ public class TenantController : ControllerBase {
     this._environmentDataHelper = environmentDataHelper;
   }
 
+  /// <summary>
+  ///   Fetch tenant health. Query parameters may be supplied to query by environment and/or tenant. This endpoint
+  ///   will return all tenants for all environments if query params aren't supplied.
+  /// </summary>
   [HttpGet(Name = "GetTenants")]
   [ProducesResponseType(typeof(TenantInfo[]), statusCode: 200)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]

@@ -73,6 +73,9 @@ public class EnvironmentController : ControllerBase {
     );
   }
 
+  /// <summary>
+  ///   Fetch a list of all environments and their current sonar aggregate health status.
+  /// </summary>
   [HttpGet(Name = "GetEnvironments")]
   [ProducesResponseType(typeof(EnvironmentHealth[]), statusCode: 200)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
@@ -90,6 +93,11 @@ public class EnvironmentController : ControllerBase {
     return this.Ok(environmentList);
   }
 
+  /// <summary>
+  ///   Fetch a single environment's current sonar aggregate health status.
+  /// </summary>
+  /// <param name="environment">Environment name that the user is querying.</param>
+  /// <param name="cancellationToken"></param>
   [HttpGet("{environment}", Name = "GetEnvironment")]
   [ProducesResponseType(typeof(EnvironmentHealth), statusCode: 200)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]

@@ -44,7 +44,8 @@ public class ApiKeyController : ControllerBase {
   }
 
   /// <summary>
-  ///   Creates and records configuration for new API key.
+  ///   Creates and records configuration for new API key. The user performing this request must have sufficient
+  ///   permissions to the requested environment/tenant.
   /// </summary>
   /// <param name="apiKeyDetails">The API key type and, if they exist, environment and tenant.</param>
   /// <param name="cancellationToken"></param>

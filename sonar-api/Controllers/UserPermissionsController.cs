@@ -31,7 +31,8 @@ public class UserPermissionsController : ControllerBase {
   }
 
   /// <summary>
-  ///   Create a user permission.
+  ///   Create a user permission. The user performing the request must have sufficient permissions
+  ///   to the requested environment/tenant.
   /// </summary>
   /// <param name="permissionDetails">Add permission for specified user(email)</param>
   /// <param name="cancellationToken"></param>
