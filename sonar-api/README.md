@@ -8,7 +8,17 @@ Launch profiles configure how dotnet starts the project when using `dotnet run` 
 dotnet run --launch-profile production
 ```
 
-Additional shared launch profiles may be configured in [`launcSettings.json`](sonar-api/Properties/launchSettings.json)
+Additional shared launch profiles may be configured in [`launchSettings.json`](sonar-api/Properties/launchSettings.json)
+
+## Overriding Launch Profiles
+
+If you want to run `sonar-api` with a particular `appsettings.{environment}.json` file without modifying launchSettings.json, you can use a command line like this:
+
+```
+ASPNETCORE_ENVIRONMENT=Personal dotnet run --no-launch-profile -- serve
+```
+
+Which will ignore `launchSettings.json` and use the specified environment name instead.
 
 ## Live Reloading
 
