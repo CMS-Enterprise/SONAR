@@ -408,8 +408,8 @@ internal class Program {
         null
       ));
 
-      disposables.Add(kubeClient);
       disposables.Add(k8sWatcher);
+      disposables.Add(kubeClient);
 
       k8sWatcher.TenantCreated += (sender, args) => {
         tasks.Add((
