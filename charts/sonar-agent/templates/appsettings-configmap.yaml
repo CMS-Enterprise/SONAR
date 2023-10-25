@@ -5,6 +5,11 @@ metadata:
 data:
   appsettings.k8s.json: |
     {
+      "Logging": {
+        "LogLevel": {
+          "Cms.BatCave.Sonar": "Debug"
+        }
+      },
       "ApiConfig": {
         "Environment": {{ quote .Values.apiConfig.environment }},
         "BaseUrl": {{ quote .Values.apiConfig.baseUrl }},

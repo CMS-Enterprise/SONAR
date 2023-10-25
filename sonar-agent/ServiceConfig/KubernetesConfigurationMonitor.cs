@@ -2,8 +2,8 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
@@ -91,7 +91,21 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
   }
 
   private void OnErrorNamespace(Exception error) {
-    this._logger.LogError("Namespace watcher - error: {ErrorMsg}", error);
+    switch (error, error.InnerException) {
+      case (HttpRequestException, EndOfStreamException):
+        // This error scenario happens when watching an empty set of K8s objects (e.g. if no namespaces have the sonar
+        // monitoring label). When this happens we get an error event (this callback), as well as a closed event;
+        // we don't need to do anything here besides log the error, because the onClosed callback will automatically
+        // re-connect (and we'll probably see this again).
+        var eosDebugMessage =
+          $"Namespace watcher - encountered {typeof(HttpRequestException)} caused by {typeof(EndOfStreamException)}; " +
+          $"this is expected when the set of K8s objects being watched is empty.";
+        this._logger.LogDebug(error, eosDebugMessage);
+        break;
+      default:
+        this._logger.LogError(error, "Namespace watcher - unexpected error: {errorMessage}", error.Message);
+        break;
+    }
   }
 
   private record WatcherEventToken(
@@ -207,7 +221,21 @@ public sealed class KubernetesConfigurationMonitor : IDisposable {
   }
 
   private void OnErrorConfigMap(Exception error) {
-    this._logger.LogError("ConfigMap watcher - error: {ErrorMsg}", error);
+    switch (error, error.InnerException) {
+      case (HttpRequestException, EndOfStreamException):
+        // This error scenario happens when watching an empty set of K8s objects (e.g. if no configmaps have the sonar
+        // config label). When this happens we get an error event (this callback), as well as a closed event;
+        // we don't need to do anything here besides log the error, because the onClosed callback will automatically
+        // re-connect (and we'll probably see this again).
+        var eosDebugMessage =
+          $"ConfigMap watcher - encountered {typeof(HttpRequestException)} caused by {typeof(EndOfStreamException)}; " +
+          $"this is expected when the set of K8s objects being watched is empty.";
+        this._logger.LogDebug(error, eosDebugMessage);
+        break;
+      default:
+        this._logger.LogError(error, "ConfigMap watcher - unexpected error: {errorMessage}", error.Message);
+        break;
+    }
   }
 
   private async void OnEventConfigMap(WatchEventType eventType, V1ConfigMap resource) {

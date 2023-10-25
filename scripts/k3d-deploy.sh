@@ -82,7 +82,7 @@ function checkArguments() {
   fi
 }
 function checkHosts() {
-  if grep -xq "127.0.0.1 ${SONAR_REGISTRY_NAME}" /etc/hosts; then
+  if grep -Exq "127.0.0.1\s+${SONAR_REGISTRY_NAME}" /etc/hosts; then
     echo ${SONAR_REGISTRY_NAME} found in /etc/hosts.
   else
     echo ${SONAR_REGISTRY_NAME} not found in /etc/hosts. Please add \"127.0.0.1 ${SONAR_REGISTRY_NAME}\" to /etc/hosts
