@@ -3,7 +3,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ServiceHierarchyInfo, TenantInfo } from 'api/data-contracts';
 import HealthStatusBadge from '../../Badges/HealthStatusBadge';
-import { getBadgeSpanStyle } from '../../Badges/HealthStatusBadge.Style';
+import { getBadgeSpanNoLinkStyle, getBadgeSpanStyle } from '../../Badges/HealthStatusBadge.Style';
 import VersionInfo from '../../Common/VersionInfo';
 import { getTenantItemStyle } from './TenantItem.Style';
 
@@ -47,8 +47,8 @@ function renderServiceList(theme: Theme, tenant: TenantInfo, flattenServices?: b
               </Link>
             </span>
             {
-              service.versions && service.versions.length &&
-              <span css={getBadgeSpanStyle(theme)} data-test="env-view-tenant">
+              service.versions && Object.getOwnPropertyNames(service.versions).length &&
+              <span css={getBadgeSpanNoLinkStyle(theme)} data-test="env-view-tenant">
                 <VersionInfo versions={service.versions} />
               </span>
             }
@@ -73,8 +73,8 @@ function renderServiceList(theme: Theme, tenant: TenantInfo, flattenServices?: b
               </Link>
             </span>
             {
-              svc.versions && svc.versions.length &&
-              <span css={getBadgeSpanStyle(theme)} data-test="env-view-tenant">
+              svc.versions && Object.getOwnPropertyNames(svc.versions).length &&
+              <span css={getBadgeSpanNoLinkStyle(theme)}>
                 <VersionInfo versions={svc.versions} />
               </span>
             }
