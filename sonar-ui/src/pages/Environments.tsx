@@ -3,16 +3,40 @@ import EnvironmentItem from 'components/Environments/EnvironmentItem';
 import * as React from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import AccordionToggleAllButton from 'components/Environments/AccordionToggleAllButton';
+import { EnvironmentHealth } from '../api/data-contracts';
 import ThemedFab from '../components/Common/ThemedFab';
 import ThemedModalDialog from '../components/Common/ThemedModalDialog';
 import CreateEnvironmentForm from '../components/Environments/CreateEnvironmentForm';
+import EnvironmentFilterBar from '../components/Environments/EnvironmentFilterBar';
 import { useGetEnvironments } from '../components/Environments/Environments.Hooks';
+import {useSearchParams} from 'react-router-dom';
 
 const Environments = () => {
   const [createEnvOpen, setCreateEnvOpen] = useState(false);
   const [allPanelsOpen, setAllPanelsOpen] = useState<boolean>(true);
   const [openPanels, setOpenPanels] = useState<string[]>([]);
   const { isLoading, data } = useGetEnvironments();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [filter, setFilter] = useState(searchParams.get("environmentName") ?? "");
+  const [filteredEnvs, setFilteredEnvs] = useState<EnvironmentHealth[]>([]);
+
+  // useEffect triggered by user input for filter. Will perform filtering on every keystroke
+  // and update search params.
+  useEffect(() => {
+    if (filter !== "" && data) {
+      // split query by space, every element in query should be present in result set.
+      const filterArr = filter.split(" ");
+      setFilteredEnvs(data.filter(e =>
+        filterArr.every(q =>
+          e.environmentName.includes(q)
+        ))
+      );
+      setSearchParams({environmentName: filter});
+    } else {
+      setFilteredEnvs(data ? data : []);
+      setSearchParams({});
+    }
+  }, [data, filter, setSearchParams])
 
   const updateOpenPanels = useCallback(() => {
     if (data) {
@@ -50,11 +74,15 @@ const Environments = () => {
 
   return (
     <section className="ds-l-container">
-      <AccordionToggleAllButton allPanelsOpen={allPanelsOpen} handleToggle={handleToggleAll}>
-      </AccordionToggleAllButton>
+      <EnvironmentFilterBar setFilter={setFilter} filter={filter} />
+
+      {(filteredEnvs.length > 0 && (data && data?.length > 0)) ? (
+        <AccordionToggleAllButton allPanelsOpen={allPanelsOpen} handleToggle={handleToggleAll} />
+      ) : null}
+
       <div className="ds-l-row">
         {isLoading ? (<Spinner />) :
-          data?.map(e => (
+          filteredEnvs.map(e => (
             <EnvironmentItem
               key={e.environmentName}
               environment={e}
