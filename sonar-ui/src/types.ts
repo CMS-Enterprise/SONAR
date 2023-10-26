@@ -17,8 +17,10 @@ export interface IHealthCheckCondition {
 export interface IHealthCheckHttpCondition {
   statusCodes?: number[],
   responseTime?: string,
+  path?: string,
+  value?: string,
+  noMatchStatus?: string
 
   status: string,
   type?: string
-
 }

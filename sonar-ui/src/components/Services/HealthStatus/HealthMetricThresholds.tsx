@@ -5,9 +5,10 @@ import {
   ServiceConfiguration,
 } from 'api/data-contracts';
 import { getOperatorPunctuation } from 'helpers/ServiceHierarchyHelper';
-import { IHealthCheckCondition, IHealthCheckDefinition, IHealthCheckHttpCondition } from 'types';
+import { IHealthCheckCondition, IHealthCheckDefinition } from 'types';
 import { DynamicTextFontStyle } from 'App.Style'
 import ExternalLinkIcon from 'components/Icons/ExternalLinkIcon';
+import { HttpHealthCheckConditionsList } from './HealthCheckConditionsList';
 
 const HealthMetricThresholds: React.FC<{
   service: ServiceConfiguration,
@@ -30,16 +31,7 @@ const HealthMetricThresholds: React.FC<{
               </p>
             )}
 
-            {definition?.conditions.map((c: IHealthCheckHttpCondition, index: number) =>
-              <div key={healthCheck.name + '-httpCondition-' + index}>
-                {c.type === 'HttpStatusCode' &&
-                  <span><b>{c.status}</b>: {c.type} in [{(index ? ', ' : '') + c.statusCodes}] </span>
-                }
-                {c.type === 'HttpResponseTime' &&
-                  <span><b>{c.status}</b>: {c.type} {'>'} {c.responseTime} </span>
-                }
-              </div>
-            )}
+            <HttpHealthCheckConditionsList conditions={definition?.conditions}/>
           </div>
         )
       case HealthCheckType.LokiMetric:
@@ -66,7 +58,6 @@ const HealthMetricThresholds: React.FC<{
         break;
     }
   }
-
 
   return (
     <div>
