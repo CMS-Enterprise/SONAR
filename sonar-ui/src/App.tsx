@@ -4,6 +4,8 @@ import { ThemeProvider } from '@emotion/react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { Security, LoginCallback } from '@okta/okta-react';
 import { mainStyle } from './App.Style';
+import AlertContextProvider from './components/App/AlertContextProvider';
+import AppAlertBanner from './components/App/AppAlertBanner';
 import Header from './components/App/Header';
 import Environment from './pages/Environment';
 import ApiKeys from './pages/ApiKeys';
@@ -35,32 +37,36 @@ function App() {
     <ThemeProvider theme={enableDarkTheme ? DarkTheme : LightTheme}>
       <Security oktaAuth={oktaAuth} restoreOriginalUri={restoreOriginalUri}>
         <AppContextProvider>
-          <main css={mainStyle} data-test="app-main">
-            <Header enableDarkTheme={enableDarkTheme} setEnableDarkTheme={setEnableDarkTheme} />
-            <Routes>
-              <Route path="/" element={<Environments />} />
-              <Route path="/:environment" element={<Environment />} />
-              <Route path="/:environment/tenants/:tenant" element={<Tenant />} />
-              <Route path="/:environment/tenants/:tenant/services/*" element={<Service />} />
-              <Route path="/login/callback" element={<LoginCallback />} />
-              <Route path="/api-keys" element={<ProtectedRoute />}>
-                <Route path="" element={<ApiKeys />} />
-              </Route>
-              <Route path="/user-permissions" element={<ProtectedRoute />}>
-                <Route path="" element={<UserPermissions />}>
-                  <Route index={true} element={<EnvironmentUsersTable />} />
-                  <Route path="environments/:environmentName" element={<UserPermissionsTable />}>
-                    <Route path=":permissionId/delete" element={<DeletePermissionModal />}/>
+          <AlertContextProvider>
+            <main css={mainStyle} data-test="app-main">
+              <AppAlertBanner />
+              <Header enableDarkTheme={enableDarkTheme} setEnableDarkTheme={setEnableDarkTheme} />
+
+              <Routes>
+                <Route path="/" element={<Environments />} />
+                <Route path="/:environment" element={<Environment />} />
+                <Route path="/:environment/tenants/:tenant" element={<Tenant />} />
+                <Route path="/:environment/tenants/:tenant/services/*" element={<Service />} />
+                <Route path="/login/callback" element={<LoginCallback />} />
+                <Route path="/api-keys" element={<ProtectedRoute />}>
+                  <Route path="" element={<ApiKeys />} />
+                </Route>
+                <Route path="/user-permissions" element={<ProtectedRoute />}>
+                  <Route path="" element={<UserPermissions />}>
+                    <Route index={true} element={<EnvironmentUsersTable />} />
+                    <Route path="environments/:environmentName" element={<UserPermissionsTable />}>
+                      <Route path=":permissionId/delete" element={<DeletePermissionModal />}/>
+                    </Route>
                   </Route>
                 </Route>
-              </Route>
-              <Route path="/error-reports" element={<ProtectedRoute />}>
-                <Route path="environments/:environment" element={<ErrorReports />}/>
-                <Route path="environments/:environment/tenants/:tenant" element={<ErrorReportsForTenant />}/>
-                <Route path="environments/:environment/tenants/:tenant/services/*" element={<ErrorReportsForTenant />}/>
-              </Route>
-            </Routes>
-          </main>
+                <Route path="/error-reports" element={<ProtectedRoute />}>
+                  <Route path="environments/:environment" element={<ErrorReports />}/>
+                  <Route path="environments/:environment/tenants/:tenant" element={<ErrorReportsForTenant />}/>
+                  <Route path="environments/:environment/tenants/:tenant/services/*" element={<ErrorReportsForTenant />}/>
+                </Route>
+              </Routes>
+            </main>
+          </AlertContextProvider>
         </AppContextProvider>
       </Security>
     </ThemeProvider>
