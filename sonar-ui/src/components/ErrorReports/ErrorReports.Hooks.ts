@@ -3,7 +3,7 @@ import {
   AgentErrorLevel,
   AgentErrorType
 } from '../../api/data-contracts';
-import { useSonarApi } from '../AppContext/AppContextProvider';
+import { useSonarApi, useUserContext } from '../AppContext/AppContextProvider';
 
 export enum QueryKeys {
   GetErrorReports = 'errorReports',
@@ -22,6 +22,9 @@ export const useListErrorReports = (
   } | undefined
 ) => {
   const sonarClient = useSonarApi();
+  const { userIsAuthenticated, userInfo } = useUserContext();
+  const okToSendRequest = (userIsAuthenticated && userInfo?.isAdmin) ?? false;
+
   return  useQuery({
     queryKey: [
       QueryKeys.GetErrorReports,
@@ -32,7 +35,8 @@ export const useListErrorReports = (
     queryFn: () => sonarClient.listErrorReports(environment, query)
       .then((res) => {
         return res.data;
-      })
+      }),
+    enabled: okToSendRequest
   });
 }
 
@@ -49,6 +53,9 @@ export const useListErrorReportsForTenant = (
   } | undefined
 ) => {
   const sonarClient = useSonarApi();
+  const { userIsAuthenticated, userInfo } = useUserContext();
+  const okToSendRequest = (userIsAuthenticated && userInfo?.isAdmin) ?? false;
+
   return  useQuery({
     queryKey: [
       QueryKeys.GetErrorReports,
@@ -60,6 +67,7 @@ export const useListErrorReportsForTenant = (
     queryFn: () => sonarClient.listErrorReportsForTenant(environment, tenant, query)
       .then((res) => {
         return res.data;
-      })
+      }),
+    enabled: okToSendRequest
   });
 }
