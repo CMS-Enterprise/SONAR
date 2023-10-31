@@ -38,13 +38,14 @@ import { ContentType, HttpClient, RequestParams } from "./http-client";
 
 export class Api<SecurityDataType = unknown> extends HttpClient<SecurityDataType> {
   /**
-   * No description
-   *
-   * @tags ApiKey
-   * @name V2KeysCreate
-   * @summary Creates and records configuration for new API key.
-   * @request POST:/api/v2/keys
-   */
+ * No description
+ *
+ * @tags ApiKey
+ * @name V2KeysCreate
+ * @summary Creates and records configuration for new API key. The user performing this request must have sufficient
+permissions to the requested environment/tenant.
+ * @request POST:/api/v2/keys
+ */
   v2KeysCreate = (data: ApiKeyDetails, params: RequestParams = {}) =>
     this.request<ApiKeyConfiguration, ProblemDetails>({
       path: `/api/v2/keys`,
@@ -176,6 +177,7 @@ export class Api<SecurityDataType = unknown> extends HttpClient<SecurityDataType
    *
    * @tags Environment
    * @name GetEnvironments
+   * @summary Fetch a list of all environments and their current sonar aggregate health status.
    * @request GET:/api/v2/environments
    */
   getEnvironments = (params: RequestParams = {}) =>
@@ -190,6 +192,7 @@ export class Api<SecurityDataType = unknown> extends HttpClient<SecurityDataType
    *
    * @tags Environment
    * @name GetEnvironment
+   * @summary Fetch a single environment's current sonar aggregate health status.
    * @request GET:/api/v2/environments/{environment}
    */
   getEnvironment = (environment: string, params: RequestParams = {}) =>
@@ -514,12 +517,14 @@ tenant, service, and health check in Prometheus. Filters out samples outside of 
       ...params,
     });
   /**
-   * No description
-   *
-   * @tags Tenant
-   * @name GetTenants
-   * @request GET:/api/v2/tenants
-   */
+ * No description
+ *
+ * @tags Tenant
+ * @name GetTenants
+ * @summary Fetch tenant health. Query parameters may be supplied to query by environment and/or tenant. This endpoint
+will return all tenants for all environments if query params aren't supplied.
+ * @request GET:/api/v2/tenants
+ */
   getTenants = (
     query?: {
       /** @default "" */
@@ -606,13 +611,14 @@ tenant, service, and health check in Prometheus. Filters out samples outside of 
       ...params,
     });
   /**
-   * No description
-   *
-   * @tags UserPermissions
-   * @name V2PermissionsCreate
-   * @summary Create a user permission.
-   * @request POST:/api/v2/permissions
-   */
+ * No description
+ *
+ * @tags UserPermissions
+ * @name V2PermissionsCreate
+ * @summary Create a user permission. The user performing the request must have sufficient permissions
+to the requested environment/tenant.
+ * @request POST:/api/v2/permissions
+ */
   v2PermissionsCreate = (data: PermissionDetails, params: RequestParams = {}) =>
     this.request<void, ProblemDetails>({
       path: `/api/v2/permissions`,

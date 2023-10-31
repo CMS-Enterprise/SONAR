@@ -2,6 +2,7 @@ import { Spinner } from '@cmsgov/design-system';
 import EnvironmentItem from 'components/Environments/EnvironmentItem';
 import * as React from 'react';
 import { useCallback, useEffect, useState } from 'react';
+import { useUserContext } from 'components/AppContext/AppContextProvider';
 import AccordionToggleAllButton from 'components/Environments/AccordionToggleAllButton';
 import { EnvironmentHealth } from '../api/data-contracts';
 import ThemedFab from '../components/Common/ThemedFab';
@@ -19,6 +20,7 @@ const Environments = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [filter, setFilter] = useState(searchParams.get("environmentName") ?? "");
   const [filteredEnvs, setFilteredEnvs] = useState<EnvironmentHealth[]>([]);
+  const { userIsAuthenticated, userInfo } = useUserContext();
 
   // useEffect triggered by user input for filter. Will perform filtering on every keystroke
   // and update search params.
@@ -91,7 +93,10 @@ const Environments = () => {
             />
         ))}
       </div>
-      <ThemedFab action={handleModalToggle} />
+      { (userIsAuthenticated && userInfo?.isAdmin) ?
+        <span title='Create New Environment'>
+          <ThemedFab action={handleModalToggle} />
+        </span> : null}
       {createEnvOpen ? (
         <ThemedModalDialog
           heading={'Add Environment'}
