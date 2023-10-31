@@ -28,7 +28,8 @@ const CreateKeyForm: React.FC<{
   const [submitDisabled, setSubmitDisabled] = useState(true);
   const [createdKeyId, setCreatedKeyId] = useState("");
   const [createdKeyVal, setCreatedKeyVal] = useState("");
-  const [copied, setCopied] = useState(false);
+  const [copiedAPiKeyId, setCopiedApiKeyId] = useState(false);
+  const [copiedApiKeySecret, setCopiedApiKeySecret] = useState(false);
   const [alertHeading, setAlertHeading] = useState("All fields are required");
   const [alertText, setAlertText] = useState("Set all fields to add a new user permission.");
   const [keyCreated, setKeyCreated] = useState(false);
@@ -143,6 +144,15 @@ const CreateKeyForm: React.FC<{
                 disabled
                 value={createdKeyId}
               />
+              <PrimaryActionButton
+                onClick={() => {
+                  navigator.clipboard.writeText(createdKeyId);
+                  setCopiedApiKeyId(true)
+                }}
+                size="small"
+              >
+                {copiedAPiKeyId ? "Copied" : "Copy"}
+              </PrimaryActionButton>
             </div>
           </div>
           <div className="ds-l-row ds-u-align-items--end">
@@ -158,11 +168,11 @@ const CreateKeyForm: React.FC<{
               <PrimaryActionButton
                 onClick={() => {
                   navigator.clipboard.writeText(createdKeyVal);
-                  setCopied(true)
+                  setCopiedApiKeySecret(true)
                 }}
                 size="small"
               >
-                {copied ? "Copied" : "Copy"}
+                {copiedApiKeySecret ? "Copied" : "Copy"}
               </PrimaryActionButton>
             </div>
           </div>
