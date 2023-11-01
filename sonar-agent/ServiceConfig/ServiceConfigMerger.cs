@@ -61,7 +61,8 @@ public static class ServiceConfigMerger {
     // Merge Root Services
     return new ServiceHierarchyConfiguration(
       serviceResults,
-      NullableSetUnion(prev.RootServices, next.RootServices) ?? ImmutableHashSet<String>.Empty
+      NullableSetUnion(prev.RootServices, next.RootServices) ?? ImmutableHashSet<String>.Empty,
+      null
     );
   }
 

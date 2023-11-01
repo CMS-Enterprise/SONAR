@@ -182,6 +182,7 @@ public class VersionCheckHelperUnitTest {
           name: "Service_3",
           displayName: "Service_3")
       }.ToImmutableList(),
-      rootServices: new HashSet<String> { }.ToImmutableHashSet());
+      rootServices: new HashSet<String> { }.ToImmutableHashSet(),
+      tags: null);
   }
 }

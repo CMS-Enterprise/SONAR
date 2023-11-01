@@ -8,14 +8,16 @@ namespace Cms.BatCave.Sonar.Models;
 
 public record ServiceHierarchyConfiguration : IValidatableObject {
   public static readonly ServiceHierarchyConfiguration Empty =
-    new ServiceHierarchyConfiguration(ImmutableList<ServiceConfiguration>.Empty, ImmutableHashSet<String>.Empty);
+    new ServiceHierarchyConfiguration(ImmutableList<ServiceConfiguration>.Empty, ImmutableHashSet<String>.Empty, null);
 
   public ServiceHierarchyConfiguration(
     IImmutableList<ServiceConfiguration> services,
-    IImmutableSet<String> rootServices) {
+    IImmutableSet<String> rootServices,
+    IImmutableDictionary<String, String?>? tags) {
 
     this.Services = services;
     this.RootServices = rootServices;
+    this.Tags = tags;
   }
 
   [Required]
@@ -23,6 +25,8 @@ public record ServiceHierarchyConfiguration : IValidatableObject {
 
   [Required]
   public IImmutableSet<String> RootServices { get; init; }
+
+  public IImmutableDictionary<String, String?>? Tags { get; init; }
 
   /// <summary>
   /// Ensures this <see cref="ServiceHierarchyConfiguration"/> meets all of the higher-order validation criteria

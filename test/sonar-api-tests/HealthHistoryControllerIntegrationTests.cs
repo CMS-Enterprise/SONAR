@@ -58,7 +58,8 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
         ImmutableList.Create(HealthHistoryControllerIntegrationTests.TestHealthCheck),
         children: null)
     ),
-    ImmutableHashSet<String>.Empty.Add(HealthHistoryControllerIntegrationTests.RootServiceName)
+    ImmutableHashSet<String>.Empty.Add(HealthHistoryControllerIntegrationTests.RootServiceName),
+    null
   );
 
   private static readonly ServiceHierarchyConfiguration TestRootChildConfiguration = new(
@@ -80,7 +81,8 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
         children: null
       )
     ),
-    ImmutableHashSet<String>.Empty.Add(HealthHistoryControllerIntegrationTests.RootServiceName)
+    ImmutableHashSet<String>.Empty.Add(HealthHistoryControllerIntegrationTests.RootServiceName),
+    null
   );
 
   public HealthHistoryControllerIntegrationTests(ApiIntegrationTestFixture fixture, ITestOutputHelper outputHelper) :

@@ -229,7 +229,8 @@ public class ServiceDataHelper {
         postgresqlServiceConfig,
         prometheusServiceConfig
       ),
-      sonarRootServices
+      sonarRootServices,
+      null
     );
 
     return sonarConfiguration;

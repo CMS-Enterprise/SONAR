@@ -729,7 +729,8 @@ public class ConfigurationController : ControllerBase {
       serviceMap.Values
         .Where(svc => svc.IsRootService)
         .Select(svc => svc.Name)
-        .ToImmutableHashSet()
+        .ToImmutableHashSet(),
+      null
     );
   }
 }

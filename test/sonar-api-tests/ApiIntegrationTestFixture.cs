@@ -180,7 +180,8 @@ public class ApiIntegrationTestFixture : IDisposable, ILoggerProvider {
         .And(req => {
           req.Content = JsonContent.Create(new ServiceHierarchyConfiguration(
             ImmutableArray<ServiceConfiguration>.Empty,
-            ImmutableHashSet<String>.Empty
+            ImmutableHashSet<String>.Empty,
+            null
           ));
         })
         .PostAsync();

@@ -66,7 +66,8 @@ public class ServiceConfigMergerUnitTest {
       ExistingService,
       ExistingChildService
     ),
-    ImmutableHashSet<String>.Empty.Add(ExistingServiceName)
+    ImmutableHashSet<String>.Empty.Add(ExistingServiceName),
+    null
   );
 
   // Add new ServiceConfiguration

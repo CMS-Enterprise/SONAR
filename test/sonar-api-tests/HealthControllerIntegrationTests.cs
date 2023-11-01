@@ -52,7 +52,8 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
         ImmutableList.Create(HealthControllerIntegrationTests.TestHealthCheck),
         children: null)
     ),
-    ImmutableHashSet<String>.Empty.Add(HealthControllerIntegrationTests.TestRootServiceName)
+    ImmutableHashSet<String>.Empty.Add(HealthControllerIntegrationTests.TestRootServiceName),
+    null
   );
 
   private static readonly ServiceHierarchyConfiguration TestRootChildConfiguration = new(
@@ -74,7 +75,8 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
         children: null
       )
     ),
-    ImmutableHashSet<String>.Empty.Add(HealthControllerIntegrationTests.TestRootServiceName)
+    ImmutableHashSet<String>.Empty.Add(HealthControllerIntegrationTests.TestRootServiceName),
+    null
   );
 
   public HealthControllerIntegrationTests(ApiIntegrationTestFixture fixture, ITestOutputHelper outputHelper) :
@@ -561,7 +563,8 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
         .And(req => {
           req.Content = JsonContent.Create(new ServiceHierarchyConfiguration(
             ImmutableArray<ServiceConfiguration>.Empty,
-            ImmutableHashSet<String>.Empty
+            ImmutableHashSet<String>.Empty,
+            null
           ));
         })
         .PostAsync();

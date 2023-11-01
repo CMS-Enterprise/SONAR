@@ -312,7 +312,8 @@ public class LegacyControllerIntegrationTests : ApiControllerTestsBase {
             "Test Service Foo",
             healthChecks: ImmutableList.Create(FakeHealthCheck))
         ),
-        ImmutableHashSet.Create("foo-service"))
+        ImmutableHashSet.Create("foo-service"),
+        null)
     );
     await this.CreateTestConfiguration(
       $"{TestEnvironment}-{testId}",
@@ -324,7 +325,8 @@ public class LegacyControllerIntegrationTests : ApiControllerTestsBase {
             "Test Service Bar",
             healthChecks: ImmutableList.Create(FakeHealthCheck))
         ),
-        ImmutableHashSet.Create("bar-service"))
+        ImmutableHashSet.Create("bar-service"),
+        null)
     );
     await this.CreateTestConfiguration(
       $"{OtherTestEnvironment}-{testId}",
@@ -336,7 +338,8 @@ public class LegacyControllerIntegrationTests : ApiControllerTestsBase {
             "Test Service Bar",
             healthChecks: ImmutableList.Create(FakeHealthCheck))
         ),
-        ImmutableHashSet.Create("baz-service"))
+        ImmutableHashSet.Create("baz-service"),
+        null)
     );
   }
 }

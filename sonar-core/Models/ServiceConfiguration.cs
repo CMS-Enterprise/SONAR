@@ -13,7 +13,8 @@ public record ServiceConfiguration {
     Uri? url = null,
     IImmutableList<HealthCheckModel>? healthChecks = null,
     IImmutableList<VersionCheckModel>? versionChecks = null,
-    IImmutableSet<String>? children = null) {
+    IImmutableSet<String>? children = null,
+    IImmutableDictionary<String, String?>? tags = null) {
 
     this.Name = name;
     this.DisplayName = displayName;
@@ -22,6 +23,7 @@ public record ServiceConfiguration {
     this.HealthChecks = healthChecks;
     this.VersionChecks = versionChecks;
     this.Children = children;
+    this.Tags = tags;
   }
 
   [StringLength(100)]
@@ -41,4 +43,6 @@ public record ServiceConfiguration {
   public IImmutableList<VersionCheckModel>? VersionChecks { get; init; }
 
   public IImmutableSet<String>? Children { get; init; }
+
+  public IImmutableDictionary<String, String?>? Tags { get; init; }
 }

@@ -95,17 +95,20 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
         url: null,
         ImmutableList.Create(TestHealthCheck),
         ImmutableList.Create(TestVersionCheck),
-        ImmutableHashSet<String>.Empty.Add(TestChildServiceName)),
+        ImmutableHashSet<String>.Empty.Add(TestChildServiceName),
+        null),
       new ServiceConfiguration(
         TestChildServiceName,
         displayName: "Display Name",
         description: null,
         url: null,
         healthChecks: ImmutableList.Create(TestHealthCheck),
-        children: null
+        children: null,
+        tags: null
       )
     ),
-    ImmutableHashSet<String>.Empty.Add(TestRootServiceName)
+    ImmutableHashSet<String>.Empty.Add(TestRootServiceName),
+    null
   );
 
   private static readonly ServiceHierarchyConfiguration TestNoRootServiceMatchConfiguration = new(
@@ -116,9 +119,11 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
         description: null,
         url: null,
         ImmutableList.Create(TestHealthCheck),
-        children: null)
+        children: null,
+        tags: null)
     ),
-    ImmutableHashSet<String>.Empty.Add(TestRootServiceName)
+    ImmutableHashSet<String>.Empty.Add(TestRootServiceName),
+    null
   );
 
   private static readonly ServiceHierarchyConfiguration TestRootServiceCasingMismatchConfiguration = new(
@@ -129,10 +134,12 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
         description: null,
         url: null,
         healthChecks: ImmutableList.Create(TestHealthCheck),
-        children: null
+        children: null,
+        tags: null
       )
     ),
-    ImmutableHashSet<String>.Empty.Add(TestRootServiceName)
+    ImmutableHashSet<String>.Empty.Add(TestRootServiceName),
+    null
   );
 
   private static readonly ServiceHierarchyConfiguration TestDiffServiceDiffCasingConfiguration = new(
@@ -143,7 +150,8 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
         description: null,
         url: null,
         healthChecks: ImmutableList.Create(TestHealthCheck),
-        children: null
+        children: null,
+        tags: null
       ),
       new ServiceConfiguration(
         TestRootServiceNameCasingMismatch,
@@ -151,10 +159,12 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
         description: null,
         url: null,
         healthChecks: ImmutableList.Create(TestHealthCheck),
-        children: null
+        children: null,
+        tags: null
       )
     ),
-    ImmutableHashSet<String>.Empty.Add(TestRootServiceName)
+    ImmutableHashSet<String>.Empty.Add(TestRootServiceName),
+    null
   );
 
   private static readonly ServiceHierarchyConfiguration TestNoChildServiceMatchConfiguration = new(
@@ -166,9 +176,11 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
         url: null,
         ImmutableList.Create(TestHealthCheck),
         ImmutableList.Create(TestVersionCheck),
-        ImmutableHashSet<String>.Empty.Add(TestChildServiceName))
+        ImmutableHashSet<String>.Empty.Add(TestChildServiceName),
+        null)
     ),
-    ImmutableHashSet<String>.Empty.Add(TestRootServiceName)
+    ImmutableHashSet<String>.Empty.Add(TestRootServiceName),
+    null
   );
 
   private static readonly ServiceHierarchyConfiguration TestDuplicateServiceNamesConfiguration = new(
@@ -178,9 +190,10 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
         displayName: "Display Name",
         description: null,
         url: null,
-        ImmutableList.Create(TestHealthCheck),
-        ImmutableList.Create(TestVersionCheck),
-        ImmutableHashSet<String>.Empty.Add(TestChildServiceName)),
+        healthChecks: ImmutableList.Create(TestHealthCheck),
+        versionChecks: ImmutableList.Create(TestVersionCheck),
+        children: ImmutableHashSet<String>.Empty.Add(TestChildServiceName),
+        tags: null),
       new ServiceConfiguration(
         TestChildServiceName,
         displayName: "Display Name",
@@ -198,7 +211,8 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
         children: null
       )
     ),
-    ImmutableHashSet<String>.Empty.Add(TestRootServiceName)
+    ImmutableHashSet<String>.Empty.Add(TestRootServiceName),
+    null
   );
 
   private static readonly ServiceHierarchyConfiguration TestServiceNameOver100CharConfiguration = new(
@@ -211,7 +225,8 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
         ImmutableList.Create(TestHealthCheck),
         children: null)
     ),
-    ImmutableHashSet<String>.Empty.Add(TestServiceNameOver100Char)
+    ImmutableHashSet<String>.Empty.Add(TestServiceNameOver100Char),
+    null
   );
 
   private static readonly ServiceHierarchyConfiguration TestHttpConditionAuthConfiguration = new(
@@ -225,7 +240,8 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
         ImmutableList.Create(TestVersionCheck),
         children: null)
     ),
-    ImmutableHashSet<String>.Empty.Add(TestHttpServiceName)
+    ImmutableHashSet<String>.Empty.Add(TestHttpServiceName),
+    null
   );
 
   private static readonly ServiceHierarchyConfiguration TestConfigurationWithoutVersionChecks = new(
@@ -238,7 +254,8 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
         healthChecks: ImmutableList.Create(TestHttpHealthCheck),
         children: null)
     ),
-    ImmutableHashSet<String>.Empty.Add(TestHttpServiceName)
+    ImmutableHashSet<String>.Empty.Add(TestHttpServiceName),
+    null
   );
   public ConfigurationControllerIntegrationTests(ApiIntegrationTestFixture fixture, ITestOutputHelper outputHelper) :
     base(fixture, outputHelper) { }
@@ -332,7 +349,8 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
     var (testEnvironment, testTenant) =
       await this.CreateTestConfiguration(new ServiceHierarchyConfiguration(
         ImmutableArray<ServiceConfiguration>.Empty,
-        ImmutableHashSet<String>.Empty));
+        ImmutableHashSet<String>.Empty,
+        null));
 
     var getResponse = await
       this.Fixture.Server.CreateRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")

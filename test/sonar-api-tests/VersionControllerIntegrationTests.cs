@@ -53,7 +53,8 @@ public class VersionControllerIntegrationTests : ApiControllerTestsBase {
         ImmutableList.Create(TestVersionCheck),
         children: null)
     ),
-    ImmutableHashSet<String>.Empty.Add(TestRootServiceName)
+    ImmutableHashSet<String>.Empty.Add(TestRootServiceName),
+    null
   );
 
   public VersionControllerIntegrationTests(ApiIntegrationTestFixture fixture, ITestOutputHelper outputHelper) :

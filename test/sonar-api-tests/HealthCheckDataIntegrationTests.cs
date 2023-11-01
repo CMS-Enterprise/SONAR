@@ -40,7 +40,8 @@ public class HealthCheckDataIntegrationTests : ApiControllerTestsBase {
         ImmutableList.Create(TestHealthCheck),
         children: null)
     ),
-    ImmutableHashSet<String>.Empty.Add(TestRootServiceName)
+    ImmutableHashSet<String>.Empty.Add(TestRootServiceName),
+    null
   );
 
   public HealthCheckDataIntegrationTests(

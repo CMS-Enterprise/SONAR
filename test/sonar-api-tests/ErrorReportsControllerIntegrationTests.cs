@@ -37,7 +37,8 @@ public class ErrorReportsControllerIntegrationTests : ApiControllerTestsBase {
         children: null
       )
     ),
-    ImmutableHashSet<String>.Empty.Add(TestRootServiceName)
+    ImmutableHashSet<String>.Empty.Add(TestRootServiceName),
+    null
   );
 
   public ErrorReportsControllerIntegrationTests(
