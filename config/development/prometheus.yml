@@ -15,6 +15,11 @@ scrape_configs:
         - sonar-agent
       type: A
       port: 2020
+# Uncomment to scrape sonar-api running on host machine
+# - job_name: sonar-api
+#   scrape_interval: 10s
+#   static_configs:
+#     - targets: ["host.docker.internal:8081"]
 # Uncomment to scrape sonar-agent running on host machine
 # - job_name: "sonar-agent"
 #   scrape_interval: 10s

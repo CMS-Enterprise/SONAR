@@ -8,6 +8,8 @@ using Cms.BatCave.Sonar.Prometheus;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using PrometheusQuerySdk;
 
@@ -54,18 +56,11 @@ public class Dependencies {
     this.RegisterDataDependencies(builder);
 
     builder.Services.AddOpenTelemetry()
-      .WithTracing(tracerBuilder => {
-        tracerBuilder.AddAspNetCoreInstrumentation();
-        tracerBuilder.AddEntityFrameworkCoreInstrumentation(options => {
-          options.EnrichWithIDbCommand = (activity, command) => {
-            activity.SetTag("db.name", command.Connection?.Database);
-            activity.SetTag("cmd.type", command.CommandType);
-            activity.SetTag("cmd.text", command.CommandText);
-            activity.SetTag("cmd.isInTransaction", command.Transaction != null);
-          };
-        });
-        tracerBuilder.AddConsoleExporter();
+      .WithMetrics(metricBuilder => {
+        metricBuilder.AddMeter("Sonar.EntityFramework.DbCommands");
+        metricBuilder.AddPrometheusExporter();
       });
+
   }
 
   protected virtual void RegisterDataDependencies(WebApplicationBuilder builder) {

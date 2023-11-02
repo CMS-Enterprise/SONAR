@@ -32,7 +32,8 @@ public class DataContext : DbContext {
     options
       .UseNpgsql(connectionStringBuilder.ToString())
       .UseSnakeCaseNamingConvention()
-      .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+      .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
+      .AddInterceptors(new DbMetrics(this._loggerFactory.CreateLogger<DbMetrics>()));
 
     if (configInstance.DbLogging) {
       options.UseLoggerFactory(this._loggerFactory);

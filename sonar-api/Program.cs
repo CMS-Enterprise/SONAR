@@ -27,6 +27,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Okta.AspNetCore;
+using OpenTelemetry;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Cms.BatCave.Sonar;
@@ -183,6 +186,9 @@ public class Program {
       });
 
     var app = builder.Build();
+
+    //Open Telemetry, default to /metrics
+    app.UseOpenTelemetryPrometheusScrapingEndpoint();
 
     // Get CORS configuration
     var webHostConfig =
