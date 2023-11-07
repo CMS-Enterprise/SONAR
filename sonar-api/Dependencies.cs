@@ -38,6 +38,7 @@ public class Dependencies {
     builder.Services.AddScoped<KeyHashHelper>();
     builder.Services.AddScoped<ErrorReportsDataHelper>();
     builder.Services.AddScoped<ValidationHelper>();
+    builder.Services.AddScoped<TagsDataHelper>();
 
     builder.Services.AddHttpClient<IPrometheusRemoteProtocolClient, PrometheusRemoteProtocolClient>((provider, client) => {
       var config = provider.GetRequiredService<IOptions<PrometheusConfiguration>>().Value;

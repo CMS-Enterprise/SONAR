@@ -45,6 +45,24 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
   private const String TestFluxKustomizationVersionCheckK8sNamespace = "test";
   private const String TestFluxKustomizationVersionCheckKustomization = "test";
 
+  private const String TestTenantTagKey = "test-tenant-tag-key";
+  private const String TestTenantTagVal = "test-tenant-tag-val";
+  private const String TestNullTenantTagKey = "test-null-tenant-tag-key";
+  private const String TestServiceTagKey = "test-service-tag-key";
+  private const String TestServiceTagVal = "test-service-tag-val";
+  private const String TestNullServiceTagKey = "test-null-service-tag-key";
+
+  private const String TestNewTenantTagKey = "test-new-tenant-tag-key";
+  private const String TestNewTenantTagVal = "test-new-tenant-tag-val";
+  private const String TestUpdatedTenantTagVal = "test-updated-tenant-tag-val";
+  private const String TestUpdatedServiceTagVal = "test-updated-service-tag-val";
+  private const String TestUpdateServiceTagToNullKey = "test-update-to-null-key";
+  private const String TestUpdateServiceTagToNullVal = "test-update-to-null-val";
+  private const String TestUpdateServiceTagNoChangeKey = "no-change-key";
+  private const String TestUpdateServiceTagNoChangeVal = "no-change-val";
+  private const String TestUpdateServiceTagRemoveKey = "removed-key";
+  private const String TestUpdateServiceTagRemoveVal = "removed-val";
+
   private static readonly JsonSerializerOptions SerializerOptions = new JsonSerializerOptions {
     Converters = { new JsonStringEnumConverter(), new ArrayTupleConverterFactory() },
     PropertyNameCaseInsensitive = true
@@ -257,6 +275,230 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
     ImmutableHashSet<String>.Empty.Add(TestHttpServiceName),
     null
   );
+
+  private static readonly ServiceHierarchyConfiguration TestCreateTagsConfiguration = new(
+    ImmutableList.Create(
+      new ServiceConfiguration(
+        TestRootServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        ImmutableList.Create(TestHealthCheck),
+        ImmutableList.Create(TestVersionCheck),
+        ImmutableHashSet<String>.Empty.Add(TestChildServiceName),
+        new Dictionary<String, String?> {
+          {TestServiceTagKey, TestServiceTagVal},
+          {TestNullServiceTagKey, null},
+        }.ToImmutableDictionary()
+        ),
+      new ServiceConfiguration(
+        TestChildServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        healthChecks: ImmutableList.Create(TestHealthCheck),
+        children: null,
+        tags: null
+      )
+    ),
+    ImmutableHashSet<String>.Empty.Add(TestRootServiceName),
+    new Dictionary<String, String?> {
+      {TestTenantTagKey, TestTenantTagVal},
+      {TestNullTenantTagKey, null},
+    }.ToImmutableDictionary()
+  );
+
+  private static readonly ServiceHierarchyConfiguration TestTagsInitialConfiguration = new(
+    ImmutableList.Create(
+      new ServiceConfiguration(
+        TestRootServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        ImmutableList.Create(TestHealthCheck),
+        ImmutableList.Create(TestVersionCheck),
+        ImmutableHashSet<String>.Empty.Add(TestChildServiceName),
+        new Dictionary<String, String?> {
+          {TestServiceTagKey, TestServiceTagVal},
+          {TestUpdateServiceTagNoChangeKey, TestUpdateServiceTagNoChangeVal},
+          {TestUpdateServiceTagToNullKey, TestUpdateServiceTagToNullVal},
+          {TestUpdateServiceTagRemoveKey, TestUpdateServiceTagRemoveVal},
+        }.ToImmutableDictionary()
+      ),
+      new ServiceConfiguration(
+        TestChildServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        healthChecks: ImmutableList.Create(TestHealthCheck),
+        children: null,
+        tags: null
+      )
+    ),
+    ImmutableHashSet<String>.Empty.Add(TestRootServiceName),
+    new Dictionary<String, String?> {
+      {TestTenantTagKey, TestTenantTagVal}
+    }.ToImmutableDictionary()
+  );
+
+  private static readonly ServiceHierarchyConfiguration TestUpdatedTagsConfiguration = new(
+    ImmutableList.Create(
+      new ServiceConfiguration(
+        TestRootServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        ImmutableList.Create(TestHealthCheck),
+        ImmutableList.Create(TestVersionCheck),
+        ImmutableHashSet<String>.Empty.Add(TestChildServiceName),
+        new Dictionary<String, String?> {
+          {TestServiceTagKey, TestUpdatedServiceTagVal},
+          {TestUpdateServiceTagNoChangeKey, TestUpdateServiceTagNoChangeVal},
+          {TestUpdateServiceTagToNullKey, null}
+        }.ToImmutableDictionary()
+      ),
+      new ServiceConfiguration(
+        TestChildServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        healthChecks: ImmutableList.Create(TestHealthCheck),
+        children: null,
+        tags: null
+      )
+    ),
+    ImmutableHashSet<String>.Empty.Add(TestRootServiceName),
+    new Dictionary<String, String?> {
+      {TestTenantTagKey, TestUpdatedTenantTagVal},
+      {TestNewTenantTagKey, TestNewTenantTagVal},
+    }.ToImmutableDictionary()
+  );
+
+  private static readonly ServiceHierarchyConfiguration TestTagsConfigurationInvalidTenantTags = new(
+    ImmutableList.Create(
+      new ServiceConfiguration(
+        TestRootServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        ImmutableList.Create(TestHealthCheck),
+        ImmutableList.Create(TestVersionCheck),
+        ImmutableHashSet<String>.Empty.Add(TestChildServiceName),
+        new Dictionary<String, String?> {
+          {TestServiceTagKey, TestServiceTagVal},
+          {TestNullServiceTagKey, null},
+        }.ToImmutableDictionary()
+      ),
+      new ServiceConfiguration(
+        TestChildServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        healthChecks: ImmutableList.Create(TestHealthCheck),
+        children: null,
+        tags: null
+      )
+    ),
+    ImmutableHashSet<String>.Empty.Add(TestRootServiceName),
+    new Dictionary<String, String?> {
+      {"", TestTenantTagVal},
+      {TestNullTenantTagKey, null},
+    }.ToImmutableDictionary()
+  );
+
+  private static readonly ServiceHierarchyConfiguration TestTagsConfigurationInvalidServiceTags = new(
+    ImmutableList.Create(
+      new ServiceConfiguration(
+        TestRootServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        ImmutableList.Create(TestHealthCheck),
+        ImmutableList.Create(TestVersionCheck),
+        ImmutableHashSet<String>.Empty.Add(TestChildServiceName),
+        new Dictionary<String, String?> {
+          {" ", TestServiceTagVal},
+          {TestNullServiceTagKey, null},
+        }.ToImmutableDictionary()
+      ),
+      new ServiceConfiguration(
+        TestChildServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        healthChecks: ImmutableList.Create(TestHealthCheck),
+        children: null,
+        tags: null
+      )
+    ),
+    ImmutableHashSet<String>.Empty.Add(TestRootServiceName),
+    new Dictionary<String, String?> {
+      {TestTenantTagKey, TestTenantTagVal},
+      {TestNullTenantTagKey, null},
+    }.ToImmutableDictionary()
+  );
+
+  private static readonly ServiceHierarchyConfiguration TestTagsConfigurationBatchUpdateInitial = new(
+    ImmutableList.Create(
+      new ServiceConfiguration(
+        TestRootServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        ImmutableList.Create(TestHealthCheck),
+        ImmutableList.Create(TestVersionCheck),
+        ImmutableHashSet<String>.Empty.Add(TestChildServiceName),
+        new Dictionary<String, String?> {
+          {TestServiceTagKey, TestServiceTagVal},
+        }.ToImmutableDictionary()
+      ),
+      new ServiceConfiguration(
+        TestChildServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        healthChecks: ImmutableList.Create(TestHealthCheck),
+        children: null
+      )
+    ),
+    ImmutableHashSet<String>.Empty.Add(TestRootServiceName),
+    new Dictionary<String, String?> {
+      {TestTenantTagKey, TestTenantTagVal},
+      {TestNullTenantTagKey, null},
+    }.ToImmutableDictionary()
+  );
+
+  private static readonly ServiceHierarchyConfiguration TestTagsConfigurationBatchUpdateUpdated = new(
+    ImmutableList.Create(
+      new ServiceConfiguration(
+        TestRootServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        ImmutableList.Create(TestHealthCheck),
+        ImmutableList.Create(TestVersionCheck),
+        ImmutableHashSet<String>.Empty.Add(TestChildServiceName),
+        null
+      ),
+      new ServiceConfiguration(
+        TestChildServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        healthChecks: ImmutableList.Create(TestHealthCheck),
+        children: null,
+        tags: new Dictionary<String, String?> {
+          {TestServiceTagKey, TestServiceTagVal},
+        }.ToImmutableDictionary()
+      )
+    ),
+    ImmutableHashSet<String>.Empty.Add(TestRootServiceName),
+    new Dictionary<String, String?> {
+      {TestTenantTagKey, TestTenantTagVal},
+      {TestNullTenantTagKey, null},
+    }.ToImmutableDictionary()
+  );
+
   public ConfigurationControllerIntegrationTests(ApiIntegrationTestFixture fixture, ITestOutputHelper outputHelper) :
     base(fixture, outputHelper) { }
 
@@ -981,6 +1223,324 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
     Assert.NotNull(body);
     var services = Assert.Single(body.Services);
     Assert.Null(services.VersionChecks);
+  }
+
+  #endregion
+
+  #region Tenant and Service Tag Tests
+
+  [Fact]
+  public async Task CreateConfigurationWithTags_Success() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestCreateTagsConfiguration);
+
+    var getResponse = await
+      this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.OK,
+      actual: getResponse.StatusCode);
+
+    getResponse = await
+      this.Fixture.Server.CreateRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.OK,
+      actual: getResponse.StatusCode);
+
+    var body = await getResponse.Content.ReadFromJsonAsync<ServiceHierarchyConfiguration>(
+      SerializerOptions
+    );
+    Assert.NotNull(body);
+
+    // Test tenant tags
+    Assert.NotNull(body.Tags);
+
+    var tenantTags = body.Tags;
+    var tenantTagVal = Assert.Contains(TestTenantTagKey, tenantTags);
+    Assert.Equal(expected: TestTenantTagVal, actual: tenantTagVal);
+    var tenantTagNullVal = Assert.Contains(TestNullTenantTagKey, tenantTags);
+    Assert.Null(tenantTagNullVal);
+
+    // Test service tags
+    Assert.NotNull(body.Services);
+    var rootService = Assert.Single(body.Services.Where(s => s.Name == TestRootServiceName));
+    Assert.NotNull(rootService.Tags);
+
+    var rootServiceTags = rootService.Tags;
+    var serviceTagVal = Assert.Contains(TestServiceTagKey, rootServiceTags);
+    Assert.Equal(expected: TestServiceTagVal, actual: serviceTagVal);
+    var serviceTagNullVal = Assert.Contains(TestNullServiceTagKey, rootServiceTags);
+    Assert.Null(serviceTagNullVal);
+  }
+
+  // Update tags
+  // Initial configuration tags:
+  //  Tenant tags:
+  //    TestTenantTagKey: TestTenantTagVal
+  //  Root service tags:
+  //    TestServiceTagKey: TestServiceTagVal
+  //    TestUpdateServiceTagNoChangeKey: TestUpdateServiceTagNoChangeVal
+  //    TestUpdateServiceTagToNullKey: TestUpdateServiceTagToNullVal
+  //    TestUpdateServiceTagRemoveKey: TestUpdateServiceTagRemoveVal
+  //  Updated configuration tags:
+  //    Tenant tags:
+  //      TestTenantTagKey: TestUpdatedTenantTagVal
+  //      TestNewTenantTagKey: TestNewTenantTagVal
+  //    Root service tags:
+  //      TestServiceTagKey: TestUpdatedServiceTagVal
+  //      TestUpdateServiceTagNoChangeKey: TestUpdateServiceTagNoChangeVal
+  //      TestUpdateServiceTagToNullKey: null
+  //  Scenarios covered (corresponding scenario number denoted in code):
+  //    1. Normal update (same key -> updated value)
+  //    2. Update to null value (same key/non-null value -> update to null value)
+  //    3. Tag present in initial configuration -> removed in new configuration (kvp not present in new configuration)
+  //    4. No update (same kvp present in both initial and new configuration)
+  //    5. New tag added (kvp present in new configuration but not present in initial)
+  [Fact]
+  public async Task UpdateConfigurationWithTags_Success() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestTagsInitialConfiguration);
+
+    var getResponse = await
+      this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.OK,
+      actual: getResponse.StatusCode);
+
+    var updateConfigResponse = await
+      this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+        .And(req => {
+          req.Content = JsonContent.Create(
+            TestUpdatedTagsConfiguration);
+        })
+        .SendAsync("PUT");
+
+    Assert.Equal(
+      expected: HttpStatusCode.OK,
+      actual: updateConfigResponse.StatusCode);
+
+    getResponse = await
+      this.Fixture.Server.CreateRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.OK,
+      actual: getResponse.StatusCode);
+
+    var body = await getResponse.Content.ReadFromJsonAsync<ServiceHierarchyConfiguration>(
+      SerializerOptions
+    );
+    Assert.NotNull(body);
+
+    // Test tenant tags
+    Assert.NotNull(body.Tags);
+
+    // scenario 1
+    var tenantTags = body.Tags;
+    var tenantTagVal = Assert.Contains(TestTenantTagKey, tenantTags);
+    Assert.Equal(expected: TestUpdatedTenantTagVal, actual: tenantTagVal);
+    // scenario 5
+    var newTenantTagVal = Assert.Contains(TestNewTenantTagKey, tenantTags);
+    Assert.Equal(expected: TestNewTenantTagVal, actual: newTenantTagVal);
+
+    // Test service tags
+    Assert.NotNull(body.Services);
+    var rootService = Assert.Single(body.Services.Where(s => s.Name == TestRootServiceName));
+    Assert.NotNull(rootService.Tags);
+    var rootServiceTags = rootService.Tags;
+
+    // scenario 1
+    var newServiceTagVal = Assert.Contains(TestServiceTagKey, rootServiceTags);
+    Assert.Equal(expected: TestUpdatedServiceTagVal, actual: newServiceTagVal);
+    // scenario 4
+    var noUpdateServiceTagVal = Assert.Contains(TestUpdateServiceTagNoChangeKey, rootServiceTags);
+    Assert.Equal(expected: TestUpdateServiceTagNoChangeVal, actual: noUpdateServiceTagVal);
+    // scenario 2
+    var newNullServiceTagVal = Assert.Contains(TestUpdateServiceTagToNullKey, rootServiceTags);
+    Assert.Null(newNullServiceTagVal);
+    // scenario 3
+    Assert.DoesNotContain(TestUpdateServiceTagRemoveKey, rootServiceTags);
+
+  }
+
+  // Testing full addition and removal of tags
+  // Scenarios covered:
+  //  1. Full removal
+  //  2. Full addition
+  [Fact]
+  public async Task UpdateConfigurationAtomicTagUpdate_Success() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestTagsConfigurationBatchUpdateInitial);
+
+    var getResponse = await
+      this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.OK,
+      actual: getResponse.StatusCode);
+
+    var updateConfigResponse = await
+      this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+        .And(req => {
+          req.Content = JsonContent.Create(
+            TestTagsConfigurationBatchUpdateUpdated);
+        })
+        .SendAsync("PUT");
+
+    Assert.Equal(
+      expected: HttpStatusCode.OK,
+      actual: updateConfigResponse.StatusCode);
+
+    getResponse = await
+      this.Fixture.Server.CreateRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.OK,
+      actual: getResponse.StatusCode);
+
+    var body = await getResponse.Content.ReadFromJsonAsync<ServiceHierarchyConfiguration>(
+      SerializerOptions
+    );
+    Assert.NotNull(body);
+
+    // Test service tags
+    Assert.NotNull(body.Services);
+    var rootService = Assert.Single(body.Services.Where(s => s.Name == TestRootServiceName));
+    // scenario 1
+    Assert.NotNull(rootService.Tags);
+    Assert.Empty(rootService.Tags);
+
+    // scenario 2
+    var childService = Assert.Single(body.Services.Where(s => s.Name == TestChildServiceName));
+    Assert.NotNull(childService);
+    Assert.NotNull(childService.Tags);
+    var childServiceTags = childService.Tags;
+    var childServiceTag = Assert.Single(childServiceTags);
+    Assert.Equal(expected: TestServiceTagVal, actual: childServiceTag.Value);
+  }
+
+  // Tests for invalid tags.
+  // An invalid tag is either a tag with an empty string key or a tag with a key that contains only whitespace.
+  // When this is present in the request body's configuration, a bad request should be returned from endpoint after validation.
+  [Fact]
+  public async Task CreateConfigurationWithInvalidTenantTags_BadRequest() {
+    var testEnvironment = Guid.NewGuid().ToString();
+    var testTenant = Guid.NewGuid().ToString();
+
+    var createConfigResponse = await
+      this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+        .And(req => {
+          req.Content = JsonContent.Create(
+            TestTagsConfigurationInvalidTenantTags);
+        })
+        .PostAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.BadRequest,
+      actual: createConfigResponse.StatusCode);
+  }
+
+  [Fact]
+  public async Task CreateConfigurationWithInvalidServiceTags_BadRequest() {
+    var testEnvironment = Guid.NewGuid().ToString();
+    var testTenant = Guid.NewGuid().ToString();
+
+    var createConfigResponse = await
+      this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+        .And(req => {
+          req.Content = JsonContent.Create(
+            TestTagsConfigurationInvalidServiceTags);
+        })
+        .PostAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.BadRequest,
+      actual: createConfigResponse.StatusCode);
+  }
+
+  [Fact]
+  public async Task UpdateConfigurationWithInvalidTenantTags_BadRequest() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestTagsInitialConfiguration);
+
+    var getResponse = await
+      this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.OK,
+      actual: getResponse.StatusCode);
+
+    var updateConfigResponse = await
+      this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+        .And(req => {
+          req.Content = JsonContent.Create(
+            TestTagsConfigurationInvalidTenantTags);
+        })
+        .SendAsync("PUT");
+
+    Assert.Equal(
+      expected: HttpStatusCode.BadRequest,
+      actual: updateConfigResponse.StatusCode);
+
+    getResponse = await
+      this.Fixture.Server.CreateRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.OK,
+      actual: getResponse.StatusCode);
+  }
+
+  [Fact]
+  public async Task UpdateConfigurationWithInvalidServiceTags_BadRequest() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestTagsInitialConfiguration);
+
+    var getResponse = await
+      this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.OK,
+      actual: getResponse.StatusCode);
+
+    var updateConfigResponse = await
+      this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+        .And(req => {
+          req.Content = JsonContent.Create(
+            TestTagsConfigurationInvalidServiceTags);
+        })
+        .SendAsync("PUT");
+
+    Assert.Equal(
+      expected: HttpStatusCode.BadRequest,
+      actual: updateConfigResponse.StatusCode);
+
+    getResponse = await
+      this.Fixture.Server.CreateRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.OK,
+      actual: getResponse.StatusCode);
   }
 
   #endregion

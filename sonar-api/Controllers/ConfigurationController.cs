@@ -36,10 +36,12 @@ public class ConfigurationController : ControllerBase {
   private readonly DbSet<ServiceRelationship> _relationshipsTable;
   private readonly DbSet<HealthCheck> _healthsTable;
   private readonly DbSet<VersionCheck> _versionChecksTable;
+  private readonly DbSet<ServiceTag> _serviceTagsTable;
+  private readonly DbSet<TenantTag> _tenantTagsTable;
   private readonly ServiceDataHelper _serviceDataHelper;
-  private readonly ApiKeyDataHelper _apiKeyDataHelper;
   private readonly TenantDataHelper _tenantDataHelper;
   private readonly String _sonarEnvironment;
+  private readonly TagsDataHelper _tagsDataHelper;
 
   public ConfigurationController(
     DataContext dbContext,
@@ -52,7 +54,10 @@ public class ConfigurationController : ControllerBase {
     ServiceDataHelper serviceDataHelper,
     ApiKeyDataHelper apiKeyDataHelper,
     TenantDataHelper tenantDataHelper,
-    IOptions<SonarHealthCheckConfiguration> sonarHealthConfig) {
+    IOptions<SonarHealthCheckConfiguration> sonarHealthConfig,
+    TagsDataHelper tagsDataHelper,
+    DbSet<ServiceTag> serviceTagsTable,
+    DbSet<TenantTag> tenantTagsTable) {
 
     this._dbContext = dbContext;
     this._environmentsTable = environmentsTable;
@@ -62,8 +67,10 @@ public class ConfigurationController : ControllerBase {
     this._healthsTable = healthsTable;
     this._versionChecksTable = versionChecksTable;
     this._serviceDataHelper = serviceDataHelper;
-    this._apiKeyDataHelper = apiKeyDataHelper;
     this._tenantDataHelper = tenantDataHelper;
+    this._tagsDataHelper = tagsDataHelper;
+    this._serviceTagsTable = serviceTagsTable;
+    this._tenantTagsTable = tenantTagsTable;
     this._sonarEnvironment = sonarHealthConfig.Value.SonarEnvironment;
   }
 
@@ -114,11 +121,22 @@ public class ConfigurationController : ControllerBase {
       (await this._serviceDataHelper.FetchExistingVersionChecks(serviceMap.Keys, cancellationToken))
       .ToLookup(vc => vc.ServiceId);
 
+    var tenantTags =
+      (await this._tagsDataHelper.FetchExistingTenantTags(tenantEntity.Id, cancellationToken))
+      .NullIfEmpty()?
+      .ToImmutableDictionary(t => t.Name, t => t.Value);
+
+    var serviceTags =
+      (await this._tagsDataHelper.FetchExistingServiceTags(serviceMap.Keys, cancellationToken))
+      .ToLookup(s => s.ServiceId);
+
     var serviceHierarchy = CreateServiceHierarchy(
       serviceMap,
       healthCheckByService,
       versionCheckByService,
-      serviceRelationshipsByParent);
+      serviceRelationshipsByParent,
+      tenantTags,
+      serviceTags);
 
     if (!isAuthorized) {
       serviceHierarchy = ServiceDataHelper.Redact(serviceHierarchy);
@@ -177,6 +195,12 @@ public class ConfigurationController : ControllerBase {
         });
       }
 
+      // validate tags
+      this._tagsDataHelper.ValidateTenantTags(
+        hierarchy.Tags?.Keys ?? Enumerable.Empty<String>(),
+        hierarchy.Services.SelectMany(
+        s => s.Tags?.Keys ?? Enumerable.Empty<String>()));
+
       Environment environmentEntity;
       if (result == null) {
         // If the environment does not exist, create it
@@ -218,8 +242,41 @@ public class ConfigurationController : ControllerBase {
           cancellationToken
         );
 
+
       // Flush changes (triggers a database error in the event of a unique constraint violation)
       await this._dbContext.SaveChangesAsync(cancellationToken);
+
+      // create tenant tags (if present)
+      var createdTenantTags = Enumerable.Empty<TenantTag>();
+      if (hierarchy.Tags != null) {
+        createdTenantTags =
+          await this._tenantTagsTable.AddAllAsync(
+            hierarchy.Tags.Select(
+              tag => TenantTag.New(
+                createdTenant.Entity.Id,
+                tag.Key,
+                tag.Value)
+            ),
+        cancellationToken
+          );
+      }
+
+      // create service tags (if present)
+      var createdServiceTags = Enumerable.Empty<ServiceTag>();
+      foreach (var service in hierarchy.Services) {
+        if (service.Tags != null && service.Tags.Count > 0) {
+          createdServiceTags =
+            await this._serviceTagsTable.AddAllAsync(
+              service.Tags.Select(
+                tag => ServiceTag.New(
+                  createdServices.First(svc => service.Name == svc.Name).Id,
+                  tag.Key,
+                  tag.Value)
+              ),
+              cancellationToken
+            );
+        }
+      }
 
       var servicesByName =
         createdServices.ToImmutableDictionary(keySelector: svc => svc.Name);
@@ -274,7 +331,9 @@ public class ConfigurationController : ControllerBase {
           servicesByName.Values.ToImmutableDictionary(svc => svc.Id),
           createdHealthChecks.ToLookup(hc => hc.ServiceId),
           createdVersionChecks.ToLookup(vc => vc.ServiceId),
-          createdRelationships.ToLookup(rel => rel.ParentServiceId)
+          createdRelationships.ToLookup(rel => rel.ParentServiceId),
+          createdTenantTags.NullIfEmpty()?.ToImmutableDictionary(tt => tt.Name, tt => tt.Value),
+          createdServiceTags.ToLookup(st => st.ServiceId)
         )
       );
 
@@ -328,6 +387,12 @@ public class ConfigurationController : ControllerBase {
     try {
       var (_, existingTenant, serviceMap) =
         await this._serviceDataHelper.FetchExistingConfiguration(environment, tenant, cancellationToken);
+
+      // validate tags
+      this._tagsDataHelper.ValidateTenantTags(
+        hierarchy.Tags?.Keys ?? Enumerable.Empty<String>(),
+        hierarchy.Services.SelectMany(
+          s => s.Tags?.Keys ?? Enumerable.Empty<String>()));
 
       // Identify services removed, created, updated
 
@@ -412,6 +477,105 @@ public class ConfigurationController : ControllerBase {
       foreach (var rel in newRelationshipLookup) {
         if (!existingRelationships.Contains(rel.Key)) {
           relationshipsToAdd.AddRange(rel.Value.Select(child => (rel.Key, child)));
+        }
+      }
+
+      // Tags //
+      var tenantTagsToAdd = new Dictionary<String, String?>();
+      var tenantTagsToRemove = new List<TenantTag>();
+      var tenantTagsToUpdate = new List<TenantTag>();
+
+      var existingTenantTags =
+        await this._tagsDataHelper.FetchExistingTenantTags(existingTenant.Id, cancellationToken);
+
+      if (hierarchy.Tags == null) {
+        // new hierarchy has no tags, remove all existing tags
+        tenantTagsToRemove.AddRange(existingTenantTags);
+      } else {
+        // validate tags
+
+        // all current tags that are not in existing tags are tags to add
+        foreach (var newTag in hierarchy.Tags) {
+          if (!existingTenantTags.Any(et => et.Name == newTag.Key)) {
+            tenantTagsToAdd.Add(newTag.Key, newTag.Value);
+          }
+        }
+
+        // determine tags to update and tags to remove
+        foreach (var existingTag in existingTenantTags) {
+          if (hierarchy.Tags.TryGetValue(existingTag.Name, out var newValue)) {
+            // tag exists, determine if value update is needed
+            if (newValue != existingTag.Value) {
+              tenantTagsToUpdate.Add(new TenantTag(
+                existingTag.Id,
+                existingTag.TenantId,
+                existingTag.Name,
+                newValue)
+              );
+            }
+          } else {
+            // tag does not exist, remove old
+            tenantTagsToRemove.Add(existingTag);
+          }
+        }
+      }
+
+      // Tags //
+      var serviceTagsToAdd = new List<(String serviceName, String tagName, String? tagValue)>();
+      var serviceTagsToRemove = new List<ServiceTag>();
+      var serviceTagsToUpdate = new List<ServiceTag>();
+
+      var existingServiceTags = await this._tagsDataHelper.FetchExistingServiceTags(serviceMap.Keys, cancellationToken);
+      var existingServiceTagLookup = existingServiceTags.ToLookup(
+        st => serviceMap[st.ServiceId].Name,
+        StringComparer.OrdinalIgnoreCase);
+
+      var newServiceTags =
+        hierarchy.Services.ToImmutableDictionary(
+          svc => svc.Name,
+          svc => svc.Tags?.ToImmutableList() ??
+            ImmutableList<KeyValuePair<String, String?>>.Empty);
+
+      // tags to add
+      foreach (var newTagsByService in newServiceTags) {
+        var serviceName = newTagsByService.Key;
+        if (!existingServiceTagLookup.Contains(serviceName)) {
+          serviceTagsToAdd.AddRange(newTagsByService.Value
+            .Select(kvp => (serviceName, kvp.Key, kvp.Value)));
+        } else {
+          foreach (var tag in newTagsByService.Value) {
+            if (!existingServiceTagLookup[serviceName].Any(existingTag => existingTag.Name == tag.Key)) {
+              serviceTagsToAdd.Add((serviceName, tag.Key, tag.Value));
+            }
+          }
+        }
+      }
+
+      // iterate through each service and determine tags to update and tags to remove
+      foreach (var existingServiceTagGrouping in existingServiceTagLookup) {
+        if (newServiceTags.TryGetValue(existingServiceTagGrouping.Key, out var newTags)) {
+          var newTagsDictionary = newTags.ToImmutableDictionary(
+            nt => nt.Key,
+            nt => nt.Value);
+
+          foreach (var existingTag in existingServiceTagGrouping) {
+            if (newTagsDictionary.TryGetValue(existingTag.Name, out var newValue)) {
+              // tag exists, determine if value update is needed
+              if (newValue != existingTag.Value) {
+                serviceTagsToUpdate.Add(new ServiceTag(
+                  existingTag.Id,
+                  existingTag.ServiceId,
+                  existingTag.Name,
+                  newValue));
+              }
+            } else {
+              // tag does not exist, remove old
+              serviceTagsToRemove.Add(existingTag);
+            }
+          }
+        } else {
+          // service exists but no tags
+          serviceTagsToRemove.AddRange(existingServiceTagGrouping);
         }
       }
 
@@ -579,6 +743,41 @@ public class ConfigurationController : ControllerBase {
         cancellationToken
       );
 
+      // apply changes to tags table
+      // remove tags
+      this._tenantTagsTable.RemoveRange(tenantTagsToRemove);
+      this._serviceTagsTable.RemoveRange(serviceTagsToRemove);
+
+      // add new tags
+      await this._tenantTagsTable.AddAllAsync(
+        tenantTagsToAdd.Select(tt => TenantTag.New(
+          existingTenant.Id,
+          tt.Key,
+          tt.Value)),
+        cancellationToken);
+
+      await this._serviceTagsTable.AddAllAsync(
+        serviceTagsToAdd.Select(st => ServiceTag.New(
+          existingServicesByName[st.serviceName].Id,
+          st.tagName,
+          st.tagValue)),
+        cancellationToken);
+
+      // update tags
+      this._tenantTagsTable.UpdateRange(
+        tenantTagsToUpdate.Select(tt => new TenantTag(
+          tt.Id,
+          tt.TenantId,
+          tt.Name,
+          tt.Value)));
+
+      this._serviceTagsTable.UpdateRange(
+        serviceTagsToUpdate.Select(st => new ServiceTag(
+          st.Id,
+          st.ServiceId,
+          st.Name,
+          st.Value)));
+
       //Apply changes to health checks to tables.
       this._healthsTable.RemoveRange(healthChecksToRemove);
 
@@ -647,12 +846,18 @@ public class ConfigurationController : ControllerBase {
         await this._serviceDataHelper.FetchExistingVersionChecks(updatedServiceMap.Keys, cancellationToken);
       var updatedRelationships =
         await this._serviceDataHelper.FetchExistingRelationships(updatedServiceMap.Keys, cancellationToken);
+      var updatedTenantTags =
+        await this._tagsDataHelper.FetchExistingTenantTags(existingTenant.Id, cancellationToken);
+      var updatedServiceTags =
+        await this._tagsDataHelper.FetchExistingServiceTags(updatedServiceMap.Keys, cancellationToken);
 
       response = this.Ok(CreateServiceHierarchy(
         updatedServiceMap,
         updatedHealthChecks.ToLookup(hc => hc.ServiceId),
         updatedVersionChecks.ToLookup(vc => vc.ServiceId),
-        updatedRelationships.ToLookup(rel => rel.ParentServiceId)
+        updatedRelationships.ToLookup(rel => rel.ParentServiceId),
+        updatedTenantTags.NullIfEmpty()?.ToImmutableDictionary(k => k.Name, k => k.Value),
+        updatedServiceTags.ToLookup(s => s.ServiceId)
       ));
 
       await tx.CommitAsync(cancellationToken);
@@ -695,7 +900,9 @@ public class ConfigurationController : ControllerBase {
     IImmutableDictionary<Guid, Service> serviceMap,
     ILookup<Guid, HealthCheck> healthCheckByService,
     ILookup<Guid, VersionCheck> versionCheckByService,
-    ILookup<Guid, ServiceRelationship> serviceRelationshipsByParent) {
+    ILookup<Guid, ServiceRelationship> serviceRelationshipsByParent,
+    IImmutableDictionary<String, String?>? tenantTags,
+    ILookup<Guid, ServiceTag>? serviceTagByService) {
     return new ServiceHierarchyConfiguration(
       serviceMap.Values
         .Select(svc => new ServiceConfiguration(
@@ -723,14 +930,18 @@ public class ConfigurationController : ControllerBase {
     serviceRelationshipsByParent[svc.Id]
             .Select(id => serviceMap[id.ServiceId].Name)
             .NullIfEmpty()
-            ?.ToImmutableHashSet()
+            ?.ToImmutableHashSet(),
+          serviceTagByService?[svc.Id]
+            .ToImmutableDictionary(
+              st => st.Name,
+              st => st.Value)
         ))
         .ToImmutableList(),
       serviceMap.Values
         .Where(svc => svc.IsRootService)
         .Select(svc => svc.Name)
         .ToImmutableHashSet(),
-      null
+      tenantTags
     );
   }
 }
