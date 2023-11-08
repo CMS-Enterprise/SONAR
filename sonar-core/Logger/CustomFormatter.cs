@@ -67,7 +67,7 @@ public sealed class CustomFormatter : ConsoleFormatter, IDisposable {
     }
 
     if (logEntry.Exception != null) {
-      sb.AppendFormat($" exception=\"{CustomFormatter.EscapeString(logEntry.Exception.ToString())}\"");
+      sb.Append($" exception=\"{CustomFormatter.EscapeString(logEntry.Exception.ToString())}\"");
     }
 
     textWriter.WriteLine(sb.ToString());
