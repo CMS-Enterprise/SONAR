@@ -10,7 +10,8 @@
     "openApiToCSharpClient": {
       "additionalNamespaceUsages": [
         "Cms.BatCave.Sonar.Models",
-        "Cms.BatCave.Sonar.Enumeration"
+        "Cms.BatCave.Sonar.Enumeration",
+        "DateTimeHealthStatusValueTuple=System.ValueTuple<System.String, System.DateTime>"
       ],
       "namespace": "Cms.BatCave.Sonar.Agent",
       "className": "SonarClient",
