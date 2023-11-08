@@ -4,7 +4,7 @@ description: A Helm chart for Kubernetes
 type: application
 
 # The version of this helm chart
-version: 0.4.1
+version: 0.5.1
 
 # The version of sonar-agent this helm chart deploys
-appVersion: "0.4.0"
+appVersion: "0.5.1"

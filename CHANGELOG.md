@@ -1,3 +1,18 @@
+## 0.5.1
+
+### BATAPI-503: fix bug in CustomFormatter where exception messages were being treated as a format string.
+
+* [view commit 2d620f2](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/2d620f2340af6066b8764f5b70c728071562fe7a)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Wed, 8 Nov 2023 11:56:44 -1000
+
+
+### SONAR Release v0.5.0
+
+* [view commit 0daeb18](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/0daeb18d543ba5b680ae4e98aaaf38f543394cde)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Tue, 7 Nov 2023 10:17:26 -0700
+
 ## 0.5.0
 
 ### BATAPI-483: add copy button for newly created API Key Ids
@@ -37,22 +52,6 @@ Closes BATAPI-454
 ## Description:
 
 * blur filter input on enter or esc
-
-## Security Impact Analysis Questionnaire
-
-### Submitter Checklist
--  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
--  [ ] Is there an impact on Authentication procedures or capabilities?
--  [ ] Is there an impact on Authorization procedures or capabilities?
--  [ ] Is there an impact on Communication Security procedures or capabilities?
--  [ ] Is there an impact on Cryptography procedures or capabilities?
--  [ ] Is there an impact on Sensitive Data procedures or capabilities?
--  [ ] Is there an impact on any other security-related procedures or capabilities?
--  [x] No security impacts identified.
-
-## Security Risks Identified:
-
-<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
 ```
 
 ### BATAPI-484: updated Error Reports hooks to include condition for useQuery
@@ -81,24 +80,6 @@ Closes BATAPI-473
 ## Description:
 
 * implement alert context, trigger alert for redirect
-
-## Security Impact Analysis Questionnaire
-
-### Submitter Checklist
--  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
--  [ ] Is there an impact on Authentication procedures or capabilities?
--  [ ] Is there an impact on Authorization procedures or capabilities?
--  [ ] Is there an impact on Communication Security procedures or capabilities?
--  [ ] Is there an impact on Cryptography procedures or capabilities?
--  [ ] Is there an impact on Sensitive Data procedures or capabilities?
--  [ ] Is there an impact on any other security-related procedures or capabilities?
--  [x] No security impacts identified.
-
-## Security Risks Identified:
-
-<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
-
-Closes BATAPI-473
 ```
 
 ### Shift k8 watcher to be disposed before kubeclient
@@ -139,24 +120,6 @@ Closes BATAPI-454
 ## Description:
 
 * finish implementation
-
-## Security Impact Analysis Questionnaire
-
-### Submitter Checklist
--  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
--  [ ] Is there an impact on Authentication procedures or capabilities?
--  [ ] Is there an impact on Authorization procedures or capabilities?
--  [ ] Is there an impact on Communication Security procedures or capabilities?
--  [ ] Is there an impact on Cryptography procedures or capabilities?
--  [ ] Is there an impact on Sensitive Data procedures or capabilities?
--  [ ] Is there an impact on any other security-related procedures or capabilities?
--  [ ] No security impacts identified.
-
-## Security Risks Identified:
-
-<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
-
-Closes BATAPI-454
 ```
 
 ### BATAPI-438 expected k8s watcher disconnection events
@@ -189,24 +152,6 @@ Closes BATAPI-471
 ## Description:
 
 * add xml comments on controllers
-
-## Security Impact Analysis Questionnaire
-
-### Submitter Checklist
--  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
--  [ ] Is there an impact on Authentication procedures or capabilities?
--  [ ] Is there an impact on Authorization procedures or capabilities?
--  [ ] Is there an impact on Communication Security procedures or capabilities?
--  [ ] Is there an impact on Cryptography procedures or capabilities?
--  [ ] Is there an impact on Sensitive Data procedures or capabilities?
--  [ ] Is there an impact on any other security-related procedures or capabilities?
--  [x] No security impacts identified.
-
-## Security Risks Identified:
-
-<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
-
-Closes BATAPI-471
 ```
 
 ### BATAPI-451: Link to Error Reports page from and display error reports count in breadcrumbs
@@ -243,22 +188,6 @@ Closes BATAPI-451
 ## Description:
 
 * address lint error
-
-## Security Impact Analysis Questionnaire
-
-### Submitter Checklist
--  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
--  [ ] Is there an impact on Authentication procedures or capabilities?
--  [ ] Is there an impact on Authorization procedures or capabilities?
--  [ ] Is there an impact on Communication Security procedures or capabilities?
--  [ ] Is there an impact on Cryptography procedures or capabilities?
--  [ ] Is there an impact on Sensitive Data procedures or capabilities?
--  [ ] Is there an impact on any other security-related procedures or capabilities?
--  [x] No security impacts identified.
-
-## Security Risks Identified:
-
-<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
 ```
 
 ### Cluster role kustomization resource
@@ -271,22 +200,6 @@ Closes BATAPI-451
 ## Description:
 
 * update to chart 0.4.1, add clusterRole to allow access to kustomization resources
-
-## Security Impact Analysis Questionnaire
-
-### Submitter Checklist
--  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
--  [ ] Is there an impact on Authentication procedures or capabilities?
--  [ ] Is there an impact on Authorization procedures or capabilities?
--  [ ] Is there an impact on Communication Security procedures or capabilities?
--  [ ] Is there an impact on Cryptography procedures or capabilities?
--  [ ] Is there an impact on Sensitive Data procedures or capabilities?
--  [ ] Is there an impact on any other security-related procedures or capabilities?
--  [x] No security impacts identified.
-
-## Security Risks Identified:
-
-<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
 ```
 
 ### Log specific issues found when service configuration validation occurs. Closes BATAPI-458
@@ -334,6 +247,8 @@ Added the Error Reports page for an environment, tenant, or service, which displ
 ```
 * SONAR Agent Helm Chart Release v0.4.0
 * SONAR Release v0.4.0
+```
+
 ## 0.4.0
 
 ### Fail-fast validation for HttpBodyHealthCheckCondition
@@ -387,24 +302,6 @@ Closes BATAPI-446
 ## Description:
 
 update chart to allow Prometheus to scrape our metrics endpoint exposed by sonar-agent
-
-## Security Impact Analysis Questionnaire
-
-### Submitter Checklist
--  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
--  [ ] Is there an impact on Authentication procedures or capabilities?
--  [ ] Is there an impact on Authorization procedures or capabilities?
--  [ ] Is there an impact on Communication Security procedures or capabilities?
--  [ ] Is there an impact on Cryptography procedures or capabilities?
--  [ ] Is there an impact on Sensitive Data procedures or capabilities?
--  [ ] Is there an impact on any other security-related procedures or capabilities?
--  [ ] No security impacts identified.
-
-## Security Risks Identified:
-
-<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
-
-Closes BATAPI-446
 ```
 
 ### BATAPI-443 Call expensive BCrypt verify operation less often
@@ -437,24 +334,6 @@ Closes BATAPI-445
 ## Description:
 
 Exposes OM endpoint via OpenTelemetry
-
-## Security Impact Analysis Questionnaire
-
-### Submitter Checklist
--  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
--  [ ] Is there an impact on Authentication procedures or capabilities?
--  [ ] Is there an impact on Authorization procedures or capabilities?
--  [ ] Is there an impact on Communication Security procedures or capabilities?
--  [ ] Is there an impact on Cryptography procedures or capabilities?
--  [ ] Is there an impact on Sensitive Data procedures or capabilities?
--  [ ] Is there an impact on any other security-related procedures or capabilities?
--  [x] No security impacts identified.
-
-## Security Risks Identified:
-
-<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
-
-Closes BATAPI-445
 ```
 
 ### BATAPI-457 Guard around null conditions in health check definitions Equals and GetHashCode
@@ -502,20 +381,6 @@ Closes BATAPI-431
 ## Description:
 
 * add validation for timestamps
-
-## Security Impact Analysis Questionnaire
-
-### Submitter Checklist
--  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
--  [ ] Is there an impact on Authentication procedures or capabilities?
--  [ ] Is there an impact on Authorization procedures or capabilities?
--  [ ] Is there an impact on Communication Security procedures or capabilities?
--  [ ] Is there an impact on Cryptography procedures or capabilities?
--  [ ] Is there an impact on Sensitive Data procedures or capabilities?
--  [ ] Is there an impact on any other security-related procedures or capabilities?
--  [x] No security impacts identified.
-
-Closes BATAPI-441
 ```
 
 ### Update bread Crumbs with links to new routes Environment and Tenant Pages
@@ -585,24 +450,6 @@ Closes BATAPI-409
 ## Description:
 
 * implement unhandled exception handler
-
-## Security Impact Analysis Questionnaire
-
-### Submitter Checklist
--  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
--  [ ] Is there an impact on Authentication procedures or capabilities?
--  [ ] Is there an impact on Authorization procedures or capabilities?
--  [ ] Is there an impact on Communication Security procedures or capabilities?
--  [ ] Is there an impact on Cryptography procedures or capabilities?
--  [ ] Is there an impact on Sensitive Data procedures or capabilities?
--  [ ] Is there an impact on any other security-related procedures or capabilities?
--  [ ] No security impacts identified.
-
-## Security Risks Identified:
-
-<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
-
-Closes BATAPI-409
 ```
 
 ### Added handling for invalid JSON returned from Prometheus query request.
@@ -649,24 +496,6 @@ Closes BATAPI-426
 ## Description:
 
 Adds an endpoint that returns historical health check results at a given timestamp for a service. I chose to add an endpoint instead of appending this data to the ServiceHierarchyHealthHistory model to help performance, as we really only need to query this data when the status history drawer is opened by a user/a different Status History Tile is selected. Makes corresponding changes in the UI.
-
-## Security Impact Analysis Questionnaire
-
-### Submitter Checklist
--  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
--  [ ] Is there an impact on Authentication procedures or capabilities?
--  [ ] Is there an impact on Authorization procedures or capabilities?
--  [ ] Is there an impact on Communication Security procedures or capabilities?
--  [ ] Is there an impact on Cryptography procedures or capabilities?
--  [ ] Is there an impact on Sensitive Data procedures or capabilities?
--  [ ] Is there an impact on any other security-related procedures or capabilities?
--  [x] No security impacts identified.
-
-## Security Risks Identified:
-
-<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
-
-Closes BATAPI-426
 ```
 
 ### Eliminate unnecessary 'undefined' version display in the UI.
@@ -704,24 +533,6 @@ Closes BATAPI-408
 ## Description:
 
 * add error reporting in HealthCheckHelper
-
-## Security Impact Analysis Questionnaire
-
-### Submitter Checklist
--  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
--  [ ] Is there an impact on Authentication procedures or capabilities?
--  [ ] Is there an impact on Authorization procedures or capabilities?
--  [ ] Is there an impact on Communication Security procedures or capabilities?
--  [ ] Is there an impact on Cryptography procedures or capabilities?
--  [ ] Is there an impact on Sensitive Data procedures or capabilities?
--  [ ] Is there an impact on any other security-related procedures or capabilities?
--  [ ] No security impacts identified.
-
-## Security Risks Identified:
-
-<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
-
-Closes BATAPI-408
 ```
 
 ### Resolve BATAPI-407 "Config error reports"
@@ -735,26 +546,8 @@ Closes BATAPI-407
 
 ## Description:
 
-* Implement error reporting for saving/fetching config exceptions. 
+* Implement error reporting for saving/fetching config exceptions.
 * Moved helpers into Helpers directory
-
-## Security Impact Analysis Questionnaire
-
-### Submitter Checklist
--  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
--  [ ] Is there an impact on Authentication procedures or capabilities?
--  [ ] Is there an impact on Authorization procedures or capabilities?
--  [ ] Is there an impact on Communication Security procedures or capabilities?
--  [ ] Is there an impact on Cryptography procedures or capabilities?
--  [ ] Is there an impact on Sensitive Data procedures or capabilities?
--  [ ] Is there an impact on any other security-related procedures or capabilities?
--  [x] No security impacts identified.
-
-## Security Risks Identified:
-
-<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
-
-Closes BATAPI-407
 ```
 
 ### Added gitleaks configuration so that non-secret Okta configuration doesn't cause false positives.
@@ -817,24 +610,6 @@ Closes BATAPI-405
 * update record
 
 * wip: implement create report endpoint
-
-## Security Impact Analysis Questionnaire
-
-### Submitter Checklist
--  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
--  [ ] Is there an impact on Authentication procedures or capabilities?
--  [ ] Is there an impact on Authorization procedures or capabilities?
--  [ ] Is there an impact on Communication Security procedures or capabilities?
--  [ ] Is there an impact on Cryptography procedures or capabilities?
--  [ ] Is there an impact on Sensitive Data procedures or capabilities?
--  [ ] Is there an impact on any other security-related procedures or capabilities?
--  [x] No security impacts identified.
-
-## Security Risks Identified:
-
-<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
-
-Closes BATAPI-405
 ```
 
 ### Added version information to the list tenants API endpoint, and added UI to display version information in the environments list.
@@ -861,18 +636,6 @@ Closes BATAPI-398
 * Display version information for each root service
 
 * Added version information to the list tenants API endpoint.
-
-## Security Impact Analysis Questionnaire
-
-### Submitter Checklist
--  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
--  [ ] Is there an impact on Authentication procedures or capabilities?
--  [ ] Is there an impact on Authorization procedures or capabilities?
--  [ ] Is there an impact on Communication Security procedures or capabilities?
--  [ ] Is there an impact on Cryptography procedures or capabilities?
--  [ ] Is there an impact on Sensitive Data procedures or capabilities?
--  [ ] Is there an impact on any other security-related procedures or capabilities?
--  [X] No security impacts identified.
 ```
 
 ### Version Info Caching
@@ -889,24 +652,6 @@ Closes BATAPI-415
 * formatting
 
 * add caching to version controller
-
-## Security Impact Analysis Questionnaire
-
-### Submitter Checklist
--  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
--  [ ] Is there an impact on Authentication procedures or capabilities?
--  [ ] Is there an impact on Authorization procedures or capabilities?
--  [ ] Is there an impact on Communication Security procedures or capabilities?
--  [ ] Is there an impact on Cryptography procedures or capabilities?
--  [ ] Is there an impact on Sensitive Data procedures or capabilities?
--  [ ] Is there an impact on any other security-related procedures or capabilities?
--  [ ] No security impacts identified.
-
-## Security Risks Identified:
-
-<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
-
-Closes BATAPI-415
 ```
 
 ### Update onClose methods to re-init namespace and confimap watchers on close
@@ -1120,24 +865,6 @@ Closes BATAPI-\{ISSUE_ID}
 ## Description:
 
 * implement configuration for version checks
-
-## Security Impact Analysis Questionnaire
-
-### Submitter Checklist
--  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
--  [ ] Is there an impact on Authentication procedures or capabilities?
--  [ ] Is there an impact on Authorization procedures or capabilities?
--  [ ] Is there an impact on Communication Security procedures or capabilities?
--  [ ] Is there an impact on Cryptography procedures or capabilities?
--  [ ] Is there an impact on Sensitive Data procedures or capabilities?
--  [ ] Is there an impact on any other security-related procedures or capabilities?
--  [x] No security impacts identified.
-
-## Security Risks Identified:
-
-<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
-
-Closes BATAPI-395
 ```
 
 ### wip: another perf hotfix.
@@ -1160,24 +887,6 @@ Closes BATAPI-381
 ## Description:
 
 * initial implementation
-
-## Security Impact Analysis Questionnaire
-
-### Submitter Checklist
--  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
--  [ ] Is there an impact on Authentication procedures or capabilities?
--  [ ] Is there an impact on Authorization procedures or capabilities?
--  [ ] Is there an impact on Communication Security procedures or capabilities?
--  [ ] Is there an impact on Cryptography procedures or capabilities?
--  [ ] Is there an impact on Sensitive Data procedures or capabilities?
--  [ ] Is there an impact on any other security-related procedures or capabilities?
--  [ ] No security impacts identified.
-
-## Security Risks Identified:
-
-<!-- For any applicable items on the "Submitter Checklist," describe the impact of the change and any implemented mitigations. -->
-
-Closes BATAPI-381
 ```
 
 ### Add default value for ApiKeyId such that agent will use new apikey format Update environment name for double underscores Remove apiKey from base appsettings.k8s.json as apiKey is loaded from k8 secrets
