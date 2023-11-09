@@ -143,6 +143,10 @@ dotnet build /p:VersionSuffix=beta1
 
 ### Creating a new Version Release
 
+#### Releasing from `main`
+
+> This assumes you want to release all changes currently on the main branch!
+
 To create a new release, without any uncommitted changes perform the following steps:
 
 1. Create a branch for the release (e.g. `git checkout -b release-0.0.2`)
@@ -150,6 +154,25 @@ To create a new release, without any uncommitted changes perform the following s
 1. Push your branch and open a merge request
 
 Once the merge request has been merged you can create a tag with just the version number (e.g. `0.0.2`) in the GitLab UI and this will automatically run the build pipeline and produce version tagged container images.
+
+#### Releasing from a point in the history other than `main`
+
+> If you want to create a release from an earlier point in the git history, follow these instructions instead!
+
+1. Check out the starting point in the commit history.
+1. Create a branch for the release (e.g. `git checkout -b release-0.0.2`).
+1. Cherry pick any changes you want to include in your release.
+1. Run the `./script/version.sh` script with the appropriate argument for the type of release (i.e. `major`, `minor`, or `patch`)
+1. Push your branch and create the release and tag from the GitLab UI.
+
+If you want to unify your release branch with the main branch perform the following steps:
+
+1. Checkout `main` (make sure you are up to date)
+1. Create a merge branch for your release (e.g. `git checkout -b merge-release-0.0.2`)
+1. Merge your release branch into your merge branch (e.g. `git merge release-0.0.2`)
+1. Push your `merge-release-*` branch and open a merge request
+
+_Note: you should not attempt to rebase your merge branch if it falls behind main, so if that happens you will need to redo the steps above._
 
 ### API Versioning
 
