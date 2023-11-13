@@ -38,6 +38,7 @@ public class HealthDataHelper {
   private readonly DataContext _dbContext;
   private readonly IOptions<DatabaseConfiguration> _dbConfig;
   private readonly ILogger<HealthDataHelper> _logger;
+  private readonly TagsDataHelper _tagsDataHelper;
 
   public HealthDataHelper(
     DataContext dbContext,
@@ -47,7 +48,8 @@ public class HealthDataHelper {
     IPrometheusClient prometheusClient,
     IOptions<PrometheusConfiguration> prometheusConfig,
     IOptions<DatabaseConfiguration> dbConfig,
-    ILogger<HealthDataHelper> logger) {
+    ILogger<HealthDataHelper> logger,
+    TagsDataHelper tagsDataHelper) {
 
     this._cacheHelper = cacheHelper;
     this._serviceDataHelper = serviceDataHelper;
@@ -59,6 +61,7 @@ public class HealthDataHelper {
     this._dbContext = dbContext;
     this._dbConfig = dbConfig;
     this._logger = logger;
+    this._tagsDataHelper = tagsDataHelper;
   }
 
   public async Task<Dictionary<String, (DateTime Timestamp, HealthStatus Status)>> GetServiceStatuses(
@@ -208,13 +211,25 @@ public class HealthDataHelper {
     Dictionary<String, (DateTime Timestamp, HealthStatus Status)> serviceStatuses,
     ILookup<Guid, Guid> serviceChildIdsLookup,
     ILookup<Guid, HealthCheck> healthChecksByService,
-    Dictionary<(String Service, String HealthCheck), (DateTime Timestamp, HealthStatus Status)> healthCheckStatus) {
+    Dictionary<(String Service, String HealthCheck), (DateTime Timestamp, HealthStatus Status)> healthCheckStatus,
+    ILookup<Guid, ServiceTag> tagsByService,
+    IImmutableDictionary<String, String?> inheritedTags) {
     // The service will have its own status if it has health checks that have recorded status.
     var hasServiceStatus = serviceStatuses.TryGetValue(service.Name, out var serviceStatus);
 
     var children =
-      serviceChildIdsLookup[service.Id].Select(sid => ToServiceHealth(
-            services[sid], services, serviceStatuses, serviceChildIdsLookup, healthChecksByService, healthCheckStatus
+      serviceChildIdsLookup[service.Id].Select(sid =>
+          ToServiceHealth(
+            services[sid],
+            services,
+            serviceStatuses,
+            serviceChildIdsLookup,
+            healthChecksByService,
+            healthCheckStatus,
+            tagsByService,
+            this._tagsDataHelper.GetResolvedServiceTags(
+              inheritedTags,
+              tagsByService[service.Id].ToList())
           )
         )
         .ToImmutableHashSet();
@@ -269,7 +284,10 @@ public class HealthDataHelper {
           checkStatus :
           ((DateTime, HealthStatus)?)null
       ),
-      children
+      children,
+      this._tagsDataHelper.GetResolvedServiceTags(
+        inheritedTags,
+        tagsByService[service.Id].ToList())
     );
   }
 

@@ -16,7 +16,9 @@ public record ServiceHierarchyHealth {
     DateTime? timestamp = null,
     HealthStatus? aggregateStatus = null,
     IReadOnlyDictionary<String, (DateTime Timestamp, HealthStatus Status)?>? healthChecks = null,
-    IImmutableSet<ServiceHierarchyHealth>? children = null) {
+    IImmutableSet<ServiceHierarchyHealth>? children = null,
+    IImmutableDictionary<String, String?>? tags = null
+    ) {
 
     this.Name = name;
     this.DisplayName = displayName;
@@ -26,6 +28,7 @@ public record ServiceHierarchyHealth {
     this.AggregateStatus = aggregateStatus;
     this.HealthChecks = healthChecks;
     this.Children = children;
+    this.Tags = tags;
   }
 
   [Required]
@@ -45,4 +48,5 @@ public record ServiceHierarchyHealth {
   public IReadOnlyDictionary<String, (DateTime Timestamp, HealthStatus Status)?>? HealthChecks { get; init; }
 
   public IImmutableSet<ServiceHierarchyHealth>? Children { get; init; }
+  public IImmutableDictionary<String, String?>? Tags { get; init; }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Net;
 using System.Net.Http.Json;
@@ -19,9 +20,24 @@ using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
 namespace Cms.BatCave.Sonar.Tests;
 
 public class HealthControllerIntegrationTests : ApiControllerTestsBase {
+  private readonly ITestOutputHelper _testOutputHelper;
   private const String TestRootServiceName = "TestRootService";
   private const String TestChildServiceName = "TestChildService";
   private const String TestHealthCheckName = "TestHealthCheck";
+  private const String TestGrandchildServiceName = "TestGrandchildService";
+
+  // Tag inheritance vars
+  private const String TestOverrideKey = "test-override-key";
+  private const String TestOverrideInitialVal = "test-override-initial-val";
+  private const String TestOverriddenVal = "test-overridden-val";
+  private const String TestInheritedKey = "test-inherited-key";
+  private const String TestInheritedVal = "test-inherited-val";
+  private const String TestNullTagKey = "test-null-tag-key";
+  private const String TestOverridenToNullKey = "test-overridden-to-null-key";
+  private const String TestOverridenToNullVal = "test-overridden-to-null-val";
+  private const String TestNewTagToBeOverridenByGrandchildKey = "test-new-tag-key";
+  private const String TestNewTagToBeOverridenByGrandchildInitialVal = "test-new-tag-val";
+  private const String TestNewTagToBeOverridenByGrandchildNewVal = "test-overridden-by-grandchild";
 
   private static readonly HealthCheckModel TestHealthCheck =
     new(
@@ -79,8 +95,54 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
     null
   );
 
-  public HealthControllerIntegrationTests(ApiIntegrationTestFixture fixture, ITestOutputHelper outputHelper) :
+  private static readonly ServiceHierarchyConfiguration TestTagInheritanceConfiguration = new(
+    ImmutableList.Create(
+      new ServiceConfiguration(
+        TestRootServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        ImmutableList.Create(TestHealthCheck),
+        ImmutableList.Create(TestVersionCheck),
+        ImmutableHashSet<String>.Empty.Add(TestChildServiceName),
+        new Dictionary<String, String?> {
+          {TestOverridenToNullKey, TestOverridenToNullVal},
+          {TestOverrideKey, TestOverriddenVal}
+        }.ToImmutableDictionary()
+      ),
+      new ServiceConfiguration(
+        TestChildServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        healthChecks: ImmutableList.Create(TestHealthCheck),
+        children: ImmutableHashSet<String>.Empty.Add(TestGrandchildServiceName),
+        tags: new Dictionary<String, String?> {
+          {TestOverridenToNullKey, null},
+          {TestNewTagToBeOverridenByGrandchildKey, TestNewTagToBeOverridenByGrandchildInitialVal}
+        }.ToImmutableDictionary()
+      ),
+      new ServiceConfiguration(
+        TestGrandchildServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        healthChecks: ImmutableList.Create(TestHealthCheck),
+        tags: new Dictionary<String, String?> {
+          {TestNewTagToBeOverridenByGrandchildKey, TestNewTagToBeOverridenByGrandchildNewVal}
+        }.ToImmutableDictionary())
+    ),
+    ImmutableHashSet<String>.Empty.Add(TestRootServiceName),
+    new Dictionary<String, String?> {
+      {TestOverrideKey, TestOverrideInitialVal},
+      {TestInheritedKey, TestInheritedVal},
+      {TestNullTagKey, null}
+    }.ToImmutableDictionary()
+  );
+
+  public HealthControllerIntegrationTests(ApiIntegrationTestFixture fixture, ITestOutputHelper outputHelper, ITestOutputHelper testOutputHelper) :
     base(fixture, outputHelper) {
+    this._testOutputHelper = testOutputHelper;
   }
 
   // RecordServiceHealth scenarios
@@ -749,6 +811,145 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
     Assert.Equal(expected: (expectedTimestamp, rootStatus), actual: rootHealthCheck.Value);
   }
 
+  #region Tag Inheritance and Resolution Tests
+
+  //****************************************************************************
+  //
+  //                     Tag Inheritance and Resolution
+  //
+  //****************************************************************************
+
+  // Update tags
+  // Initial configuration tags:
+  //  Tenant tags:
+  //    TestOverrideKey: TestOverrideInitialVal
+  //    TestInheritedKey: TestInheritedVal
+  //    TestNullTagKey: null
+  //  Root service tags:
+  //    TestOverriddenToNullKey: TestOverriddenToNullVal
+  //    TestOverrideKey: TestOverriddenVal
+  //  Child service tags:
+  //    TestOverriddenToNullKey: null,
+  //    TestNewTagToBeOverridenByGrandchildKey: TestNewTagToBeOverridenByGrandchildInitialVal
+  //  Grandchild service tags:
+  //    TestNewTagToBeOverridenByGrandchildKey: TestNewTagToBeOverridenByGrandchildNewVal
+  //  Resolved Tags
+  //    Root service tags:
+  //      TestOverrideKey: TestOverriddenVal
+  //      TestInheritedKey: TestInheritedVal
+  //      TestOverriddenToNullKey: TestOverriddenToNullVal
+  //    Child service tags:
+  //      TestInheritedKey: TestInheritedVal
+  //      TestNewTagToBeOverridenByGrandchildKey: TestNewTagToBeOverridenByGrandchildInitialVal
+  //    Grandchild service tags:
+  //      TestInheritedKey: TestInheritedVal
+  //      TestNewTagToBeOverridenByGrandchildKey: TestNewTagToBeOverridenByGrandchildNewVal
+  //  Scenarios covered (corresponding scenario number denoted in code):
+  //    1. Normal inheritance (TestInheritedKey present in tenant tags and inherited down to grandchild service)
+  //    2. Normal override (TestOverrideKey present in tenant tags and overridden by root service)
+  //    3. Tag removal (TestNullTagKey present in tenant keys and removed in root service and children)
+  //    4. Tag overridden to null and removed (TestOverriddenToNullKey is non-null and present in root service but
+  //       overridden to null in child service, consequently being removed during tag resolution)
+  //    5. New tag added, overridden by descendent
+
+  [Fact]
+  public async Task GetServiceHierarchyHealth_TagInheritance_Success() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestTagInheritanceConfiguration);
+
+    var getResponse = await
+      this.Fixture.Server.CreateRequest($"/api/v2/health/{testEnvironment}/tenants/{testTenant}")
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.OK,
+      actual: getResponse.StatusCode);
+
+    var body = await getResponse.Content.ReadFromJsonAsync<ServiceHierarchyHealth[]>(
+      HealthControllerIntegrationTests.SerializerOptions
+    );
+
+    Assert.NotNull(body);
+    var rootService = Assert.Single(body);
+
+    // setup
+    Assert.NotNull(rootService);
+    Assert.NotNull(rootService.Children);
+    var rootServiceTags = rootService.Tags;
+    Assert.NotNull(rootServiceTags);
+    var childService = Assert.Single(rootService.Children);
+    Assert.NotNull(childService);
+    Assert.NotNull(childService.Children);
+    var childServiceTags = childService.Tags;
+    Assert.NotNull(childServiceTags);
+    var grandchildService = Assert.Single(childService.Children);
+    Assert.NotNull(grandchildService);
+    var grandchildServiceTags = grandchildService.Tags;
+    Assert.NotNull(grandchildServiceTags);
+
+    // scenario 1
+    var inheritedTagRootService = Assert.Contains(TestInheritedKey, rootServiceTags);
+    Assert.Equal(expected: TestInheritedVal, actual: inheritedTagRootService);
+    var inheritedTagChildService = Assert.Contains(TestInheritedKey, childServiceTags);
+    Assert.Equal(expected: TestInheritedVal, actual: inheritedTagChildService);
+    var inheritedTagGrandchildService = Assert.Contains(TestInheritedKey, grandchildServiceTags);
+    Assert.Equal(expected: TestInheritedVal, actual: inheritedTagGrandchildService);
+
+    // scenario 2
+    var overriddenTagRootServiceVal = Assert.Contains(TestOverrideKey, rootServiceTags);
+    Assert.Equal(expected: TestOverriddenVal, actual: overriddenTagRootServiceVal);
+
+    // scenario 3
+    Assert.DoesNotContain(TestNullTagKey, rootServiceTags);
+
+    // scenario 4
+    var rootServiceNullTagVal = Assert.Contains(TestOverridenToNullKey, rootServiceTags);
+    Assert.Equal(expected: TestOverridenToNullVal, actual: rootServiceNullTagVal);
+    Assert.DoesNotContain(TestOverridenToNullKey, childServiceTags);
+
+    // scenario 5
+    // test that root service doesn't contain new tag, will be added by child and overridden by grandchild
+    Assert.DoesNotContain(TestNewTagToBeOverridenByGrandchildKey, rootServiceTags);
+    var newTagValChild = Assert.Contains(TestNewTagToBeOverridenByGrandchildKey, childServiceTags);
+    Assert.Equal(expected: TestNewTagToBeOverridenByGrandchildInitialVal, actual: newTagValChild);
+    var newTagValGrandchild =
+      Assert.Contains(TestNewTagToBeOverridenByGrandchildKey, grandchildServiceTags);
+    Assert.Equal(expected: TestNewTagToBeOverridenByGrandchildNewVal, actual: newTagValGrandchild);
+  }
+
+  // Query only the grandchild service, confirm tag resolution
+  [Fact]
+  public async Task GetSpecificServiceHierarchyHealth_TagInheritance_Success() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestTagInheritanceConfiguration);
+
+    var getResponse = await
+      this.Fixture.Server.CreateRequest(
+          $"/api/v2/health/{testEnvironment}/tenants/{testTenant}/services/{TestRootServiceName}/{TestChildServiceName}/{TestGrandchildServiceName}")
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.OK,
+      actual: getResponse.StatusCode);
+
+    var body = await getResponse.Content.ReadFromJsonAsync<ServiceHierarchyHealth[]>(
+      HealthControllerIntegrationTests.SerializerOptions
+    );
+
+    Assert.NotNull(body);
+    var grandchildService = Assert.Single(body);
+
+    Assert.NotNull(grandchildService);
+    var grandchildServiceTags = grandchildService.Tags;
+    Assert.NotNull(grandchildServiceTags);
+
+    var inheritedTagGrandchildService = Assert.Contains(TestInheritedKey, grandchildServiceTags);
+    Assert.Equal(expected: TestInheritedVal, actual: inheritedTagGrandchildService);
+  }
+
+  #endregion
 
   #region Authentication and Authorization Tests
 

@@ -33,7 +33,7 @@ public class HealthController : ControllerBase {
   private readonly HealthDataHelper _healthDataHelper;
   private readonly ServiceHealthCacheHelper _cacheHelper;
   private readonly String _sonarEnvironment;
-  private readonly ValidationHelper _validationHelper;
+  private readonly TagsDataHelper _tagsDataHelper;
 
   public HealthController(
     ServiceDataHelper serviceDataHelper,
@@ -42,14 +42,14 @@ public class HealthController : ControllerBase {
     PrometheusRemoteWriteClient remoteWriteClient,
     IOptions<SonarHealthCheckConfiguration> sonarHealthConfig,
     ILogger<HealthController> logger,
-    ValidationHelper validationHelper) {
+    TagsDataHelper tagsDataHelper) {
     this._serviceDataHelper = serviceDataHelper;
     this._healthDataHelper = healthDataHelper;
     this._cacheHelper = cacheHelper;
     this._remoteWriteClient = remoteWriteClient;
     this._sonarEnvironment = sonarHealthConfig.Value.SonarEnvironment;
     this._logger = logger;
-    this._validationHelper = validationHelper;
+    this._tagsDataHelper = tagsDataHelper;
   }
 
   /// <summary>
@@ -216,7 +216,7 @@ public class HealthController : ControllerBase {
       return this.Ok(GetSonarHealth(environment, cancellationToken));
     }
 
-    var (_, _, services) =
+    var (_, existingTenant, services) =
       await this._serviceDataHelper.FetchExistingConfiguration(environment, tenant, cancellationToken);
 
     var serviceStatuses = await this._healthDataHelper.GetServiceStatuses(
@@ -228,11 +228,19 @@ public class HealthController : ControllerBase {
 
     var serviceChildIdsLookup = await this._serviceDataHelper.GetServiceChildIdsLookup(services, cancellationToken);
     var healthChecksByService = await this._healthDataHelper.GetHealthChecksByService(services, cancellationToken);
-
+    var tagsByService = await this._tagsDataHelper.FetchExistingServiceTags(services.Keys, cancellationToken);
+    var tenantTags = await this._tagsDataHelper.FetchExistingTenantTags(existingTenant.Id, cancellationToken);
     return this.Ok(
       services.Values.Where(svc => svc.IsRootService)
         .Select(svc => this._healthDataHelper.ToServiceHealth(
-          svc, services, serviceStatuses, serviceChildIdsLookup, healthChecksByService, healthCheckStatus)
+          svc,
+          services,
+          serviceStatuses,
+          serviceChildIdsLookup,
+          healthChecksByService,
+          healthCheckStatus,
+          tagsByService.ToLookup(st => st.ServiceId),
+          this._tagsDataHelper.GetResolvedTenantTags(tenantTags.ToList()))
         )
         .ToArray()
     );
@@ -249,7 +257,7 @@ public class HealthController : ControllerBase {
     [FromRoute] String servicePath,
     CancellationToken cancellationToken) {
 
-    var (_, _, services) =
+    var (_, existingTenant, services) =
       await this._serviceDataHelper.FetchExistingConfiguration(environment, tenant, cancellationToken);
     var serviceChildIdsLookup = await this._serviceDataHelper.GetServiceChildIdsLookup(services, cancellationToken);
 
@@ -269,11 +277,38 @@ public class HealthController : ControllerBase {
       environment, tenant, cancellationToken
     );
     var healthChecksByService = await this._healthDataHelper.GetHealthChecksByService(services, cancellationToken);
+    var tagsByService = await this._tagsDataHelper.FetchExistingServiceTags(services.Keys, cancellationToken);
+    var tenantTags = await this._tagsDataHelper.FetchExistingTenantTags(existingTenant.Id, cancellationToken);
+    var serviceHierarchy = services.Values
+      .Where(svc => svc.IsRootService)
+      .Select(svc => this._healthDataHelper.ToServiceHealth(
+        svc,
+        services,
+        serviceStatuses,
+        serviceChildIdsLookup,
+        healthChecksByService,
+        healthCheckStatus,
+        tagsByService.ToLookup(st => st.ServiceId),
+        this._tagsDataHelper.GetResolvedTenantTags(tenantTags.ToList())));
 
-    return this.Ok(this._healthDataHelper.ToServiceHealth(
-      services.Values.Single(svc => svc.Id == existingService.Id),
-      services, serviceStatuses, serviceChildIdsLookup, healthChecksByService, healthCheckStatus)
-    );
+    var flattenedHierarchy = FlattenHierarchy(serviceHierarchy);
+
+    return this.Ok(flattenedHierarchy.Where(s => s.Name == existingService.Name));
+  }
+
+  private IEnumerable<ServiceHierarchyHealth> FlattenHierarchy(
+    IEnumerable<ServiceHierarchyHealth> hierarchy) {
+    foreach (var node in hierarchy) {
+      yield return node;
+
+      if (node.Children == null) {
+        continue;
+      }
+
+      foreach (var children in this.FlattenHierarchy(node.Children)) {
+        yield return children;
+      }
+    }
   }
 
   private static IEnumerable<TimeSeries> CreateHealthStatusMetric(

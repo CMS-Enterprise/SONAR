@@ -17,7 +17,8 @@ public record ServiceHierarchyInfo {
     HealthStatus? aggregateStatus = null,
     IReadOnlyDictionary<VersionCheckType, String>? versions = null,
     IReadOnlyDictionary<String, (DateTime Timestamp, HealthStatus Status)?>? healthChecks = null,
-    IImmutableSet<ServiceHierarchyInfo>? children = null) {
+    IImmutableSet<ServiceHierarchyInfo>? children = null,
+    IImmutableDictionary<String, String?>? tags = null) {
 
     this.Name = name;
     this.DisplayName = displayName;
@@ -28,6 +29,7 @@ public record ServiceHierarchyInfo {
     this.Versions = versions;
     this.HealthChecks = healthChecks;
     this.Children = children;
+    this.Tags = tags;
   }
 
   [Required]
@@ -48,4 +50,5 @@ public record ServiceHierarchyInfo {
   public IReadOnlyDictionary<String, (DateTime Timestamp, HealthStatus Status)?>? HealthChecks { get; init; }
 
   public IImmutableSet<ServiceHierarchyInfo>? Children { get; init; }
+  public IImmutableDictionary<String, String?>? Tags { get; init; }
 }
