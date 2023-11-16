@@ -52,6 +52,7 @@ apiConfig:
   apiKey: test+api+key+do+not+use+in+production+xxxxx=
   apiKeyId: 00000000-0000-0000-0000-000000000000
   reportingInterval: 30
+  isNonProd: false
 
 prometheus:
   host: prometheus

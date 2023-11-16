@@ -9,11 +9,13 @@ public record EnvironmentHealth {
   public EnvironmentHealth(
     String environmentName,
     DateTime? timestamp = null,
-    HealthStatus? aggregateStatus = null) {
+    HealthStatus? aggregateStatus = null,
+    Boolean isNonProd = false) {
 
     this.EnvironmentName = environmentName;
     this.Timestamp = timestamp;
     this.AggregateStatus = aggregateStatus;
+    this.IsNonProd = isNonProd;
   }
 
   [Required]
@@ -22,4 +24,6 @@ public record EnvironmentHealth {
   public DateTime? Timestamp { get; init; }
 
   public HealthStatus? AggregateStatus { get; init; }
+
+  public Boolean IsNonProd { get; init; }
 }

@@ -3,6 +3,7 @@ using System;
 using Cms.BatCave.Sonar.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cms.BatCave.Sonar.Data.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20231106040950_AddIsNonProd")]
+    partial class AddIsNonProd
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -353,38 +356,6 @@ namespace Cms.BatCave.Sonar.Data.Migrations
                     b.ToTable("service_relationship", (string)null);
                 });
 
-            modelBuilder.Entity("Cms.BatCave.Sonar.Data.ServiceTag", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("name")
-                        .UseCollation("ci_collation");
-
-                    b.Property<Guid>("ServiceId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("service_id");
-
-                    b.Property<string>("Value")
-                        .HasColumnType("text")
-                        .HasColumnName("value")
-                        .UseCollation("ci_collation");
-
-                    b.HasKey("Id")
-                        .HasName("pk_service_tag");
-
-                    b.HasIndex("ServiceId", "Name")
-                        .IsUnique()
-                        .HasDatabaseName("ix_service_tag_service_id_name");
-
-                    b.ToTable("service_tag", (string)null);
-                });
-
             modelBuilder.Entity("Cms.BatCave.Sonar.Data.ServiceVersionCache", b =>
                 {
                     b.Property<Guid>("Id")
@@ -459,38 +430,6 @@ namespace Cms.BatCave.Sonar.Data.Migrations
                         .HasDatabaseName("ix_tenant_environment_id_name");
 
                     b.ToTable("tenant", (string)null);
-                });
-
-            modelBuilder.Entity("Cms.BatCave.Sonar.Data.TenantTag", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("name")
-                        .UseCollation("ci_collation");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("tenant_id");
-
-                    b.Property<string>("Value")
-                        .HasColumnType("text")
-                        .HasColumnName("value")
-                        .UseCollation("ci_collation");
-
-                    b.HasKey("Id")
-                        .HasName("pk_tenant_tag");
-
-                    b.HasIndex("TenantId", "Name")
-                        .IsUnique()
-                        .HasDatabaseName("ix_tenant_tag_tenant_id_name");
-
-                    b.ToTable("tenant_tag", (string)null);
                 });
 
             modelBuilder.Entity("Cms.BatCave.Sonar.Data.User", b =>
@@ -681,16 +620,6 @@ namespace Cms.BatCave.Sonar.Data.Migrations
                         .HasConstraintName("fk_service_relationship_service_service_id");
                 });
 
-            modelBuilder.Entity("Cms.BatCave.Sonar.Data.ServiceTag", b =>
-                {
-                    b.HasOne("Cms.BatCave.Sonar.Data.Service", null)
-                        .WithMany()
-                        .HasForeignKey("ServiceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_service_tag_service_service_id");
-                });
-
             modelBuilder.Entity("Cms.BatCave.Sonar.Data.Tenant", b =>
                 {
                     b.HasOne("Cms.BatCave.Sonar.Data.Environment", null)
@@ -699,16 +628,6 @@ namespace Cms.BatCave.Sonar.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_tenant_environment_environment_id");
-                });
-
-            modelBuilder.Entity("Cms.BatCave.Sonar.Data.TenantTag", b =>
-                {
-                    b.HasOne("Cms.BatCave.Sonar.Data.Tenant", null)
-                        .WithMany()
-                        .HasForeignKey("TenantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_tenant_tag_tenant_tenant_id");
                 });
 
             modelBuilder.Entity("Cms.BatCave.Sonar.Data.UserPermission", b =>

@@ -210,6 +210,35 @@ internal class Program {
     for (var attempts = 0; attempts <= threshold; attempts++) {
       logger.LogInformation("Saving configuration, attempt {Attempts}", attempts);
       try {
+        // if IsNonProd has a value (false or true) make sure it matches the sonar api environment setting.
+        if (apiConfig.Value.IsNonProd != null) {
+          // Call sonar API and get the environment's isNonProd value. Compare the value to the configuration value.
+          // If they do not match use the configuration value to update Sonar api.
+          var envHealth = await GetOrCreateEnvironment(apiConfig, agentConfig.Value.AgentInterval, logger, token);
+          if (apiConfig.Value.IsNonProd != envHealth.IsNonProd) {
+            //Update isNonProd in Sonar API
+            EnvironmentModel model = new EnvironmentModel(apiConfig.Value.Environment, (Boolean)apiConfig.Value.IsNonProd);
+            try {
+              await UpdateEnvironment(apiConfig, agentConfig.Value.AgentInterval, model, logger, token);
+            } catch (ApiException apiEx) when (apiEx is ApiException { StatusCode: 403 }) {
+              logger.LogWarning("Unable to update environment {Environment}: {_Message} ", apiConfig.Value.Environment, apiEx.Message);
+              await errorReportsHelper.CreateErrorReport(
+                apiConfig.Value.Environment,
+                new ErrorReportDetails(
+                  DateTime.UtcNow,
+                  null,
+                  null,
+                  null,
+                  AgentErrorLevel.Warning,
+                  AgentErrorType.SaveConfiguration,
+                  $"Unable to update environment {apiConfig.Value.Environment}: {apiEx.Message} ",
+                  null,
+                  null),
+                token);
+            }
+          }
+        }
+
         await configurationHelper.ConfigureServicesAsync(apiConfig.Value.Environment, servicesHierarchy, token);
         isSuccess = true;
         break;
@@ -505,4 +534,36 @@ internal class Program {
       token);
     logger.LogError(e, "Unhandled exception occured with following message: {_Message}", e.Message);
   }
+
+  static async Task<EnvironmentHealth> GetOrCreateEnvironment(RecordOptionsManager<ApiConfiguration> apiConfig, double waitInterval, ILogger logger, CancellationToken token) {
+
+    EnvironmentHealth environmentHealth;
+    using var httpClient = new HttpClient() {
+      Timeout = TimeSpan.FromSeconds(waitInterval)
+    };
+    var sonarClient = new SonarClient(apiConfig, httpClient);
+    try {
+      environmentHealth = await sonarClient.GetEnvironmentAsync(apiConfig.Value.Environment, token);
+    } catch (ApiException apiEx) {
+      if (apiEx.StatusCode == 404) {
+        logger.LogInformation("{Environment} not found attempting to re-create it: ", apiConfig.Value.Environment);
+        EnvironmentModel m = new EnvironmentModel(apiConfig.Value.Environment, false);
+        var envModel = await sonarClient.CreateEnvironmentAsync(m, token);
+        environmentHealth = new EnvironmentHealth(environmentName: envModel.Name, isNonProd: envModel.IsNonProd, aggregateStatus: null);
+      } else {
+        throw;
+      }
+    }
+    return environmentHealth;
+  }
+
+  static async Task UpdateEnvironment(RecordOptionsManager<ApiConfiguration> apiConfig, Double waitInterval, EnvironmentModel model, ILogger logger, CancellationToken token) {
+
+    using var httpClient = new HttpClient() {
+      Timeout = TimeSpan.FromSeconds(waitInterval)
+    };
+    var sonarClient = new SonarClient(apiConfig, httpClient);
+    await sonarClient.UpdateEnvironmentAsync(model.Name, model, token);
+  }
+
 }

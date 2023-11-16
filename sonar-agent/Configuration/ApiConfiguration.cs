@@ -6,5 +6,6 @@ public record ApiConfiguration(
   String Environment,
   String BaseUrl,
   String ApiKey,
-  Guid? ApiKeyId = null
+  Guid? ApiKeyId = null,
+  Boolean? IsNonProd = null
   );

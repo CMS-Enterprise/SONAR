@@ -12,6 +12,7 @@ data:
       },
       "ApiConfig": {
         "Environment": {{ quote .Values.apiConfig.environment }},
+        "IsNonProd": {{ .Values.apiConfig.isNonProd }},
         "BaseUrl": {{ quote .Values.apiConfig.baseUrl }},
         {{- if .Values.apiConfig.apiKeyId }}
         "ApiKeyId": {{ quote .Values.apiConfig.apiKeyId }}

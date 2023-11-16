@@ -207,7 +207,8 @@ public class ConfigurationController : ControllerBase {
         var createdEnvironment = await this._environmentsTable.AddAsync(
           new Environment(
             Guid.Empty,
-            environment),
+            environment,
+            false),
           cancellationToken
         );
 

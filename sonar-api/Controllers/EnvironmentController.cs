@@ -59,7 +59,7 @@ public class EnvironmentController : ControllerBase {
 
     var entity =
       await this._environmentDataHelper.AddAsync(
-        Environment.New(environmentModel.Name),
+        Environment.New(environmentModel.Name, environmentModel.IsNonProd),
         cancellationToken
       );
 
@@ -69,8 +69,50 @@ public class EnvironmentController : ControllerBase {
 
     return this.Created(
       this.Url.Action(nameof(GetEnvironment), new { environment = entity.Name }) ?? "",
-      new EnvironmentModel(entity.Name)
+      new EnvironmentModel(entity.Name, environmentModel.IsNonProd)
     );
+  }
+
+  /// <summary>
+  ///   Update environment.
+  /// </summary>
+  /// <param name="environment">The name of the environment updating.</param>
+  /// <param name="environmentModel">The body contains Json of type Environment Model.  The Name is required but is not used or validated.  The environment name from the address route(URL) is used.</param>
+  /// <param name="cancellationToken"></param>
+  /// <response code="200">The environment has been updated.</response>
+  /// <response code="401">The API key in the header is not authorized for updating a tenant.</response>
+  /// <response code="404">The specified environment was not found.</response>
+  [HttpPut("{environment}", Name = "UpdateEnvironment")]
+  [Consumes(typeof(EnvironmentModel), contentType: "application/json")]
+  [ProducesResponseType(typeof(EnvironmentModel), statusCode: 200)]
+  [ProducesResponseType(typeof(ProblemDetails), statusCode: 400)]
+  [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
+  public async Task<ActionResult> UpdateEnvironment(
+    [FromRoute] String environment,
+    [FromBody] EnvironmentModel environmentModel,
+    CancellationToken cancellationToken = default) {
+
+    await using var tx = await this._dbContext.Database.BeginTransactionAsync(cancellationToken);
+
+    var existingEnv =
+      await this._environmentDataHelper.TryFetchEnvironmentAsync(
+        environment,
+        cancellationToken
+      );
+
+    if (existingEnv == null) {
+      throw new ResourceNotFoundException(nameof(Environment), environment);
+    }
+
+    existingEnv.IsNonProd = environmentModel.IsNonProd;
+
+    var entity = await this._environmentDataHelper.Update(existingEnv);
+
+    await this._dbContext.SaveChangesAsync(cancellationToken);
+
+    await tx.CommitAsync(cancellationToken);
+
+    return this.Ok(existingEnv);
   }
 
   /// <summary>
@@ -177,6 +219,6 @@ public class EnvironmentController : ControllerBase {
       }
     }
 
-    return new EnvironmentHealth(environment.Name, statusTimestamp, aggregateStatus);
+    return new EnvironmentHealth(environment.Name, statusTimestamp, aggregateStatus, environment.IsNonProd);
   }
 }

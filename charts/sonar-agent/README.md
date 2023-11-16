@@ -23,20 +23,21 @@ This Helm Chart deploys a single instance of the `sonar-agent` microservice as a
 
 ### Application Configuration
 
-|Key|Type|Description|
-|---|---|---|
-|apiConfig.environment|string|The name of the environment for which this agent is reporting information.|
-|apiConfig.tenant|string|The name of the tenant for which this agent is reporting information.|
-|apiConfig.baseUrl|string|The base URL of the SONAR API to report information to.|
-|apiConfig.apiKey|string|The API key to use to authenticate requests to the SONAR API.|
-|apiConfig.reportingInterval|number|The minimum interval (in seconds) between service health checks.|
-|prometheus.host|string|The host name to use when connecting to Prometheus.|
-|prometheus.protocol|string|The protocol to use when connecting to Prometheus (default: http).|
-|prometheus.port|number|The port to use when connecting to Prometheus (default: 9090).|
-|loki.host|string|The host name to use when connecting to Loki.|
-|loki.protocol|string|The protocol to use when connecting to Loki (default: http).|
-|loki.port|number|The port to use when connecting to Loki (default: 3100).|
-|configs|object|One or more [sonar-agent service configurations](#values_sonar_service_configuration) which define the services being monitored and the checks used to determine their health.|
+| Key                         |Type|Description|
+|-----------------------------|---|---|
+| apiConfig.environment       |string|The name of the environment for which this agent is reporting information.|
+| apiConfig.tenant            |string|The name of the tenant for which this agent is reporting information.|
+| apiConfig.baseUrl           |string|The base URL of the SONAR API to report information to.|
+| apiConfig.apiKey            |string|The API key to use to authenticate requests to the SONAR API.|
+| apiConfig.reportingInterval |number|The minimum interval (in seconds) between service health checks.|
+| apiconfig.isNonProd         |Boolean|Flag to determine if environment in production or not.|
+| prometheus.host             |string|The host name to use when connecting to Prometheus.|
+| prometheus.protocol         |string|The protocol to use when connecting to Prometheus (default: http).|
+| prometheus.port             |number|The port to use when connecting to Prometheus (default: 9090).|
+| loki.host                   |string|The host name to use when connecting to Loki.|
+| loki.protocol               |string|The protocol to use when connecting to Loki (default: http).|
+| loki.port                   |number|The port to use when connecting to Loki (default: 3100).|
+| configs                     |object|One or more [sonar-agent service configurations](#values_sonar_service_configuration) which define the services being monitored and the checks used to determine their health.|
 
 ### <a name="values_sonar_service_configuration" />SONAR Service Configuration
 
