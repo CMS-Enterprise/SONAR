@@ -1,3 +1,109 @@
+## 0.5.2
+
+### BATAPI-499 Isnonprod flag
+
+* [view commit c9baa01](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/c9baa0175992df071a5504232d8845c2eaae433d)
+* Author (Committer): Dale O'Neill (Dale O'Neill)
+* Date: Thu, 16 Nov 2023 06:45:42 +0000
+
+```
+Closes BATAPI-499
+
+## Description:
+
+* Added isnonprod flag to values and updated documentation in the readme file
+
+* From configuration check IsNonProd settings and update sonar api if needed.
+
+* Updated the client API generated code from Sonar API NSwag
+
+* Added Put to controller to update environment.
+
+* Added IsNonProd to CreateEnvironment.  Supports backward compactability
+
+* Added Db migration files for IsNonProd
+
+* Added IsNonProd to the Environment datamodel.  Also updated migrations table.
+
+* Added IsNonProd property to Environment
+
+## Security Impact Analysis Questionnaire
+
+### Submitter Checklist
+-  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
+-  [ ] Is there an impact on Authentication procedures or capabilities?
+-  [ ] Is there an impact on Authorization procedures or capabilities?
+-  [ ] Is there an impact on Communication Security procedures or capabilities?
+-  [ ] Is there an impact on Cryptography procedures or capabilities?
+-  [ ] Is there an impact on Sensitive Data procedures or capabilities?
+-  [ ] Is there an impact on any other security-related procedures or capabilities?
+-  [X] No security impacts identified.
+
+Closes BATAPI-499
+```
+
+### Update ServiceConfigMerger to handle tags
+
+* [view commit d8a10ff](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/d8a10ffd81731348709cb28ae232f76fe01053a4)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Thu, 16 Nov 2023 06:30:16 +0000
+
+```
+Closes BATAPI-502
+
+## Description:
+
+* update ServiceConfigMerger to handle tags
+
+Closes BATAPI-502
+```
+
+### Tag inheritance and resolution
+
+* [view commit 6fef6d0](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/6fef6d05bce8b41da19dd8d6ebda79e3c16529bc)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Mon, 13 Nov 2023 23:09:22 +0000
+
+```
+Closes BATAPI-497
+```
+
+### Merge branch 'release-0.5.1' into main
+
+* [view commit 4155bd6](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/4155bd683f6f08c78d2e7d6f6b0f073f6a85bc92)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Wed, 8 Nov 2023 14:33:27 -1000
+
+
+
+### Updated README with release instructions for starting from a previous point in the git commit history.
+
+* [view commit b891d70](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/b891d7005d8637e121f1e61cd3bbe36e60e8c11a)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Wed, 8 Nov 2023 14:32:36 -1000
+
+
+
+### BATAPI-503: fix bug in CustomFormatter where exception messages were being treated as a format string.
+
+* [view commit 9ee33e9](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/9ee33e9eb6206559e9a58d66e103b5b14357cf6d)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Wed, 8 Nov 2023 11:56:44 -1000
+
+
+
+### sonar-agent: Fix SonarClient code generation.
+
+* [view commit eb6002e](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/eb6002ec9c9e22800d86703a552f153cad173a7b)
+* Author (Committer): Paul Wheeler (Dale O'Neill)
+* Date: Wed, 8 Nov 2023 02:04:58 +0000
+
+```
+## Description:
+NSwag code generation for SonarClient was creating invalid code because it does not recognize the C# Tuple type and expects a custom class to represent that. This change adds an explicit type mapping from the type described in or OpenApi spec to the C# Tuple type.
+
+No Security Impact
+
 ## 0.5.1
 
 ### BATAPI-503: fix bug in CustomFormatter where exception messages were being treated as a format string.
