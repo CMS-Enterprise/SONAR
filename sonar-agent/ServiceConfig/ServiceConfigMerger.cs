@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Models;
+using Microsoft.VisualBasic;
 
 namespace Cms.BatCave.Sonar.Agent.ServiceConfig;
 
@@ -62,7 +64,7 @@ public static class ServiceConfigMerger {
     return new ServiceHierarchyConfiguration(
       serviceResults,
       NullableSetUnion(prev.RootServices, next.RootServices) ?? ImmutableHashSet<String>.Empty,
-      null
+      MergeTags(prev.Tags, next.Tags)
     );
   }
 
@@ -80,7 +82,8 @@ public static class ServiceConfigMerger {
       nextService.Url ?? prevService.Url,
       MergeHealthCheckLists(prevService.HealthChecks, nextService.HealthChecks),
       MergeVersionCheckLists(prevService.VersionChecks, nextService.VersionChecks),
-      NullableSetUnion(prevService.Children, nextService.Children)
+      NullableSetUnion(prevService.Children, nextService.Children),
+      MergeTags(prevService.Tags, nextService.Tags)
     );
   }
 
@@ -283,6 +286,24 @@ public static class ServiceConfigMerger {
           );
       }
     }
+  }
+
+  private static IImmutableDictionary<String, String?>? MergeTags(
+    IImmutableDictionary<String, String?>? prevTags,
+    IImmutableDictionary<String, String?>? nextTags) {
+
+    if (prevTags == null) {
+      return nextTags;
+    }
+
+    if (nextTags == null) {
+      return prevTags;
+    }
+
+    var merged = new Dictionary<String, String?>();
+    prevTags.ToList().ForEach(kvp => merged[kvp.Key] = kvp.Value);
+    nextTags.ToList().ForEach(kvp => merged[kvp.Key] = kvp.Value);
+    return merged.ToImmutableDictionary();
   }
 
   private static IImmutableSet<String>? NullableSetUnion(

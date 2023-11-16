@@ -11,7 +11,10 @@
             "kustomization": "test"
           }
         }
-      ]
+      ],
+      "tags": {
+        "test-metric-app-tag": "test-val-updated"
+      }
     },
     {
       "name": "http-metric-test-app",

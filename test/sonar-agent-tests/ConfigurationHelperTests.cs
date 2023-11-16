@@ -154,4 +154,64 @@ public class ConfigurationHelperTests {
       Assert.Equal(expectedExceptionType, e.ErrorType);
     }
   }
+
+  [Fact]
+  public async Task MergeConfigurationWithTags_Success() {
+    const String jsonFilePath1 = "test-inputs/merge-tags-config1.json";
+    const String jsonFilePath2 = "test-inputs/merge-tags-config2.json";
+    var errorReportsHelper = new ErrorReportsHelper(() => (Mock.Of<IDisposable>(), Mock.Of<ISonarClient>()),
+      Mock.Of<ILogger<ErrorReportsHelper>>());
+    var configHelper = new ConfigurationHelper(
+      new LocalFileServiceConfigSource("test", new[] { jsonFilePath1, jsonFilePath2 }),
+      () => (Mock.Of<IDisposable>(), Mock.Of<ISonarClient>()),
+      Mock.Of<ILogger<ConfigurationHelper>>(),
+      errorReportsHelper
+    );
+
+    var configuration = await configHelper.LoadAndValidateJsonServiceConfigAsync(
+      "testEnv",
+      CancellationToken.None);
+
+    Assert.True(configuration.TryGetValue("test", out var tenantConfig));
+
+    // Tenant tag merge tests
+    Assert.NotNull(tenantConfig);
+    Assert.NotNull(tenantConfig.Tags);
+    var tenantTags = tenantConfig.Tags;
+    var unchangedTenantTag = Assert.Contains("tenant-tag", tenantTags);
+    var updatedTenantTag = Assert.Contains("tenant-tag-merge", tenantTags);
+    var newTenantTag = Assert.Contains("new-tenant-tag", tenantTags);
+    // Test case where tenant tag exists in left hand config and remains unchanged
+    Assert.Equal(expected: "tenant-tag-val", actual: unchangedTenantTag);
+    // Test case where tenant tag exists in left hand config and updated by right hand config
+    Assert.Equal(expected: "updated-tenant-tag", actual: updatedTenantTag);
+    // Test case where tenant tag is added by right hand config
+    Assert.Equal(expected: "new-tenant-tag-val", actual: newTenantTag);
+
+    // Service tag merge tests
+    var rootService1 = tenantConfig.Services.FirstOrDefault(
+      svc => svc.Name == $"service-with-health-checks-and-children");
+    var rootService2 = tenantConfig.Services.FirstOrDefault(
+      svc => svc.Name == $"service-with-only-children");
+    Assert.NotNull(rootService1);
+    Assert.NotNull(rootService2);
+
+    var rootService1Tags = rootService1.Tags;
+    var rootService2Tags = rootService2.Tags;
+
+    Assert.NotNull(rootService1Tags);
+    Assert.NotNull(rootService2Tags);
+
+    // Test case where tag exists in both configs, gets updated by the right hand config
+    var updatedServiceTag = Assert.Contains("service-tag-merge", rootService1Tags);
+    Assert.Equal(expected: "service-tag-updated", actual: updatedServiceTag);
+
+    // Test case where tag present in left hand config and persists after merge
+    var unchangedServiceTag = Assert.Contains("root-service-tag", rootService1Tags);
+    Assert.Equal(expected: "test-val", actual: unchangedServiceTag);
+
+    // Test case where tag is not present in left hand config but is added in right hand config
+    var newServiceTag = Assert.Contains("new-service-tag", rootService2Tags);
+    Assert.Equal(expected: "new-service-tag-val", actual: newServiceTag);
+  }
 }

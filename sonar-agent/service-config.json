@@ -63,7 +63,10 @@
             "kustomization": "sample-kustomization"
           }
         }
-      ]
+      ],
+      "tags": {
+        "test-metric-app-tag": "test-val"
+      }
     },
     {
       "name": "http-metric-test-app",
@@ -192,5 +195,8 @@
   "rootServices": [
     "test-metric-app",
     "http-metric-test-app"
-  ]
+  ],
+  "tags": {
+    "test-tag-1": "test-original"
+  }
 }
