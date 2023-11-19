@@ -81,7 +81,7 @@ public class Program {
         });
         // apply common opts
         ApplyCommonOptions(builder, opts);
-        builder.WebHost.UseUrls("http://0.0.0.0:8081");
+        builder.WebHost.UseUrls("http://0.0.0.0:8081", "http://[::]:8081");
 
         await using var app = BuildApplication(builder);
         return await RunServe(app, opts);
