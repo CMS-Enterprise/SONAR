@@ -14,6 +14,7 @@ import {
   ServiceOverviewContentStyle,
   ServiceOverviewHeaderStyle
 } from './ServiceOverview.Style';
+import ServiceTagsTable from './ServiceTags/ServiceTagsTable';
 import ServiceVersionModule from './ServiceVersion/ServiceVersionModule';
 import StatusHistoryModule from './StatusHistory/StatusHistoryModule';
 import { ServiceOverviewContext } from './ServiceOverviewContext';
@@ -73,6 +74,11 @@ const ServiceOverview: React.FC<{
                 </div>
               )}
             </>
+          )}
+        </div>
+        <div>
+          {serviceHealth.tags && Object.entries(serviceHealth.tags).length > 0 && (
+            <ServiceTagsTable tags={serviceHealth.tags} />
           )}
         </div>
         <div>

@@ -178,6 +178,7 @@ export interface ServiceConfiguration {
   healthChecks?: HealthCheckModel[] | null;
   versionChecks?: VersionCheckModel[] | null;
   children?: string[] | null;
+  tags?: Record<string, string>;
 }
 
 export interface ServiceHealth {
@@ -198,6 +199,7 @@ export interface ServiceHealthData {
 export interface ServiceHierarchyConfiguration {
   services: ServiceConfiguration[];
   rootServices: string[];
+  tags?: Record<string, string>;
 }
 
 export interface ServiceHierarchyHealth {
@@ -213,6 +215,7 @@ export interface ServiceHierarchyHealth {
   aggregateStatus?: HealthStatus;
   healthChecks?: Record<string, DateTimeHealthStatusValueTuple>;
   children?: ServiceHierarchyHealth[] | null;
+  tags?: Record<string, string>;
 }
 
 export interface ServiceHierarchyHealthHistory {
@@ -241,6 +244,7 @@ export interface ServiceHierarchyInfo {
   versions?: Record<string, string>;
   healthChecks?: Record<string, DateTimeHealthStatusValueTuple>;
   children?: ServiceHierarchyInfo[] | null;
+  tags?: Record<string, string>;
 }
 
 export interface ServiceVersion {
