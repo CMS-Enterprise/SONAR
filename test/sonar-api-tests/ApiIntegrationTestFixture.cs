@@ -103,17 +103,37 @@ public class ApiIntegrationTestFixture : IDisposable, ILoggerProvider {
     return new TestLogger(this, categoryName);
   }
 
-  public RequestBuilder CreateAdminRequest(String url) {
-    return this.WithDependencies(provider => {
-      var config = provider.GetRequiredService<IOptions<SecurityConfiguration>>();
-      return this.CreateAuthenticatedRequest(url, config.Value.DefaultApiKey ?? "");
-    });
-  }
-
-  public RequestBuilder CreateAuthenticatedRequest(String url, String apiKey) {
+  public RequestBuilder CreateLegacyAuthenticatedRequest(String url, String apiKey) {
     return this.Server.CreateRequest(url)
       .And(req => {
         req.Headers.Add("ApiKey", apiKey);
+      });
+  }
+
+  public RequestBuilder CreateLegacyAuthenticatedRequest(
+    String url,
+    PermissionType type,
+    String? environment = null,
+    String? tenant = null) {
+
+    var apiKey = this.CreateApiKey(type, environment, tenant);
+
+    return this.CreateLegacyAuthenticatedRequest(url, apiKey.ApiKey);
+  }
+
+  public RequestBuilder CreateAdminRequest(String url) {
+    return this.WithDependencies(provider => {
+      var config = provider.GetRequiredService<IOptions<SecurityConfiguration>>();
+      return this.CreateAuthenticatedRequest(url, Guid.Empty, config.Value.DefaultApiKey ?? "");
+    });
+  }
+
+  public RequestBuilder CreateAuthenticatedRequest(String url, Guid apiKeyId, String apiKey) {
+    var updatedApiKey = apiKeyId + ":" + apiKey;
+
+    return this.Server.CreateRequest(url)
+      .And(req => {
+        req.Headers.Add("ApiKey", updatedApiKey);
       });
   }
 
@@ -125,34 +145,7 @@ public class ApiIntegrationTestFixture : IDisposable, ILoggerProvider {
 
     var apiKey = this.CreateApiKey(type, environment, tenant);
 
-    return this.CreateAuthenticatedRequest(url, apiKey.ApiKey);
-  }
-
-  public RequestBuilder CreateAdminRequestUpdated(String url) {
-    return this.WithDependencies(provider => {
-      var config = provider.GetRequiredService<IOptions<SecurityConfiguration>>();
-      return this.CreateAuthenticatedRequestUpdated(url, config.Value.DefaultApiKey ?? "", Guid.Empty);
-    });
-  }
-
-  public RequestBuilder CreateAuthenticatedRequestUpdated(String url, String apiKey, Guid apiKeyId) {
-    var updatedApiKey = apiKeyId + ":" + apiKey;
-
-    return this.Server.CreateRequest(url)
-      .And(req => {
-        req.Headers.Add("ApiKey", updatedApiKey);
-      });
-  }
-
-  public RequestBuilder CreateAuthenticatedRequestUpdated(
-    String url,
-    PermissionType type,
-    String? environment = null,
-    String? tenant = null) {
-
-    var apiKey = this.CreateApiKey(type, environment, tenant);
-
-    return this.CreateAuthenticatedRequestUpdated(url, apiKey.ApiKey, apiKey.Id);
+    return this.CreateAuthenticatedRequest(url, apiKey.Id, apiKey.ApiKey);
   }
 
   public ApiKeyConfiguration CreateApiKey(
@@ -176,7 +169,7 @@ public class ApiIntegrationTestFixture : IDisposable, ILoggerProvider {
     var testTenant = Guid.NewGuid().ToString();
 
     var createConfigResponse = await
-      this.CreateAdminRequestUpdated($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      this.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
         .And(req => {
           req.Content = JsonContent.Create(new ServiceHierarchyConfiguration(
             ImmutableArray<ServiceConfiguration>.Empty,

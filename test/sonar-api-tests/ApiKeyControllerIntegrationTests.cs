@@ -471,7 +471,7 @@ public class ApiKeyControllerIntegrationTests : ApiControllerTestsBase {
   public async Task CreateGlobalApiKey_BuiltInAdmin_Success_Updated() {
     var request =
       this.Fixture
-        .CreateAdminRequestUpdated("/api/v2/keys")
+        .CreateAdminRequest("/api/v2/keys")
         .And(msg => {
           msg.Content = JsonContent.Create(new {
             apiKeyType = PermissionType.Admin.ToString()
@@ -487,7 +487,7 @@ public class ApiKeyControllerIntegrationTests : ApiControllerTestsBase {
   public async Task CreateGlobalApiKey_GlobalAdmin_Success_Updated() {
     var request =
       this.Fixture
-        .CreateAuthenticatedRequestUpdated("/api/v2/keys", PermissionType.Admin)
+        .CreateAuthenticatedRequest("/api/v2/keys", PermissionType.Admin)
         .And(msg => {
           msg.Content = JsonContent.Create(new {
             apiKeyType = PermissionType.Admin.ToString()
@@ -505,7 +505,7 @@ public class ApiKeyControllerIntegrationTests : ApiControllerTestsBase {
 
     var request =
       this.Fixture
-        .CreateAuthenticatedRequestUpdated("/api/v2/keys", PermissionType.Admin)
+        .CreateAuthenticatedRequest("/api/v2/keys", PermissionType.Admin)
         .And(msg => {
           msg.Content = JsonContent.Create(new {
             apiKeyType = PermissionType.Admin.ToString(),
@@ -524,7 +524,7 @@ public class ApiKeyControllerIntegrationTests : ApiControllerTestsBase {
 
     var request =
       this.Fixture
-        .CreateAdminRequestUpdated("/api/v2/keys")
+        .CreateAdminRequest("/api/v2/keys")
         .And(msg => {
           msg.Content = JsonContent.Create(new {
             apiKeyType = PermissionType.Admin.ToString(),
@@ -543,7 +543,7 @@ public class ApiKeyControllerIntegrationTests : ApiControllerTestsBase {
 
     var request =
       this.Fixture
-        .CreateAuthenticatedRequestUpdated("/api/v2/keys", PermissionType.Admin, environment)
+        .CreateAuthenticatedRequest("/api/v2/keys", PermissionType.Admin, environment)
         .And(msg => {
           msg.Content = JsonContent.Create(new {
             apiKeyType = PermissionType.Admin.ToString(),
@@ -562,7 +562,7 @@ public class ApiKeyControllerIntegrationTests : ApiControllerTestsBase {
 
     var request =
       this.Fixture
-        .CreateAuthenticatedRequestUpdated("/api/v2/keys", PermissionType.Standard)
+        .CreateAuthenticatedRequest("/api/v2/keys", PermissionType.Standard)
         .And(msg => {
           msg.Content = JsonContent.Create(new {
             apiKeyType = PermissionType.Admin.ToString(),
@@ -581,7 +581,7 @@ public class ApiKeyControllerIntegrationTests : ApiControllerTestsBase {
 
     var request =
       this.Fixture
-        .CreateAuthenticatedRequestUpdated("/api/v2/keys", PermissionType.Standard, environment)
+        .CreateAuthenticatedRequest("/api/v2/keys", PermissionType.Standard, environment)
         .And(msg => {
           msg.Content = JsonContent.Create(new {
             apiKeyType = PermissionType.Admin.ToString(),
@@ -601,7 +601,7 @@ public class ApiKeyControllerIntegrationTests : ApiControllerTestsBase {
 
     var request =
       this.Fixture
-        .CreateAuthenticatedRequestUpdated("/api/v2/keys", PermissionType.Admin, environment1)
+        .CreateAuthenticatedRequest("/api/v2/keys", PermissionType.Admin, environment1)
         .And(msg => {
           msg.Content = JsonContent.Create(new {
             apiKeyType = PermissionType.Admin.ToString(),
@@ -620,7 +620,7 @@ public class ApiKeyControllerIntegrationTests : ApiControllerTestsBase {
 
     var request =
       this.Fixture
-        .CreateAuthenticatedRequestUpdated("/api/v2/keys", PermissionType.Admin)
+        .CreateAuthenticatedRequest("/api/v2/keys", PermissionType.Admin)
         .And(msg => {
           msg.Content = JsonContent.Create(new {
             apiKeyType = PermissionType.Admin.ToString(),
@@ -640,7 +640,7 @@ public class ApiKeyControllerIntegrationTests : ApiControllerTestsBase {
 
     var request =
       this.Fixture
-        .CreateAdminRequestUpdated("/api/v2/keys")
+        .CreateAdminRequest("/api/v2/keys")
         .And(msg => {
           msg.Content = JsonContent.Create(new {
             apiKeyType = PermissionType.Admin.ToString(),
@@ -659,7 +659,7 @@ public class ApiKeyControllerIntegrationTests : ApiControllerTestsBase {
 
     var request =
       this.Fixture
-        .CreateAuthenticatedRequestUpdated("/api/v2/keys", PermissionType.Standard)
+        .CreateAuthenticatedRequest("/api/v2/keys", PermissionType.Standard)
         .And(msg => {
           msg.Content = JsonContent.Create(new {
             apiKeyType = PermissionType.Admin.ToString(),
@@ -679,7 +679,7 @@ public class ApiKeyControllerIntegrationTests : ApiControllerTestsBase {
 
     var request =
       this.Fixture
-        .CreateAuthenticatedRequestUpdated("/api/v2/keys", PermissionType.Admin, environment)
+        .CreateAuthenticatedRequest("/api/v2/keys", PermissionType.Admin, environment)
         .And(msg => {
           msg.Content = JsonContent.Create(new {
             apiKeyType = PermissionType.Admin.ToString(),
@@ -700,7 +700,7 @@ public class ApiKeyControllerIntegrationTests : ApiControllerTestsBase {
 
     var request =
       this.Fixture
-        .CreateAuthenticatedRequestUpdated("/api/v2/keys", PermissionType.Admin, environment1)
+        .CreateAuthenticatedRequest("/api/v2/keys", PermissionType.Admin, environment1)
         .And(msg => {
           msg.Content = JsonContent.Create(new {
             apiKeyType = PermissionType.Admin.ToString(),
@@ -717,7 +717,7 @@ public class ApiKeyControllerIntegrationTests : ApiControllerTestsBase {
   [Fact]
   public async Task GetApiKeys_GlobalAdmin_Success_Updated() {
     var request =
-      this.Fixture.CreateAuthenticatedRequestUpdated("/api/v2/keys", PermissionType.Admin);
+      this.Fixture.CreateAuthenticatedRequest("/api/v2/keys", PermissionType.Admin);
 
     var response = await request.GetAsync();
 
@@ -726,7 +726,7 @@ public class ApiKeyControllerIntegrationTests : ApiControllerTestsBase {
 
   [Fact]
   public async Task GetApiKeys_BuiltInAdmin_Success_Updated() {
-    var request = this.Fixture.CreateAdminRequestUpdated("/api/v2/keys");
+    var request = this.Fixture.CreateAdminRequest("/api/v2/keys");
 
     var response = await request.GetAsync();
 
@@ -736,7 +736,7 @@ public class ApiKeyControllerIntegrationTests : ApiControllerTestsBase {
   [Fact]
   public async Task GetApiKeys_GlobalStandard_Forbidden_Updated() {
     var request =
-      this.Fixture.CreateAuthenticatedRequestUpdated("/api/v2/keys", PermissionType.Standard);
+      this.Fixture.CreateAuthenticatedRequest("/api/v2/keys", PermissionType.Standard);
 
     var response = await request.GetAsync();
 
@@ -748,7 +748,7 @@ public class ApiKeyControllerIntegrationTests : ApiControllerTestsBase {
     var (environment, _) = await this.Fixture.CreateEmptyTestConfiguration();
 
     var request =
-      this.Fixture.CreateAuthenticatedRequestUpdated("/api/v2/keys", PermissionType.Admin, environment);
+      this.Fixture.CreateAuthenticatedRequest("/api/v2/keys", PermissionType.Admin, environment);
 
     var response = await request.GetAsync();
 
@@ -760,7 +760,7 @@ public class ApiKeyControllerIntegrationTests : ApiControllerTestsBase {
     var existingApiKey = this.Fixture.CreateApiKey(PermissionType.Admin);
 
     var request =
-      this.Fixture.CreateAuthenticatedRequestUpdated($"/api/v2/keys/{existingApiKey.Id}", PermissionType.Admin);
+      this.Fixture.CreateAuthenticatedRequest($"/api/v2/keys/{existingApiKey.Id}", PermissionType.Admin);
 
     var response = await request.SendAsync("DELETE");
 
@@ -773,7 +773,7 @@ public class ApiKeyControllerIntegrationTests : ApiControllerTestsBase {
     var existingApiKey = this.Fixture.CreateApiKey(PermissionType.Standard, environment);
 
     var request =
-      this.Fixture.CreateAdminRequestUpdated($"/api/v2/keys/{existingApiKey.Id}");
+      this.Fixture.CreateAdminRequest($"/api/v2/keys/{existingApiKey.Id}");
 
     var response = await request.SendAsync("DELETE");
 
@@ -786,7 +786,7 @@ public class ApiKeyControllerIntegrationTests : ApiControllerTestsBase {
     var existingApiKey = this.Fixture.CreateApiKey(PermissionType.Standard);
 
     var request =
-      this.Fixture.CreateAuthenticatedRequestUpdated($"/api/v2/keys/{existingApiKey.Id}", PermissionType.Standard);
+      this.Fixture.CreateAuthenticatedRequest($"/api/v2/keys/{existingApiKey.Id}", PermissionType.Standard);
 
     var response = await request.SendAsync("DELETE");
 
@@ -799,7 +799,7 @@ public class ApiKeyControllerIntegrationTests : ApiControllerTestsBase {
     var existingApiKey = this.Fixture.CreateApiKey(PermissionType.Standard, environment);
 
     var request =
-      this.Fixture.CreateAuthenticatedRequestUpdated(
+      this.Fixture.CreateAuthenticatedRequest(
         $"/api/v2/keys/{existingApiKey.Id}",
         PermissionType.Admin,
         environment
@@ -816,7 +816,7 @@ public class ApiKeyControllerIntegrationTests : ApiControllerTestsBase {
     var existingApiKey = this.Fixture.CreateApiKey(PermissionType.Standard, environment);
 
     var request =
-      this.Fixture.CreateAuthenticatedRequestUpdated(
+      this.Fixture.CreateAuthenticatedRequest(
         $"/api/v2/keys/{existingApiKey.Id}",
         PermissionType.Standard
       );
@@ -832,7 +832,7 @@ public class ApiKeyControllerIntegrationTests : ApiControllerTestsBase {
     var existingApiKey = this.Fixture.CreateApiKey(PermissionType.Standard, environment);
 
     var request =
-      this.Fixture.CreateAuthenticatedRequestUpdated(
+      this.Fixture.CreateAuthenticatedRequest(
         $"/api/v2/keys/{existingApiKey.Id}",
         PermissionType.Standard,
         environment
@@ -851,7 +851,7 @@ public class ApiKeyControllerIntegrationTests : ApiControllerTestsBase {
 
     var request =
       this.Fixture
-        .CreateAuthenticatedRequestUpdated(
+        .CreateAuthenticatedRequest(
           $"/api/v2/keys/{existingApiKey.Id}",
           PermissionType.Admin,
           environment2

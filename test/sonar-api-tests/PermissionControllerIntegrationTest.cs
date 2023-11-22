@@ -58,7 +58,7 @@ public class PermissionControllerIntegrationTest : ApiControllerTestsBase {
   ) {
     await this.BuildDbTables();
     if (expectedStatusCode == HttpStatusCode.Unauthorized) {
-      var requestBuilder = this.Fixture.CreateAuthenticatedRequest("/api/v2/permissions", String.Empty);
+      var requestBuilder = this.Fixture.CreateAuthenticatedRequest("/api/v2/permissions", Guid.Empty, String.Empty);
       requestBuilder.And(msg => {
         msg.Content = JsonContent.Create(
           new {
@@ -154,7 +154,7 @@ public class PermissionControllerIntegrationTest : ApiControllerTestsBase {
 
     if (expectedStatusCode == HttpStatusCode.Unauthorized) {
       //Delete with a anonymous user
-      var requestBuilder = this.Fixture.CreateAuthenticatedRequest($"/api/v2/permissions/{perm!.Id.ToString()}", String.Empty);
+      var requestBuilder = this.Fixture.Server.CreateRequest($"/api/v2/permissions/{perm!.Id.ToString()}");
       var response = await requestBuilder.SendAsync("DELETE");
       //Check results
       Assert.Equal(expectedStatusCode, response.StatusCode);
@@ -265,7 +265,7 @@ public class PermissionControllerIntegrationTest : ApiControllerTestsBase {
   [Fact]
   public async Task UpdateUserPermission_Unauthorized() {
     //Update user.  The Id here is fake, it is not in the database.  Will never make it to the controller to be checked.
-    var requestBuilder = this.Fixture.CreateAuthenticatedRequest($"/api/v2/permissions/FDDAA3C9-B8BD-494B-8A48-27988AA03BCC", String.Empty);
+    var requestBuilder = this.Fixture.Server.CreateRequest($"/api/v2/permissions/FDDAA3C9-B8BD-494B-8A48-27988AA03BCC");
     requestBuilder.And(msg => {
       msg.Content = JsonContent.Create(
         new {
@@ -384,9 +384,27 @@ public class PermissionControllerIntegrationTest : ApiControllerTestsBase {
     Assert.Contains(body, pc => pc.Environment == null);
     Assert.Contains(body, pc => pc.Tenant == null);
   }
+
+  // Validate that the legacy API Key format still works
+  [Fact]
+  public async Task GetCurrentUserPermissions_LegacyApiKeyFormat_Success() {
+    // create users, environments, and tenants
+    await this.BuildDbTables();
+
+    var requestBuilder = this.Fixture.CreateLegacyAuthenticatedRequest("/api/v2/permissions/me", PermissionType.Admin, null, null);
+    var response = await requestBuilder.GetAsync();
+
+    // Verify user permission created
+    var body = await response.Content.ReadFromJsonAsync<List<PermissionConfiguration>>(SerializerOptions);
+    Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    Assert.NotNull(body);
+    Assert.Single(body);
+    Assert.Contains(body, pc => pc.Environment == null);
+    Assert.Contains(body, pc => pc.Tenant == null);
+  }
   [Fact]
   public async Task GetCurrentUserPermission_Unauthorized() {
-    var requestBuilder = this.Fixture.CreateAuthenticatedRequest($"/api/v2/permissions/me", String.Empty);
+    var requestBuilder = this.Fixture.Server.CreateRequest($"/api/v2/permissions/me");
     var response = await requestBuilder.GetAsync();
     Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
   }
@@ -446,7 +464,7 @@ public class PermissionControllerIntegrationTest : ApiControllerTestsBase {
   [Fact]
   public async Task GetUserPermission_Unauthorized() {
     //Update user.  The Id here is fake, it is not in the database.  Will never make it to the controller to be checked.
-    var requestBuilder = this.Fixture.CreateAuthenticatedRequest($"/api/v2/permissions", String.Empty);
+    var requestBuilder = this.Fixture.Server.CreateRequest($"/api/v2/permissions");
     requestBuilder.And(msg => {
       msg.Content = JsonContent.Create(
         new {
