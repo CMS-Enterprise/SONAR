@@ -26,6 +26,7 @@ public class TenantDataHelper {
   private readonly VersionDataHelper _versionDataHelper;
   private readonly String _sonarEnvironment;
   private readonly TagsDataHelper _tagsDataHelper;
+  private readonly DataContext _dbContext;
 
   public TenantDataHelper(
     DbSet<Environment> environmentsTable,
@@ -34,7 +35,8 @@ public class TenantDataHelper {
     ServiceDataHelper serviceDataHelper,
     VersionDataHelper versionDataHelper,
     IOptions<SonarHealthCheckConfiguration> sonarHealthConfig,
-    TagsDataHelper tagsDataHelper) {
+    TagsDataHelper tagsDataHelper,
+    DataContext dbContext) {
 
     this._environmentsTable = environmentsTable;
     this._tenantsTable = tenantsTable;
@@ -43,6 +45,27 @@ public class TenantDataHelper {
     this._versionDataHelper = versionDataHelper;
     this._tagsDataHelper = tagsDataHelper;
     this._sonarEnvironment = sonarHealthConfig.Value.SonarEnvironment;
+    this._dbContext = dbContext;
+  }
+
+  public async Task<Tenant> FetchOrCreateTenantAsync(
+    String environmentName,
+    String tenantName,
+    CancellationToken cancellationToken) {
+
+    var (environment, tenant) = await this.TryFetchTenantAsync(environmentName, tenantName, cancellationToken);
+
+    if (environment is null) {
+      throw new ResourceNotFoundException(nameof(environment), environmentName);
+    }
+
+    if (tenant is null) {
+      var newTenant = await this._tenantsTable.AddAsync(Tenant.New(environment.Id, tenantName), cancellationToken);
+      await this._dbContext.SaveChangesAsync(cancellationToken);
+      tenant = newTenant.Entity;
+    }
+
+    return tenant;
   }
 
   public async Task<Tenant> FetchExistingTenantAsync(

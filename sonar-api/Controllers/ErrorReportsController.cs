@@ -210,7 +210,7 @@ public class ErrorReportsController : ControllerBase {
 
     if (!String.IsNullOrEmpty(tenant)) {
       existingTenant =
-        await this._tenantDataHelper.FetchExistingTenantAsync(
+        await this._tenantDataHelper.FetchOrCreateTenantAsync(
           environment,
           tenant,
           cancellationToken);

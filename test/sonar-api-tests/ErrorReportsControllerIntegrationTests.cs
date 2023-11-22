@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
@@ -92,7 +93,7 @@ public class ErrorReportsControllerIntegrationTests : ApiControllerTestsBase {
   }
 
   [Fact]
-  public async Task CreateErrorReport_InvalidTenantReturnsNotFound() {
+  public async Task CreateErrorReport_UnknownTenantIsCreated() {
     var existingEnvironmentName = Guid.NewGuid().ToString();
     var missingTenantName = Guid.NewGuid().ToString();
     // Create existing Environment
@@ -104,7 +105,7 @@ public class ErrorReportsControllerIntegrationTests : ApiControllerTestsBase {
       await dbContext.SaveChangesAsync(cancellationToken);
     });
 
-    var response = await
+    var createResponse = await
       this.Fixture.CreateAdminRequest($"/api/v2/error-reports/{existingEnvironmentName}")
         .AddHeader(name: "Accept", value: "application/json")
         .And(req => {
@@ -123,18 +124,17 @@ public class ErrorReportsControllerIntegrationTests : ApiControllerTestsBase {
         .PostAsync();
 
     Assert.Equal(
-      expected: HttpStatusCode.NotFound,
-      actual: response.StatusCode);
+      expected: HttpStatusCode.Created,
+      actual: createResponse.StatusCode);
 
-    var body = await response.Content.ReadFromJsonAsync<ProblemDetails>(
-      SerializerOptions
-    );
+    var listResponse = await
+      this.Fixture.CreateAdminRequest($"/api/v2/error-reports/{existingEnvironmentName}")
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
 
-    Assert.NotNull(body);
-    Assert.Equal(
-      expected: ResourceNotFoundException.ProblemTypeName,
-      actual: body.Type
-    );
+    var errorReports = await listResponse.Content.ReadFromJsonAsync<List<ErrorReportDetails>>(SerializerOptions);
+
+    Assert.Equal(expected: missingTenantName, errorReports?.First().Tenant);
   }
 
   [Fact]
