@@ -46,10 +46,6 @@
     <PackageReference Include="Google.Protobuf.Tools" Version="3.21.9" GeneratePathProperty="true" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Telemetry" />
-  </ItemGroup>
-
   <Choose>
     <When Condition="'$(OS)' == 'Windows_NT' And $([System.Environment]::Is64BitOperatingSystem)">
       <PropertyGroup>
