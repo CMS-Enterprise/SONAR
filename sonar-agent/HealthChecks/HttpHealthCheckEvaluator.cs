@@ -31,6 +31,7 @@ public class HttpHealthCheckEvaluator : IHealthCheckEvaluator<HttpHealthCheckDef
 
   private readonly IOptions<AgentConfiguration> _agentConfig;
   private readonly ILogger<HttpHealthCheckEvaluator> _logger;
+  private readonly Func<HttpHealthCheckDefinition, HttpMessageHandler> _httpMsgHandlerFactory;
 
   public HttpHealthCheckEvaluator(
     IOptions<AgentConfiguration> agentConfig,
@@ -38,6 +39,18 @@ public class HttpHealthCheckEvaluator : IHealthCheckEvaluator<HttpHealthCheckDef
 
     this._agentConfig = agentConfig;
     this._logger = logger;
+
+    this._httpMsgHandlerFactory = this.CreateHttpClientHandler;
+  }
+
+  public HttpHealthCheckEvaluator(
+    IOptions<AgentConfiguration> agentConfig,
+    ILogger<HttpHealthCheckEvaluator> logger,
+    Func<HttpHealthCheckDefinition, HttpMessageHandler> httpMsgHandlerFactory) {
+
+    this._agentConfig = agentConfig;
+    this._logger = logger;
+    this._httpMsgHandlerFactory = httpMsgHandlerFactory;
   }
 
   public async Task<HealthStatus> EvaluateHealthCheckAsync(
@@ -46,23 +59,7 @@ public class HttpHealthCheckEvaluator : IHealthCheckEvaluator<HttpHealthCheckDef
     CancellationToken cancellationToken = default) {
 
     try {
-      using var handler = new HttpClientHandler {
-        AllowAutoRedirect = definition.FollowRedirects != false
-      };
-
-      if (definition.SkipCertificateValidation == true) {
-        handler.ServerCertificateCustomValidationCallback = (_, _, _, errors) => {
-          if (errors != SslPolicyErrors.None) {
-            this._logger.LogDebug(
-              "Ignoring SSL Certificate Validation Errors ({CertificateErrors}) for Request {Url}",
-              String.Join(separator: ", ", Enum.GetValues<SslPolicyErrors>().Where(v => v != SslPolicyErrors.None && errors.HasFlag(v))),
-              definition.Url
-            );
-          }
-
-          return true;
-        };
-      }
+      var handler = this._httpMsgHandlerFactory(definition);
 
       using var client = new HttpClient(handler);
       client.Timeout = TimeSpan.FromSeconds(this._agentConfig.Value.AgentInterval);
@@ -113,10 +110,10 @@ public class HttpHealthCheckEvaluator : IHealthCheckEvaluator<HttpHealthCheckDef
       var statusCode = (UInt16)response.StatusCode;
 
       // Evaluate all status code conditions first
+      // If no HttpStatusCode conditions are specified, require the status code to be 200/204
       var statusCodeConditions =
         definition.Conditions
           .Where(c => c.Type == HttpHealthCheckConditionType.HttpStatusCode)
-          // If no HttpStatusCode conditions are specified, require the status code to be 200/204
           .DefaultIfEmpty(HttpHealthCheckEvaluator.DefaultStatusCodeCondition);
       var conditionMet = false;
       foreach (var condition in statusCodeConditions) {
@@ -216,6 +213,29 @@ public class HttpHealthCheckEvaluator : IHealthCheckEvaluator<HttpHealthCheckDef
         return HealthStatus.Offline;
       }
     }
+  }
+
+  private HttpClientHandler CreateHttpClientHandler(HttpHealthCheckDefinition definition) {
+    using var handler = new HttpClientHandler {
+      AllowAutoRedirect = definition.FollowRedirects != false
+    };
+
+    if (definition.SkipCertificateValidation == true) {
+      handler.ServerCertificateCustomValidationCallback = (_, _, _, errors) => {
+        if (errors != SslPolicyErrors.None) {
+          this._logger.LogDebug(
+            "Ignoring SSL Certificate Validation Errors ({CertificateErrors}) for Request {Url}",
+            String.Join(separator: ", ",
+              Enum.GetValues<SslPolicyErrors>().Where(v => v != SslPolicyErrors.None && errors.HasFlag(v))),
+            definition.Url
+          );
+        }
+
+        return true;
+      };
+    }
+
+    return handler;
   }
 
   public HealthStatus EvaluateCondition(
