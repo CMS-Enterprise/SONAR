@@ -71,6 +71,7 @@ export interface EnvironmentHealth {
   /** @format date-time */
   timestamp?: string | null;
   aggregateStatus?: HealthStatus;
+  isNonProd?: boolean;
 }
 
 export interface EnvironmentModel {
@@ -80,6 +81,7 @@ export interface EnvironmentModel {
    * @pattern ^[0-9a-zA-Z_-]+$
    */
   name: string;
+  isNonProd?: boolean;
 }
 
 export interface ErrorReportDetails {

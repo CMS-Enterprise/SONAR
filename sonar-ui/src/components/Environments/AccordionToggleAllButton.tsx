@@ -13,7 +13,6 @@ const AccordionToggleAllButton: React.FC<{
   return (
     <div className="ds-l-row ds-u-justify-content--end">
       <div
-        className="ds-l-sm-col--4 ds-u-margin-right--4 ds-u-margin-left--auto"
         css={getAccordionToggleStyle(theme)}
       >
         <Button

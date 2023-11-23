@@ -191,6 +191,23 @@ permissions to the requested environment/tenant.
    * No description
    *
    * @tags Environment
+   * @name UpdateEnvironment
+   * @summary Update environment.
+   * @request PUT:/api/v2/environments/{environment}
+   */
+  updateEnvironment = (environment: string, data: EnvironmentModel, params: RequestParams = {}) =>
+    this.request<EnvironmentModel, ProblemDetails | void>({
+      path: `/api/v2/environments/${environment}`,
+      method: "PUT",
+      body: data,
+      type: ContentType.Json,
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags Environment
    * @name GetEnvironment
    * @summary Fetch a single environment's current sonar aggregate health status.
    * @request GET:/api/v2/environments/{environment}

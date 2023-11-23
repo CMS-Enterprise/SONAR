@@ -5,7 +5,6 @@ using System.Linq;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Models;
-using Microsoft.VisualBasic;
 
 namespace Cms.BatCave.Sonar.Agent.ServiceConfig;
 

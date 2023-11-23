@@ -11,6 +11,7 @@ import CreateEnvironmentForm from '../components/Environments/CreateEnvironmentF
 import EnvironmentFilterBar from '../components/Environments/EnvironmentFilterBar';
 import { useGetEnvironments } from '../components/Environments/Environments.Hooks';
 import {useSearchParams} from 'react-router-dom';
+import ToggleSwitch from '../components/Environments/ToggleSwitch';
 
 const Environments = () => {
   const [createEnvOpen, setCreateEnvOpen] = useState(false);
@@ -21,6 +22,7 @@ const Environments = () => {
   const [filter, setFilter] = useState(searchParams.get("environmentName") ?? "");
   const [filteredEnvs, setFilteredEnvs] = useState<EnvironmentHealth[]>([]);
   const { userIsAuthenticated, userInfo } = useUserContext();
+  const [showNonProdEnvs, setNonProdEnvsFlag] = useState(true);
 
   // useEffect triggered by user input for filter. Will perform filtering on every keystroke
   // and update search params.
@@ -79,18 +81,22 @@ const Environments = () => {
       <EnvironmentFilterBar setFilter={setFilter} filter={filter} />
 
       {(filteredEnvs.length > 0 && (data && data?.length > 0)) ? (
-        <AccordionToggleAllButton allPanelsOpen={allPanelsOpen} handleToggle={handleToggleAll} />
+        <div className="ds-l-sm-col--10 ds-u-margin-left--auto ds-u-margin-right--auto ds-u-margin-top--2 ds-u-display--flex ds-u-justify-content--between">
+            <ToggleSwitch switchFlag={showNonProdEnvs} setSwitchFlag={setNonProdEnvsFlag} />
+            <AccordionToggleAllButton allPanelsOpen={allPanelsOpen} handleToggle={handleToggleAll} />
+        </div>
       ) : null}
 
       <div className="ds-l-row">
         {isLoading ? (<Spinner />) :
           filteredEnvs.map(e => (
+            ((showNonProdEnvs) || (e.isNonProd === showNonProdEnvs)) ?
             <EnvironmentItem
               key={e.environmentName}
               environment={e}
               openPanels={openPanels}
               setOpenPanels={setOpenPanels}
-            />
+            /> : null
         ))}
       </div>
       { (userIsAuthenticated && userInfo?.isAdmin) ?
