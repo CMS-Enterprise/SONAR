@@ -17,7 +17,7 @@ public class DbMetrics : IDbCommandInterceptor {
     new("'[a-z0-9]{8}(-[a-z0-9]{4}){3}-[a-z0-9]{12}'", RegexOptions.Compiled);
   private static readonly Regex GuidArrayLiteralRegex =
     new(
-      "'[a-z0-9]{8}(-[a-z0-9]{4}){3}-[a-z0-9]{12}'(, '[a-z0-9]{8}(-[a-z0-9]{4}){3}-[a-z0-9]{12}')*",
+      "'[a-z0-9]{8}(-[a-z0-9]{4}){3}-[a-z0-9]{12}'(, '[a-z0-9]{8}(-[a-z0-9]{4}){3}-[a-z0-9]{12}')+",
       RegexOptions.Compiled
     );
 
