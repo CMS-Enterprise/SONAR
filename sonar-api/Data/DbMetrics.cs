@@ -54,35 +54,35 @@ public class DbMetrics : IDbCommandInterceptor {
     return ValueTask.FromResult(result);
   }
 
-  public DbDataReader ScalarExecuted(
+  public Object? ScalarExecuted(
     DbCommand command,
     CommandExecutedEventData eventData,
-    DbDataReader result) {
+    Object? result) {
     AddCommandMetrics(command, eventData, label: "Scalar", isAsync: false);
     return result;
   }
 
-  public ValueTask<DbDataReader> ScalarExecutedAsync(
+  public ValueTask<Object?> ScalarExecutedAsync(
     DbCommand command,
     CommandExecutedEventData eventData,
-    DbDataReader result,
+    Object? result,
     CancellationToken cancellationToken = new CancellationToken()) {
     AddCommandMetrics(command, eventData, label: "Scalar", isAsync: true);
     return ValueTask.FromResult(result);
   }
 
-  public DbDataReader NonQueryExecuted(
+  public Int32 NonQueryExecuted(
     DbCommand command,
     CommandExecutedEventData eventData,
-    DbDataReader result) {
+    Int32 result) {
     AddCommandMetrics(command, eventData, label: "NonQuery", isAsync: false);
     return result;
   }
 
-  public ValueTask<DbDataReader> NonQueryExecutedAsync(
+  public ValueTask<Int32> NonQueryExecutedAsync(
     DbCommand command,
     CommandExecutedEventData eventData,
-    DbDataReader result,
+    Int32 result,
     CancellationToken cancellationToken = new CancellationToken()) {
     AddCommandMetrics(command, eventData, label: "NonQuery", isAsync: true);
     return ValueTask.FromResult(result);
