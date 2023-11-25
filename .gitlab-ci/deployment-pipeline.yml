@@ -21,69 +21,25 @@ stages:
   APP_IMAGE_SRC: $UI_APP_IMAGE_SRC
 
 # Automatic deployment pipeline trigger jobs for lower realms.
-# These must all be run serially! Each triggered pipeline pushes a commit to the same branch
-# of the Sonar manifests repo. If they ran in parallel starting at the same time (thus, with
-# the same initial commit ref for the branch), after one of them pushes it's commit successfully,
-# all others would fail because they don't have the new commit from the first one. It'd be like a
-# bunch of devs pushing conflicting updates to the same code without rebasing/syncing each others
-# changes, someone will always get a merge conflict.
 deploy-api-dev:
   extends: .deploy
   rules:
     - if: $CI_COMMIT_BRANCH == $MAIN_BRANCH_NAME && $CI_COMMIT_TAG == null
   variables:
-    TARGET_ENVIRONMENT: dev
+    TARGET_ENVIRONMENTS: "environments/dev environments/batcave-dev environments/k3d environments/impl"
     <<: *api-deploy-vars
 
 deploy-ui-dev:
-  needs: [ deploy-api-dev ]
   extends: .deploy
   rules:
     - if: $CI_COMMIT_BRANCH == $MAIN_BRANCH_NAME && $CI_COMMIT_TAG == null
   variables:
-    TARGET_ENVIRONMENT: dev
-    <<: *ui-deploy-vars
-
-deploy-api-k3d:
-  needs: [ deploy-ui-dev ]
-  extends: .deploy
-  rules:
-    - if: $CI_COMMIT_BRANCH == $MAIN_BRANCH_NAME && $CI_COMMIT_TAG == null
-  variables:
-    TARGET_ENVIRONMENT: k3d
-    <<: *api-deploy-vars
-
-deploy-ui-k3d:
-  needs: [ deploy-api-k3d ]
-  extends: .deploy
-  rules:
-    - if: $CI_COMMIT_BRANCH == $MAIN_BRANCH_NAME && $CI_COMMIT_TAG == null
-  variables:
-    TARGET_ENVIRONMENT: k3d
-    <<: *ui-deploy-vars
-
-deploy-api-impl:
-  needs: [ deploy-ui-k3d ]
-  extends: .deploy
-  rules:
-    - if: $CI_COMMIT_BRANCH == $MAIN_BRANCH_NAME && $CI_COMMIT_TAG == null
-  variables:
-    TARGET_ENVIRONMENT: impl
-    <<: *api-deploy-vars
-
-deploy-ui-impl:
-  needs: [ deploy-api-impl ]
-  extends: .deploy
-  rules:
-    - if: $CI_COMMIT_BRANCH == $MAIN_BRANCH_NAME && $CI_COMMIT_TAG == null
-  variables:
-    TARGET_ENVIRONMENT: impl
+    TARGET_ENVIRONMENTS: "environments/dev environments/batcave-dev environments/k3d environments/impl"
     <<: *ui-deploy-vars
 
 # Deployment pipeline trigger jobs for the upper realms; automatic deployment for test, manual for prod.
-# These must also be run serially, for the same reasons as the lower realms! However, these jobs run
-# under different conditions (orthogonal to the lower realm conditions) and don't depend on the lower
-# realm jobs; they form a different "chain" of deployments.
+# However, these jobs run under different conditions (orthogonal to the lower realm conditions) and
+# don't depend on the lower realm jobs; they form a different "chain" of deployments.
 deploy-api-test:
   extends: .deploy
   rules:
@@ -94,7 +50,6 @@ deploy-api-test:
     APP_IMAGE_TAG: $CI_COMMIT_TAG
 
 deploy-ui-test:
-  needs: [ deploy-api-test ]
   extends: .deploy
   rules:
     - if: $CI_COMMIT_TAG =~ $APP_VERSION_TAG_REGEX
@@ -104,7 +59,7 @@ deploy-ui-test:
     APP_IMAGE_TAG: $CI_COMMIT_TAG
 
 deploy-api-prod:
-  needs: [ deploy-ui-test ]
+  needs: [ deploy-api-test ]
   extends: .deploy
   rules:
     - if: $CI_COMMIT_TAG =~ $APP_VERSION_TAG_REGEX
@@ -115,7 +70,7 @@ deploy-api-prod:
     APP_IMAGE_TAG: $CI_COMMIT_TAG
 
 deploy-ui-prod:
-  needs: [ deploy-api-prod ]
+  needs: [ deploy-ui-test ]
   extends: .deploy
   rules:
     - if: $CI_COMMIT_TAG =~ $APP_VERSION_TAG_REGEX
