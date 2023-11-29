@@ -1,3 +1,157 @@
+## 0.5.3
+
+## Enable dev builds for the SONAR UI.
+
+ * [view commit 358efd4](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/358efd4e2622eee8c2db1d402de59c12e7d08f47)
+ * Author: Paul Wheeler <pwheeler@revacomm.com>
+ * Date:   Tue Nov 28 23:45:54 2023 -1000
+
+
+## Added a Maintenance HealthStatus and added validation to ensure it isn't misused.
+
+ * [view commit 1bab0e9](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/1bab0e981044496a0c28483523e3f1ead8a28ef1)
+ * Author: Paul Wheeler <pwheeler@revacomm.com>
+ * Date: Wed, Nov 29 23:13:14 2023 -1000
+
+
+
+## sonar-api: apparently binding to the IPv6 loopback address does not work in BatCAVE EKS clusters.
+
+ * [view commit e4c42c5](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/e4c42c5dab37d62ae6f585b2886d2eb35655f0aa)
+ * Author: Paul Wheeler <pwheeler@revacomm.com>
+ * Date: Wed, Nov 29 00:32:25 2023 -1000
+
+
+
+### Added support for ipv6 to sonar-api.
+
+* [view commit e525b84](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/e525b84ef1d439b9b3cf7df3d7dec648035fe5a6)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Sat, 18 Nov 2023 15:32:12 -1000
+
+
+
+### Updated the environments CI variables to include the environments dir.
+
+* [view commit aea1214](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/aea121410efbe9feb8aea6464300cb172a76aae3)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Fri, 24 Nov 2023 14:26:15 -1000
+
+```
+Also merged all the dev environment jobs into one and enabled
+parallelism.
+```
+
+### sonar-api: Fixed signatures in DbMetrics interceptor that did not match the interface declarations.
+
+* [view commit 9ae58f7](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/9ae58f795cef7025192b1ded7a10a7a02632939b)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Fri, 24 Nov 2023 11:52:15 -1000
+
+
+
+### sonar-api: fixed DbMetrics regex for simplifying command text with guid arrays.
+
+* [view commit ed35608](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/ed35608d5019ccf1f3ff3fe4ff9f79adc2756ea7)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Fri, 24 Nov 2023 10:31:32 -1000
+
+
+
+### sonar-api: Updates to DbMetrics based on code review feedback.
+
+* [view commit e70f7cf](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/e70f7cf4fbfe8d035c38fb0b5e30049d4fc1f4a3)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Fri, 24 Nov 2023 09:57:50 -1000
+
+
+
+### Remove folder reference
+
+* [view commit 4fb2931](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/4fb29316e27435fabd7b0deae0787337197fd5a5)
+* Author (Committer): Kevin Ly (Paul Wheeler)
+* Date: Wed, 22 Nov 2023 10:44:27 -0800
+
+
+
+### Create DbMetrics to meter queries as counters, propogate for reader, nonquery, scalar. Set up Prometheus config for local docker tests.
+
+* [view commit 4f31d8d](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/4f31d8df3b053c6e7124773667a5dcd41523ca0c)
+* Author (Committer): Kevin Ly (Paul Wheeler)
+* Date: Thu, 2 Nov 2023 14:12:34 -0700
+
+
+
+### Adds base OTLP dependencies for collecting profiling metrics Pins to latest stable versions of OpenTelemetry hosting extensions and console exporter Adds OTel tracing configuration to web application builder Adds asp.net core instrumentation to tracing configuration
+
+* [view commit 32fc793](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/32fc79393941018d5967cc331a225e492504d0f5)
+* Author (Committer): Stephen Brey (Paul Wheeler)
+* Date: Tue, 31 Oct 2023 13:47:07 -0600
+
+
+
+### Updated API tests to use the updated api key format
+
+* [view commit d03bf67](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/d03bf67ca5b945c44c00e30196a932c38b80293c)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Tue, 21 Nov 2023 22:56:23 -1000
+
+
+
+### Close BATAPI-500 Hide non production environments
+
+* [view commit 737fec5](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/737fec56fc5d0305c5feabbf682cabdb3e1befed)
+* Author (Committer): Dale O'Neill (Dale O'Neill)
+* Date: Thu, 23 Nov 2023 00:40:41 +0000
+
+```
+* Add checkbox switch to hide non production
+
+* Updated api contract to get latest changes to sonar api.
+```
+
+### Resolve BATAPI-489 "Unit tests for httphealthcheckevaluator"
+
+* [view commit 5ae63d9](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/5ae63d9a86928d038664a3a9199ba19781c62c68)
+* Author (Committer): Teresa Tran (Teresa Tran)
+* Date: Wed, 22 Nov 2023 22:22:03 +0000
+
+```
+Closes BATAPI-489
+
+## Description:
+
+* Implement Unit Tests for HttpHealthCheckEvaluator. Test the interactions between different health check conditions and corresponding http responses.
+```
+
+### BATAPI-504 Create tenant for error report if tenant does not exist
+
+* [view commit 32e09a4](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/32e09a4f1c83c8b0aba408cf09ac1aa6ef2d049a)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Wed, 22 Nov 2023 15:50:37 +0000
+
+
+
+### Tags section to service interface
+
+* [view commit 4255f82](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/4255f82f3b59c3bca8cd6aed26d064c0b0ba9e48)
+* Author (Committer): Blaise Takushi (Paul Wheeler)
+* Date: Wed, 22 Nov 2023 08:05:30 +0000
+
+```
+* Adds service tags section to service card
+* Updates sonar client
+
+Closes BATAPI-498
+```
+
+### chart release 0.5.2
+
+* [view commit 71f3c1a](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/71f3c1ae390789f263fff0b941128fd1dd12d5c1)
+* Author (Committer): Dale O'Neill (Dale O'Neill)
+* Date: Thu, 16 Nov 2023 09:29:24 -0800
+
+
 ## 0.5.2
 
 ### BATAPI-499 Isnonprod flag
@@ -26,20 +180,6 @@ Closes BATAPI-499
 * Added IsNonProd to the Environment datamodel.  Also updated migrations table.
 
 * Added IsNonProd property to Environment
-
-## Security Impact Analysis Questionnaire
-
-### Submitter Checklist
--  [ ] Is there an impact on Auditing and Logging procedures or capabilities?
--  [ ] Is there an impact on Authentication procedures or capabilities?
--  [ ] Is there an impact on Authorization procedures or capabilities?
--  [ ] Is there an impact on Communication Security procedures or capabilities?
--  [ ] Is there an impact on Cryptography procedures or capabilities?
--  [ ] Is there an impact on Sensitive Data procedures or capabilities?
--  [ ] Is there an impact on any other security-related procedures or capabilities?
--  [X] No security impacts identified.
-
-Closes BATAPI-499
 ```
 
 ### Update ServiceConfigMerger to handle tags
