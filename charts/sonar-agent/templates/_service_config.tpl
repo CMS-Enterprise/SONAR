@@ -16,5 +16,8 @@
     {{- end }}
   ],
   "rootServices": {{ toJson .rootServices }}
+  {{- with .tags }},
+  "tags": {{ toPrettyJson . | indent 2 | trim }}
+  {{- end }}
 }
 {{- end }}

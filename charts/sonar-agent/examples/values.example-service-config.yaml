@@ -85,6 +85,8 @@ configs:
         }
       }
     rootServices: [ "test-metric-app", "http-metric-test-app" ]
+    tags:
+      myKey: "some metadata"
   example-additional-config:
     order: 2
     services:
