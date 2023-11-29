@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -81,7 +82,17 @@ public class Program {
         });
         // apply common opts
         ApplyCommonOptions(builder, opts);
-        builder.WebHost.UseUrls("http://0.0.0.0:8081", "http://[::]:8081");
+
+        var config = builder.Configuration.GetSection("WebHost").BindCtor<WebHostConfiguration>();
+        var urls = new List<String>();
+        if (config.BindOptions.HasFlag(BindOption.Ipv4)) {
+          urls.Add("http://0.0.0.0:8081");
+        }
+        if (config.BindOptions.HasFlag(BindOption.Ipv6)) {
+          urls.Add("http://[::]:8081");
+        }
+
+        builder.WebHost.UseUrls(urls.ToArray());
 
         await using var app = BuildApplication(builder);
         return await RunServe(app, opts);
