@@ -1,0 +1,29 @@
+{
+  "services": [
+    {
+      "name": "service",
+      "displayName": "Service",
+      "healthChecks": [
+        {
+          "name": "example",
+          "description": "Invalid condition status: Maintenance",
+          "definition": {
+            "url": "http://localhost:8082/api/ready/statusjson",
+            "conditions": [
+              {
+                "status": "Maintenance",
+                "path": "/data/@status",
+                "value": "OK",
+                "type": "HttpBodyXml"
+              }
+            ]
+          },
+          "type": "httpRequest"
+        }
+      ]
+    }
+  ],
+  "rootServices": [
+    "service"
+  ]
+}

@@ -10,7 +10,7 @@ using Json.Path;
 
 namespace Cms.BatCave.Sonar.Models;
 
-public record HttpBodyHealthCheckCondition : HttpHealthCheckCondition, IValidatableObject {
+public record HttpBodyHealthCheckCondition : HttpHealthCheckCondition {
 
   public HttpBodyHealthCheckCondition(
     HealthStatus status,
@@ -33,8 +33,8 @@ public record HttpBodyHealthCheckCondition : HttpHealthCheckCondition, IValidata
   public HealthStatus? NoMatchStatus { get; init; }
 
 
-  public IEnumerable<ValidationResult> Validate(ValidationContext validationContext) {
-    var validationResults = new List<ValidationResult>();
+  public override IEnumerable<ValidationResult> Validate(ValidationContext validationContext) {
+    var validationResults = new List<ValidationResult>(base.Validate(validationContext));
 
     // Validate that our Value is a valid regular expression.
     try {
@@ -44,6 +44,13 @@ public record HttpBodyHealthCheckCondition : HttpHealthCheckCondition, IValidata
         errorMessage: $"Regular expression is not valid: {e.Message}",
         new[] { nameof(this.Value) }));
     }
+
+    if (this.NoMatchStatus == HealthStatus.Maintenance) {
+      validationResults.Add(new ValidationResult(
+        errorMessage: $"Invalid {nameof(this.NoMatchStatus)}: The {nameof(HealthStatus)} {nameof(HealthStatus.Maintenance)} is reserved and not a valid health check status."
+      ));
+    }
+
 
     // Validate that our Type is valid, and that our Path is valid according to our type.
     switch (this.Type) {

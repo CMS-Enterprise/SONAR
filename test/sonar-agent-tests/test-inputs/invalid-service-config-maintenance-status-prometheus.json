@@ -1,0 +1,29 @@
+{
+  "services": [
+    {
+      "name": "service",
+      "displayName": "Service",
+      "healthChecks": [
+        {
+          "name": "example",
+          "description": "Invalid condition status: Maintenance",
+          "definition": {
+            "duration": "0.00:00:20",
+            "expression": "example_saw_wave",
+            "conditions": [
+              {
+                "operator": "GreaterThan",
+                "threshold": 40,
+                "status": "Maintenance"
+              }
+            ]
+          },
+          "type": "prometheusMetric"
+        }
+      ]
+    }
+  ],
+  "rootServices": [
+    "service"
+  ]
+}
