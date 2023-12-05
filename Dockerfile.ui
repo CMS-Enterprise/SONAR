@@ -16,8 +16,8 @@ RUN apk upgrade --no-cache libssl3 libcrypto3
 WORKDIR /usr/share/nginx/html
 RUN rm -rf ./*
 
-# remove busybox (after usage of rm)
-RUN rm /bin/*
+# remove busybox (must be the last command run)
+RUN apk del busybox
 
 COPY --from=builder /sonar/sonar-ui/build .
 COPY --from=builder /sonar/sonar-ui/default.conf /etc/nginx/conf.d/
