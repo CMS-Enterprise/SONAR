@@ -14,8 +14,8 @@ FROM mcr.microsoft.com/dotnet/runtime:7.0-alpine3.18
 # make sure we are running the most recent version of these libraries
 RUN apk upgrade --no-cache libssl3 libcrypto3
 
-# remove busybox (must be the last command run)
-RUN apk del busybox
+# remove busybox (must be after usage of apk)
+RUN rm /bin/*
 
 WORKDIR /sonar/sonar-agent
 COPY --from=build /sonar/sonar-agent/bin/Release/net7.0/* .
