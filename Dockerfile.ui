@@ -1,4 +1,4 @@
-FROM artifactory.cloud.cms.gov/docker/node:18-alpine AS builder
+FROM artifactory.cloud.cms.gov/docker/node:18.18-alpine3.18 AS builder
 WORKDIR /sonar/sonar-ui
 COPY sonar-ui/package.json .
 COPY sonar-ui/package-lock.json .
