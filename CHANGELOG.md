@@ -1,3 +1,55 @@
+## 0.5.4
+
+### Remove using statement from http client handler returned from factory
+
+* [view commit 2b6413b](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/2b6413be18859c225223b90c6645b38c57d977fa)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Wed, 6 Dec 2023 16:00:40 -0700
+
+
+
+### Revert my earlier change that attempted to use apk to remove busybox
+
+* [view commit fb1c353](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/fb1c353a9fe89b08e0cd7809a531ce8cfc85740e)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Tue, 5 Dec 2023 13:09:52 -1000
+
+```
+It turns out that several core packages depend on busybox which prevents it from being removed by APK, so manually removing the binaries is the only way
+```
+
+### BATAPI-533 Pin base image for the UI container to node:18.18-alpine3.18 to address pipeline failures
+
+* [view commit 8fd3021](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/8fd302122009e1a53cada2c1b1c75a16da328667)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Tue, 5 Dec 2023 22:42:41 +0000
+
+
+
+### SONAR Agent Chart Release v0.5.3
+
+* [view commit 667941e](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/667941e499f3fc188f3765ee97c4ae4a29946426)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Thu, 30 Nov 2023 17:19:27 -1000
+
+
+
+### sonar-agent chart: added support for tenant level tags.
+
+* [view commit 3325d47](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/3325d475fe2021424eaf7aeef0ca9ac26f2b9a70)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Tue, 28 Nov 2023 17:58:44 -1000
+
+
+
+### BATAPI-533 Update all Dockerfiles to use Alpine 3.18
+
+* [view commit 645fcc4](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/645fcc410a578358db735b224877b006b026193f)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Tue, 5 Dec 2023 19:37:30 +0000
+
+```
+Update all Dockerfiles to use Alpine 3.18 to resolve findings in DefectDojo
 ## 0.5.3
 
 ## Enable dev builds for the SONAR UI.
