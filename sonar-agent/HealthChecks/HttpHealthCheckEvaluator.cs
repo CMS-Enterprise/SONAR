@@ -216,7 +216,7 @@ public class HttpHealthCheckEvaluator : IHealthCheckEvaluator<HttpHealthCheckDef
   }
 
   private HttpClientHandler CreateHttpClientHandler(HttpHealthCheckDefinition definition) {
-    using var handler = new HttpClientHandler {
+    var handler = new HttpClientHandler {
       AllowAutoRedirect = definition.FollowRedirects != false
     };
 
