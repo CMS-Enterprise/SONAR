@@ -437,6 +437,14 @@ internal class Program {
         null
       ));
 
+      // Start the HelmRelease Version Check processing task
+      var helmReleaseVersionRequester = new FluxHelmReleaseVersionRequester(kubeClient);
+      tasks.Add((
+        versionCheckQueueProcessor.StartAsync(helmReleaseVersionRequester, token),
+        "FluxHelmRelease Version Check Processor",
+        null
+      ));
+
       //Start the Kubernetes resource version check processing task
       var kubernetesVersionRequester = new KubernetesImageVersionRequester(kubeClient);
       tasks.Add((

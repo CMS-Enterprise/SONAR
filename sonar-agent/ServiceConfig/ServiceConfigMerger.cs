@@ -255,6 +255,23 @@ public static class ServiceConfigMerger {
             );
           }
 
+        case VersionCheckType.FluxHelmRelease:
+          if (nextDefinition is FluxHelmReleaseVersionCheckDefinition nextFluxHelmVersionCheckDefinition) {
+            if (prevDefinition is FluxHelmReleaseVersionCheckDefinition prevFluxHelmVersionCheckDefinition) {
+              return new FluxHelmReleaseVersionCheckDefinition(
+                nextFluxHelmVersionCheckDefinition.K8sNamespace ?? prevFluxHelmVersionCheckDefinition.K8sNamespace,
+                nextFluxHelmVersionCheckDefinition.HelmRelease ?? prevFluxHelmVersionCheckDefinition.HelmRelease);
+            } else {
+              return nextDefinition;
+            }
+          } else {
+            // This should not happen because the deserializer cannot deserialize a
+            // VersionCheckDefinition that isn't compatible with the specified VersionCheckType.
+            throw new InvalidOperationException(
+              "The specified version check definition is not compatible with the expected version check type."
+            );
+          }
+
         case VersionCheckType.HttpResponseBody:
           if (nextDefinition is HttpResponseBodyVersionCheckDefinition nextHttpVersionCheckDefinition) {
             if (prevDefinition is HttpResponseBodyVersionCheckDefinition prevHttpVersionCheckDefinition) {

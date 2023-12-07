@@ -37,6 +37,12 @@ public class VersionCheck {
           this.Definition,
           DefinitionSerializerOptions) ??
         throw new InvalidOperationException("Definition deserialized to null."),
+      VersionCheckType.FluxHelmRelease =>
+        JsonSerializer.Deserialize<FluxHelmReleaseVersionCheckDefinition>(
+          this.Definition,
+          DefinitionSerializerOptions) ??
+        throw new InvalidOperationException("Definition deserialized to null."),
+
       VersionCheckType.KubernetesImage =>
         JsonSerializer.Deserialize<KubernetesVersionCheckDefinition>(
           this.Definition,
@@ -58,6 +64,10 @@ public class VersionCheck {
       VersionCheckType.FluxKustomization =>
         JsonSerializer.Serialize(
           (FluxKustomizationVersionCheckDefinition)def,
+          DefinitionSerializerOptions),
+      VersionCheckType.FluxHelmRelease =>
+        JsonSerializer.Serialize(
+          (FluxHelmReleaseVersionCheckDefinition)def,
           DefinitionSerializerOptions),
       VersionCheckType.KubernetesImage =>
         JsonSerializer.Serialize(

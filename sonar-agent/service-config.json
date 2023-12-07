@@ -62,6 +62,13 @@
             "k8sNamespace": "sample-kustomization",
             "kustomization": "sample-kustomization"
           }
+        },
+        {
+          "versionCheckType": "FluxHelmRelease",
+          "definition": {
+            "k8sNamespace": "baz",
+            "helmRelease": "podinfo"
+          }
         }
       ],
       "tags": {
