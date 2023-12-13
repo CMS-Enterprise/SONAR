@@ -1,0 +1,46 @@
+{
+  "services": [
+    {
+      "name": "test-metric-app",
+      "displayName": "Test Application",
+      "description": "A test application that generates arbitrary metrics for testing purpose",
+      "url": "http://localhost:2020/metrics",
+      "children": null,
+      "healthChecks": [
+        {
+          "name": "example",
+          "description": "Degraded and Offline periodically based on an example metric.",
+          "definition": {
+            "duration": "0.00:00:20",
+            "expression": "example_saw_wave",
+            "conditions": [
+              {
+                "operator": "GreaterThan",
+                "threshold": 60,
+                "status": "Offline"
+              },
+              {
+                "operator": "GreaterThan",
+                "threshold": 20,
+                "status": "Degraded"
+              }
+            ]
+          },
+          "type": "prometheusMetric"
+        }
+      ],
+      "versionChecks": [
+        {
+          "versionCheckType": "FluxHelmRelease",
+          "definition": {
+            "k8sNamespace": "test-helmrelease",
+            "helmRelease": "podinfo"
+          }
+        }
+      ]
+    }
+  ],
+  "rootServices": [
+    "test-metric-app"
+  ]
+}

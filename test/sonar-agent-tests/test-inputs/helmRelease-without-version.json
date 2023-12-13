@@ -1,0 +1,153 @@
+{
+  "apiVersion": "helm.toolkit.fluxcd.io/v2beta1",
+  "items": [
+    {
+      "apiVersion": "helm.toolkit.fluxcd.io/v2beta1",
+      "kind": "HelmRelease",
+      "metadata": {
+        "creationTimestamp": "2023-12-13T22:14:20Z",
+        "deletionGracePeriodSeconds": null,
+        "deletionTimestamp": null,
+        "finalizers": [
+          "finalizers.fluxcd.io"
+        ],
+        "generateName": null,
+        "generation": 1,
+        "labels": null,
+        "managedFields": [
+          {
+            "apiVersion": "helm.toolkit.fluxcd.io/v2beta1",
+            "fieldsType": "FieldsV1",
+            "fieldsV1": {
+              "f:metadata": {
+                "f:finalizers": {
+                  ".": {},
+                  "v:\u0022finalizers.fluxcd.io\u0022": {}
+                }
+              }
+            },
+            "manager": "helm-controller",
+            "operation": "Update",
+            "subresource": null,
+            "time": "2023-12-13T22:14:20Z"
+          },
+          {
+            "apiVersion": "helm.toolkit.fluxcd.io/v2beta1",
+            "fieldsType": "FieldsV1",
+            "fieldsV1": {
+              "f:metadata": {
+                "f:annotations": {
+                  ".": {},
+                  "f:kubectl.kubernetes.io/last-applied-configuration": {}
+                }
+              },
+              "f:spec": {
+                ".": {},
+                "f:chart": {
+                  ".": {},
+                  "f:spec": {
+                    ".": {},
+                    "f:chart": {},
+                    "f:interval": {},
+                    "f:reconcileStrategy": {},
+                    "f:sourceRef": {
+                      ".": {},
+                      "f:kind": {},
+                      "f:name": {}
+                    },
+                    "f:version": {}
+                  }
+                },
+                "f:install": {
+                  ".": {},
+                  "f:remediation": {
+                    ".": {},
+                    "f:retries": {}
+                  }
+                },
+                "f:interval": {},
+                "f:releaseName": {},
+                "f:test": {
+                  ".": {},
+                  "f:enable": {}
+                },
+                "f:timeout": {},
+                "f:upgrade": {
+                  ".": {},
+                  "f:remediation": {
+                    ".": {},
+                    "f:retries": {}
+                  }
+                },
+                "f:values": {
+                  ".": {},
+                  "f:replicaCount": {}
+                }
+              }
+            },
+            "manager": "kubectl-client-side-apply",
+            "operation": "Update",
+            "subresource": null,
+            "time": "2023-12-13T22:14:20Z"
+          },
+          {
+            "apiVersion": "helm.toolkit.fluxcd.io/v2beta1",
+            "fieldsType": "FieldsV1",
+            "fieldsV1": {
+              "f:status": {
+                "f:conditions": {},
+                "f:helmChart": {},
+                "f:lastAppliedRevision": {},
+                "f:lastAttemptedRevision": {},
+                "f:lastAttemptedValuesChecksum": {},
+                "f:lastReleaseRevision": {},
+                "f:observedGeneration": {}
+              }
+            },
+            "manager": "helm-controller",
+            "operation": "Update",
+            "subresource": "status",
+            "time": "2023-12-13T22:14:34Z"
+          }
+        ],
+        "name": "sample-helmrelease",
+        "namespace": "sample-namespace",
+        "ownerReferences": null,
+        "resourceVersion": "99084",
+        "selfLink": null,
+        "uid": "22c20433-ee08-4815-9400-0d02e0490c66"
+      },
+      "spec": {
+        "chart": {
+          "spec": {
+            "sourceRef": {
+              "kind": "HelmRepository",
+              "name": "podinfo",
+              "namespace": ""
+            }
+          }
+        },
+        "interval": "10m"
+      },
+      "status": {
+        "lastAppliedRevision": null,
+        "HasObject": false,
+        "apiVersion": null,
+        "code": null,
+        "details": null,
+        "kind": null,
+        "message": null,
+        "metadata": null,
+        "reason": null,
+        "status": null
+      }
+    }
+  ],
+  "kind": "HelmReleaseList",
+  "metadata": {
+    "continue": "",
+    "remainingItemCount": null,
+    "resourceVersion": "277185",
+    "selfLink": null
+  }
+}

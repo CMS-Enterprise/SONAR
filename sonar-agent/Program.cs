@@ -438,7 +438,9 @@ internal class Program {
       ));
 
       // Start the HelmRelease Version Check processing task
-      var helmReleaseVersionRequester = new FluxHelmReleaseVersionRequester(kubeClient);
+      var helmReleaseVersionRequester = new FluxHelmReleaseVersionRequester(
+        kubeClient,
+        loggerFactory.CreateLogger<FluxHelmReleaseVersionRequester>());
       tasks.Add((
         versionCheckQueueProcessor.StartAsync(helmReleaseVersionRequester, token),
         "FluxHelmRelease Version Check Processor",
