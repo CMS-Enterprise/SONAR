@@ -82,6 +82,15 @@
             "path": "$.version",
             "bodyType": "json"
           }
+        },
+        {
+          "versionCheckType": "KubernetesImage",
+          "definition": {
+            "resourceNamespace": "baz",
+            "resourceType": "Deployment",
+            "resourceName": "my-argocd-redis",
+            "containerName": "redis"
+          }
         }
       ],
       "healthChecks": [

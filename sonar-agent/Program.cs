@@ -437,6 +437,14 @@ internal class Program {
         null
       ));
 
+      //Start the Kubernetes resource version check processing task
+      var kubernetesVersionRequester = new KubernetesImageVersionRequester(kubeClient);
+      tasks.Add((
+        versionCheckQueueProcessor.StartAsync(kubernetesVersionRequester, token),
+        "Kubernetes resource version check processor",
+        null
+        ));
+
       disposables.Add(k8sWatcher);
       disposables.Add(kubeClient);
 

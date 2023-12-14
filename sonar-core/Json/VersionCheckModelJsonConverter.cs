@@ -28,6 +28,8 @@ public class VersionCheckModelJsonConverter : JsonConverter<VersionCheckModel> {
           definition = type switch {
             VersionCheckType.FluxKustomization =>
               definitionElement.Deserialize<FluxKustomizationVersionCheckDefinition>(options),
+            VersionCheckType.KubernetesImage =>
+              definitionElement.Deserialize<KubernetesVersionCheckDefinition>(options),
             VersionCheckType.HttpResponseBody =>
               definitionElement.Deserialize<HttpResponseBodyVersionCheckDefinition>(options),
             _ =>
@@ -89,6 +91,9 @@ public class VersionCheckModelJsonConverter : JsonConverter<VersionCheckModel> {
     switch (value.VersionCheckType) {
       case VersionCheckType.FluxKustomization:
         JsonSerializer.Serialize(writer, (FluxKustomizationVersionCheckDefinition)value.Definition, options);
+        break;
+      case VersionCheckType.KubernetesImage:
+        JsonSerializer.Serialize(writer, (KubernetesVersionCheckDefinition)value.Definition, options);
         break;
       case VersionCheckType.HttpResponseBody:
         JsonSerializer.Serialize(writer, (HttpResponseBodyVersionCheckDefinition)value.Definition, options);
