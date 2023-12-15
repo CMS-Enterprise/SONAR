@@ -174,6 +174,10 @@ If you want to unify your release branch with the main branch perform the follow
 
 _Note: you should not attempt to rebase your merge branch if it falls behind main, so if that happens you will need to redo the steps above._
 
+### Development Builds
+
+Normally we only push container images to artifactory for builds on the `main` branch. If you want to test changes on a branch in a BatCAVE dev cluster, you will need to publish container images for sonar-api, sonar-agent, and/or sonar-ui to Artifactory. You can do this by creating a "dev build." When you create a tag with the format `dev-build-X.X.X-your-feature` the GitLab CI/CD pipeline will automatically publish container images with this tag to Artifactory at which point you can reference those in BatCAVE Landing Zone config, or in our manifests repo.
+
 ### API Versioning
 
 Versioned API routes should always start with `/api/v{major-version-number}/...` so that in the event that we need to make a breaking change to an existing API, such as introducing a new required parameter or removing or renaming a previously returned property in a JSON body, we can introduce the new behavior at a new URL while preserving the existing behavior at the old endpoint.
