@@ -27,6 +27,10 @@ spec:
           image: sonarapi:testing
           imagePullPolicy: Always
           workingDir: /sonar/sonar-api
+          args:
+            - serve
+            - --appsettings-location
+            - /config
           ports:
             - containerPort: 8081
           envFrom:
@@ -50,9 +54,18 @@ spec:
                 secretKeyRef:
                   name: postgres-creds
                   key: POSTGRES_DB
+            - name: ASPNETCORE_ENVIRONMENT
+              value: k3d
           securityContext:
             allowPrivilegeEscalation: false
+          volumeMounts:
+            - mountPath: /config
+              name: appsettings-volume
       terminationGracePeriodSeconds: 15
+      volumes:
+        - name: appsettings-volume
+          configMap:
+            name: appsettings
 ---
 apiVersion: v1
 kind: Service

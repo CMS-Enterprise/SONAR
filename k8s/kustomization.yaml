@@ -9,11 +9,16 @@ resources:
   - sonar-api.yaml
   - sonar-ui.yaml
   - ingress.yaml
+  - service-monitor.yaml
 
 configMapGenerator:
   - name: environment-config
     envs:
       - .env
+  - name: appsettings
+    files:
+      - appsettings.json=appsettings.k3d.json
+
 
 replacements:
   - source:
