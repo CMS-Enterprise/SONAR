@@ -1,3 +1,53 @@
+## 0.5.5
+
+### Update readme, add execute beta2v2 on not found and logging, update unit tests
+
+* [view commit c6477c3](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/c6477c30e01e858aee20911553040a10cf0d40ed)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Wed, 13 Dec 2023 14:28:49 -0800
+
+
+
+### Add Flux HelmChart Version Check, update message, Resolve indentation, add serialization/deserialization, add versionchecktype, update k8s kustomization with appsettings, add support for helmrelease v2beta1 and v2beta2
+
+* [view commit 3476638](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/3476638dfda1602dd971814b6c22b8095be7048a)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Thu, 7 Dec 2023 14:48:23 -0800
+
+
+
+### Add Kustomization Config
+
+* [view commit 59a2512](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/59a25126bb6174f816705db1c1dbd10c8c7a8d0d)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Mon, 18 Dec 2023 16:24:22 -0800
+
+
+
+### Set appsettings IPrometheusRemoteProtocolClient default to Warning Closes BATAPI-534
+
+* [view commit 776191d](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/776191dda2cff1a8725594fbfcb0a844d68e580b)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Tue, 19 Dec 2023 18:30:12 +0000
+
+
+
+### Update README.md to add details about creating development builds
+
+* [view commit c807961](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/c807961d3d1654fcd5a91825a11452ea2ba3effa)
+* Author (Committer): Paul Wheeler (Paul Wheeler)
+* Date: Fri, 15 Dec 2023 23:20:21 +0000
+
+
+
+### Closes BATAPI-464
+
+* [view commit b7cac36](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/b7cac36bc5e8269169eb57c3a428fda919c1cf87)
+* Author (Committer): Dale O'Neill (Dale O'Neill)
+* Date: Thu, 14 Dec 2023 03:38:06 +0000
+
+```
+* Kubernetes resource image version check
 ## 0.5.4
 
 ### Remove using statement from http client handler returned from factory
