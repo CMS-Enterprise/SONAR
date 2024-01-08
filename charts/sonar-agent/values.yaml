@@ -14,7 +14,13 @@ networkPolicies:
 
 clusterRole:
   additionalRules:
-    - apiGroups: ["kustomize.toolkit.fluxcd.io"]
+    - apiGroups: [ "apps" ]
+      resources: [ "daemonsets", "deployments", "statefulsets" ]
+      verbs: [ "get", "watch", "list" ]
+    - apiGroups: [ "helm.toolkit.fluxcd.io" ]
+      resources: [ "helmreleases" ]
+      verbs: [ "get", "watch", "list" ]
+    - apiGroups: [ "kustomize.toolkit.fluxcd.io" ]
       resources: [ "kustomizations" ]
       verbs: [ "get", "watch", "list" ]
 
