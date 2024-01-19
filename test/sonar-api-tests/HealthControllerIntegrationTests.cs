@@ -432,7 +432,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
 
     Assert.NotNull(body);
     Assert.Equal(
-      expected: ProblemTypes.InvalidData,
+      expected: BadRequestException.DefaultProblemTypeName,
       actual: body.Type
     );
   }
@@ -488,7 +488,7 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
 
     Assert.NotNull(body);
     Assert.Equal(
-      expected: ProblemTypes.InvalidData,
+      expected: BadRequestException.DefaultProblemTypeName,
       actual: body.Type
     );
   }

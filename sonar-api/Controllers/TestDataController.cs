@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Asp.Versioning;
 using Cms.BatCave.Sonar.Helpers;
+using Cms.BatCave.Sonar.Prometheus;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.AspNetCore.Mvc;
 using Prometheus;
@@ -16,10 +17,10 @@ namespace Cms.BatCave.Sonar.Controllers;
 [Route("api/test")]
 [ApiVersionNeutral]
 public class TestDataController : ControllerBase {
-  private readonly PrometheusRemoteWriteClient _remoteWriteClient;
+  private readonly IPrometheusRemoteProtocolClient _remoteProtocolClient;
 
-  public TestDataController(PrometheusRemoteWriteClient remoteWriteClient) {
-    this._remoteWriteClient = remoteWriteClient;
+  public TestDataController(IPrometheusRemoteProtocolClient remoteProtocolClient) {
+    this._remoteProtocolClient = remoteProtocolClient;
   }
 
   [HttpPost("data", Name = "SaveData")]
@@ -40,12 +41,9 @@ public class TestDataController : ControllerBase {
       }
     };
 
-    var problem = await this._remoteWriteClient.RemoteWriteRequest(writeData, cancellationToken);
-    if (problem == null) {
-      return this.NoContent();
-    }
+    await this._remoteProtocolClient.WriteAsync(writeData, cancellationToken);
 
-    return this.StatusCode(problem.Status ?? 500, problem);
+    return this.NoContent();
   }
 
   private static TimeSeries CreateMetricTimeSeries(MetricData metricData) {

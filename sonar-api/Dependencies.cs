@@ -17,7 +17,6 @@ namespace Cms.BatCave.Sonar;
 
 public class Dependencies {
   public virtual void RegisterDependencies(WebApplicationBuilder builder) {
-    builder.Services.AddScoped<PrometheusRemoteWriteClient>();
     builder.Services.AddScoped<IPrometheusClient>(provider => {
       var config = provider.GetRequiredService<IOptions<PrometheusConfiguration>>();
       return new PrometheusClient(() => {

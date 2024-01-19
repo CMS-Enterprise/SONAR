@@ -10,6 +10,7 @@ using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Helpers;
+using Cms.BatCave.Sonar.Prometheus;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -24,7 +25,7 @@ namespace Cms.BatCave.Sonar.Controllers;
 [Authorize(Policy = "Admin")]
 [Route("api/v{version:apiVersion}/version")]
 public class VersionController : ControllerBase {
-  private readonly PrometheusRemoteWriteClient _remoteWriteClient;
+  private readonly IPrometheusRemoteProtocolClient _remoteProtocolClient;
   private readonly ILogger<HealthController> _logger;
   private readonly ServiceDataHelper _serviceDataHelper;
   private readonly VersionDataHelper _versionDataHelper;
@@ -33,13 +34,13 @@ public class VersionController : ControllerBase {
   public VersionController(
     ServiceDataHelper serviceDataHelper,
     VersionDataHelper versionDataHelper,
-    PrometheusRemoteWriteClient remoteWriteClient,
+    IPrometheusRemoteProtocolClient remoteProtocolClient,
     ILogger<HealthController> logger,
     ServiceVersionCacheHelper versionCacheHelper,
     ValidationHelper validationHelper) {
     this._serviceDataHelper = serviceDataHelper;
     this._versionDataHelper = versionDataHelper;
-    this._remoteWriteClient = remoteWriteClient;
+    this._remoteProtocolClient = remoteProtocolClient;
     this._logger = logger;
     this._versionCacheHelper = versionCacheHelper;
     this._validationHelper = validationHelper;
@@ -118,38 +119,18 @@ public class VersionController : ControllerBase {
       );
 
     var cachingTask = CachingTaskExceptionHandling();
-    var prometheusTask = this._remoteWriteClient.RemoteWriteRequest(writeData, cancellationToken);
-
+    var prometheusTask = this._remoteProtocolClient.WriteAsync(writeData, cancellationToken);
+    await cachingTask;
     try {
-      await Task.WhenAll(cachingTask, prometheusTask);
-    } catch (Exception) {
-      // ignore
-    }
-
-    // This will throw if the prometheus write has an issue
-    try {
-      var problem = await prometheusTask;
-
-      if (problem == null) {
-        return this.NoContent();
-      }
-
-      if (problem.Status == (Int32)HttpStatusCode.BadRequest) {
-        problem.Type = ProblemTypes.InvalidData;
-      }
-
-      return this.StatusCode(problem.Status ?? (Int32)HttpStatusCode.InternalServerError, problem);
-    } catch (Exception ex) {
+      await prometheusTask;
+    } catch (Exception e) when (e is not ProblemDetailException) {
       this._logger.LogError(
-        ex,
+        e,
         "An unhandled exception was raised by Prometheus while attempting to write service version: {Message}",
-        ex.Message
+        e.Message
       );
-
-      // This type of failure should be invisible to the agent since we also cache the status
-      return this.NoContent();
     }
-
+    return this.NoContent();
   }
 
   [HttpGet("{environment}/tenants/{tenant}/services/{*servicePath}", Name = "GetSpecificServiceVersionDetails")]
