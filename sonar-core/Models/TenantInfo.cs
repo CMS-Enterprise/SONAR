@@ -11,12 +11,14 @@ public record TenantInfo {
   public TenantInfo(
     String environmentName,
     String tenantName,
+    Boolean isNonProd,
     DateTime? timestamp = null,
     HealthStatus? aggregateStatus = null,
     ServiceHierarchyInfo[]? rootServices = null) {
 
     this.EnvironmentName = environmentName;
     this.TenantName = tenantName;
+    this.IsNonProd = isNonProd;
     this.Timestamp = timestamp;
     this.AggregateStatus = aggregateStatus;
     this.RootServices = rootServices;
@@ -27,6 +29,9 @@ public record TenantInfo {
 
   [Required]
   public String TenantName { get; init; }
+
+  [Required]
+  public Boolean IsNonProd { get; init; }
 
   public DateTime? Timestamp { get; init; }
 

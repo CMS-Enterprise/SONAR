@@ -127,6 +127,7 @@ export enum HealthStatus {
   AtRisk = "AtRisk",
   Degraded = "Degraded",
   Offline = "Offline",
+  Maintenance = "Maintenance",
 }
 
 export interface MetricDataCollection {
@@ -268,6 +269,7 @@ export interface TenantInfo {
   environmentName: string;
   /** @minLength 1 */
   tenantName: string;
+  isNonProd: boolean;
   /** @format date-time */
   timestamp?: string | null;
   aggregateStatus?: HealthStatus;
@@ -332,4 +334,6 @@ export interface VersionCheckModel {
 export enum VersionCheckType {
   FluxKustomization = "FluxKustomization",
   HttpResponseBody = "HttpResponseBody",
+  KubernetesImage = "KubernetesImage",
+  FluxHelmRelease = "FluxHelmRelease",
 }

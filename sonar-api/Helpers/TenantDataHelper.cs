@@ -163,13 +163,13 @@ public class TenantDataHelper {
           this._tagsDataHelper.GetResolvedTenantTags(tenantTags.ToList()))
         ).ToArray();
 
-      tenantList.Add(ToTenantInfo(tenant.Name, environment.Name, serviceVersionLookup, rootServiceHealth));
+      tenantList.Add(ToTenantInfo(tenant.Name, environment, serviceVersionLookup, rootServiceHealth));
     }
 
     if (environment.Name == this._sonarEnvironment) {
       tenantList.Add(ToTenantInfo(
         SonarTenantName,
-        environment.Name,
+        environment,
         // Note: we could fetch version information for our built in dependencies
         ImmutableDictionary<String, IImmutableList<ServiceVersionDetails>>.Empty,
         (await this._healthDataHelper.CheckSonarHealth(cancellationToken)).ToArray()
@@ -181,7 +181,7 @@ public class TenantDataHelper {
 
   private static TenantInfo ToTenantInfo(
     String tenantName,
-    String environmentName,
+    Environment environment,
     IImmutableDictionary<String, IImmutableList<ServiceVersionDetails>> serviceVersionLookup,
     ServiceHierarchyHealth[] rootServiceHealth
   ) {
@@ -213,8 +213,9 @@ public class TenantDataHelper {
     }
 
     return new TenantInfo(
-      environmentName,
+      environment.Name,
       tenantName,
+      environment.IsNonProd,
       statusTimestamp,
       aggregateStatus,
       AddVersionInfo(rootServiceHealth, serviceVersionLookup).ToArray()
