@@ -1,3 +1,37 @@
+## 0.5.6
+
+### Adds environment IsNonProd flag to the TenantInfo model
+
+* [view commit 3c187bd](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/3c187bd5c70dbab5a4c64216f3a6f317c703a0f3)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Tue, 23 Jan 2024 00:26:31 +0000
+
+```
+Closes BATAPI-570
+```
+
+### Resolve BATAPI-227 "Use prometheus remote protocol client"
+
+* [view commit 8cff25a](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/8cff25a6c58a60da552ed98070bdf85768674e49)
+* Author (Committer): Albert Tran (Albert Tran)
+* Date: Fri, 19 Jan 2024 22:37:26 +0000
+
+```
+Closes BATAPI-227
+
+## Description:
+
+This branch is to use Prometheus remote protocol client instead of Prometheus remote write client.
+```
+
+### Closes BATAPI-462
+
+* [view commit 066283b](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/066283bfee3f3e658ac2bf5fcd9ed2df70577f6b)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Mon, 8 Jan 2024 16:58:53 +0000
+
+```
+* Adds rules to sonar-agent k8s cluster role allowing read for healmreleases, deployments, stateful sets, and daemon sets
 ## 0.5.5
 
 ### Update readme, add execute beta2v2 on not found and logging, update unit tests
