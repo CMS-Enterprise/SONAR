@@ -95,6 +95,60 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
     null
   );
 
+  private static readonly ServiceHierarchyConfiguration TestGrandchildConfiguration = new(
+    ImmutableList.Create(
+      new ServiceConfiguration(
+        HealthControllerIntegrationTests.TestRootServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        ImmutableList.Create(HealthControllerIntegrationTests.TestHealthCheck),
+        ImmutableList.Create(TestVersionCheck),
+        ImmutableHashSet<String>.Empty.Add(HealthControllerIntegrationTests.TestChildServiceName)),
+      new ServiceConfiguration(
+        HealthControllerIntegrationTests.TestChildServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        healthChecks: ImmutableList.Create(HealthControllerIntegrationTests.TestHealthCheck),
+        children: ImmutableHashSet<String>.Empty.Add(HealthControllerIntegrationTests.TestGrandchildServiceName)
+    ),
+      new ServiceConfiguration(
+        HealthControllerIntegrationTests.TestGrandchildServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        healthChecks: ImmutableList.Create(HealthControllerIntegrationTests.TestHealthCheck),
+        children: null
+      )
+    ),
+    ImmutableHashSet<String>.Empty.Add(HealthControllerIntegrationTests.TestRootServiceName),
+    null
+  );
+
+  private static readonly ServiceHierarchyConfiguration TestContainerParentService = new(
+    ImmutableList.Create(
+      new ServiceConfiguration(
+        HealthControllerIntegrationTests.TestRootServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        null,
+        ImmutableList.Create(TestVersionCheck),
+        ImmutableHashSet<String>.Empty.Add(HealthControllerIntegrationTests.TestChildServiceName)),
+      new ServiceConfiguration(
+        HealthControllerIntegrationTests.TestChildServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        healthChecks: ImmutableList.Create(HealthControllerIntegrationTests.TestHealthCheck),
+        children: null
+      )
+    ),
+    ImmutableHashSet<String>.Empty.Add(HealthControllerIntegrationTests.TestRootServiceName),
+    null
+  );
+
   private static readonly ServiceHierarchyConfiguration TestTagInheritanceConfiguration = new(
     ImmutableList.Create(
       new ServiceConfiguration(
@@ -809,6 +863,148 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
     var rootHealthCheck = Assert.Single(serviceHealth.HealthChecks);
     Assert.Equal(expected: HealthControllerIntegrationTests.TestHealthCheckName, actual: rootHealthCheck.Key);
     Assert.Equal(expected: (expectedTimestamp, rootStatus), actual: rootHealthCheck.Value);
+  }
+
+  /// <summary>
+  ///   This test validates that the GetServiceHierarchyHealth endpoint properly handles the case where
+  ///   a parent service does not have any health checks, but its aggregate status is derived from
+  ///   its children's health checks
+  /// </summary>
+  [Fact]
+  public async Task GetServiceHierarchyHealth_ContainerParentServiceAggregation() {
+
+    var expectedAggregateStatus = HealthStatus.Degraded;
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(HealthControllerIntegrationTests.TestContainerParentService);
+
+    var timestamp = DateTime.UtcNow;
+
+    await this.RecordServiceHealth(
+      testEnvironment,
+      testTenant,
+      HealthControllerIntegrationTests.TestChildServiceName,
+      HealthControllerIntegrationTests.TestHealthCheckName,
+      timestamp,
+      expectedAggregateStatus);
+
+    var getResponse = await
+      this.Fixture.Server.CreateRequest($"/api/v2/health/{testEnvironment}/tenants/{testTenant}")
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.OK,
+      actual: getResponse.StatusCode);
+
+    var body = await getResponse.Content.ReadFromJsonAsync<ServiceHierarchyHealth[]>(
+      HealthControllerIntegrationTests.SerializerOptions
+    );
+
+    Assert.NotNull(body);
+    var serviceHealth = Assert.Single(body);
+
+    Assert.NotNull(serviceHealth);
+    Assert.NotNull(serviceHealth.Children);
+    var childServiceHealth = Assert.Single(serviceHealth.Children);
+
+    // The child service and health check should have the recorded status
+    var expectedTimestamp = timestamp.TruncateNanoseconds();
+    Assert.NotNull(childServiceHealth);
+    Assert.Equal(expectedTimestamp, childServiceHealth.Timestamp);
+    Assert.Equal(expectedAggregateStatus, childServiceHealth.AggregateStatus);
+    Assert.NotNull(childServiceHealth.HealthChecks);
+    var childHealthCheck = Assert.Single(childServiceHealth.HealthChecks);
+    Assert.Equal(expected: HealthControllerIntegrationTests.TestHealthCheckName, actual: childHealthCheck.Key);
+    Assert.Equal(expected: (expectedTimestamp, expectedAggregateStatus), actual: childHealthCheck.Value);
+
+    // The root service should have the expected aggregate status
+    Assert.Equal(expectedTimestamp, serviceHealth.Timestamp);
+    Assert.Equal(expectedAggregateStatus, serviceHealth.AggregateStatus);
+
+    // The root health check should no health checks
+    Assert.Empty(serviceHealth.HealthChecks);
+  }
+
+  /// <summary>
+  ///   This test validates that the GetServiceHierarchyHealth endpoint evaluates the root aggregate status when
+  ///   the grandchild's reported status is the worst.
+  /// </summary>
+  [Fact]
+  public async Task GetServiceHierarchyHealth_GrandchildStatusAggregation() {
+
+    var rootStatus = HealthStatus.Online;
+    var childStatus = HealthStatus.Degraded;
+    var grandchildStatus = HealthStatus.Offline;
+
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(HealthControllerIntegrationTests.TestGrandchildConfiguration);
+
+    var timestamp = DateTime.UtcNow;
+
+    await this.RecordServiceHealth(
+      testEnvironment,
+      testTenant,
+      HealthControllerIntegrationTests.TestRootServiceName,
+      HealthControllerIntegrationTests.TestHealthCheckName,
+      timestamp,
+      rootStatus);
+
+    await this.RecordServiceHealth(
+      testEnvironment,
+      testTenant,
+      HealthControllerIntegrationTests.TestChildServiceName,
+      HealthControllerIntegrationTests.TestHealthCheckName,
+      timestamp,
+      childStatus);
+
+    await this.RecordServiceHealth(
+      testEnvironment,
+      testTenant,
+      HealthControllerIntegrationTests.TestGrandchildServiceName,
+      HealthControllerIntegrationTests.TestHealthCheckName,
+      timestamp,
+      grandchildStatus);
+
+    var getResponse = await
+      this.Fixture.Server.CreateRequest($"/api/v2/health/{testEnvironment}/tenants/{testTenant}")
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.OK,
+      actual: getResponse.StatusCode);
+
+    var body = await getResponse.Content.ReadFromJsonAsync<ServiceHierarchyHealth[]>(
+      HealthControllerIntegrationTests.SerializerOptions
+    );
+
+    Assert.NotNull(body);
+    var serviceHealth = Assert.Single(body);
+
+    Assert.NotNull(serviceHealth);
+    Assert.NotNull(serviceHealth.Children);
+    var childServiceHealth = Assert.Single(serviceHealth.Children);
+    var expectedTimestamp = timestamp.TruncateNanoseconds();
+
+    // The grandchild service and health check should have the recorded status
+    Assert.NotNull(childServiceHealth.Children);
+    var grandchildServiceHealth = Assert.Single(childServiceHealth.Children);
+    Assert.NotNull(grandchildServiceHealth);
+    Assert.Equal(expectedTimestamp, grandchildServiceHealth.Timestamp);
+    Assert.Equal(grandchildStatus, grandchildServiceHealth.AggregateStatus);
+    Assert.NotNull(grandchildServiceHealth.HealthChecks);
+    var grandchildHealthCheck = Assert.Single(grandchildServiceHealth.HealthChecks);
+    Assert.Equal(expected: HealthControllerIntegrationTests.TestHealthCheckName, actual: grandchildHealthCheck.Key);
+    Assert.Equal(expected: (expectedTimestamp, grandchildStatus), actual: grandchildHealthCheck.Value);
+
+    // The child service
+    Assert.NotNull(childServiceHealth);
+    Assert.Equal(expectedTimestamp, childServiceHealth.Timestamp);
+    Assert.Equal(grandchildStatus, childServiceHealth.AggregateStatus);
+
+    // The root service should have the expected aggregate status
+    Assert.Equal(expectedTimestamp, serviceHealth.Timestamp);
+    Assert.Equal(grandchildStatus, serviceHealth.AggregateStatus);
   }
 
   #region Tag Inheritance and Resolution Tests

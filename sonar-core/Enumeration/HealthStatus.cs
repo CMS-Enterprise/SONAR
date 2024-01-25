@@ -1,3 +1,5 @@
+using System;
+
 namespace Cms.BatCave.Sonar.Enumeration;
 
 /// <summary>
@@ -29,4 +31,22 @@ public enum HealthStatus {
   AtRisk,
   Degraded,
   Offline
+}
+
+public static class HealthStatusExtensions {
+
+  /// <summary>
+  /// Returns true if <see cref="@this"/> represents a more severe health status than <see cref="other"/>,
+  /// returns false if <see cref="@this"/> is the same severity or less severe than <see cref="other"/>;
+  /// <see cref="HealthStatus.Unknown"/> is considered the worst severity.
+  /// </summary>
+  ///
+  public static Boolean IsWorseThan(this HealthStatus @this, HealthStatus other) {
+    if ((@this != HealthStatus.Unknown) && (other != HealthStatus.Unknown)) {
+      return @this > other;
+    }
+
+    return (@this == HealthStatus.Unknown) && (other != HealthStatus.Unknown);
+  }
+
 }

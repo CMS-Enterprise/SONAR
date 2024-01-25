@@ -236,7 +236,7 @@ public class HealthDataHelper {
 
     HealthStatus? aggregateStatus = hasServiceStatus ? serviceStatus.Status : null;
     DateTime? statusTimestamp = hasServiceStatus ? serviceStatus.Timestamp : null;
-
+    HealthStatus? worstChildStatus = null;
     var healthChecks = healthChecksByService[service.Id].ToImmutableList();
     // Only aggregate the status of the children if the current service either
     // has a recorded status based on its health checks, or has no health
@@ -244,31 +244,48 @@ public class HealthDataHelper {
     // service then there is no point considering the status of the children).
     if (hasServiceStatus || !healthChecks.Any()) {
       // If this service has a status
+
       foreach (var child in children) {
-        if (child.AggregateStatus.HasValue) {
-          if ((aggregateStatus == null) ||
-            (aggregateStatus.Value < child.AggregateStatus.Value) ||
-            (child.AggregateStatus == HealthStatus.Unknown)) {
-
-            aggregateStatus = child.AggregateStatus;
-          }
-
-          // The child service should always have a timestamp here, but double check anyway
-          if (child.Timestamp.HasValue &&
-            (!statusTimestamp.HasValue || (child.Timestamp.Value < statusTimestamp.Value))) {
-
-            // The status timestamp should always be the *oldest* of the
-            // recorded status data points.
-            statusTimestamp = child.Timestamp.Value;
-          }
-        } else {
-          // One of the child services has an "unknown" status, that means
-          // this service will also have the "unknown" status.
-          aggregateStatus = null;
+        if (!child.AggregateStatus.HasValue) {
+          worstChildStatus = null;
           statusTimestamp = null;
           break;
         }
+
+        var currChildStatus = (HealthStatus)child.AggregateStatus;
+        if (worstChildStatus == null ||
+          currChildStatus.IsWorseThan((HealthStatus)worstChildStatus)) {
+          worstChildStatus = child.AggregateStatus;
+        }
+
+        if (child.Timestamp.HasValue &&
+          (!statusTimestamp.HasValue || (child.Timestamp.Value < statusTimestamp.Value))) {
+
+          // The status timestamp should always be the *oldest* of the
+          // recorded status data points.
+          statusTimestamp = child.Timestamp.Value;
+        }
       }
+    }
+
+    // service with status and child status
+    if (aggregateStatus != null &&
+      worstChildStatus != null) {
+      aggregateStatus = ((HealthStatus)aggregateStatus).IsWorseThan((HealthStatus)worstChildStatus) ?
+        aggregateStatus :
+        worstChildStatus;
+    } else if (aggregateStatus == null &&
+      worstChildStatus != null) {
+      // service with no status but has child with status
+      // example: Parent with no health checks but children with health checks
+      aggregateStatus = worstChildStatus;
+    } else if (aggregateStatus != null &&
+      worstChildStatus == null &&
+      !children.IsEmpty) {
+      // service has status, worst child status is null, set both to null as long as
+      // service is not a leaf node (child with no children)
+      aggregateStatus = null;
+      statusTimestamp = null;
     }
 
     return new ServiceHierarchyHealth(
