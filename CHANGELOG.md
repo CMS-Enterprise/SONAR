@@ -1,3 +1,19 @@
+## 0.5.7
+
+### BATAPI-575 "Root agg status bug"
+
+* [view commit 00b7ccd](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/00b7ccd2dae444da48377986ea19ea274f14bad9)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Thu, 25 Jan 2024 19:14:12 +0000
+
+```
+Closes BATAPI-575
+
+## Description:
+
+* Fixes bug where a parent with no health checks (no determined health status) derived an incorrect status from its children. The issue was in the `ToServiceHealth` function where a parent with no health checks would take the first child's status (which is the reason for the non-deterministic statuses showing up in the dashboard on refresh).
+
+Closes BATAPI-575
 ## 0.5.6
 
 ### Adds environment IsNonProd flag to the TenantInfo model
