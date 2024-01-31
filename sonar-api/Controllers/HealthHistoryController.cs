@@ -230,9 +230,10 @@ public class HealthHistoryController : ControllerBase {
     GetServicesStatusHistory(
       String environment, String tenant, DateTime start, DateTime end, Int32 step,
       CancellationToken cancellationToken) {
+
     return await this._healthDataHelper.GetPrometheusQueryRangeValue(
       this._prometheusClient,
-      $"{HealthDataHelper.ServiceHealthAggregateMetricName}{{environment=\"{environment}\", tenant=\"{tenant}\"}}",
+      $"max_over_time({HealthDataHelper.ServiceHealthAggregateMetricName}{{environment=\"{environment}\", tenant=\"{tenant}\"}}[{PrometheusClient.ToPrometheusDuration(TimeSpan.FromSeconds(step))}])",
       start, end, TimeSpan.FromSeconds(step),
       processResult: results => {
         // StateSet metrics are split into separate metric per-state
@@ -247,36 +248,52 @@ public class HealthHistoryController : ControllerBase {
                   serviceName :
                   null, StringComparer.OrdinalIgnoreCase);
 
-        var final = new Dictionary<String, List<(DateTime Timestamp, HealthStatus Value)>>();
+        var serviceStatusHistoryDictionary = new Dictionary<String, List<(DateTime Timestamp, HealthStatus Value)>>();
         // Iterate though the services grouping and create a time series list of each health status.
         foreach (var service in metricByService) {
           if (service.Key is null) {
             throw new InvalidOperationException("The time series for health status is missing the service label");
           }
-          // There will be one Health status(unknown, online, atRisk...) at each timestamp, from the time series
-          // retrieved from Prometheus find them('1') and create a new times series with the specific health status.
-          // Put the results into statusList.
-          var statusList = new List<(DateTime Timestamp, HealthStatus Value)>();
-          foreach (var entry in service) {
-            if (!entry.Labels.TryGetValue(HealthDataHelper.ServiceHealthAggregateMetricName,
-              out var healthStatusName)) {
-              throw new InvalidOperationException("The times series for a health status is missing a status label");
-            }
 
-            // Ignore any time series that does not have a recognized HealthStatus
-            if (Enum.TryParse<HealthStatus>(healthStatusName, out var status)) {
-              var target = entry.Item2.Where(v => v.Value == "1")
-                .Select(x => (DateTime.UnixEpoch.AddSeconds((Double)x.Timestamp), status));
-              statusList.AddRange(target);
+          var statusList = new List<(DateTime, HealthStatus)>();
+
+          // group metrics by timestamp to determine worst status at that particular time
+          // resulting data structure will look like:
+          //  timestamp: [ { labels, value }, { labels, value } ]
+          var r = service.SelectMany(e => e.Item2.Select(timestampValTuple => new { e.Labels, timestampValTuple }))
+            .GroupBy(
+              val => val.timestampValTuple.Timestamp,
+              val => (val.Labels, val.timestampValTuple.Value));
+
+          foreach (var timestampGroup in r) {
+            var statusTimestamp = DateTime.UnixEpoch.AddSeconds((Double)timestampGroup.Key);
+            HealthStatus? worstStatus = null;
+
+            // only iterate over values that have a reported status, determine the worst status in that subset
+            foreach (var metric in timestampGroup
+              .Where(e => e.Value == "1")) {
+
+              // throw exception if metric does not have the sonar health status label
+              if (!metric.Labels.TryGetValue(HealthDataHelper.ServiceHealthAggregateMetricName,
+                out var healthStatusValue)) {
+                throw new InvalidOperationException("The times series for a health status is missing a status label");
+              }
+
+              // if extracted health status is valid, determine the worst status
+              if (Enum.TryParse<HealthStatus>(healthStatusValue, out var status)) {
+                if (!worstStatus.HasValue ||
+                  status.IsWorseThan((HealthStatus)worstStatus)) {
+                  worstStatus = status;
+                }
+              }
             }
+            statusList.Add((statusTimestamp, worstStatus ?? HealthStatus.Unknown));
           }
 
-          // Order the status list and put it with its service.
-          var orderedStatusList = statusList.OrderBy(x => x.Timestamp).ToList();
-          final.Add(service.Key, orderedStatusList);
+          serviceStatusHistoryDictionary.Add(service.Key, statusList);
         }
 
-        return final;
+        return serviceStatusHistoryDictionary;
       },
       cancellationToken
     );

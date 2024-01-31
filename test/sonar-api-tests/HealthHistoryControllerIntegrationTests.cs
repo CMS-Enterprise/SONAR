@@ -3,15 +3,12 @@ using Xunit;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Enumeration;
-using Cms.BatCave.Sonar.Extensions;
 using Cms.BatCave.Sonar.Models;
-using Google.Protobuf.WellKnownTypes;
 using DateTime = System.DateTime;
 
 namespace Cms.BatCave.Sonar.Tests;
@@ -142,7 +139,7 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
     }
 
     var getResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?start={start}&end={end}&step={Step}")
+      this.Fixture.Server.CreateRequest($"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?start={GetUniversalTimeString(start)}&end={GetUniversalTimeString(end)}&step={Step}")
         .AddHeader(name: "Accept", value: "application/json")
         .GetAsync();
 
@@ -156,13 +153,11 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
 
     Assert.NotNull(body);
     var serviceHealth = Assert.Single(body);
-
-    if (serviceHealth.AggregateStatus != null) {
-      var colStatus = serviceHealth.AggregateStatus.Select(x => x.AggregateStatus);
-      var healthStatusEnumerable = colStatus as HealthStatus[] ?? colStatus.ToArray();
-      Assert.Contains(testStatus, healthStatusEnumerable);
-      Assert.Equal(HealthHistoryControllerIntegrationTests.RootServiceName, serviceHealth.Name);
-    }
+    Assert.NotNull(serviceHealth.AggregateStatus);
+    var colStatus = serviceHealth.AggregateStatus.Select(x => x.AggregateStatus);
+    var healthStatusEnumerable = colStatus as HealthStatus[] ?? colStatus.ToArray();
+    Assert.Contains(testStatus, healthStatusEnumerable);
+    Assert.Equal(HealthHistoryControllerIntegrationTests.RootServiceName, serviceHealth.Name);
   }
 
   [Theory]
@@ -193,7 +188,7 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
     }
 
     var getResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?start={start}&end={end}&step={Step}")
+      this.Fixture.Server.CreateRequest($"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?start={GetUniversalTimeString(start)}&end={GetUniversalTimeString(end)}&step={Step}")
         .AddHeader(name: "Accept", value: "application/json")
         .GetAsync();
 
@@ -211,18 +206,16 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
     var serviceHealth = Assert.Single(body);
     Assert.NotNull(serviceHealth);
 
-    if (serviceHealth.AggregateStatus != null) {
+    Assert.NotNull(serviceHealth.AggregateStatus);
+    //Expecting 2 items for each minute(30 second step)
+    Assert.Equal(serviceHealth.AggregateStatus.Count, expectedStatus.Length * 2);
 
-      //Expecting 2 items for each minute(30 second step)
-      Assert.Equal(serviceHealth.AggregateStatus.Count, expectedStatus.Length * 2);
-
-      var index = 0;
-      foreach (var hs in expectedStatus) {
-        //should have 2 items for each minute (30 second step).
-        Assert.Equal(hs, serviceHealth.AggregateStatus[index].AggregateStatus);
-        Assert.Equal(hs, serviceHealth.AggregateStatus[index + 1].AggregateStatus);
-        index += 2;
-      }
+    var index = 0;
+    foreach (var hs in expectedStatus) {
+      //should have 2 items for each minute (30 second step).
+      Assert.Equal(hs, serviceHealth.AggregateStatus[index].AggregateStatus);
+      Assert.Equal(hs, serviceHealth.AggregateStatus[index + 1].AggregateStatus);
+      index += 2;
     }
   }
 
@@ -269,7 +262,7 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
     }
 
     var getResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?start={start}&end={end}&step={Step}")
+      this.Fixture.Server.CreateRequest($"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?start={GetUniversalTimeString(start)}&end={GetUniversalTimeString(end)}&step={Step}")
         .AddHeader(name: "Accept", value: "application/json")
         .GetAsync();
 
@@ -290,7 +283,6 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
     var childService = Assert.Single(serviceHealth.Children);
 
     if (serviceHealth.AggregateStatus != null) {
-
       //Expecting 2 items for each minute(30 second step)
       Assert.Equal(serviceHealth.AggregateStatus.Count, expectedStatus.Length * 2);
 
@@ -301,20 +293,19 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
         Assert.Equal(hs, serviceHealth.AggregateStatus[index + 1].AggregateStatus);
         index += 2;
       }
+
     } else {
       //If no parent service metrics, check the child metrics
-      if (childService.AggregateStatus != null) {
+      Assert.NotNull(childService.AggregateStatus);
+      //Expecting 2 items for each minute(30 second step)
+      Assert.Equal(childService.AggregateStatus.Count, expectedStatus.Length * 2);
 
-        //Expecting 2 items for each minute(30 second step)
-        Assert.Equal(childService.AggregateStatus.Count, expectedStatus.Length * 2);
-
-        var index = 0;
-        foreach (var hs in expectedStatus) {
-          //should have 2 items for each minute (30 second step).
-          Assert.Equal(hs, childService.AggregateStatus[index].AggregateStatus);
-          Assert.Equal(hs, childService.AggregateStatus[index + 1].AggregateStatus);
-          index += 2;
-        }
+      var index = 0;
+      foreach (var hs in expectedStatus) {
+        //should have 2 items for each minute (30 second step).
+        Assert.Equal(hs, childService.AggregateStatus[index].AggregateStatus);
+        Assert.Equal(hs, childService.AggregateStatus[index + 1].AggregateStatus);
+        index += 2;
       }
     }
   }
@@ -359,6 +350,63 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
     Assert.Equal(HealthCheckName, healthCheckHistory.Key);
     Assert.Equal(truncatedQueryTimestamp, healthCheckHistory.Value.Timestamp);
     Assert.Equal(testStatus, healthCheckHistory.Value.Status);
+  }
+
+  /// <summary>
+  ///   This test validates that the GetServiceHealthHistory endpoint is correctly
+  ///   aggregating the worst status over a given step.
+  /// </summary>
+  [Fact]
+  public async Task GetServiceHealthHistory_WorstStatusIsReturned() {
+
+    var initialStatus = HealthStatus.Offline;
+    var currentStatus = HealthStatus.Online;
+
+    var end = DateTime.UtcNow;
+    var start = end.AddMinutes(-10);
+    var step = 600;
+
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(HealthHistoryControllerIntegrationTests.TestRootOnlyConfiguration);
+
+    await this.RecordServiceHealth(
+      testEnvironment,
+      testTenant,
+      HealthHistoryControllerIntegrationTests.RootServiceName,
+      HealthHistoryControllerIntegrationTests.HealthCheckName,
+      start.AddMinutes(1),
+      initialStatus);
+
+    await this.RecordServiceHealth(
+      testEnvironment,
+      testTenant,
+      HealthHistoryControllerIntegrationTests.RootServiceName,
+      HealthHistoryControllerIntegrationTests.HealthCheckName,
+      start.AddMinutes(2),
+      currentStatus);
+
+    var getResponse = await
+      this.Fixture.Server.CreateRequest($"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}/services/{RootServiceName}?start={GetUniversalTimeString(start)}&end={GetUniversalTimeString(end)}&step={step}")
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.OK,
+      actual: getResponse.StatusCode);
+
+    var body = await getResponse.Content.ReadFromJsonAsync<ServiceHierarchyHealthHistory>(
+      HealthControllerIntegrationTests.SerializerOptions
+    );
+
+    Assert.NotNull(body);
+    var aggregateStatus = body.AggregateStatus;
+
+    Assert.NotNull(aggregateStatus);
+    Assert.NotEmpty(aggregateStatus);
+
+    // 1 item should be in response since the step was the same as the duration
+    var aggregateStatusItem = Assert.Single(aggregateStatus);
+    Assert.Equal(aggregateStatusItem.AggregateStatus, initialStatus);
   }
 
   #region Authentication and Authorization Tests
@@ -523,5 +571,9 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
       response.IsSuccessStatusCode,
       message: "Failed to record service health"
     );
+  }
+
+  private static String GetUniversalTimeString(DateTime timestamp) {
+    return timestamp.ToString("yyyy-MM-ddTHH:mm:ssZ");
   }
 }
