@@ -167,6 +167,8 @@ public class HealthCheckHelper {
           Task<HealthStatus> Status,
           Int16? smoothingTolerance)>();
 
+        var ts = DateTime.UtcNow;
+
         // Iterate over each service
         if (tenantResult != null) {
           this._logger.LogDebug("Service Count: {ServiceCount}", tenantResult.Services.Count);
@@ -289,6 +291,7 @@ public class HealthCheckHelper {
               checkResults,
               client,
               aggStatus.Value,
+              ts,
               token
             );
           }
@@ -325,9 +328,9 @@ public class HealthCheckHelper {
     Dictionary<String, HealthStatus> results,
     SonarClient client,
     HealthStatus aggStatus,
+    DateTime ts,
     CancellationToken token) {
 
-    var ts = DateTime.UtcNow;
     var healthChecks = new ReadOnlyDictionary<String, HealthStatus>(results);
     var body = new ServiceHealth(ts, aggStatus, healthChecks);
 
