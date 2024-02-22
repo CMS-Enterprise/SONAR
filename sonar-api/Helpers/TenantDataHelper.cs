@@ -160,7 +160,10 @@ public class TenantDataHelper {
           healthChecksByService,
           healthCheckStatus,
           tagsByService.ToLookup(st => st.ServiceId),
-          this._tagsDataHelper.GetResolvedTenantTags(tenantTags.ToList()))
+          this._tagsDataHelper.GetResolvedTenantTags(tenantTags.ToList()),
+          environment.Name,
+          tenant.Name,
+          ImmutableQueue.Create<String>(svc.Name))
         ).ToArray();
 
       tenantList.Add(ToTenantInfo(tenant.Name, environment, serviceVersionLookup, rootServiceHealth));
@@ -229,6 +232,7 @@ public class TenantDataHelper {
       yield return new ServiceHierarchyInfo(
         svc.Name,
         svc.DisplayName,
+        svc.DashboardLink,
         svc.Description,
         svc.Url,
         svc.Timestamp,

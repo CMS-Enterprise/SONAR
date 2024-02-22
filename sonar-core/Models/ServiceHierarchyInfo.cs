@@ -11,6 +11,7 @@ public record ServiceHierarchyInfo {
   public ServiceHierarchyInfo(
     String name,
     String displayName,
+    String dashboardLink,
     String? description = null,
     Uri? url = null,
     DateTime? timestamp = null,
@@ -22,6 +23,7 @@ public record ServiceHierarchyInfo {
 
     this.Name = name;
     this.DisplayName = displayName;
+    this.DashboardLink = dashboardLink;
     this.Description = description;
     this.Url = url;
     this.Timestamp = timestamp;
@@ -37,6 +39,9 @@ public record ServiceHierarchyInfo {
 
   [Required]
   public String DisplayName { get; init; }
+
+  [Required]
+  public String DashboardLink { get; init; }
 
   public String? Description { get; init; }
 

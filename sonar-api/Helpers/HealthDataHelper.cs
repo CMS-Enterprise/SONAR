@@ -39,6 +39,7 @@ public class HealthDataHelper {
   private readonly IOptions<DatabaseConfiguration> _dbConfig;
   private readonly ILogger<HealthDataHelper> _logger;
   private readonly TagsDataHelper _tagsDataHelper;
+  private readonly IOptions<WebHostConfiguration> _webHostConfiguration;
 
   public HealthDataHelper(
     DataContext dbContext,
@@ -49,7 +50,9 @@ public class HealthDataHelper {
     IOptions<PrometheusConfiguration> prometheusConfig,
     IOptions<DatabaseConfiguration> dbConfig,
     ILogger<HealthDataHelper> logger,
-    TagsDataHelper tagsDataHelper) {
+    TagsDataHelper tagsDataHelper,
+    IOptions<WebHostConfiguration> webHostConfiguration) {
+
 
     this._cacheHelper = cacheHelper;
     this._serviceDataHelper = serviceDataHelper;
@@ -62,6 +65,7 @@ public class HealthDataHelper {
     this._dbConfig = dbConfig;
     this._logger = logger;
     this._tagsDataHelper = tagsDataHelper;
+    this._webHostConfiguration = webHostConfiguration;
   }
 
   public async Task<Dictionary<String, (DateTime Timestamp, HealthStatus Status)>> GetServiceStatuses(
@@ -213,10 +217,12 @@ public class HealthDataHelper {
     ILookup<Guid, HealthCheck> healthChecksByService,
     Dictionary<(String Service, String HealthCheck), (DateTime Timestamp, HealthStatus Status)> healthCheckStatus,
     ILookup<Guid, ServiceTag> tagsByService,
-    IImmutableDictionary<String, String?> inheritedTags) {
+    IImmutableDictionary<String, String?> inheritedTags,
+    String environment,
+    String tenant,
+    ImmutableQueue<String> servicePathQueue) {
     // The service will have its own status if it has health checks that have recorded status.
     var hasServiceStatus = serviceStatuses.TryGetValue(service.Name, out var serviceStatus);
-
     var children =
       serviceChildIdsLookup[service.Id].Select(sid =>
           ToServiceHealth(
@@ -229,7 +235,10 @@ public class HealthDataHelper {
             tagsByService,
             this._tagsDataHelper.GetResolvedServiceTags(
               inheritedTags,
-              tagsByService[service.Id].ToList())
+              tagsByService[service.Id].ToList()),
+            environment,
+            tenant,
+            servicePathQueue.Enqueue(services[sid].Name)
           )
         )
         .ToImmutableHashSet();
@@ -291,6 +300,7 @@ public class HealthDataHelper {
     return new ServiceHierarchyHealth(
       service.Name,
       service.DisplayName,
+      BuildDashboardLink(servicePathQueue, environment, tenant),
       service.Description,
       service.Url,
       statusTimestamp,
@@ -306,6 +316,17 @@ public class HealthDataHelper {
         inheritedTags,
         tagsByService[service.Id].ToList())
     );
+  }
+
+  public String BuildDashboardLink(
+    ImmutableQueue<String> servicePathQueue,
+    String environment,
+    String tenant) {
+    var servicePath = String.Join("/", servicePathQueue);
+    var dashboardBaseUrl =
+      this._webHostConfiguration.Value.AllowedOrigins.FirstOrDefault() ??
+      "http://localhost:8080";
+    return $"{dashboardBaseUrl}/{environment}/tenants/{tenant}/services/{servicePath}";
   }
 
   public async Task<T>
@@ -438,7 +459,11 @@ public class HealthDataHelper {
     return new ServiceHierarchyHealth(
       "postgresql",
       "Postgresql",
-      "The Postgresql instance that the SONAR API uses to persist service health information.",
+      BuildDashboardLink(
+        ImmutableQueue.Create<String>("postgresql"),
+        "sonar-local",
+        "sonar"),
+  "The Postgresql instance that the SONAR API uses to persist service health information.",
       new Uri(
         $"postgresql://{_dbConfig.Value.Host}:{_dbConfig.Value.Port}/{_dbConfig.Value.Database}"),
       DateTime.UtcNow,
@@ -487,6 +512,10 @@ public class HealthDataHelper {
     return new ServiceHierarchyHealth(
       "prometheus",
       "Prometheus",
+      BuildDashboardLink(
+        ImmutableQueue.Create<String>("prometheus"),
+        "sonar-local",
+        "sonar"),
       "The Prometheus instance that the SONAR API uses to persist service health information.",
       this._prometheusUrl,
       DateTime.UtcNow,

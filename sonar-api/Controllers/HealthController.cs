@@ -224,7 +224,10 @@ public class HealthController : ControllerBase {
           healthChecksByService,
           healthCheckStatus,
           tagsByService.ToLookup(st => st.ServiceId),
-          this._tagsDataHelper.GetResolvedTenantTags(tenantTags.ToList()))
+          this._tagsDataHelper.GetResolvedTenantTags(tenantTags.ToList()),
+          environment,
+          existingTenant.Name,
+          ImmutableQueue.Create(svc.Name))
         )
         .ToArray()
     );
@@ -273,7 +276,10 @@ public class HealthController : ControllerBase {
         healthChecksByService,
         healthCheckStatus,
         tagsByService.ToLookup(st => st.ServiceId),
-        this._tagsDataHelper.GetResolvedTenantTags(tenantTags.ToList())));
+        this._tagsDataHelper.GetResolvedTenantTags(tenantTags.ToList()),
+        environment,
+        existingTenant.Name,
+        ImmutableQueue.Create(svc.Name)));
 
     var flattenedHierarchy = FlattenHierarchy(serviceHierarchy);
 

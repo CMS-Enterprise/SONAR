@@ -11,6 +11,7 @@ public record ServiceHierarchyHealth {
   public ServiceHierarchyHealth(
     String name,
     String displayName,
+    String dashboardLink,
     String? description = null,
     Uri? url = null,
     DateTime? timestamp = null,
@@ -18,10 +19,11 @@ public record ServiceHierarchyHealth {
     IReadOnlyDictionary<String, (DateTime Timestamp, HealthStatus Status)?>? healthChecks = null,
     IImmutableSet<ServiceHierarchyHealth>? children = null,
     IImmutableDictionary<String, String?>? tags = null
-    ) {
+  ) {
 
     this.Name = name;
     this.DisplayName = displayName;
+    this.DashboardLink = dashboardLink;
     this.Description = description;
     this.Url = url;
     this.Timestamp = timestamp;
@@ -36,6 +38,9 @@ public record ServiceHierarchyHealth {
 
   [Required]
   public String DisplayName { get; init; }
+
+  [Required]
+  public String DashboardLink { get; init; }
 
   public String? Description { get; init; }
 

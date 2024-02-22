@@ -5,13 +5,17 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Extensions;
 using Cms.BatCave.Sonar.Models;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using Xunit;
 using Xunit.Abstractions;
 using Environment = Cms.BatCave.Sonar.Data.Environment;
@@ -197,6 +201,18 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
   public HealthControllerIntegrationTests(ApiIntegrationTestFixture fixture, ITestOutputHelper outputHelper, ITestOutputHelper testOutputHelper) :
     base(fixture, outputHelper) {
     this._testOutputHelper = testOutputHelper;
+  }
+
+  private static readonly String _testBaseUrl = "http://testUrl";
+
+  protected override void OnInitializing(WebApplicationBuilder builder) {
+    base.OnInitializing(builder);
+    builder.Services.RemoveAll<IOptions<WebHostConfiguration>>();
+    builder.Services.AddScoped<IOptions<WebHostConfiguration>>(provider => {
+      return new OptionsWrapper<WebHostConfiguration>(
+        new WebHostConfiguration(
+          new[] { _testBaseUrl }));
+    });
   }
 
   // RecordServiceHealth scenarios
@@ -1439,6 +1455,83 @@ public class HealthControllerIntegrationTests : ApiControllerTestsBase {
       expected: HttpStatusCode.Forbidden,
       actual: getResponse.StatusCode);
   }
+
+  #endregion
+
+  #region Dashboard Link Tests
+  [Fact]
+  public async Task GetServiceHierarchyHealth_DashboardLinkTest() {
+
+    var rootStatus = HealthStatus.Online;
+    var childStatus = HealthStatus.Degraded;
+    var grandchildStatus = HealthStatus.Offline;
+
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(HealthControllerIntegrationTests.TestGrandchildConfiguration);
+
+    var timestamp = DateTime.UtcNow;
+
+    await this.RecordServiceHealth(
+      testEnvironment,
+      testTenant,
+      HealthControllerIntegrationTests.TestRootServiceName,
+      HealthControllerIntegrationTests.TestHealthCheckName,
+      timestamp,
+      rootStatus);
+
+    await this.RecordServiceHealth(
+      testEnvironment,
+      testTenant,
+      HealthControllerIntegrationTests.TestChildServiceName,
+      HealthControllerIntegrationTests.TestHealthCheckName,
+      timestamp,
+      childStatus);
+
+    await this.RecordServiceHealth(
+      testEnvironment,
+      testTenant,
+      HealthControllerIntegrationTests.TestGrandchildServiceName,
+      HealthControllerIntegrationTests.TestHealthCheckName,
+      timestamp,
+      grandchildStatus);
+
+    // build expected dashboard links
+    var expectedRootServiceLink = $"{_testBaseUrl}/{testEnvironment}/tenants/{testTenant}/services/{TestRootServiceName}";
+    var expectedChildServiceLink = $"{_testBaseUrl}/{testEnvironment}/tenants/{testTenant}/services/{TestRootServiceName}/{TestChildServiceName}";
+    var expectedGrandchildServiceLink = $"{_testBaseUrl}/{testEnvironment}/tenants/{testTenant}/services/{TestRootServiceName}/{TestChildServiceName}/{TestGrandchildServiceName}";
+
+    var getResponse = await
+      this.Fixture.Server.CreateRequest($"/api/v2/health/{testEnvironment}/tenants/{testTenant}")
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    Assert.Equal(
+      expected: HttpStatusCode.OK,
+      actual: getResponse.StatusCode);
+
+    var body = await getResponse.Content.ReadFromJsonAsync<ServiceHierarchyHealth[]>(
+      HealthControllerIntegrationTests.SerializerOptions
+    );
+
+    Assert.NotNull(body);
+    var serviceHealth = Assert.Single(body);
+    Assert.NotNull(serviceHealth);
+    Assert.Equal(expected: expectedRootServiceLink, actual: serviceHealth.DashboardLink);
+
+    Assert.NotNull(serviceHealth.Children);
+    var childServiceHealth = Assert.Single(serviceHealth.Children);
+
+    // Test child service dashboard link
+    Assert.NotNull(childServiceHealth);
+    Assert.Equal(expected: expectedChildServiceLink, actual: childServiceHealth.DashboardLink);
+
+    // Test grandchild service dashboard link
+    Assert.NotNull(childServiceHealth.Children);
+    var grandchildServiceHealth = Assert.Single(childServiceHealth.Children);
+    Assert.Equal(expected: expectedGrandchildServiceLink, actual: grandchildServiceHealth.DashboardLink);
+
+  }
+
 
   #endregion
 
