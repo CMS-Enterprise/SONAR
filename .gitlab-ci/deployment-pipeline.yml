@@ -12,6 +12,10 @@ stages:
         file: deployment.yaml
     strategy: depend
 
+.agent-deploy-vars: &agent-deploy-vars
+  TARGET_SERVICE: $AGENT_PROJECT_NAME
+  APP_IMAGE_SRC: $AGENT_APP_IMAGE_SRC
+
 .api-deploy-vars: &api-deploy-vars
   TARGET_SERVICE: $API_PROJECT_NAME
   APP_IMAGE_SRC: $API_APP_IMAGE_SRC
@@ -21,6 +25,14 @@ stages:
   APP_IMAGE_SRC: $UI_APP_IMAGE_SRC
 
 # Automatic deployment pipeline trigger jobs for lower realms.
+deploy-agent-dev:
+  extends: .deploy
+  rules:
+    - if: $CI_COMMIT_BRANCH == $MAIN_BRANCH_NAME && $CI_COMMIT_TAG == null
+  variables:
+    TARGET_ENVIRONMENTS: "environments/dev"
+    <<: *agent-deploy-vars
+
 deploy-api-dev:
   extends: .deploy
   rules:
