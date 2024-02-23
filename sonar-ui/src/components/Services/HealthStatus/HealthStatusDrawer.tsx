@@ -58,8 +58,13 @@ const HealthStatusDrawer: React.FC<{
           { isMetricHealthCheck && (
             <>
               <h4 css={getDrawerSectionHeaderStyle}>Health Check Metrics</h4>
-              <HealthStatusDataTimeSeriesChart key={`${healthCheck.name}-ts`} svcDefinitions={healthCheckDefinition} healthCheckName={healthCheck.name} timeSeriesData={timeSeriesData} />
-              <HealthStatusDataTable key={`${healthCheck.name}-dt`} healthCheckName={healthCheck.name} timeSeriesData={timeSeriesData} />
+              {(timeSeriesData[0] != null) ?
+                <>
+                  <HealthStatusDataTimeSeriesChart key={`${healthCheck.name}-ts`} svcDefinitions={healthCheckDefinition} healthCheckName={healthCheck.name} timeSeriesData={timeSeriesData} />
+                  <HealthStatusDataTable key={`${healthCheck.name}-dt`} healthCheckName={healthCheck.name} timeSeriesData={timeSeriesData} />
+                </>
+                : <p>No data available</p>
+              }
             </>
           )}
         </>
