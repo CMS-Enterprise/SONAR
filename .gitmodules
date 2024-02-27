@@ -4,3 +4,6 @@
 [submodule "lib/gogo-protobuf"]
 	path = lib/gogo-protobuf
 	url = https://github.com/gogo/protobuf
+[submodule "lib/alertmanager"]
+	path = lib/alertmanager
+	url = https://github.com/prometheus/alertmanager.git

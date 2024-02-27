@@ -8,16 +8,20 @@ namespace Cms.BatCave.Sonar.Models;
 
 public record ServiceHierarchyConfiguration : IValidatableObject {
   public static readonly ServiceHierarchyConfiguration Empty =
-    new ServiceHierarchyConfiguration(ImmutableList<ServiceConfiguration>.Empty, ImmutableHashSet<String>.Empty, null);
+    new ServiceHierarchyConfiguration(
+      ImmutableList<ServiceConfiguration>.Empty,
+      ImmutableHashSet<String>.Empty);
 
   public ServiceHierarchyConfiguration(
     IImmutableList<ServiceConfiguration> services,
     IImmutableSet<String> rootServices,
-    IImmutableDictionary<String, String?>? tags) {
+    IImmutableDictionary<String, String?>? tags = null,
+    AlertingConfiguration? alerting = null) {
 
     this.Services = services;
     this.RootServices = rootServices;
     this.Tags = tags;
+    this.Alerting = alerting;
   }
 
   [Required]
@@ -28,27 +32,8 @@ public record ServiceHierarchyConfiguration : IValidatableObject {
 
   public IImmutableDictionary<String, String?>? Tags { get; init; }
 
-  /// <summary>
-  /// Ensures this <see cref="ServiceHierarchyConfiguration"/> meets all of the higher-order validation criteria
-  /// that can't expressed via data attributes. This method returns an empty collection if the object is valid,
-  /// otherwise it returns a list of the validation errors found.
-  /// <list type="number">
-  ///   <listheader>
-  ///     <description>Validation criteria:</description>
-  ///   </listheader>
-  ///   <item>
-  ///     <description>All service names in the service collection are unique.</description>
-  ///   </item>
-  ///   <item>
-  ///     <description>All declared child services are present in the service collection.</description>
-  ///   </item>
-  ///   <item>
-  ///     <description>All declared root services are present in the service collection.</description>
-  ///   </item>
-  /// </list>
-  /// </summary>
-  /// <param name="validationContext">The validation context.</param>
-  /// <returns>An empty collection if the object is valid, or a list of errors found if the object is invalid.</returns>
+  public AlertingConfiguration? Alerting { get; init; }
+
   public IEnumerable<ValidationResult> Validate(ValidationContext validationContext) {
     var validationResults = new List<ValidationResult>();
 
@@ -60,7 +45,7 @@ public record ServiceHierarchyConfiguration : IValidatableObject {
     if (duplicateServiceNames.Any()) {
       validationResults.Add(new ValidationResult(
         errorMessage: "The specified list of services contained multiple services with the same name.",
-        new[] { nameof(this.Services) }));
+        memberNames: new[] { nameof(this.Services) }));
     }
 
     var missingRootServices =
@@ -71,7 +56,7 @@ public record ServiceHierarchyConfiguration : IValidatableObject {
     if (missingRootServices.Any()) {
       validationResults.Add(new ValidationResult(
         errorMessage: "One or more of the specified root services do not exist in the services array.",
-        new[] { nameof(this.RootServices) }));
+        memberNames: new[] { nameof(this.RootServices) }));
     }
 
     var missingChildServices =
@@ -87,7 +72,22 @@ public record ServiceHierarchyConfiguration : IValidatableObject {
     if (missingChildServices.Any()) {
       validationResults.Add(new ValidationResult(
         errorMessage: "One or more of the specified services contained a reference to a child service that did not exist in the services array.",
-      new[] { nameof(this.Services) }));
+        memberNames: new[] { nameof(this.Services) }));
+    }
+
+    var alertReceiverNames = (this.Alerting?.Receivers.Select(r => r.Name) ?? ImmutableList<String>.Empty)
+      .ToImmutableList();
+    var referencedAlertReceiverNames = this.Services.Where(s => s.AlertingRules?.Any() == true)
+      .SelectMany(s => s.AlertingRules ?? ImmutableList<AlertingRuleConfiguration>.Empty)
+      .Select(r => r.ReceiverName)
+      .ToImmutableList();
+    var missingReferencedAlertReceiverNames = referencedAlertReceiverNames.Where(n =>
+      !alertReceiverNames.Contains(n, StringComparer.OrdinalIgnoreCase));
+
+    if (missingReferencedAlertReceiverNames.Any()) {
+      validationResults.Add(new ValidationResult(
+        errorMessage: "One or more service alerting rules references an undefined alert receiver name.",
+        memberNames: new[] { nameof(AlertingRuleConfiguration.ReceiverName) }));
     }
 
     return validationResults;

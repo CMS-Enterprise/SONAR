@@ -13,6 +13,9 @@ networkPolicies:
   additionalIngressRules: []
 
 clusterRole:
+  # If specified, overrides the auto-generated ClusterRole name which consist of
+  # the chart installation full name and the suffix -configmap-reader
+  nameOverride: null
   additionalRules:
     - apiGroups: [ "apps" ]
       resources: [ "daemonsets", "deployments", "statefulsets" ]
@@ -60,6 +63,9 @@ apiConfig:
   reportingInterval: 30
   isNonProd: false
 
+createSonarSecret: true
+sonarSecretName: sonar-agent-secrets
+
 prometheus:
   host: prometheus
   # Optional. Defaults to http / 9090
@@ -82,3 +88,5 @@ serviceAccountName: null
 
 # A dictionary of service configurations that will be merged together in the order they are specified
 configs: {}
+
+extraEnv: []

@@ -13,6 +13,10 @@
     <Version Condition=" '$(VersionSuffix)' != '' ">$(VersionPrefix)-$(VersionSuffix)</Version>
     <Version Condition=" '$(Version)' == '' ">$(VersionPrefix)</Version>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <InternalsVisibleTo Include="sonar-api-tests" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\sonar-core\sonar-core.csproj" />
@@ -24,6 +28,7 @@
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="EFCore.NamingConventions" Version="7.0.2" />
     <PackageReference Include="Google.Protobuf" Version="3.21.9" />
+    <PackageReference Include="KubernetesClient" Version="10.0.27" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.8" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0" />
     <!-- Snappy depends on NETStandard 1.6 which has vulnerabilities, this forces an upgrade.
@@ -96,6 +101,17 @@
     <Message Text="Generating C# Data Types for Prometheus Remote Write..." Importance="high" />
     <Exec Command="$(PkgGoogle_Protobuf_Tools)/tools/$(ProtocToolPath) $(ProtocArguments_Prometheus_Gogoproto.Replace('%0a', '').Trim())" />
     <Exec Command="$(PkgGoogle_Protobuf_Tools)/tools/$(ProtocToolPath) $(ProtocArguments_Prometheus_Remote.Replace('%0a', '').Trim())" />
+  </Target>
+
+  <ItemGroup>
+    <PackageReference Include="NSwag.MSBuild" Version="13.18.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <Target Name="NSwag">
+    <Exec Command="$(NSwagExe_Net70) run nswag.json" />
   </Target>
 
 </Project>

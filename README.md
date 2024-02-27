@@ -127,6 +127,20 @@ To selectively run SONAR services via Docker Compose, run the following command:
 docker-compose up sonar-api sonar-agent sonar-ui
 ```
 
+### Alerting Components
+
+To run the alerting services via Docker Compose, run the following command:
+
+```
+docker compose up -d --build alertmanager mailserver http-metric-test-app
+```
+
+This will start the alertmanager (which routes Prometheus alerts to notification destinations), the mailserver (a local browser-based SMTP development server that can capture email notifications sent out by alertmanager), and the http-metric-test-app (a SONAR test application that simulates various health statuses over HTTP health checks, for which the prometheus server has alerts configured).
+
+As the http-metric-test-app periodically goes offline, it will trigger alerts in prometheus, which alertmanager will generate email notifications for and send them to the mailserver.
+
+The alertmanager UI can be accessed at http://localhost:9093, and the mailserver UI can be accessed at http://localhost:8025.
+
 ## Running in Kubernetes
 
 In production environments the SONAR agent is installed via it's Helm chart by batcave-landing-zone, and the SONAR API is deployed via ArgoCD based on the [manifests repo](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/manifests/). However, it is possible to test SONAR locally in a k3d or other small Kubernetes cluster. For detailed instructions see the [helm chart developer readme](./charts/README.md).

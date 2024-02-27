@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Cms.BatCave.Sonar.Extensions;
 
@@ -28,5 +29,20 @@ public static class EnumerableExtensions {
     }
 
     return true;
+  }
+
+  /// <summary>
+  /// Checks whether <paramref name="enumerable"/> is null or empty.
+  /// </summary>
+  /// <remarks>
+  /// This is shamelessly cribbed from <see cref="Microsoft.IdentityModel.Tokens.CollectionUtilities.IsNullOrEmpty{T}"/>
+  /// for the sole purpose of avoiding the weird-seeming import of <c>Microsoft.IdentityModel.Tokens</c> where such a
+  /// method is needed.
+  /// </remarks>
+  /// <typeparam name="T">The type of the <paramref name="enumerable"/>.</typeparam>
+  /// <param name="enumerable">The <see cref="IEnumerable{T}"/> to be checked.</param>
+  /// <returns>True if <paramref name="enumerable"/> is null or empty, false otherwise.</returns>
+  public static Boolean IsNullOrEmpty<T>(this IEnumerable<T>? enumerable) {
+    return (enumerable is null) || !enumerable.Any();
   }
 }

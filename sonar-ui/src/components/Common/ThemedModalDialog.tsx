@@ -11,8 +11,6 @@ const ThemedModalDialog = (props: DialogProps) => {
       {...props}
     />
   );
-
-
 }
 
 export default ThemedModalDialog;

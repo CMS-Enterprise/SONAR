@@ -13,18 +13,24 @@ namespace Cms.BatCave.Sonar.Helpers;
 
 public class EnvironmentDataHelper {
   private readonly DbSet<Environment> _environmentsTable;
-  private readonly String _sonarEnvironment;
+  private readonly String _sonarEnvironmentName;
 
   public EnvironmentDataHelper(
     DbSet<Environment> environmentsTable,
     IOptions<SonarHealthCheckConfiguration> sonarHealthConfig) {
     this._environmentsTable = environmentsTable;
-    this._sonarEnvironment = sonarHealthConfig.Value.SonarEnvironment;
+    this._sonarEnvironmentName = sonarHealthConfig.Value.SonarEnvironment;
   }
+
+  private Environment SonarEnvironment => new(new Guid(), this._sonarEnvironmentName);
 
   public async Task<Environment> FetchExistingEnvAsync(
     String environmentName,
     CancellationToken cancellationToken) {
+
+    if (environmentName.Equals(this._sonarEnvironmentName, StringComparison.OrdinalIgnoreCase)) {
+      return this.SonarEnvironment;
+    }
 
     // Check if the environment exists
     var result = await this.TryFetchEnvironmentAsync(environmentName, cancellationToken);
@@ -59,8 +65,8 @@ public class EnvironmentDataHelper {
     }
 
     // Add Sonar-Local Env
-    if (!result.Any(e => String.Equals(e.Name, this._sonarEnvironment, StringComparison.OrdinalIgnoreCase))) {
-      result.Add(new Environment(new Guid(), this._sonarEnvironment, false));
+    if (!result.Any(e => String.Equals(e.Name, this._sonarEnvironmentName, StringComparison.OrdinalIgnoreCase))) {
+      result.Add(this.SonarEnvironment);
     }
 
     return result;

@@ -1,0 +1,13 @@
+groups:
+  - name: dev-alerts
+    rules:
+      - alert: alerting-test-app-is-offline
+        expr: sonar_service_status{environment="foo",tenant="baz",service="alerting-test-app",sonar_service_status="Offline"} > 0
+        for: 0s
+        labels:
+          purpose: service-alerting
+          environment: foo
+          tenant: baz
+          service: alerting-test-app
+        annotations:
+          sonar_dashboard_uri: "http://localhost:8080/foo/tenants/baz/services/alerting-test-app"

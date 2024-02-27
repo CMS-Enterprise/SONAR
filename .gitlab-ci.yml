@@ -22,6 +22,15 @@ chart-build-pipeline:
     include: .gitlab-ci/chart-build-pipeline.yml
     strategy: depend
 
+alerting-test-app-build-pipeline:
+  stage: build-and-test
+  rules:
+    - if: $CI_COMMIT_BRANCH == $MAIN_BRANCH_NAME && $CI_COMMIT_TAG == null
+    - if: $CI_COMMIT_TAG =~ $APP_VERSION_TAG_REGEX
+  trigger:
+    include: .gitlab-ci/alerting-test-app-build-pipeline.yml
+    strategy: depend
+
 deployment-pipeline:
   stage: deploy
   rules:

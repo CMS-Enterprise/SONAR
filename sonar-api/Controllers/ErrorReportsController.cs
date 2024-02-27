@@ -22,20 +22,20 @@ namespace Cms.BatCave.Sonar.Controllers;
 [Authorize(Policy = "Admin")]
 [Route("api/v{version:apiVersion}/error-reports")]
 public class ErrorReportsController : ControllerBase {
-  private readonly ILogger<ErrorReportsController> _logger;
+  private readonly DataContext _dbContext;
   private readonly EnvironmentDataHelper _environmentDataHelper;
   private readonly TenantDataHelper _tenantDataHelper;
   private readonly ServiceDataHelper _serviceDataHelper;
   private readonly ErrorReportsDataHelper _errorReportsDataHelper;
 
   public ErrorReportsController(
-    ILogger<ErrorReportsController> logger,
+    DataContext dbContext,
     EnvironmentDataHelper environmentDataHelper,
     TenantDataHelper tenantDataHelper,
     ServiceDataHelper serviceDataHelper,
     ErrorReportsDataHelper errorReportsDataHelper) {
 
-    this._logger = logger;
+    this._dbContext = dbContext;
     this._environmentDataHelper = environmentDataHelper;
     this._tenantDataHelper = tenantDataHelper;
     this._serviceDataHelper = serviceDataHelper;
@@ -54,7 +54,7 @@ public class ErrorReportsController : ControllerBase {
     CancellationToken cancellationToken = default) {
 
     // validate environment, tenant, service
-    var validatedConfiguration = await ValidateReportData(
+    var validatedConfiguration = await this.ValidateReportData(
       environment,
       reportDetails.Tenant,
       reportDetails.Service,
@@ -75,6 +75,8 @@ public class ErrorReportsController : ControllerBase {
           reportDetails.Configuration,
           reportDetails.StackTrace),
         cancellationToken);
+
+    await this._dbContext.SaveChangesAsync(cancellationToken);
 
     return this.StatusCode(
       (Int32)HttpStatusCode.Created,

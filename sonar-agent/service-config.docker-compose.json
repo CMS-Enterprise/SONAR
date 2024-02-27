@@ -1,4 +1,15 @@
 {
+  "alerting": {
+    "receivers": [
+      {
+        "name": "dev-receiver",
+        "type": "Email",
+        "options": {
+          "address": "dev-receiver@mailserver.local"
+        }
+      }
+    ]
+  },
   "services": [
     {
       "name": "test-metric-app-child",
@@ -89,7 +100,7 @@
     {
       "name": "http-metric-test-app",
       "displayName": "Test Application for HTTP Health Check",
-      "description": "A test application that has one endpoint to simulate different HTTP status codes.",
+      "description": "A test application that has endpoints to simulate different HTTP status codes.",
       "url": "http://http-metric-test-app:8082/api/ready",
       "children": null,
       "versionChecks": [
@@ -126,10 +137,40 @@
           "type": "httpRequest"
         }
       ]
+    },
+    {
+      "name": "alerting-test-app",
+      "displayName": "Test application for alerting",
+      "description": "An application with alerting configuration. Rules and receivers have been manually configured in the docker-compose environment.",
+      "alertingRules": [
+        {
+          "name": "alerting-test-app-is-offline",
+          "threshold": "Offline",
+          "receiverName": "dev-receiver"
+        }
+      ],
+      "healthChecks": [
+        {
+          "name": "succeedfail-http-health-check",
+          "description": "Request the succeedfail endpoint from the http-metric-test-app to alternate between an online and offline state.",
+          "type": "HttpRequest",
+          "definition": {
+            "url": "http://http-metric-test-app:8082/api/succeedfail?period=00:03:00",
+            "conditions": [
+              {
+                "status": "Online",
+                "statusCodes": [ 200 ],
+                "type": "HttpStatusCode"
+              }
+            ]
+          }
+        }
+      ]
     }
   ],
   "rootServices": [
     "test-metric-app",
-    "http-metric-test-app"
+    "http-metric-test-app",
+    "alerting-test-app"
   ]
 }

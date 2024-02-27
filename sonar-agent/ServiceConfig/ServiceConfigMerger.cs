@@ -63,7 +63,8 @@ public static class ServiceConfigMerger {
     return new ServiceHierarchyConfiguration(
       serviceResults,
       NullableSetUnion(prev.RootServices, next.RootServices) ?? ImmutableHashSet<String>.Empty,
-      MergeTags(prev.Tags, next.Tags)
+      MergeTags(prev.Tags, next.Tags),
+      MergeAlertingConfiguration(prev.Alerting, next.Alerting)
     );
   }
 
@@ -82,7 +83,8 @@ public static class ServiceConfigMerger {
       MergeHealthCheckLists(prevService.HealthChecks, nextService.HealthChecks),
       MergeVersionCheckLists(prevService.VersionChecks, nextService.VersionChecks),
       NullableSetUnion(prevService.Children, nextService.Children),
-      MergeTags(prevService.Tags, nextService.Tags)
+      MergeTags(prevService.Tags, nextService.Tags),
+      MergeAlertingRuleLists(prevService.AlertingRules, nextService.AlertingRules)
     );
   }
 
@@ -322,6 +324,40 @@ public static class ServiceConfigMerger {
     return merged.ToImmutableDictionary();
   }
 
+  private static IImmutableList<AlertingRuleConfiguration>? MergeAlertingRuleLists(
+    IImmutableList<AlertingRuleConfiguration>? prevAlertingRules,
+    IImmutableList<AlertingRuleConfiguration>? nextAlertingRules) {
+
+    if (prevAlertingRules is null) {
+      return nextAlertingRules;
+    } else if (nextAlertingRules is null) {
+      return prevAlertingRules;
+    } else {
+      return MergeBy(
+        first: prevAlertingRules,
+        second: nextAlertingRules,
+        match: (r1, r2) => r1.Name.Equals(r2.Name, StringComparison.OrdinalIgnoreCase),
+        merge: (_, r2) => r2);
+    }
+  }
+
+  private static AlertingConfiguration? MergeAlertingConfiguration(
+    AlertingConfiguration? prevAlertingConfiguration,
+    AlertingConfiguration? nextAlertingConfiguration) {
+
+    if (prevAlertingConfiguration is null) {
+      return nextAlertingConfiguration;
+    } else if (nextAlertingConfiguration is null) {
+      return prevAlertingConfiguration;
+    } else {
+      var merged = MergeBy(
+        first: prevAlertingConfiguration.Receivers,
+        second: nextAlertingConfiguration.Receivers,
+        match: (r1, r2) => r1.Name.Equals(r2.Name, StringComparison.OrdinalIgnoreCase),
+        merge: (_, r2) => r2);
+      return new AlertingConfiguration(merged);
+    }
+  }
   private static IImmutableSet<String>? NullableSetUnion(
     IImmutableSet<String>? prevSet,
     IImmutableSet<String>? nextSet) {

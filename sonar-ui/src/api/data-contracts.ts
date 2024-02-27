@@ -24,6 +24,55 @@ export enum AgentErrorType {
   Unknown = "Unknown",
 }
 
+export interface AlertReceiverConfiguration {
+  /**
+   * @minLength 0
+   * @maxLength 100
+   * @pattern ^[0-9a-zA-Z_-]+$
+   */
+  name: string;
+  type: AlertReceiverType;
+  options: AlertReceiverOptions;
+}
+
+export type AlertReceiverOptions = object;
+
+export enum AlertReceiverType {
+  Email = "Email",
+}
+
+export interface AlertSilenceDetails {
+  /** @minLength 1 */
+  name: string;
+}
+
+export interface AlertSilenceView {
+  /** @format date-time */
+  startsAt: string;
+  /** @format date-time */
+  endsAt: string;
+  /** @minLength 1 */
+  silencedBy: string;
+}
+
+export interface AlertingConfiguration {
+  receivers: AlertReceiverConfiguration[];
+}
+
+export interface AlertingRuleConfiguration {
+  /**
+   * @minLength 0
+   * @maxLength 100
+   * @pattern ^[0-9a-zA-Z_-]+$
+   */
+  name: string;
+  threshold: HealthStatus;
+  /** @minLength 1 */
+  receiverName: string;
+  /** @format int32 */
+  delay?: number;
+}
+
 export interface ApiKeyConfiguration {
   /** @format uuid */
   id?: string;
@@ -166,6 +215,20 @@ export interface ProblemDetails {
   [key: string]: any;
 }
 
+export interface ServiceAlert {
+  /** @minLength 1 */
+  name: string;
+  threshold: HealthStatus;
+  /** @minLength 1 */
+  receiverName: string;
+  receiverType: AlertReceiverType;
+  /** @format date-time */
+  since?: string | null;
+  isFiring: boolean;
+  isSilenced: boolean;
+  silenceDetails?: AlertSilenceView;
+}
+
 export interface ServiceConfiguration {
   /**
    * @minLength 0
@@ -182,6 +245,7 @@ export interface ServiceConfiguration {
   versionChecks?: VersionCheckModel[] | null;
   children?: string[] | null;
   tags?: Record<string, string>;
+  alertingRules?: AlertingRuleConfiguration[] | null;
 }
 
 export interface ServiceHealth {
@@ -203,6 +267,7 @@ export interface ServiceHierarchyConfiguration {
   services: ServiceConfiguration[];
   rootServices: string[];
   tags?: Record<string, string>;
+  alerting?: AlertingConfiguration;
 }
 
 export interface ServiceHierarchyHealth {

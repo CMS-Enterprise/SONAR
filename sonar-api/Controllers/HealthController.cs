@@ -166,7 +166,7 @@ public class HealthController : ControllerBase {
     return this.NoContent();
   }
 
-  [HttpGet("{environment}/tenants/sonar", Name = "GetSonarHealth")]
+  [HttpGet($"{{environment}}/tenants/{TenantDataHelper.SonarTenantName}", Name = "GetSonarHealth")]
   [ProducesResponseType(typeof(ServiceHierarchyHealth[]), statusCode: 200)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 500)]

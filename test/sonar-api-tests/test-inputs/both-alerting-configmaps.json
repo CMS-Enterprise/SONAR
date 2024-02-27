@@ -1,0 +1,44 @@
+{
+  "apiVersion": "v1",
+  "items": [
+    {
+      "apiVersion": "v1",
+      "data": {
+        "alertmanager-config.yaml": "{\"global\":{},\"receivers\":[{\"name\":\"foo_baz_receiver1\",\"email_configs\":[{\"to\":\"user1@gmail.com\",\"text\":\"{{ template \\u0022email.sonar-alerts.text\\u0022 . }}\",\"html\":\"{{ template \\u0022email.sonar-alerts.html\\u0022 . }}\"}]},{\"name\":\"foo_baz_receiver2\",\"email_configs\":[{\"to\":\"user2@gmail.com\",\"text\":\"{{ template \\u0022email.sonar-alerts.text\\u0022 . }}\",\"html\":\"{{ template \\u0022email.sonar-alerts.html\\u0022 . }}\"}]}],\"route\":{\"receiver\":\"nobody\",\"matchers\":[],\"group_by\":[],\"continue\":null,\"group_wait\":null,\"group_interval\":null,\"repeat_interval\":null,\"routes\":[{\"receiver\":\"foo_baz_receiver1\",\"matchers\":[\"environment=\\u0022foo\\u0022\",\"tenant=\\u0022baz\\u0022\",\"alertname=\\u0022test-metric-app_test-alert\\u0022\"],\"group_by\":[\"environment\",\"tenant\",\"service\"[],\"continue\":null,\"group_wait\":null,\"group_interval\":null,\"repeat_interval\":null,\"routes\":null}]},\"templates\":[\"/sonar-config/templates/*.tmpl\"]}"
+      },
+      "kind": "ConfigMap",
+      "metadata": {
+        "annotations": {
+          "versionNumber": "2"
+        },
+        "creationTimestamp": "2024-01-26T22:13:34Z",
+        "name": "sonar-alertmanager-config",
+        "namespace": "sonar",
+        "resourceVersion": "749",
+        "uid": "9049e14a-9051-43eb-b45e-6a2f85f1a232"
+      }
+    },
+    {
+      "apiVersion": "v1",
+      "data": {
+        "alerting-rules.yaml": "{\"groups\":[{\"name\":\"foo_baz\",\"rules\":[{\"alert\":\"test-metric-app_test-alert\",\"expr\":\"min(min(sonar_service_status{environment=foo, tenant=baz, service=~(test-metric-app), sonar_service_status=~(Online|AtRisk)} or label_replace(vector(0), service, test-metric-app, _, .*)) by (service)) \\u003C 1\",\"for\":\"0s\",\"labels\":{\"environment\":\"foo\",\"threshold\":\"Degraded\",\"tenant\":\"baz\",\"service\":\"test-metric-app\"},\"annotations\":{\"sonar_dashboard_uri\":\"http://localhost:3000/foo/tenants/baz/services/test-metric-app\"}}]}]}"
+      },
+      "kind": "ConfigMap",
+      "metadata": {
+        "annotations": {
+          "versionNumber": "2"
+        },
+        "creationTimestamp": "2024-01-30T22:13:34Z",
+        "name": "sonar-alerting-rules",
+        "namespace": "sonar",
+        "resourceVersion": "750",
+        "uid": "df3cba27-9ba6-4be3-84fd-513c60a166e1"
+      }
+    }
+  ],
+  "kind": "ConfigMapList",
+  "metadata": {
+    "continue": "",
+    "resourceVersion": "751"
+  }
+}

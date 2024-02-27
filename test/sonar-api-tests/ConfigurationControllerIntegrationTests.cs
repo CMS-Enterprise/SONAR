@@ -1944,11 +1944,328 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
 
   #endregion
 
+  #region Alerting Configuration Tests
+
+  [Fact]
+  public async Task CreateConfiguration_PersistsNewAlertingConfig() {
+    var configIn = new ServiceHierarchyConfiguration(
+      alerting: new AlertingConfiguration(
+        receivers: ImmutableList.Create(
+          new AlertReceiverConfiguration(
+            name: "receiver-1",
+            receiverType: AlertReceiverType.Email,
+            options: new AlertReceiverOptionsEmail(
+              address: "test-user-1@test-host")),
+          new AlertReceiverConfiguration(
+            name: "receiver-2",
+            receiverType: AlertReceiverType.Email,
+            options: new AlertReceiverOptionsEmail(
+              address: "test-user-2@test-host")))),
+      services: ImmutableList.Create(
+        new ServiceConfiguration(
+          name: "service-1",
+          displayName: "service-1",
+          alertingRules: ImmutableList.Create(
+            new AlertingRuleConfiguration(
+              name: "service-1-rule-1",
+              receiverName: "receiver-1",
+              threshold: HealthStatus.Offline),
+            new AlertingRuleConfiguration(
+              name: "service-1-rule-2",
+              receiverName: "receiver-2",
+              threshold: HealthStatus.Offline))),
+        new ServiceConfiguration(
+          name: "service-2",
+          displayName: "service-2",
+          alertingRules: ImmutableList.Create(
+            new AlertingRuleConfiguration(
+              name: "service-2-rule-1",
+              receiverName: "receiver-1",
+              threshold: HealthStatus.Offline),
+            new AlertingRuleConfiguration(
+              name: "service-2-rule-2",
+              receiverName: "receiver-2",
+              threshold: HealthStatus.Offline))),
+        new ServiceConfiguration(
+          name: "service-3",
+          displayName: "service-3")),
+      rootServices: ImmutableHashSet.Create("service-1", "service-2", "service-3"));
+
+    var (testEnvironment, testTenant) = await this.CreateTestConfiguration(configIn);
+
+    var configOutResponse = await this.Fixture
+      .CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      .GetAsync();
+
+    var configOut = await configOutResponse.Content
+      .ReadFromJsonAsync<ServiceHierarchyConfiguration>(SerializerOptions);
+
+    foreach (var receiver in configIn.Alerting!.Receivers) {
+      Assert.Contains(receiver, configOut!.Alerting!.Receivers);
+    }
+
+    foreach (var rule in configIn.Services.SelectMany(s =>
+      s.AlertingRules ?? ImmutableList<AlertingRuleConfiguration>.Empty)) {
+
+      Assert.Contains(rule, configOut!.Services.SelectMany(s =>
+        s.AlertingRules ?? ImmutableList<AlertingRuleConfiguration>.Empty));
+    }
+
+  }
+
+  [Fact]
+  public async Task UpdateConfiguration_ReceiverChangesArePersisted() {
+    var receiver1 = new AlertReceiverConfiguration(
+      name: "receiver-1",
+      receiverType: AlertReceiverType.Email,
+      options: new AlertReceiverOptionsEmail(
+        address: "test-user-1@test-host"));
+
+    var receiver1Prime = new AlertReceiverConfiguration(
+      name: "receiver-1",
+      receiverType: AlertReceiverType.Email,
+      options: new AlertReceiverOptionsEmail(
+        address: "test-user-1-prime@test-host"));
+
+    var receiver2 = new AlertReceiverConfiguration(
+      name: "receiver-2",
+      receiverType: AlertReceiverType.Email,
+      options: new AlertReceiverOptionsEmail(
+        address: "test-user-2@test-host"));
+
+    var receiver3 = new AlertReceiverConfiguration(
+      name: "receiver-3",
+      receiverType: AlertReceiverType.Email,
+      options: new AlertReceiverOptionsEmail(
+        address: "test-user-3@test-host"));
+
+    var configIn = new ServiceHierarchyConfiguration(
+      alerting: new AlertingConfiguration(
+        receivers: ImmutableList.Create(
+          receiver1,
+          receiver2)),
+      services: ImmutableList<ServiceConfiguration>.Empty,
+      rootServices: ImmutableHashSet<String>.Empty);
+
+    var (testEnvironment, testTenant) = await this.CreateTestConfiguration(configIn);
+
+    var configOutResponse = await this.Fixture
+      .CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      .GetAsync();
+
+    var configOut = await configOutResponse.Content
+      .ReadFromJsonAsync<ServiceHierarchyConfiguration>(SerializerOptions);
+
+    Assert.Contains(receiver1, configOut!.Alerting!.Receivers);
+    Assert.Contains(receiver2, configOut!.Alerting!.Receivers);
+    Assert.DoesNotContain(receiver1Prime, configOut!.Alerting!.Receivers);
+    Assert.DoesNotContain(receiver3, configOut!.Alerting!.Receivers);
+
+    var configUpdate = configIn with {
+      Alerting = new AlertingConfiguration(
+        receivers: ImmutableList.Create(
+          receiver1Prime,
+          receiver3))
+    };
+
+    await this.Fixture
+      .CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      .And(request => request.Content = JsonContent.Create(configUpdate))
+      .SendAsync("PUT");
+
+    configOutResponse = await this.Fixture
+      .CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      .GetAsync();
+
+    configOut = await configOutResponse.Content
+      .ReadFromJsonAsync<ServiceHierarchyConfiguration>(SerializerOptions);
+
+    Assert.DoesNotContain(receiver1, configOut!.Alerting!.Receivers);
+    Assert.DoesNotContain(receiver2, configOut!.Alerting!.Receivers);
+    Assert.Contains(receiver1Prime, configOut!.Alerting!.Receivers);
+    Assert.Contains(receiver3, configOut!.Alerting!.Receivers);
+
+  }
+
+  [Fact]
+  public async Task UpdateConfiguration_RuleChangesArePersisted() {
+
+    var rule1 = new AlertingRuleConfiguration(
+      name: "rule-1",
+      threshold: HealthStatus.Offline,
+      receiverName: "receiver-1",
+      delay: 1);
+
+    var rule1Prime = new AlertingRuleConfiguration(
+      name: "rule-1",
+      threshold: HealthStatus.Degraded,
+      receiverName: "receiver-2",
+      delay: 11);
+
+    var rule2 = new AlertingRuleConfiguration(
+      name: "rule-2",
+      threshold: HealthStatus.Offline,
+      receiverName: "receiver-2",
+      delay: 2);
+
+    var rule3 = new AlertingRuleConfiguration(
+      name: "rule-3",
+      threshold: HealthStatus.Offline,
+      receiverName: "receiver-1",
+      delay: 3);
+
+    var configIn = new ServiceHierarchyConfiguration(
+      alerting: new AlertingConfiguration(
+        receivers: ImmutableList.Create(
+          new AlertReceiverConfiguration(
+            name: "receiver-1",
+            receiverType: AlertReceiverType.Email,
+            options: new AlertReceiverOptionsEmail(
+              address: "test-user-1@test-host")),
+          new AlertReceiverConfiguration(
+            name: "receiver-2",
+            receiverType: AlertReceiverType.Email,
+            options: new AlertReceiverOptionsEmail(
+              address: "test-user-2@test-host")))),
+      services: ImmutableList.Create(
+        new ServiceConfiguration(
+          name: "service-1",
+          displayName: "service-1",
+          alertingRules: ImmutableList.Create(
+            rule1,
+            rule2))),
+      rootServices: ImmutableHashSet.Create("service-1"));
+
+    var (testEnvironment, testTenant) = await this.CreateTestConfiguration(configIn);
+
+    var configOutResponse = await this.Fixture
+      .CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      .GetAsync();
+
+    var configOut = await configOutResponse.Content
+      .ReadFromJsonAsync<ServiceHierarchyConfiguration>(SerializerOptions);
+
+    Assert.Contains(rule1, configOut!.Services[0].AlertingRules!);
+    Assert.Contains(rule2, configOut!.Services[0].AlertingRules!);
+    Assert.DoesNotContain(rule1Prime, configOut!.Services[0].AlertingRules!);
+    Assert.DoesNotContain(rule3, configOut!.Services[0].AlertingRules!);
+
+    var configUpdate = configIn with {
+      Services = ImmutableList.Create(
+        new ServiceConfiguration(
+          name: "service-1",
+          displayName: "service-1",
+          alertingRules: ImmutableList.Create(
+            rule1Prime,
+            rule3)))
+    };
+
+    await this.Fixture
+      .CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      .And(request => request.Content = JsonContent.Create(configUpdate))
+      .SendAsync("PUT");
+
+    configOutResponse = await this.Fixture
+      .CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      .GetAsync();
+
+    configOut = await configOutResponse.Content
+      .ReadFromJsonAsync<ServiceHierarchyConfiguration>(SerializerOptions);
+
+    Assert.DoesNotContain(rule1, configOut!.Services[0].AlertingRules!);
+    Assert.DoesNotContain(rule2, configOut!.Services[0].AlertingRules!);
+    Assert.Contains(rule1Prime, configOut!.Services[0].AlertingRules!);
+    Assert.Contains(rule3, configOut!.Services[0].AlertingRules!);
+  }
+
+  [Fact]
+  public async Task UpdateConfiguration_AlertingConfigNoOp() {
+
+    var rule1 = new AlertingRuleConfiguration(
+      name: "rule-1",
+      threshold: HealthStatus.Offline,
+      receiverName: "receiver-1",
+      delay: 1);
+
+    var rule1Prime = new AlertingRuleConfiguration(
+      name: "rule-1",
+      threshold: HealthStatus.Degraded,
+      receiverName: "receiver-2",
+      delay: 11);
+
+    var rule2 = new AlertingRuleConfiguration(
+      name: "rule-2",
+      threshold: HealthStatus.Offline,
+      receiverName: "receiver-2",
+      delay: 2);
+
+    var rule3 = new AlertingRuleConfiguration(
+      name: "rule-3",
+      threshold: HealthStatus.Offline,
+      receiverName: "receiver-1",
+      delay: 3);
+
+    var configIn = new ServiceHierarchyConfiguration(
+      alerting: new AlertingConfiguration(
+        receivers: ImmutableList.Create(
+          new AlertReceiverConfiguration(
+            name: "receiver-1",
+            receiverType: AlertReceiverType.Email,
+            options: new AlertReceiverOptionsEmail(
+              address: "test-user-1@test-host")),
+          new AlertReceiverConfiguration(
+            name: "receiver-2",
+            receiverType: AlertReceiverType.Email,
+            options: new AlertReceiverOptionsEmail(
+              address: "test-user-2@test-host")))),
+      services: ImmutableList.Create(
+        new ServiceConfiguration(
+          name: "service-1",
+          displayName: "service-1",
+          alertingRules: ImmutableList.Create(
+            rule1,
+            rule2))),
+      rootServices: ImmutableHashSet.Create("service-1"));
+
+    var (testEnvironment, testTenant) = await this.CreateTestConfiguration(configIn);
+
+    var configOutResponse = await this.Fixture
+      .CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      .GetAsync();
+
+    var configOut = await configOutResponse.Content
+      .ReadFromJsonAsync<ServiceHierarchyConfiguration>(SerializerOptions);
+
+    Assert.Contains(rule1, configOut!.Services[0].AlertingRules!);
+    Assert.Contains(rule2, configOut!.Services[0].AlertingRules!);
+    Assert.DoesNotContain(rule1Prime, configOut!.Services[0].AlertingRules!);
+    Assert.DoesNotContain(rule3, configOut!.Services[0].AlertingRules!);
+
+    await this.Fixture
+      .CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      .And(request => request.Content = JsonContent.Create(configIn))
+      .SendAsync("PUT");
+
+    configOutResponse = await this.Fixture
+      .CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+      .GetAsync();
+
+    configOut = await configOutResponse.Content
+      .ReadFromJsonAsync<ServiceHierarchyConfiguration>(SerializerOptions);
+
+    Assert.Contains(rule1, configOut!.Services[0].AlertingRules!);
+    Assert.Contains(rule2, configOut!.Services[0].AlertingRules!);
+    Assert.DoesNotContain(rule1Prime, configOut!.Services[0].AlertingRules!);
+    Assert.DoesNotContain(rule3, configOut!.Services[0].AlertingRules!);
+  }
+
+  #endregion
+
   private static T? GetExtensionValue<T>(Object? extensionValue) {
     return extensionValue switch {
       null => default,
       T typedValue => typedValue,
-      JsonElement element => ConfigurationControllerIntegrationTests.GetElementValue<T>(element),
+      JsonElement element => GetElementValue<T>(element),
       _ => throw new ArgumentException(
         $"The {nameof(extensionValue)} argument was an unexpected type: {extensionValue.GetType().Name}",
         nameof(extensionValue))

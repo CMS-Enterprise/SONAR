@@ -35,5 +35,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+  
+  <ItemGroup>
+    <None Include="test-inputs/**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 
 </Project>

@@ -40,17 +40,16 @@ spec:
         - name: appsettings-configmap
           configMap:
             name: appsettings-configmap-file
-        # You set volumes at the Pod level, then mount them into containers inside that Pod
+        {{- if .Values.configs }}
         - name: service-configmap
           configMap:
-            # Provide the name of the ConfigMap you want to mount.
             name: service-configmap-file
-            # An array of keys from the ConfigMap to create as files
             items:
               {{- range $key, $_ := .Values.configs }}
               - key: {{ $key }}
                 path: {{ $key }}.yaml
               {{- end }}
+        {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -83,15 +82,19 @@ spec:
             - name: appsettings-configmap
               mountPath: "/sonar/sonar-agent/settings"
               readOnly: true
+            {{- if .Values.configs }}
             - name: service-configmap
               mountPath: "/sonar/sonar-agent/service-config"
               readOnly: true
+            {{- end }}
           env:
+            {{- if .Values.sonarSecretName }}
             - name: ApiConfig__ApiKey
               valueFrom:
                 secretKeyRef:
-                  name: sonar-agent-secrets
+                  name: {{ .Values.sonarSecretName }}
                   key: apiKey
+            {{- end }}
             {{- if .Values.apiConfig.apiKeyId }}
             - name: ApiConfig__ApiKeyId
               value: {{ quote .Values.apiConfig.apiKeyId }}
@@ -105,6 +108,9 @@ spec:
             {{- if .Values.serviceAccountName }}
             - name: AgentConfig__InClusterConfig
               value: "true"
+            {{- end }}
+            {{- if .Values.extraEnv }}
+            {{- toYaml .Values.extraEnv | nindent 12 }}
             {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}

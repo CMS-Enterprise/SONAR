@@ -23,6 +23,106 @@ namespace Cms.BatCave.Sonar.Data.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Cms.BatCave.Sonar.Data.AlertReceiver", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name")
+                        .UseCollation("ci_collation");
+
+                    b.Property<string>("Options")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("options")
+                        .UseCollation("ci_collation");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer")
+                        .HasColumnName("type");
+
+                    b.HasKey("Id")
+                        .HasName("pk_alert_receiver");
+
+                    b.HasIndex("TenantId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("ix_alert_receiver_tenant_id_name");
+
+                    b.ToTable("alert_receiver", (string)null);
+                });
+
+            modelBuilder.Entity("Cms.BatCave.Sonar.Data.AlertingConfigurationVersion", b =>
+                {
+                    b.Property<int>("VersionNumber")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("version_number");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("VersionNumber"));
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("timestamp");
+
+                    b.HasKey("VersionNumber")
+                        .HasName("pk_alerting_config_version");
+
+                    b.ToTable("alerting_config_version", (string)null);
+                });
+
+            modelBuilder.Entity("Cms.BatCave.Sonar.Data.AlertingRule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AlertReceiverId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("alert_receiver_id");
+
+                    b.Property<int>("Delay")
+                        .HasColumnType("integer")
+                        .HasColumnName("delay");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name")
+                        .UseCollation("ci_collation");
+
+                    b.Property<Guid>("ServiceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("service_id");
+
+                    b.Property<int>("Threshold")
+                        .HasColumnType("integer")
+                        .HasColumnName("threshold");
+
+                    b.HasKey("Id")
+                        .HasName("pk_alerting_rule");
+
+                    b.HasIndex("AlertReceiverId")
+                        .HasDatabaseName("ix_alerting_rule_alert_receiver_id");
+
+                    b.HasIndex("ServiceId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("ix_alerting_rule_service_id_name");
+
+                    b.ToTable("alerting_rule", (string)null);
+                });
+
             modelBuilder.Entity("Cms.BatCave.Sonar.Data.ApiKey", b =>
                 {
                     b.Property<Guid>("Id")
@@ -601,6 +701,33 @@ namespace Cms.BatCave.Sonar.Data.Migrations
                         .HasDatabaseName("ix_version_check_service_id_version_check_type");
 
                     b.ToTable("version_check", (string)null);
+                });
+
+            modelBuilder.Entity("Cms.BatCave.Sonar.Data.AlertReceiver", b =>
+                {
+                    b.HasOne("Cms.BatCave.Sonar.Data.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_alert_receiver_tenant_tenant_id");
+                });
+
+            modelBuilder.Entity("Cms.BatCave.Sonar.Data.AlertingRule", b =>
+                {
+                    b.HasOne("Cms.BatCave.Sonar.Data.AlertReceiver", null)
+                        .WithMany()
+                        .HasForeignKey("AlertReceiverId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_alerting_rule_alert_receiver_alert_receiver_id");
+
+                    b.HasOne("Cms.BatCave.Sonar.Data.Service", null)
+                        .WithMany()
+                        .HasForeignKey("ServiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_alerting_rule_service_service_id");
                 });
 
             modelBuilder.Entity("Cms.BatCave.Sonar.Data.ApiKey", b =>

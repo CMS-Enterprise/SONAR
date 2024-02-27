@@ -1,0 +1,43 @@
+global:
+  smtp_from: "noreply+sonar-alerts@sonar.local"
+  smtp_smarthost: "mailserver:1025"
+  smtp_require_tls: false
+
+receivers:
+  - name: default-receiver
+    email_configs:
+      - to: default-receiver@mailserver.local
+  - name: self-health-receiver
+    email_configs:
+      - to: self-health-receiver@mailserver.local
+  - name: dev-receiver
+    email_configs:
+      - to: dev-receiver@mailserver.local
+        html: '{{ template "email.sonar-alerts.html" . }}'
+        text: '{{ template "email.sonar-alerts.text" . }}'
+
+route:
+  receiver: default-receiver
+  group_by: [ '...' ] # Special value; disables grouping by default
+  group_wait: 0s
+  group_interval: 1m
+  repeat_interval: 1h
+  routes:
+    - matchers:
+        - purpose = "self-health-alerting"
+      receiver: self-health-receiver
+    - matchers:
+        - purpose = "service-alerting"
+      routes:
+        - matchers:
+            - environment = "foo"
+            - tenant = "baz"
+            - service = "alerting-test-app"
+          group_by:
+            - environment
+            - tenant
+            - service
+          receiver: dev-receiver
+
+templates:
+  - /etc/alertmanager/templates/*.tmpl

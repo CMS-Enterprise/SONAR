@@ -55,8 +55,8 @@ public class ErrorReport {
     AgentErrorLevel level,
     AgentErrorType type,
     String message,
-    String? configuration,
-    String? stackTrace) =>
+    String? configuration = null,
+    String? stackTrace = null) =>
     new ErrorReport(
       Guid.Empty,
       timestamp,

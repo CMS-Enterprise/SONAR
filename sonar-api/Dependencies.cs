@@ -1,16 +1,17 @@
 using System;
 using System.Net.Http;
+using Cms.BatCave.Sonar.Alertmanager;
+using Cms.BatCave.Sonar.Alerting;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Data.Services;
+using Cms.BatCave.Sonar.Factories;
 using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Prometheus;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using OpenTelemetry.Metrics;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
 using PrometheusQuerySdk;
 
 namespace Cms.BatCave.Sonar;
@@ -41,12 +42,25 @@ public class Dependencies {
     builder.Services.AddScoped<ErrorReportsDataHelper>();
     builder.Services.AddScoped<ValidationHelper>();
     builder.Services.AddScoped<TagsDataHelper>();
+    builder.Services.AddScoped<AlertingDataHelper>();
+    builder.Services.AddScoped<KubeClientFactory>();
+    builder.Services.AddScoped<AlertingGlobalConfigurationGenerator>();
+    builder.Services.AddScoped<AlertingReceiverConfigurationGenerator>();
+    builder.Services.AddScoped<AlertingRulesConfigurationGenerator>();
+    builder.Services.AddScoped<AlertingConfigurationManager>();
+    builder.Services.AddScoped<AlertingConfigurationHelper>();
 
     builder.Services.AddHttpClient<IPrometheusRemoteProtocolClient, PrometheusRemoteProtocolClient>((provider, client) => {
       var config = provider.GetRequiredService<IOptions<PrometheusConfiguration>>().Value;
       client.BaseAddress = new Uri($"{config.Protocol}://{config.Host}:{config.Port}");
     });
     builder.Services.AddScoped<IPrometheusService, PrometheusService>();
+    builder.Services.AddHttpClient<IAlertmanagerClient, AlertmanagerClient>((provider, client) => {
+      var config = provider.GetRequiredService<IOptions<AlertmanagerConfiguration>>().Value;
+      client.BaseAddress = new Uri($"{config.Protocol}://{config.Host}:{config.Port}");
+      client.Timeout = TimeSpan.FromSeconds(config.RequestTimeoutSeconds);
+    });
+    builder.Services.AddScoped<IAlertmanagerService, AlertmanagerService>();
     builder.Services.AddScoped<IDbMigrationService, DbMigrationService>();
 
     // Register all Configuration Option Classes for dependency injection
@@ -54,12 +68,15 @@ public class Dependencies {
     // Register DataContext and DbSet<> dependencies
     this.RegisterDataDependencies(builder);
 
+    builder.Services.AddScoped<AlertingRulesConfigurationGenerator>();
+
     builder.Services.AddOpenTelemetry()
       .WithMetrics(metricBuilder => {
         metricBuilder.AddMeter("Sonar.EntityFramework.DbCommands");
         metricBuilder.AddPrometheusExporter();
       });
 
+    builder.Services.AddHostedService<AlertingConfigSyncService>();
   }
 
   protected virtual void RegisterDataDependencies(WebApplicationBuilder builder) {

@@ -1,0 +1,27 @@
+{
+  "apiVersion": "v1",
+  "items": [
+    {
+      "apiVersion": "v1",
+      "data": {
+        "alerting-rules.yaml": "{\"groups\":[{\"name\":\"foo_baz\",\"rules\":[{\"alert\":\"test-metric-app_test-alert\",\"expr\":\"min(min(sonar_service_status{environment=foo, tenant=baz, service=~(test-metric-app), sonar_service_status=~(Online|AtRisk)} or label_replace(vector(0), service, test-metric-app, _, .*)) by (service)) \\u003C 1\",\"for\":\"0s\",\"labels\":{\"environment\":\"foo\",\"threshold\":\"Degraded\",\"tenant\":\"baz\",\"service\":\"test-metric-app\"},\"annotations\":{\"sonar_dashboard_uri\":\"http://localhost:3000/foo/tenants/baz/services/test-metric-app\"}}]}]}"
+      },
+      "kind": "ConfigMap",
+      "metadata": {
+        "annotations": {
+          "versionNumber": "2"
+        },
+        "creationTimestamp": "2024-01-30T22:13:34Z",
+        "name": "sonar-alerting-rules",
+        "namespace": "sonar",
+        "resourceVersion": "750",
+        "uid": "df3cba27-9ba6-4be3-84fd-513c60a166e1"
+      }
+    }
+  ],
+  "kind": "ConfigMapList",
+  "metadata": {
+    "continue": "",
+    "resourceVersion": "751"
+  }
+}

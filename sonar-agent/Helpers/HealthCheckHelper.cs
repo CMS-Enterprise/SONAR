@@ -216,6 +216,11 @@ public class HealthCheckHelper {
                     (HttpHealthCheckDefinition)healthCheck.Definition
                   );
                   break;
+                case HealthCheckType.Internal:
+                  this._logger.LogWarning(
+                    message: "Skipping internal health check {healthCheckId}",
+                    healthCheckId);
+                  continue;
                 default:
                   await this._errorReportsHelper.CreateErrorReport(env,
                     new ErrorReportDetails(

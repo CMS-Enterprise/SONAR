@@ -1,0 +1,18 @@
+{
+  "runtime": "Net70",
+  "documentGenerator": {
+    "fromDocument": {
+      "url": "../lib/alertmanager/api/v2/openapi.yaml"
+    }
+  },
+  "codeGenerators": {
+    "openApiToCSharpClient": {
+      "namespace": "Cms.BatCave.Sonar.Alertmanager",
+      "className": "AlertmanagerClient",
+      "generateClientInterfaces": true,
+      "jsonLibrary": "SystemTextJson",
+      "generateDtoTypes": true,
+      "output": "Alertmanager/AlertmanagerClient.g.cs"
+    }
+  }
+}

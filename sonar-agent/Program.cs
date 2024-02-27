@@ -17,6 +17,7 @@ using Cms.BatCave.Sonar.Agent.VersionChecks;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
+using Cms.BatCave.Sonar.Factories;
 using Cms.BatCave.Sonar.Loki;
 using Cms.BatCave.Sonar.Models;
 using PrometheusQuerySdk;
@@ -141,18 +142,6 @@ internal class Program {
       source?.Cancel();
     };
 
-    Kubernetes CreateKubeClient() {
-      var config = agentConfig.Value.InClusterConfig ?
-        KubernetesClientConfiguration.InClusterConfig() :
-        KubernetesClientConfiguration.BuildDefaultConfig();
-
-      var kubernetes = new Kubernetes(config);
-      logger.LogDebug(
-        "Connecting to Kubernetes Host: {Host}, Namespace: {Namespace}, BaseUri: {BaseUri}",
-        config.Host, config.Namespace, kubernetes.BaseUri);
-      return kubernetes;
-    }
-
     var configFiles = opts.ServiceConfigFiles.ToArray();
     var configSources = configFiles.Length > 0 ?
       new[] {
@@ -160,8 +149,10 @@ internal class Program {
       } :
       Enumerable.Empty<IServiceConfigSource>();
 
+    var kubeClientFactory = new KubeClientFactory(loggerFactory.CreateLogger<KubeClientFactory>());
+
     if (opts.KubernetesConfigurationOption) {
-      var kubeClient = CreateKubeClient();
+      var kubeClient = kubeClientFactory.CreateKubeClient(agentConfig.Value.InClusterConfig);
       disposables.Add(kubeClient);
       configSources =
         configSources.Append(
@@ -421,7 +412,7 @@ internal class Program {
 
     // Run task that calls Health Check and Version Check function for every tenant
     if (opts.KubernetesConfigurationOption) {
-      var kubeClient = CreateKubeClient();
+      var kubeClient = kubeClientFactory.CreateKubeClient(agentConfig.Value.InClusterConfig);
       var k8sWatcher = new KubernetesConfigurationMonitor(
         apiConfig.Value.Environment,
         configurationHelper,

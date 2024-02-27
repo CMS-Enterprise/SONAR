@@ -36,7 +36,7 @@
     {
       "name": "httpMetricTestApp",
       "displayName": "Test Application for HTTP Health Check",
-      "description": "A test application that has one endpoint to simulate different HTTP status codes.",
+      "description": "A test application that has endpoints to simulate different HTTP status codes.",
       "url": "http://localhost:8082/api/ready",
       "children": ["httpMetricTestAppChild"],
       "healthChecks": [

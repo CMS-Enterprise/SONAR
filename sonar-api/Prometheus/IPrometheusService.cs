@@ -2,12 +2,19 @@ using System;
 using System.Collections.Immutable;
 using System.Threading;
 using System.Threading.Tasks;
+using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Models;
 
 namespace Cms.BatCave.Sonar.Prometheus;
 
 public interface IPrometheusService {
+
+  // How often Prometheus is configured to scape Alertmanager metrics.
+  public static TimeSpan AlertmanagerScrapeInterval => TimeSpan.FromMinutes(3);
+  // How often Prometheus is configured to evaluate rules.
+  public static TimeSpan RuleEvaluationInterval => TimeSpan.FromMinutes(1);
+
   /// <summary>
   /// Write the given raw <see cref="ServiceHealthData"/> time series samples for the given environment,
   /// tenant, and service to Prometheus using P8s' remote write API. Out-of-order samples and samples older
@@ -82,4 +89,33 @@ public interface IPrometheusService {
     DateTime start,
     DateTime end,
     CancellationToken cancellationToken);
+
+  /// <summary>
+  /// Get the current status of Alertmanager metrics scraping. This is a health check to ensure that Alertmanager
+  /// metrics are up-to-date. We query Prometheus for the <c>alertmanager_build_info</c> metric and validate that it
+  /// has been sampled recently.
+  /// </summary>
+  /// <returns>
+  /// <see cref="HealthStatus.Online"/> if the build info metric is present and was updated recently.
+  /// <see cref="HealthStatus.Degraded"/> if the build info metric is present, but hasn't been updated recently.
+  /// <see cref="HealthStatus.Offline"/> if data is missing for the build info metric.
+  /// <see cref="HealthStatus.Unknown"/> if there was any unexpected error querying the metric data.
+  /// </returns>
+  Task<HealthStatus> GetAlertmanagerScrapeStatusAsync(CancellationToken cancellationToken);
+
+  /// <summary>
+  /// Get the current status of Alertmanager notification delivery for a given integration. This is a health check
+  /// for whether there have been any recent notification request failures reported by Alertmanager for the given
+  /// integration according to the <c>alertmanager_notification_requests_failed_total</c> metric.
+  /// </summary>
+  /// <param name="integration">The notification integration type to check metrics for, e.g. "email" or "slack".</param>
+  /// <param name="cancellationToken">The cancellation token for the async operation.</param>
+  /// <returns>
+  /// <see cref="HealthStatus.Online"/> if no notification request failures for the given integration have been reported
+  /// recently.
+  /// <see cref="HealthStatus.Degraded"/> if any notification request failures for the given integration have been
+  /// reported recently.
+  /// <see cref="HealthStatus.Unknown"/> if there was any unexpected error querying the metric data.
+  /// </returns>
+  Task<HealthStatus> GetAlertmanagerNotificationsStatusAsync(String integration, CancellationToken cancellationToken);
 }

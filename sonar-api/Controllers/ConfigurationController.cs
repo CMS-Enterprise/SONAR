@@ -8,6 +8,8 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Asp.Versioning;
+using Cms.BatCave.Sonar.Alerting;
+using Cms.BatCave.Sonar.Alertmanager;
 using Cms.BatCave.Sonar.Authentication;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
@@ -38,10 +40,14 @@ public class ConfigurationController : ControllerBase {
   private readonly DbSet<VersionCheck> _versionChecksTable;
   private readonly DbSet<ServiceTag> _serviceTagsTable;
   private readonly DbSet<TenantTag> _tenantTagsTable;
+  private readonly DbSet<AlertingConfigurationVersion> _alertingConfigurationVersionTable;
   private readonly ServiceDataHelper _serviceDataHelper;
   private readonly TenantDataHelper _tenantDataHelper;
   private readonly String _sonarEnvironment;
   private readonly TagsDataHelper _tagsDataHelper;
+  private readonly AlertingDataHelper _alertingDataHelper;
+  private readonly AlertingConfigurationManager _alertmanagerHelper;
+  private readonly IOptions<KubernetesApiAccessConfiguration> _kubernetesApiAccessConfig;
 
   public ConfigurationController(
     DataContext dbContext,
@@ -57,8 +63,11 @@ public class ConfigurationController : ControllerBase {
     IOptions<SonarHealthCheckConfiguration> sonarHealthConfig,
     TagsDataHelper tagsDataHelper,
     DbSet<ServiceTag> serviceTagsTable,
-    DbSet<TenantTag> tenantTagsTable) {
-
+    DbSet<TenantTag> tenantTagsTable,
+    AlertingDataHelper alertingDataHelper,
+    DbSet<AlertingConfigurationVersion> alertingConfigurationVersionTable,
+    AlertingConfigurationManager alertmanagerHelper,
+    IOptions<KubernetesApiAccessConfiguration> kubernetesApiAccessConfig) {
     this._dbContext = dbContext;
     this._environmentsTable = environmentsTable;
     this._tenantsTable = tenantsTable;
@@ -72,6 +81,10 @@ public class ConfigurationController : ControllerBase {
     this._serviceTagsTable = serviceTagsTable;
     this._tenantTagsTable = tenantTagsTable;
     this._sonarEnvironment = sonarHealthConfig.Value.SonarEnvironment;
+    this._alertingDataHelper = alertingDataHelper;
+    this._alertingConfigurationVersionTable = alertingConfigurationVersionTable;
+    this._alertmanagerHelper = alertmanagerHelper;
+    this._kubernetesApiAccessConfig = kubernetesApiAccessConfig;
   }
 
   /// <summary>
@@ -130,13 +143,23 @@ public class ConfigurationController : ControllerBase {
       (await this._tagsDataHelper.FetchExistingServiceTags(serviceMap.Keys, cancellationToken))
       .ToLookup(s => s.ServiceId);
 
+    var alertReceiversById =
+      (await this._alertingDataHelper.FetchAlertReceiversAsync(tenantEntity.Id, cancellationToken))
+      .ToImmutableDictionary(keySelector: r => r.Id);
+
+    var alertingRulesByServiceId =
+      (await this._alertingDataHelper.FetchAlertingRulesAsync(serviceMap.Keys, cancellationToken))
+      .ToLookup(keySelector: r => r.ServiceId);
+
     var serviceHierarchy = CreateServiceHierarchy(
       serviceMap,
       healthCheckByService,
       versionCheckByService,
       serviceRelationshipsByParent,
       tenantTags,
-      serviceTags);
+      serviceTags,
+      alertReceiversById,
+      alertingRulesByServiceId);
 
     if (!isAuthorized) {
       serviceHierarchy = ServiceDataHelper.Redact(serviceHierarchy);
@@ -324,6 +347,45 @@ public class ConfigurationController : ControllerBase {
         cancellationToken
       );
 
+      // Add tenant alerting configuration and service alerting rules if any
+      // are defined on the incoming hierarchy configuration object.
+      IImmutableList<AlertReceiver> createdAlertReceivers = ImmutableList<AlertReceiver>.Empty;
+      IImmutableList<AlertingRule> createdAlertingRules = ImmutableList<AlertingRule>.Empty;
+      var alertReceiversChanged = false;
+      var alertingRulesChanged = false;
+
+      if (hierarchy.Alerting is not null) {
+        (alertReceiversChanged, createdAlertReceivers) =
+          await this._alertingDataHelper.CreateOrUpdateAlertReceiversAsync(
+            tenantId: createdTenant.Entity.Id,
+            alertReceiverConfigurations: hierarchy.Alerting.Receivers,
+            cancellationToken);
+
+        var accumulatedAlertingRules = new List<AlertingRule>();
+
+        foreach (var svc in hierarchy.Services) {
+          if (svc.AlertingRules is not null) {
+            var (_, alertingRules) = await this._alertingDataHelper.CreateOrUpdateAlertingRulesAsync(
+              serviceId: servicesByName[svc.Name].Id,
+              alertReceivers: createdAlertReceivers,
+              alertingRuleConfigurations: svc.AlertingRules,
+              cancellationToken);
+            accumulatedAlertingRules.AddRange(alertingRules);
+          }
+        }
+
+        createdAlertingRules = accumulatedAlertingRules.ToImmutableList();
+        if (createdAlertingRules.Any()) {
+          alertingRulesChanged = true;
+        }
+      }
+
+      // Increment Alerting Configuration Version
+      if (alertReceiversChanged || alertingRulesChanged) {
+        await this._alertingConfigurationVersionTable.AddAsync(new AlertingConfigurationVersion(DateTime.UtcNow),
+          cancellationToken);
+      }
+
       await this._dbContext.SaveChangesAsync(cancellationToken);
 
       response = this.Created(
@@ -334,7 +396,9 @@ public class ConfigurationController : ControllerBase {
           createdVersionChecks.ToLookup(vc => vc.ServiceId),
           createdRelationships.ToLookup(rel => rel.ParentServiceId),
           createdTenantTags.NullIfEmpty()?.ToImmutableDictionary(tt => tt.Name, tt => tt.Value),
-          createdServiceTags.ToLookup(st => st.ServiceId)
+          createdServiceTags.ToLookup(st => st.ServiceId),
+          createdAlertReceivers.ToImmutableDictionary(keySelector: r => r.Id),
+          createdAlertingRules.ToLookup(keySelector: r => r.ServiceId)
         )
       );
 
@@ -833,6 +897,56 @@ public class ConfigurationController : ControllerBase {
               vc.updatedVersionCheck.Definition));
         }));
 
+      // Update tenant alerting configuration and service alerting rules if any
+      // are defined on the incoming hierarchy configuration object.
+      // If the tenant alerting configuration is not present on the incoming
+      // hierarchy configuration object, delete it from the DB, which will
+      // cascade delete the tenant's service alerting rules from the DB as well.
+      IImmutableList<AlertReceiver> updatedAlertReceivers = ImmutableList<AlertReceiver>.Empty;
+      IImmutableList<AlertingRule> updatedAlertingRules = ImmutableList<AlertingRule>.Empty;
+      var alertReceiversChanged = false;
+      var alertingRulesChanged = false;
+
+      if (hierarchy.Alerting is not null) {
+        (alertReceiversChanged, updatedAlertReceivers) =
+          await this._alertingDataHelper.CreateOrUpdateAlertReceiversAsync(
+            tenantId: existingTenant.Id,
+            alertReceiverConfigurations: hierarchy.Alerting.Receivers,
+            cancellationToken);
+
+        var accumulatedAlertingRules = new List<AlertingRule>();
+
+        foreach (var svc in hierarchy.Services) {
+          if (svc.AlertingRules is not null) {
+            var (changed, alertingRules) = await this._alertingDataHelper.CreateOrUpdateAlertingRulesAsync(
+              serviceId: existingServicesByName[svc.Name].Id,
+              alertReceivers: updatedAlertReceivers,
+              alertingRuleConfigurations: svc.AlertingRules,
+              cancellationToken);
+            accumulatedAlertingRules.AddRange(alertingRules);
+            if (changed) {
+              alertingRulesChanged = true;
+            }
+          } else {
+            if (await this._alertingDataHelper.DeleteAlertingRulesAsync(existingServicesByName[svc.Name].Id)) {
+              alertingRulesChanged = true;
+            }
+          }
+        }
+
+        updatedAlertingRules = accumulatedAlertingRules.ToImmutableList();
+      } else {
+        if (await this._alertingDataHelper.DeleteAlertReceiversAsync(existingTenant.Id)) {
+          alertReceiversChanged = true;
+        }
+      }
+
+      // Increment Alerting Configuration Version
+      if (alertReceiversChanged || alertingRulesChanged) {
+        await this._alertingConfigurationVersionTable.AddAsync(new AlertingConfigurationVersion(DateTime.UtcNow),
+          cancellationToken);
+      }
+
       // Delete servicesToDelete
       this._servicesTable.RemoveRange(servicesToDelete);
 
@@ -858,13 +972,24 @@ public class ConfigurationController : ControllerBase {
         updatedVersionChecks.ToLookup(vc => vc.ServiceId),
         updatedRelationships.ToLookup(rel => rel.ParentServiceId),
         updatedTenantTags.NullIfEmpty()?.ToImmutableDictionary(k => k.Name, k => k.Value),
-        updatedServiceTags.ToLookup(s => s.ServiceId)
+        updatedServiceTags.ToLookup(s => s.ServiceId),
+        updatedAlertReceivers.ToImmutableDictionary(keySelector: r => r.Id),
+        updatedAlertingRules.ToLookup(keySelector: r => r.ServiceId)
       ));
 
       await tx.CommitAsync(cancellationToken);
     } catch {
       await tx.RollbackAsync(cancellationToken);
       throw;
+    }
+
+    // TODO: update Alertmanager configuration on a background thread so that
+    // it doesn't delay the API response
+    // Note: It is important that this happen after SaveChanges successfully
+    // completes and the transaction is successfully committed.
+    if (this._kubernetesApiAccessConfig.Value.IsEnabled) {
+      // Create or update alert recipient configuration
+      await this._alertmanagerHelper.CreateOrUpdateAlertmanagerConfigMapAsync(cancellationToken);
     }
 
     return response;
@@ -881,8 +1006,16 @@ public class ConfigurationController : ControllerBase {
       await this._dbContext.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, cancellationToken);
 
     try {
-      // remove tenant
+      // fetch tenant
       var tenantEntity = await this._tenantDataHelper.FetchExistingTenantAsync(environment, tenant, cancellationToken);
+
+      // Update Configuration Version
+      if (await this._alertingDataHelper.DeleteAlertReceiversAsync(tenantEntity.Id)) {
+        await this._alertingConfigurationVersionTable.AddAsync(new AlertingConfigurationVersion(DateTime.UtcNow),
+          cancellationToken);
+      }
+
+      // remove tenant
       this._tenantsTable.Remove(tenantEntity);
 
       // save
@@ -903,7 +1036,21 @@ public class ConfigurationController : ControllerBase {
     ILookup<Guid, VersionCheck> versionCheckByService,
     ILookup<Guid, ServiceRelationship> serviceRelationshipsByParent,
     IImmutableDictionary<String, String?>? tenantTags,
-    ILookup<Guid, ServiceTag>? serviceTagByService) {
+    ILookup<Guid, ServiceTag>? serviceTagByService,
+    IImmutableDictionary<Guid, AlertReceiver> alertReceiversById,
+    ILookup<Guid, AlertingRule> alertingRulesByServiceId) {
+
+    AlertingConfiguration? alertingConfiguration = null;
+    if (alertReceiversById.Any()) {
+      alertingConfiguration = new AlertingConfiguration(
+        receivers: alertReceiversById.Values
+          .Select(r => new AlertReceiverConfiguration(
+            name: r.Name,
+            receiverType: r.Type,
+            options: r.DeserializeOptions()))
+          .ToImmutableList());
+    }
+
     return new ServiceHierarchyConfiguration(
       serviceMap.Values
         .Select(svc => new ServiceConfiguration(
@@ -928,21 +1075,30 @@ public class ConfigurationController : ControllerBase {
               ))
             .NullIfEmpty()
             ?.ToImmutableList(),
-    serviceRelationshipsByParent[svc.Id]
+          serviceRelationshipsByParent[svc.Id]
             .Select(id => serviceMap[id.ServiceId].Name)
             .NullIfEmpty()
             ?.ToImmutableHashSet(),
           serviceTagByService?[svc.Id]
             .ToImmutableDictionary(
               st => st.Name,
-              st => st.Value)
+              st => st.Value),
+          alertingRulesByServiceId[svc.Id].NullIfEmpty()?
+            .Select(r => new AlertingRuleConfiguration(
+              name: r.Name,
+              threshold: r.Threshold,
+              receiverName: alertReceiversById[r.AlertReceiverId].Name,
+              delay: r.Delay
+            ))
+            .ToImmutableList()
         ))
         .ToImmutableList(),
       serviceMap.Values
         .Where(svc => svc.IsRootService)
         .Select(svc => svc.Name)
         .ToImmutableHashSet(),
-      tenantTags
+      tenantTags,
+      alertingConfiguration
     );
   }
 }

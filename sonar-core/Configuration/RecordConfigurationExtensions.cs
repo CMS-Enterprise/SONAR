@@ -89,7 +89,14 @@ public static class RecordConfigurationExtensions {
           !typeof(IEnumerable).IsAssignableFrom(param.ParameterType)) {
 
           var subSection = configuration.GetSection(param.Name);
-          if (subSection != null) {
+          if (subSection != null &&
+            (!(param.HasDefaultValue || param.IsOptional) || HasData(subSection))) {
+            // It is impossible to distinguish between:
+            // { }
+            // and
+            // { "example": { } }
+            // because they both return the same thing when you get the section "example"
+            // The purpose of the if condition above is to only attempt to construct the type that corresponds to "example" if some data is specified, or it is non-optional
             if (subSection.Value == String.Empty) {
               parameters = parameters.Add(param.Name, null);
             } else if (param.ParameterType.GetConstructors().Any(c => c.GetParameters().Length == 0)) {
@@ -217,6 +224,11 @@ public static class RecordConfigurationExtensions {
     Debug.Assert(result != null, "result != null");
 
     return (T)result;
+  }
+
+  private static Boolean HasData(IConfiguration configuration) {
+    // When you get a section from configuration and it does not exist, it still returns a IConfigurationSection instance with a single KeyValuePair, it simply contains no properties.
+    return configuration.AsEnumerable().Skip(1).Any();
   }
 
   public static Object BindCtor(this IConfiguration configuration, Type objectType) {

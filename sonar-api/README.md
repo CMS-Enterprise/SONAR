@@ -146,6 +146,24 @@ git submodule update --init
 dotnet msbuild -target:generate_prometheus_types
 ```
 
+## Alertmanager Client
+
+The client that we use for talking to the Alertmanager API is generated from the [Alertmanager OpenAPI spec](https://github.com/prometheus/alertmanager/blob/main/api/v2/openapi.yaml) using a tool called [NSwag](https://github.com/RicoSuter/NSwag) (the same tool we use over in sonar-agent for generating the SONAR API client). The alertmanager project (which provides the OpenAPI spec) is included as a submodule of this repository, and the client code generation is accomplished via a custom MSBuild target in the sonar-api project.
+
+To generate the Alertmanager client:
+
+```shell
+# Initialize or update git submodules:
+git submodule update --init
+
+# Run the NSwag code generation msbuild task:
+dotnet msbuild -target:NSwag
+```
+
+This only needs to be done when we update to a newer version of the Alertmanager API.
+
+_Note: It's important to include the `--init` flag on the git submodule command above; the submodule is pinned to a particular tagged commit of the alertmanager repo, and a naked `update` would change the submodule's detached HEAD to a different commit._
+
 ## Authentication
 
 All API endpoints that create, modify, or delete resources require authentication.

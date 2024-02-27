@@ -14,11 +14,11 @@ services:
       - "shared"
 
   prometheus:
-    image: prom/prometheus:v2.38.0
+    image: prom/prometheus:v2.45.0
     restart: always
     ports: ["9090:9090"]
     volumes:
-      - "./config/development/prometheus.yml:/etc/prometheus/prometheus.yml:ro"
+      - "./config/development/prometheus:/etc/prometheus:ro"
       - "tsdbVolume:/prometheus:rw"
     command:
       - "--web.enable-remote-write-receiver"
@@ -27,6 +27,28 @@ services:
       - "--storage.tsdb.path=/prometheus"
       - "--web.console.libraries=/usr/share/prometheus/console_libraries"
       - "--web.console.templates=/usr/share/prometheus/consoles"
+    networks:
+      - "shared"
+
+  alertmanager:
+    image: prom/alertmanager:v0.25.0
+    restart: always
+    ports: [ "9093:9093" ]
+    volumes:
+      - "./config/development/alertmanager:/etc/alertmanager:ro"
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+    networks:
+      - "shared"
+
+  mailserver:
+    image: axllent/mailpit:v1.10.2
+    restart: unless-stopped
+    ports: [ "1025:1025", "8025:8025" ]
+    environment:
+      MP_MAX_MESSAGES: 100
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
     networks:
       - "shared"
 

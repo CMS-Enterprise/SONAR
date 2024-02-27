@@ -1,5 +1,6 @@
-import { useQuery } from 'react-query';
+import { useMutation, useQuery, useQueryClient } from 'react-query';
 import {
+  AlertSilenceDetails,
   HealthCheckModel,
   ServiceHierarchyConfiguration
 } from '../../api/data-contracts';
@@ -99,4 +100,60 @@ export const useMaybeGetHierarchyConfigQuery = (
       }
     }
   );
+}
+
+export const useGetServiceAlerts = (
+  env: string,
+  tenant: string,
+  service: string,
+) => {
+  const sonarClient = useSonarApi();
+  return useQuery({
+    queryKey: ['ServiceAlert', env, tenant, service],
+    queryFn: () => {
+      return sonarClient.getServiceAlerts(
+        env,
+        tenant,
+        service
+      ).then(res => res.data);
+    },
+  })
+}
+
+export const useCreateUpdateSilence = (
+  env: string,
+  tenant: string,
+  service: string
+) => {
+  const sonarClient = useSonarApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (silence: AlertSilenceDetails) => sonarClient.createUpdateSilence(
+      env,
+      tenant,
+      service,
+      silence),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({queryKey: ['ServiceAlert', env, tenant, service],})
+    }
+  })
+}
+
+export const useRemoveSilence = (
+  env: string,
+  tenant: string,
+  service: string
+) => {
+  const sonarClient = useSonarApi();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (silence: AlertSilenceDetails) => sonarClient.removeSilence(
+      env,
+      tenant,
+      service,
+      silence),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({queryKey: ['ServiceAlert', env, tenant, service],})
+    }
+  })
 }

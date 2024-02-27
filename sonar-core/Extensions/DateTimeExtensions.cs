@@ -18,4 +18,8 @@ public static class DateTimeExtensions {
   public static Double SecondsSinceUnixEpoch(this DateTime value) {
     return value.MillisSinceUnixEpoch() / 1000.0;
   }
+
+  public static DateTime UnixTimeSecondsToUtcDateTime(this Decimal unixTimeSeconds) {
+    return DateTimeOffset.FromUnixTimeSeconds((Int64)Math.Round(unixTimeSeconds)).UtcDateTime;
+  }
 }

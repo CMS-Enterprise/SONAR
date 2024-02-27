@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 
 namespace Cms.BatCave.Sonar.Models;
 
-public record ServiceConfiguration {
+public record ServiceConfiguration : IValidatableObject {
 
   public ServiceConfiguration(
     String name,
@@ -14,7 +16,8 @@ public record ServiceConfiguration {
     IImmutableList<HealthCheckModel>? healthChecks = null,
     IImmutableList<VersionCheckModel>? versionChecks = null,
     IImmutableSet<String>? children = null,
-    IImmutableDictionary<String, String?>? tags = null) {
+    IImmutableDictionary<String, String?>? tags = null,
+    IImmutableList<AlertingRuleConfiguration>? alertingRules = null) {
 
     this.Name = name;
     this.DisplayName = displayName;
@@ -24,6 +27,7 @@ public record ServiceConfiguration {
     this.VersionChecks = versionChecks;
     this.Children = children;
     this.Tags = tags;
+    this.AlertingRules = alertingRules;
   }
 
   [StringLength(100)]
@@ -45,4 +49,23 @@ public record ServiceConfiguration {
   public IImmutableSet<String>? Children { get; init; }
 
   public IImmutableDictionary<String, String?>? Tags { get; init; }
+
+  public IImmutableList<AlertingRuleConfiguration>? AlertingRules { get; init; }
+
+  public IEnumerable<ValidationResult> Validate(ValidationContext validationContext) {
+    var validationResults = new List<ValidationResult>();
+
+    var alertingRuleNames = (this.AlertingRules?.Select(r => r.Name) ?? ImmutableList<String>.Empty)
+      .ToImmutableList();
+    var distinctAlertingRuleNames = new HashSet<String>(alertingRuleNames, StringComparer.OrdinalIgnoreCase)
+      .ToImmutableHashSet();
+
+    if (distinctAlertingRuleNames.Count != alertingRuleNames.Count) {
+      validationResults.Add(new ValidationResult(
+        errorMessage: "One or more alerting rules have the same name.",
+        memberNames: new[] { nameof(this.AlertingRules) }));
+    }
+
+    return validationResults;
+  }
 }

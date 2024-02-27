@@ -17,7 +17,7 @@ using Environment = Cms.BatCave.Sonar.Data.Environment;
 namespace Cms.BatCave.Sonar.Helpers;
 
 public class TenantDataHelper {
-  public const String SonarTenantName = "sonar";
+  public const String SonarTenantName = "sonar-internal";
 
   private readonly DbSet<Environment> _environmentsTable;
   private readonly DbSet<Tenant> _tenantsTable;

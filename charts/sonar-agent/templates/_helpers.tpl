@@ -86,3 +86,14 @@ container registry credentials
   }
 }
 {{- end }}
+
+{{/*
+ClusterRole Name
+*/}}
+{{- define "clusterRoleName" -}}
+{{- if .Values.clusterRole.nameOverride -}}
+{{ .Values.clusterRole.nameOverride }}
+{{- else -}}
+{{ include "sonar-agent.fullname" . }}-configmap-reader
+{{- end }}
+{{- end }}

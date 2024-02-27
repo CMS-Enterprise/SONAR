@@ -21,5 +21,4 @@ spec:
       - {{.Release.Namespace}}
   selector:
     matchLabels:
-      app.kubernetes.io/instance: sonar-agent
-      app.kubernetes.io/name: sonar-agent
+      {{- include "sonar-agent.selectorLabels" . | nindent 6}}

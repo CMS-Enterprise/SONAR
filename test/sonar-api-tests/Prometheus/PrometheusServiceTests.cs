@@ -1,18 +1,22 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Globalization;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Extensions;
 using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
 using Cms.BatCave.Sonar.Prometheus;
-using PrometheusQuerySdk.Models;
-using PrometheusQuerySdk;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Moq.Language.Flow;
 using Prometheus;
+using PrometheusQuerySdk;
+using PrometheusQuerySdk.Models;
 using Xunit;
 using TestData = Cms.BatCave.Sonar.Tests.Prometheus.PrometheusServiceTestsData;
 using ImmutableSamplesList = System.Collections.Immutable.IImmutableList<(System.DateTime Timestamp, System.Double Value)>;
@@ -397,6 +401,248 @@ public class PrometheusServiceTests {
   }
 
   #endregion QueryLatestHealthCheckDataTimestampsAsync Tests
+
+  #region GetAlertmanagerScrapeStatusAsync Tests
+
+  private static QueryResults AlertmanagerHealthCheckQueryResults =>
+    new(
+      ResultType: QueryResultType.Vector,
+      Result: ImmutableList<ResultData>.Empty,
+      Statistics: null);
+
+  private static ResponseEnvelope<QueryResults> AlertmanagerHealthCheckResponseEnvelope =>
+    new(
+      Status: ResponseStatus.Success,
+      Data: AlertmanagerHealthCheckQueryResults,
+      ErrorType: null,
+      Error: null,
+      Warnings: null);
+
+  [Fact]
+  public async Task GetAlertmanagerScrapeStatusAsync_ErrorResponseFromPrometheusQuery_ReturnsUnknown() {
+    this.MockPrometheusClient
+      .SetupQueryAsyncForAlertmanagerBuildInfoTimestamp()
+      .ReturnsAsync(AlertmanagerHealthCheckResponseEnvelope with {
+        Status = ResponseStatus.Error
+      })
+      .Verifiable();
+
+    var status = await this._prometheusService.GetAlertmanagerScrapeStatusAsync(default);
+
+    this.MockPrometheusClient.Verify();
+    Assert.Equal(expected: HealthStatus.Unknown, actual: status);
+  }
+
+  [Theory]
+  [MemberData(nameof(GetAlertmanagerScrapeStatusAsync_EmptyResponseFromPrometheusQuery_ReturnsOffline_Data))]
+  public async Task GetAlertmanagerScrapeStatusAsync_EmptyResponseFromPrometheusQuery_ReturnsOffline(
+    ResponseEnvelope<QueryResults> responseEnvelope) {
+
+    this.MockPrometheusClient
+      .SetupQueryAsyncForAlertmanagerBuildInfoTimestamp()
+      .ReturnsAsync(responseEnvelope)
+      .Verifiable();
+
+    var status = await this._prometheusService.GetAlertmanagerScrapeStatusAsync(default);
+
+    this.MockPrometheusClient.Verify();
+    Assert.Equal(expected: HealthStatus.Offline, actual: status);
+  }
+
+  public static IEnumerable<Object[]>
+    GetAlertmanagerScrapeStatusAsync_EmptyResponseFromPrometheusQuery_ReturnsOffline_Data =>
+    new List<Object[]> {
+      new Object[] { AlertmanagerHealthCheckResponseEnvelope },
+      new Object[] { AlertmanagerHealthCheckResponseEnvelope with { Data = null } }
+    };
+
+  [Fact]
+  public async Task GetAlertmanagerScrapeStatusAsync_BuildInfoMetricTooOld_ReturnsDegraded() {
+    var staleTimeSpan = IPrometheusService.AlertmanagerScrapeInterval + TimeSpan.FromSeconds(61);
+    var staleSample = new ResultData(
+      Labels: ImmutableDictionary<String, String>.Empty,
+      Value: (
+        Convert.ToDecimal(DateTime.UtcNow.SecondsSinceUnixEpoch()),
+        DateTime.UtcNow.Subtract(staleTimeSpan).SecondsSinceUnixEpoch().ToString(CultureInfo.InvariantCulture)
+      ),
+      Values: null);
+
+    this.MockPrometheusClient
+      .SetupQueryAsyncForAlertmanagerBuildInfoTimestamp()
+      .ReturnsAsync(AlertmanagerHealthCheckResponseEnvelope with {
+        Data = AlertmanagerHealthCheckQueryResults with {
+          Result = ImmutableList.Create(staleSample)
+        }
+      })
+      .Verifiable();
+
+    var status = await this._prometheusService.GetAlertmanagerScrapeStatusAsync(default);
+
+    this.MockPrometheusClient.Verify();
+    Assert.Equal(expected: HealthStatus.Degraded, actual: status);
+  }
+
+  [Fact]
+  public async Task GetAlertmanagerScrapeStatusAsync_BuildInfoMetricUpToDate_ReturnsOnline() {
+    var freshTimeSpan = IPrometheusService.AlertmanagerScrapeInterval;
+    var freshSample = new ResultData(
+      Labels: ImmutableDictionary<String, String>.Empty,
+      Value: (
+        Convert.ToDecimal(DateTime.UtcNow.SecondsSinceUnixEpoch()),
+        DateTime.UtcNow.Subtract(freshTimeSpan).SecondsSinceUnixEpoch().ToString(CultureInfo.InvariantCulture)
+      ),
+      Values: null);
+
+    this.MockPrometheusClient
+      .SetupQueryAsyncForAlertmanagerBuildInfoTimestamp()
+      .ReturnsAsync(AlertmanagerHealthCheckResponseEnvelope with {
+        Data = AlertmanagerHealthCheckQueryResults with {
+          Result = ImmutableList.Create(freshSample)
+        }
+      })
+      .Verifiable();
+
+    var status = await this._prometheusService.GetAlertmanagerScrapeStatusAsync(default);
+
+    this.MockPrometheusClient.Verify();
+    Assert.Equal(expected: HealthStatus.Online, actual: status);
+  }
+
+  [Theory]
+  [MemberData(nameof(AnyException_Data))]
+  public async Task GetAlertmanagerScrapeStatusAsync_AnyException_ReturnsUnknown(
+    Exception anyException) {
+
+    this.MockPrometheusClient
+      .SetupQueryAsyncForAlertmanagerBuildInfoTimestamp()
+      .ThrowsAsync(anyException)
+      .Verifiable();
+
+    var status = await this._prometheusService.GetAlertmanagerScrapeStatusAsync(default);
+
+    this.MockPrometheusClient.Verify();
+    Assert.Equal(expected: HealthStatus.Unknown, actual: status);
+  }
+
+  public static IEnumerable<Object[]> AnyException_Data =>
+    new List<Object[]> {
+      new Object[] { new Exception() },
+      new Object[] { new HttpRequestException() },
+      new Object[] { new OperationCanceledException() }
+    };
+
+  #endregion GetAlertmanagerScrapeStatusAsync Tests
+
+  #region GetAlertmanagerNotificationsStatusAsync Tests
+
+  [Fact]
+  public async Task GetAlertmanagerNotificationsStatusAsync_ErrorResponseFromPrometheusQuery_ReturnsUnknown() {
+    this.MockPrometheusClient
+      .SetupQueryAsyncForAlertmanagerNotificationsFailedMetric(integration: "email")
+      .ReturnsAsync(AlertmanagerHealthCheckResponseEnvelope with {
+        Status = ResponseStatus.Error
+      })
+      .Verifiable();
+
+    var status = await this._prometheusService.GetAlertmanagerNotificationsStatusAsync(
+      integration: "email",
+      cancellationToken: default);
+
+    this.MockPrometheusClient.Verify();
+    Assert.Equal(expected: HealthStatus.Unknown, actual: status);
+  }
+
+  [Fact]
+  public async Task GetAlertmanagerNotificationsStatusAsync_NotificationFailuresIncreased_ReturnsDegraded() {
+    var notificationFailuresIncreasedSample = new ResultData(
+      Labels: ImmutableDictionary<String, String>.Empty,
+      Value: (Convert.ToDecimal(DateTime.UtcNow.SecondsSinceUnixEpoch()), "1.0"),
+      Values: null);
+
+    this.MockPrometheusClient
+      .SetupQueryAsyncForAlertmanagerNotificationsFailedMetric(integration: "email")
+      .ReturnsAsync(AlertmanagerHealthCheckResponseEnvelope with {
+        Data = AlertmanagerHealthCheckQueryResults with {
+          Result = ImmutableList.Create(notificationFailuresIncreasedSample)
+        }
+      })
+      .Verifiable();
+
+    var status = await this._prometheusService.GetAlertmanagerNotificationsStatusAsync(
+      integration: "email",
+      cancellationToken: default);
+
+    this.MockPrometheusClient.Verify();
+    Assert.Equal(expected: HealthStatus.Degraded, actual: status);
+  }
+
+  [Fact]
+  public async Task GetAlertmanagerNotificationsStatusAsync_NotificationFailuresNotIncreased_ReturnsOnline() {
+    var notificationFailuresNotIncreasedSample = new ResultData(
+      Labels: ImmutableDictionary<String, String>.Empty,
+      Value: (Convert.ToDecimal(DateTime.UtcNow.SecondsSinceUnixEpoch()), "0.0"),
+      Values: null);
+
+    this.MockPrometheusClient
+      .SetupQueryAsyncForAlertmanagerNotificationsFailedMetric(integration: "email")
+      .ReturnsAsync(AlertmanagerHealthCheckResponseEnvelope with {
+        Data = AlertmanagerHealthCheckQueryResults with {
+          Result = ImmutableList.Create(notificationFailuresNotIncreasedSample)
+        }
+      })
+      .Verifiable();
+
+    var status = await this._prometheusService.GetAlertmanagerNotificationsStatusAsync(
+      integration: "email",
+      cancellationToken: default);
+
+    this.MockPrometheusClient.Verify();
+    Assert.Equal(expected: HealthStatus.Online, actual: status);
+  }
+
+  [Theory]
+  [MemberData(nameof(GetAlertmanagerNotificationsStatusAsync_NoFailureData_ReturnsOnline_Data))]
+  public async Task GetAlertmanagerNotificationsStatusAsync_NoFailureData_ReturnsOnline(
+    ResponseEnvelope<QueryResults> responseEnvelope) {
+
+    this.MockPrometheusClient
+      .SetupQueryAsyncForAlertmanagerNotificationsFailedMetric(integration: "email")
+      .ReturnsAsync(responseEnvelope)
+      .Verifiable();
+
+    var status = await this._prometheusService.GetAlertmanagerNotificationsStatusAsync(
+      integration: "email",
+      cancellationToken: default);
+
+    this.MockPrometheusClient.Verify();
+    Assert.Equal(expected: HealthStatus.Online, actual: status);
+  }
+
+  public static IEnumerable<Object[]> GetAlertmanagerNotificationsStatusAsync_NoFailureData_ReturnsOnline_Data =>
+    new List<Object[]> {
+      new Object[] { AlertmanagerHealthCheckResponseEnvelope },
+      new Object[] { AlertmanagerHealthCheckResponseEnvelope with { Data = null } }
+    };
+
+  [Theory]
+  [MemberData(nameof(AnyException_Data))]
+  public async Task GetAlertmanagerNotificationsStatusAsync_AnyException_ReturnsUnknown(
+    Exception anyException) {
+    this.MockPrometheusClient
+      .SetupQueryAsyncForAlertmanagerNotificationsFailedMetric(integration: "email")
+      .ThrowsAsync(anyException)
+      .Verifiable();
+
+    var status = await this._prometheusService.GetAlertmanagerNotificationsStatusAsync(
+      integration: "email",
+      cancellationToken: default);
+
+    this.MockPrometheusClient.Verify();
+    Assert.Equal(expected: HealthStatus.Unknown, actual: status);
+  }
+
+  #endregion GetAlertmanagerNotificationsStatusAsync Tests
+
 }
 
 internal static class MockPrometheusClientExtensions {
@@ -420,5 +666,34 @@ internal static class MockPrometheusClientExtensions {
           It.IsAny<CancellationToken>()))
       .ReturnsAsync(
         TestData.CreateSuccessfulMatrixQueryResults(resultData));
+  }
+
+  public static ISetup<IPrometheusClient, Task<ResponseEnvelope<QueryResults>>>
+    SetupQueryAsyncForAlertmanagerBuildInfoTimestamp(this Mock<IPrometheusClient> mockPrometheusClient) {
+
+    return mockPrometheusClient
+      .Setup(client =>
+        client.QueryAsync(
+          "timestamp(alertmanager_build_info)",
+          It.IsAny<DateTime>(),
+          It.IsAny<TimeSpan?>(),
+          It.IsAny<CancellationToken>()));
+  }
+
+  public static ISetup<IPrometheusClient, Task<ResponseEnvelope<QueryResults>>>
+    SetupQueryAsyncForAlertmanagerNotificationsFailedMetric(
+      this Mock<IPrometheusClient> mockPrometheusClient,
+      String integration) {
+
+    var metricQueryStringRegex =
+      $"sum\\(increase\\(alertmanager_notification_requests_failed_total\\{{integration='{integration}'}}\\[.*\\]\\)\\)";
+
+    return mockPrometheusClient
+      .Setup(client =>
+        client.QueryAsync(
+          It.IsRegex(metricQueryStringRegex),
+          It.IsAny<DateTime>(),
+          It.IsAny<TimeSpan?>(),
+          It.IsAny<CancellationToken>()));
   }
 }

@@ -4,12 +4,14 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Extensions;
 using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.Extensions.Logging;
 using Prometheus;
 using PrometheusQuerySdk;
+using PrometheusQuerySdk.Models;
 
 namespace Cms.BatCave.Sonar.Prometheus;
 
@@ -235,5 +237,99 @@ public class PrometheusService : IPrometheusService {
     }
 
     return serviceHealthMetrics[healthCheck].ToImmutableList();
+  }
+
+  /// <inheritdoc />
+  public async Task<HealthStatus> GetAlertmanagerScrapeStatusAsync(CancellationToken cancellationToken) {
+    var status = HealthStatus.Online;
+
+    try {
+      var queryResponse = await this._prometheusClient.QueryAsync(
+        query: "timestamp(alertmanager_build_info)",
+        timestamp: DateTime.UtcNow,
+        cancellationToken: cancellationToken);
+
+      if (queryResponse.Status is ResponseStatus.Error) {
+        this._logger.LogError(
+          message: "Querying last Alertmanager metrics scrape time returned error: {queryError}",
+          queryResponse.Error);
+        status = HealthStatus.Unknown;
+      } else if ((queryResponse.Data?.Result).IsNullOrEmpty()) {
+        this._logger.LogError("Querying last Alertmanager metrics scrape time returned empty result.");
+        status = HealthStatus.Offline;
+      } else {
+        var (_, lastSampleUnixTimeSecondsString) = queryResponse.Data!.Result[0].Value!.Value;
+        var lastSampleUnixTimeSeconds = Convert.ToDecimal(lastSampleUnixTimeSecondsString);
+        var lastSampleAge = DateTime.UtcNow.Subtract(lastSampleUnixTimeSeconds.UnixTimeSecondsToUtcDateTime());
+        // We _should_ see this metric updated once for every scape interval, but allow a little slop for
+        // things like network delays.
+        var maxAgeThreshold = IPrometheusService.AlertmanagerScrapeInterval + TimeSpan.FromMinutes(1);
+
+        if (lastSampleAge > maxAgeThreshold) {
+          this._logger.LogError(
+            message: "The last Alertmanager metrics scrape is older than {threshold}",
+            maxAgeThreshold);
+          status = HealthStatus.Degraded;
+        }
+      }
+    } catch (Exception e) {
+      this._logger.LogError(
+        exception: e,
+        message: "Unexpected error querying last Alertmanager metrics scrape time.");
+      status = HealthStatus.Unknown;
+    }
+
+    return status;
+  }
+
+  /// <inheritdoc />
+  public async Task<HealthStatus> GetAlertmanagerNotificationsStatusAsync(
+    String integration,
+    CancellationToken cancellationToken) {
+
+    const String metricName = "alertmanager_notification_requests_failed_total";
+    var status = HealthStatus.Online;
+
+    try {
+      // Query time range 4x the scrape interval plus a little slop to ensure we look at data from the last 3 scrapes.
+      var queryTimeRange = (IPrometheusService.AlertmanagerScrapeInterval * 4) + TimeSpan.FromMinutes(1);
+      var query = String.Format(
+        format: "sum(increase({0}{{integration='{1}'}}[{2}]))",
+        metricName,
+        integration,
+        PrometheusClient.ToPrometheusDuration(queryTimeRange));
+
+      var queryResponse = await this._prometheusClient.QueryAsync(
+        query: query,
+        timestamp: DateTime.UtcNow,
+        cancellationToken: cancellationToken);
+
+      if (queryResponse.Status is ResponseStatus.Error) {
+        this._logger.LogError(
+          message: "Querying {metricName} returned error: {queryError}",
+          metricName,
+          queryResponse.Error);
+        status = HealthStatus.Unknown;
+      } else if (!(queryResponse.Data?.Result).IsNullOrEmpty()) {
+        var (_, notificationsFailedIncreaseString) = queryResponse.Data!.Result[0].Value!.Value;
+        var notificationsFailedIncrease = Convert.ToDecimal(notificationsFailedIncreaseString);
+
+        if (notificationsFailedIncrease > 0) {
+          this._logger.LogError(
+            message: "Alertmanager {integration} notification failures have increased in the last {queryTimeRange}.",
+            integration,
+            queryTimeRange);
+          status = HealthStatus.Degraded;
+        }
+      }
+    } catch (Exception e) {
+      this._logger.LogError(
+        exception: e,
+        message: "Unexpected error querying {metricName}.",
+        metricName);
+      status = HealthStatus.Unknown;
+    }
+
+    return status;
   }
 }

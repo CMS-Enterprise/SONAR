@@ -484,6 +484,101 @@ public class ServiceConfigMergerUnitTest {
     }
   }
 
+  [Fact]
+  public void MergeConfigurations_AlertingRules() {
+
+    // Base config specifies two services, service-1 and service-2
+    // service-1 has two alerts, service-1-alert-1 and service-1-alert-2
+    // service-2 has no alerts
+    var baseConfig =
+      new ServiceHierarchyConfiguration(
+        services: ImmutableList.Create(
+          new ServiceConfiguration(
+            name: "service-1",
+            displayName: "service-1",
+            alertingRules: ImmutableList.Create(
+              new AlertingRuleConfiguration(
+                name: "service-1-alert-1",
+                threshold: HealthStatus.AtRisk,
+                receiverName: "receiver-1"),
+              new AlertingRuleConfiguration(
+                name: "service-1-alert-2",
+                threshold: HealthStatus.Offline,
+                receiverName: "receiver-1"))),
+          new ServiceConfiguration(
+            name: "service-2",
+            displayName: "service-2")),
+        rootServices: ImmutableHashSet.Create(
+          "service-1",
+          "service-2"),
+        alerting: new AlertingConfiguration(
+          receivers: ImmutableList.Create(
+            new AlertReceiverConfiguration(
+              name: "receiver-1",
+              receiverType: AlertReceiverType.Email,
+              options: new AlertReceiverOptionsEmail(
+                address: "user-1@host-1")))));
+
+    // Overlay config has the same services defined as base config
+    // service-1-alert-2 is modified in service-1 (the other one is left alone)
+    // service-2-alert-1 is added to service-2
+    var overlayConfig =
+      new ServiceHierarchyConfiguration(
+        services: ImmutableList.Create(
+          new ServiceConfiguration(
+            name: "service-1",
+            displayName: "service-1",
+            alertingRules: ImmutableList.Create(
+              new AlertingRuleConfiguration(
+                name: "service-1-alert-2",
+                threshold: HealthStatus.Degraded,
+                receiverName: "receiver-1"))),
+          new ServiceConfiguration(
+            name: "service-2",
+            displayName: "service-2",
+            alertingRules: ImmutableList.Create(
+              new AlertingRuleConfiguration(
+                name: "service-2-alert-1",
+                threshold: HealthStatus.Degraded,
+                receiverName: "receiver-1")))),
+        rootServices: ImmutableHashSet.Create(
+          "service-1",
+          "service-2"),
+        alerting: new AlertingConfiguration(
+          receivers: ImmutableList.Create(
+            new AlertReceiverConfiguration(
+              name: "receiver-1",
+              receiverType: AlertReceiverType.Email,
+              options: new AlertReceiverOptionsEmail(
+                address: "user-1@host-1")))));
+
+    var mergedConfig = ServiceConfigMerger.MergeConfigurations(baseConfig, overlayConfig);
+
+    AlertingRuleConfiguration GetAlertingRuleByName(ServiceHierarchyConfiguration config, String alertingRuleName) {
+      return config.Services
+        .SelectMany(s => s.AlertingRules ?? ImmutableList<AlertingRuleConfiguration>.Empty)
+        .First(r => r.Name == alertingRuleName);
+    }
+
+    // service-1-alert-1 was not modified in the overlay config,
+    // so merged config should have the same value as base config
+    Assert.Equal(
+      GetAlertingRuleByName(baseConfig, "service-1-alert-1"),
+      GetAlertingRuleByName(mergedConfig, "service-1-alert-1"));
+
+    // service-1-alert-2 was modified in the overlay config,
+    // so merged config should have the same value as overlay config
+    Assert.Equal(
+      GetAlertingRuleByName(overlayConfig, "service-1-alert-2"),
+      GetAlertingRuleByName(mergedConfig, "service-1-alert-2"));
+
+    // service-2-alert-1 was added by the overlay config,
+    // so merged config should have the same value as overlay config
+    Assert.Equal(
+      GetAlertingRuleByName(overlayConfig, "service-2-alert-1"),
+      GetAlertingRuleByName(mergedConfig, "service-2-alert-1"));
+  }
+
   private static String SerializeConfigObject(Object config) {
     return JsonSerializer.Serialize(config, JsonServiceConfigSerializer.ConfigSerializerOptions);
   }

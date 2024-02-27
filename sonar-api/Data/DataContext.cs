@@ -165,6 +165,26 @@ public class DataContext : DbContext {
           .HasForeignKey(k => k.TenantId)
           .OnDelete(DeleteBehavior.Cascade);
       })
+      .Entity<AlertingConfigurationVersion>(entity => {
+        entity.Property(p => p.VersionNumber)
+          .ValueGeneratedOnAdd();
+      })
+      .Entity<AlertReceiver>(entity => {
+        entity.HasOne<Tenant>()
+          .WithMany()
+          .HasForeignKey(ar => ar.TenantId)
+          .OnDelete(DeleteBehavior.Cascade);
+      })
+      .Entity<AlertingRule>(entity => {
+        entity.HasOne<Service>()
+          .WithMany()
+          .HasForeignKey(ar => ar.ServiceId)
+          .OnDelete(DeleteBehavior.Cascade);
+        entity.HasOne<AlertReceiver>()
+          .WithMany()
+          .HasForeignKey(ar => ar.AlertReceiverId)
+          .OnDelete(DeleteBehavior.Cascade);
+      })
       .Entity<ServiceVersionCache>();
   }
 }

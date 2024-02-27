@@ -3,8 +3,7 @@ kind: Service
 metadata:
   name: {{ include "sonar-agent.fullname" . }}
   labels:
-    app.kubernetes.io/instance: sonar-agent
-    app.kubernetes.io/name: sonar-agent
+    {{- include "sonar-agent.labels" . | nindent 4 }}
 spec:
   type: ClusterIP
   selector:

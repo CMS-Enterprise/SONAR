@@ -199,6 +199,17 @@ public class ServiceDataHelper {
       null
     );
 
+    // Prometheus Checks
+    var prometheusWriteTest = new HealthCheckModel(
+      name: "write-test",
+      description: "Prometheus Remote Write Test",
+      HealthCheckType.Internal,
+      new InternalHealthCheckDefinition(
+        description: "Prometheus Exception when attempting to RemoteWrite",
+        expression: null),
+      null
+    );
+
     var prometheusReadiness = new HealthCheckModel(
       name: "readiness-probe",
       description: "Prometheus Readiness Endpoint",
@@ -215,22 +226,116 @@ public class ServiceDataHelper {
         displayName: "Prometheus",
         description: "Prometheus Database",
         url: this._prometheusUrl,
-        ImmutableList.Create(prometheusTestQuery, prometheusReadiness),
+        ImmutableList.Create(
+          prometheusTestQuery,
+          prometheusWriteTest,
+          prometheusReadiness),
         children: null
       );
+
+    var alertmanagerConfigMapHealthCheck =
+      new HealthCheckModel(
+        name: "alertmanager-config",
+        description: "Check whether the Alertmanager config map is up-to-date.",
+        type: HealthCheckType.Internal,
+        definition: new InternalHealthCheckDefinition(
+          description: "Query the version annotation of the Alertmanager config map and verify it matches the " +
+          "current alerting configuration in the SONAR database.",
+          expression: null),
+        smoothingTolerance: null);
+
+    var prometheusRulesHealthCheck =
+      new HealthCheckModel(
+        name: "prometheus-rules",
+        description: "Check whether the Prometheus config map is up-to-date.",
+        type: HealthCheckType.Internal,
+        definition: new InternalHealthCheckDefinition(
+          description: "Query the version annotation of the Prometheus config map and verify it matches the " +
+          "current alerting configuration in the SONAR database.",
+          expression: null),
+        smoothingTolerance: null);
+
+    var alertmanagerSecretHealthCheck =
+      new HealthCheckModel(
+        name: "alertmanager-secret",
+        description: "Check whether the Alertmanager secret is up-to-date.",
+        type: HealthCheckType.Internal,
+        definition: new InternalHealthCheckDefinition(
+          description: "Query the version annotation of the Alertmanager secret and verify it matches the " +
+          "current alerting configuration in the SONAR database.",
+          expression: null),
+        smoothingTolerance: null);
+
+    var alertingConfigSyncServiceConfig =
+      new ServiceConfiguration(
+        name: "alertingconfig",
+        displayName: "AlertingConfig",
+        description: "The Kubernetes resources that SONAR API uses to persist Alertmanager configuration " +
+        "for recipients and Prometheus rules.",
+        healthChecks: ImmutableList.Create(
+          alertmanagerConfigMapHealthCheck,
+          prometheusRulesHealthCheck,
+          alertmanagerSecretHealthCheck));
+
+    var alwaysFiringAlertHealthCheck =
+      new HealthCheckModel(
+        name: "always-firing-alert",
+        description: "Check whether Prometheus is evaluating alerting rules and sending alerts to Alertmanager.",
+        type: HealthCheckType.Internal,
+        definition: new InternalHealthCheckDefinition(
+          description: "Query Alertmanager for the special always-firing alert and validate the alert is present " +
+          "and was updated in the last Prometheus rule-evaluation interval.",
+          expression: null),
+        smoothingTolerance: null);
+
+    var alertmanagerScrapingHealthCheck =
+      new HealthCheckModel(
+        name: "alertmanager-scraping",
+        description: "Check whether Prometheus has up-to-date metrics for Alertmanager.",
+        type: HealthCheckType.Internal,
+        definition: new InternalHealthCheckDefinition(
+          description: "Query Prometheus for Alertmanager's build_info metric and validate the most recent " +
+          "sample of the metric was obtained in the last Prometheus scrape interval.",
+          expression: null),
+        smoothingTolerance: null);
+
+    var emailNotificationsHealthCheck =
+      new HealthCheckModel(
+        name: "email-notifications",
+        description: "Check whether Alertmanager has reported recent email notification failures in its metrics.",
+        type: HealthCheckType.Internal,
+        definition: new InternalHealthCheckDefinition(
+          description: "Query Prometheus for the increase of Alertmanager's " +
+          "alertmanager_notifications_failed_total{integration='email'} metric over the last few scape " +
+          "intervals and validate the increase is zero (i.e. there are no recent failures).",
+          expression: null),
+        smoothingTolerance: null);
+
+    var alertDeliveryServiceConfig =
+      new ServiceConfiguration(
+        name: "alert-delivery",
+        displayName: "AlertDelivery",
+        description: "The Prometheus and Alertmanager facilities used for SONAR service alert notification delivery.",
+        healthChecks: ImmutableList.Create(
+          alwaysFiringAlertHealthCheck,
+          alertmanagerScrapingHealthCheck,
+          emailNotificationsHealthCheck));
 
     var sonarRootServices =
       ImmutableHashSet<String>.Empty
         .Add("postgresql")
-        .Add("prometheus");
+        .Add("prometheus")
+        .Add("alertingconfig")
+        .Add("alert-delivery");
 
     ServiceHierarchyConfiguration sonarConfiguration = new ServiceHierarchyConfiguration(
-      ImmutableList.Create(
+      services: ImmutableList.Create(
         postgresqlServiceConfig,
-        prometheusServiceConfig
+        prometheusServiceConfig,
+        alertingConfigSyncServiceConfig,
+        alertDeliveryServiceConfig
       ),
-      sonarRootServices,
-      null
+      rootServices: sonarRootServices
     );
 
     return sonarConfiguration;

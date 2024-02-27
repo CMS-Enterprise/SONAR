@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Text;
+using Cms.BatCave.Sonar.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging.Console;
@@ -55,27 +56,23 @@ public sealed class CustomFormatter : ConsoleFormatter, IDisposable {
     }
 
     if (logEntry.Formatter != null) {
-      sb.Append($" message=\"{CustomFormatter.EscapeString(logEntry.Formatter(logEntry.State, logEntry.Exception))}\"");
+      sb.Append($" message=\"{logEntry.Formatter(logEntry.State, logEntry.Exception).Escape()}\"");
 
       if (logEntry.State is IEnumerable<KeyValuePair<String, Object?>> data) {
         foreach (var kvp in data) {
           if (!ReservedKeys.Contains(kvp.Key) && !kvp.Key.StartsWith("_") && (kvp.Value != null)) {
-            sb.Append($" {kvp.Key.Replace(' ', '_')}=\"{CustomFormatter.EscapeString(kvp.Value.ToString()!)}\"");
+            sb.Append($" {kvp.Key.Replace(' ', '_')}=\"{kvp.Value.ToString()?.Escape()}\"");
           }
         }
       }
     }
 
     if (logEntry.Exception != null) {
-      sb.Append($" exception=\"{CustomFormatter.EscapeString(logEntry.Exception.ToString())}\"");
+      sb.Append($" exception=\"{logEntry.Exception.ToString().Escape()}\"");
     }
 
     textWriter.WriteLine(sb.ToString());
   }
-
-  // TODO: this could be done more efficiently
-  private static String EscapeString(String str) =>
-    str.Replace(oldValue: "\\", newValue: "\\\\").ReplaceLineEndings("\\n").Replace(oldValue: "\"", newValue: "\\\"");
 
   private static String GetLogLevelColor(LogLevel level) {
 

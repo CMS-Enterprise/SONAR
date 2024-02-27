@@ -15,6 +15,14 @@ export const ServiceOverviewHeaderStyle: CSSObject = {
   fontWeight: 500
 }
 
+export const CollapsibleHeaderStyle: CSSObject = {
+  "summary": {
+    padding: 10,
+    fontSize: 18,
+    fontWeight: 500
+  }
+}
+
 export const ServiceOverviewContentStyle: CSSObject = {
   paddingLeft: 10,
   display: "flex",

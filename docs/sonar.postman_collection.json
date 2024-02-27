@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "3baeadbb-42f5-4a94-96d5-c3026c773038",
+		"_postman_id": "cedd22d9-bc2c-4c4a-9705-b7aa71459052",
 		"name": "SONAR",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "20614257"
+		"_exporter_id": "30159347"
 	},
 	"item": [
 		{
@@ -884,7 +884,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{SONAR_BASE_URL}}/api/v2/health/{{SONAR_ENVIRONMENT}}/tenants/sonar",
+							"raw": "{{SONAR_BASE_URL}}/api/v2/health/{{SONAR_ENVIRONMENT}}/tenants/sonar-internal",
 							"host": [
 								"{{SONAR_BASE_URL}}"
 							],
@@ -894,7 +894,7 @@
 								"health",
 								"{{SONAR_ENVIRONMENT}}",
 								"tenants",
-								"sonar"
+								"sonar-internal"
 							]
 						}
 					},
@@ -2290,6 +2290,128 @@
 			]
 		},
 		{
+			"name": "Alerts",
+			"item": [
+				{
+					"name": "Silences",
+					"item": [
+						{
+							"name": "[JWT] Create Silence",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"alerting-test-app-is-offline\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{SONAR_BASE_URL}}/api/v2/alerts/silences/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE_PATH}}",
+									"host": [
+										"{{SONAR_BASE_URL}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"alerts",
+										"silences",
+										"{{TEST_ENVIRONMENT}}",
+										"tenants",
+										"{{TEST_TENANT}}",
+										"services",
+										"{{TEST_SERVICE_PATH}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "[JWT] Remove Silence",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{ID_TOKEN}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"alerting-test-app-is-offline\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{SONAR_BASE_URL}}/api/v2/alerts/silences/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE_PATH}}",
+									"host": [
+										"{{SONAR_BASE_URL}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"alerts",
+										"silences",
+										"{{TEST_ENVIRONMENT}}",
+										"tenants",
+										"{{TEST_TENANT}}",
+										"services",
+										"{{TEST_SERVICE_PATH}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Get Service Alerts",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/alerts/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE_PATH}}",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"alerts",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}",
+								"services",
+								"{{TEST_SERVICE_PATH}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "Readiness Endpoint",
 			"request": {
 				"auth": {
@@ -2311,6 +2433,24 @@
 					"path": [
 						"api",
 						"ready"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Healthiness Endpoint",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{SONAR_BASE_URL}}/api/healthy",
+					"host": [
+						"{{SONAR_BASE_URL}}"
+					],
+					"path": [
+						"api",
+						"healthy"
 					]
 				}
 			},

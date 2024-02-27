@@ -12,16 +12,13 @@ using Microsoft.EntityFrameworkCore;
 namespace Cms.BatCave.Sonar.Helpers;
 
 public class ErrorReportsDataHelper {
-  private readonly DataContext _dbContext;
   private readonly DbSet<ErrorReport> _errorReportTable;
   private readonly DbSet<Tenant> _tenantsTable;
 
   public ErrorReportsDataHelper(
-    DataContext dbContext,
     DbSet<ErrorReport> errorReportTable,
     DbSet<Tenant> tenantsTable) {
 
-    this._dbContext = dbContext;
     this._errorReportTable = errorReportTable;
     this._tenantsTable = tenantsTable;
   }
@@ -30,14 +27,9 @@ public class ErrorReportsDataHelper {
     ErrorReport errorReport,
     CancellationToken cancellationToken) {
 
-    await using var tx = await this._dbContext.Database
-      .BeginTransactionAsync(cancellationToken);
-
     var result = await this._errorReportTable.AddAsync(
       errorReport,
       cancellationToken);
-    await this._dbContext.SaveChangesAsync(cancellationToken);
-    await tx.CommitAsync(cancellationToken);
 
     return result.Entity;
   }
@@ -62,7 +54,7 @@ public class ErrorReportsDataHelper {
       .Where(r =>
         r.ErrorReport.EnvironmentId == environmentId)
       .Where(r =>
-        r.ErrorReport.Timestamp > start && r.ErrorReport.Timestamp <= end);
+        (r.ErrorReport.Timestamp > start) && (r.ErrorReport.Timestamp <= end));
 
     // build query with optional params
     if (tenantId != null) {

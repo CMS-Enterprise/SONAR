@@ -1,0 +1,10 @@
+groups:
+  - name: self-health-alerts
+    rules:
+      - alert: always-firing
+        expr: vector(1)
+        for: 0s
+        labels:
+          purpose: self-health-alerting
+        annotations:
+          description: An always-firing alert to ensure the alerting pathway from Prometheus to Alertmanager is working.

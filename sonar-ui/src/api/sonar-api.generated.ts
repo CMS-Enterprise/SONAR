@@ -12,6 +12,7 @@
 import {
   AgentErrorLevel,
   AgentErrorType,
+  AlertSilenceDetails,
   ApiKeyConfiguration,
   ApiKeyDetails,
   CurrentUserView,
@@ -23,6 +24,7 @@ import {
   PermissionConfiguration,
   PermissionDetails,
   ProblemDetails,
+  ServiceAlert,
   ServiceHealth,
   ServiceHealthData,
   ServiceHierarchyConfiguration,
@@ -531,6 +533,62 @@ tenant, service, and health check in Prometheus. Filters out samples outside of 
       method: "GET",
       query: query,
       format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags ServiceAlert
+   * @name GetServiceAlerts
+   * @request GET:/api/v2/alerts/{environment}/tenants/{tenant}/services/{servicePath}
+   */
+  getServiceAlerts = (environment: string, tenant: string, servicePath: string, params: RequestParams = {}) =>
+    this.request<ServiceAlert[], ProblemDetails>({
+      path: `/api/v2/alerts/${environment}/tenants/${tenant}/services/${servicePath}`,
+      method: "GET",
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags ServiceAlert
+   * @name CreateUpdateSilence
+   * @request POST:/api/v2/alerts/silences/{environment}/tenants/{tenant}/services/{servicePath}
+   */
+  createUpdateSilence = (
+    environment: string,
+    tenant: string,
+    servicePath: string,
+    data: AlertSilenceDetails,
+    params: RequestParams = {},
+  ) =>
+    this.request<void, ProblemDetails>({
+      path: `/api/v2/alerts/silences/${environment}/tenants/${tenant}/services/${servicePath}`,
+      method: "POST",
+      body: data,
+      type: ContentType.Json,
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags ServiceAlert
+   * @name RemoveSilence
+   * @request PUT:/api/v2/alerts/silences/{environment}/tenants/{tenant}/services/{servicePath}
+   */
+  removeSilence = (
+    environment: string,
+    tenant: string,
+    servicePath: string,
+    data: AlertSilenceDetails,
+    params: RequestParams = {},
+  ) =>
+    this.request<void, ProblemDetails>({
+      path: `/api/v2/alerts/silences/${environment}/tenants/${tenant}/services/${servicePath}`,
+      method: "PUT",
+      body: data,
+      type: ContentType.Json,
       ...params,
     });
   /**
