@@ -1,3 +1,67 @@
+## 0.6.0
+
+### Adds built-in alerting capabilities to SONAR.
+
+* [view commit 2971f4a](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/2971f4a9e91cf5a11fe35a7e91011b5a9aba75b8)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Tue, 27 Feb 2024 17:55:55 +0000
+
+```
+Closes BATAPI-16
+```
+
+### Add condition to display chart
+
+* [view commit 5a5c66b](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/5a5c66b7cff19c883deb32a8f8cfaf47b4fa62db)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Fri, 23 Feb 2024 10:08:14 -0800
+
+
+
+### Add and populate dashboardLink property in ServiceHierarchyHealth and ServiceHierarchyInfo
+
+* [view commit 7ecc918](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/7ecc9186b88fbdfce4574a6b9b11ace09ad14792)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Thu, 22 Feb 2024 22:43:56 +0000
+
+```
+Closes BATAPI-586
+
+## Description:
+
+* Add and populate dashboardLink property in ServiceHierarchyHealth and ServiceHierarchyInfo
+
+Closes BATAPI-586
+```
+
+### Updated timestamps for healthcheck
+
+* [view commit 1284c29](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/1284c293632b19d08a48fb23645ab68238a81f0f)
+* Author (Committer): Albert Tran (Albert Tran)
+* Date: Fri, 2 Feb 2024 20:28:55 +0000
+
+```
+Closes BATAPI-219
+
+## Description:
+
+* Updated timestamps for healthcheck
+```
+
+### Use max_over_time function to always return the worst status that occurs in an interval
+
+* [view commit 64bff22](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/64bff22f7f18de096bbdc75056d8d2a04de00705)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Wed, 31 Jan 2024 21:28:09 +0000
+
+```
+Closes BATAPI-562
+
+## Description:
+
+* fix bug, implement regression tests
+
+Closes BATAPI-562
 ## 0.5.7
 
 ### BATAPI-575 "Root agg status bug"
