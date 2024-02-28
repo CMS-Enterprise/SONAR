@@ -33,3 +33,8 @@ export const subRowCellDetailStyle: CSSObject = {
   maxWidth: "1rem",
   overflowWrap: "break-word"
 };
+
+export const errorInfoCellStyle: CSSObject = {
+  maxHeight: '200px',
+  overflowY: 'auto'
+}
