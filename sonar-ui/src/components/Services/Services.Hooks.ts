@@ -4,7 +4,7 @@ import {
   HealthCheckModel,
   ServiceHierarchyConfiguration
 } from '../../api/data-contracts';
-import { calculateHistoryRange } from '../../helpers/StatusHistoryHelper';
+import { getQueryRangeParameters } from '../../helpers/StatusHistoryHelper';
 import { useSonarApi } from '../AppContext/AppContextProvider';
 
 export enum QueryKeys {
@@ -32,16 +32,23 @@ export const useGetServiceHealthCheckData = (
 export const useGetServiceHealthHistory = (
   envName: string,
   tenantName: string,
-  servicePath: string
+  servicePath: string,
+  start: Date,
+  end: Date,
+  step: number
 ) => {
   const sonarClient = useSonarApi();
   return useQuery({
     queryKey: [QueryKeys.StatusHistory, envName, tenantName, servicePath],
     queryFn: () =>
-      sonarClient.getServiceHealthHistory(envName, tenantName, servicePath, calculateHistoryRange())
-        .then((res) => {
-          return res.data;
-        })
+      sonarClient.getServiceHealthHistory(
+        envName,
+        tenantName,
+        servicePath,
+        getQueryRangeParameters(start, end, step)
+      ).then((res) => {
+        return res.data;
+      })
   });
 }
 

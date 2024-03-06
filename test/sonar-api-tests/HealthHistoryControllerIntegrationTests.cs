@@ -89,8 +89,8 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
 
   [Theory]
   [InlineData("/api/v2/environments")]
-  [InlineData("/api/v2/health-history/{testEnvironment}/tenants/{testTenant}")]
-  [InlineData($"/api/v2/health-history/{{testEnvironment}}/tenants/{{testTenant}}/services/{HealthHistoryControllerIntegrationTests.RootServiceName}")]
+  [InlineData("/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?step=60")]
+  [InlineData($"/api/v2/health-history/{{testEnvironment}}/tenants/{{testTenant}}/services/{HealthHistoryControllerIntegrationTests.RootServiceName}?step=120")]
   public async Task HealthHistoryURLTest(
     string urlpath) {
 
@@ -112,6 +112,29 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
     Assert.NotNull(body);
   }
 
+  [Theory]
+  [InlineData("/api/v2/health-history/{testEnvironment}/tenants/{testTenant}")]
+  [InlineData($"/api/v2/health-history/{{testEnvironment}}/tenants/{{testTenant}}/services/{HealthHistoryControllerIntegrationTests.RootServiceName}")]
+  public async Task HealthHistoryURLNoQueryStepTest(
+    string urlpath) {
+
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(HealthHistoryControllerIntegrationTests.TestRootOnlyConfiguration);
+
+    var urlText = urlpath.Replace("{testEnvironment}", testEnvironment).Replace("{testTenant}", testTenant);
+    var getResponse = await
+      this.Fixture.Server.CreateRequest(urlText)
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    var body = await getResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+    Assert.Equal(
+      expected: HttpStatusCode.BadRequest,
+      actual: getResponse.StatusCode);
+
+    Assert.NotNull(body);
+  }
 
   [Theory]
   [InlineData(HealthStatus.Unknown)]

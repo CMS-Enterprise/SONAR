@@ -1,4 +1,4 @@
-import { css, CSSObject, Theme } from '@emotion/react';
+import { css, CSSObject, SerializedStyles, Theme } from '@emotion/react';
 import { HealthStatus } from 'api/data-contracts';
 import { getStatusColors } from 'helpers/StyleHelper';
 
@@ -79,3 +79,46 @@ export const StatusHistoryDrawerSubsectionStyle: CSSObject = {
   padding: "10px 15px 10px 15px",
   fontSize: 16
 };
+
+export const StatusHistoryDatePickerContainerStyle: CSSObject = {
+  padding: "0px 5px 0px 5px",
+  "& input": {
+    margin: "0px 10px 0px 10px"
+  }
+};
+
+export const StatusHistoryTimeRangeContainerStyle: CSSObject = {
+  paddingLeft: "10px",
+  margin: "10px 0px 10px 0px"
+}
+
+export const StatusHistoryTimeRangeOptionStyle: CSSObject = {
+  paddingLeft: "10px",
+  margin: "0px 10px 0px 20px",
+  "& label": {
+    marginTop: 0
+  },
+  "& .ds-c-field": {
+    padding: "1px 25px 1px 10px",
+    fontSize: "0.9rem"
+  }
+};
+
+export const StatusHistoryQuickRangeTextFieldStyle :
+  (theme: Theme) => SerializedStyles = theme => css ({
+  display: 'inline-block',
+  margin: "0px 10px 0px 10px",
+  "& .ds-c-field": {
+    padding: "0px 10px 0px 10px",
+    fontSize: "0.9rem",
+    backgroundColor: theme.backgroundColor,
+    borderColor: theme.foregroundColor
+  },
+  "& .ds-c-label": {
+    margin: 0
+  }
+});
+
+export const StatusHistoryButtonStyle: CSSObject = {
+  margin: "0px 2px 0px 2px"
+}

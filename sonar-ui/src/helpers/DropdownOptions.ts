@@ -39,6 +39,47 @@ export const initialUserOption: DropdownOptions = {
   value: 0
 }
 
+export enum StatusStartTimes {
+  Last6Hours,
+  Last10Hours,
+  Last12Hours,
+  Last24Hours,
+  Last48Hours,
+  LastWeek ,
+  CustomTimeRange
+}
+
+export const statusTimeRangeOptions: DropdownOptions[] = [
+  {
+    label: "Last 6 hours",
+    value: StatusStartTimes.Last6Hours
+  },
+  {
+    label: "Last 10 hours",
+    value: StatusStartTimes.Last10Hours
+  },
+  {
+    label: "Last 12 hours",
+    value: StatusStartTimes.Last12Hours
+  },
+  {
+    label: "Last 24 hours",
+    value: StatusStartTimes.Last24Hours
+  },
+  {
+    label: "Last 48 hours",
+    value: StatusStartTimes.Last48Hours
+  },
+  {
+    label: "Last week",
+    value: StatusStartTimes.LastWeek
+  },
+  {
+    label: "Custom range (max=7days)",
+    value: StatusStartTimes.CustomTimeRange
+  }
+];
+
 export function getPermissionOptions(
   allPermissions: PermissionConfiguration[]
 ) {

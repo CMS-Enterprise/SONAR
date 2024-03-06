@@ -20,7 +20,15 @@ const StatusHistoryTile: React.FC<{
   selectedTileId: string,
   serviceHealth: ServiceHierarchyHealth,
   showDate: boolean
-}> = ({ id, statusTimestampTuple, addTimestamp, closeDrawer, selectedTileId, serviceHealth, showDate }) => {
+}> = ({
+  id,
+  statusTimestampTuple,
+  addTimestamp,
+  closeDrawer,
+  selectedTileId,
+  serviceHealth,
+  showDate
+}) => {
   const theme = useTheme();
   const handleSelect = () => {
     if (selectedTileId !== id) {
@@ -47,7 +55,6 @@ const StatusHistoryTile: React.FC<{
         {renderStatusIcon(status)}
       </Button>
     </span>
-
   )
 }
 

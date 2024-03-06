@@ -388,8 +388,10 @@ public class HealthHistoryController : ControllerBase {
     var start = queryStart?.ToUniversalTime() ?? end.Subtract(TimeSpan.FromHours(1));
     var step = queryStep ?? 30;
 
-    if (step > 3600) {
-      throw new BadRequestException($"step {step} cannot be greater the 3600");
+    var dataPoints = (end - start).TotalSeconds / step;
+    if (dataPoints > 100) {
+      throw new BadRequestException($"The number of data points (range in seconds / step in seconds) " +
+        $"in the returned time series must be less than or equal to 100.");
     }
 
     if (end <= start) {
@@ -397,7 +399,7 @@ public class HealthHistoryController : ControllerBase {
     }
 
     // End - Start cannot be greater than 7 days to be consistent with Metric history restriction.
-    if ((end - start) >= QueryRangeMaximumNumberDays) {
+    if ((end - start) > QueryRangeMaximumNumberDays) {
       throw new BadRequestException(
         $"The number of days must be less than or equal to {QueryRangeMaximumNumberDays.Days}"
       );
