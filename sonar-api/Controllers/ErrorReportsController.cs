@@ -11,6 +11,7 @@ using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Environment = Cms.BatCave.Sonar.Data.Environment;
 using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
@@ -27,24 +28,27 @@ public class ErrorReportsController : ControllerBase {
   private readonly TenantDataHelper _tenantDataHelper;
   private readonly ServiceDataHelper _serviceDataHelper;
   private readonly ErrorReportsDataHelper _errorReportsDataHelper;
+  private readonly ILogger<ErrorReportsController> _logger;
 
   public ErrorReportsController(
     DataContext dbContext,
     EnvironmentDataHelper environmentDataHelper,
     TenantDataHelper tenantDataHelper,
     ServiceDataHelper serviceDataHelper,
-    ErrorReportsDataHelper errorReportsDataHelper) {
+    ErrorReportsDataHelper errorReportsDataHelper,
+    ILogger<ErrorReportsController> logger) {
 
     this._dbContext = dbContext;
     this._environmentDataHelper = environmentDataHelper;
     this._tenantDataHelper = tenantDataHelper;
     this._serviceDataHelper = serviceDataHelper;
     this._errorReportsDataHelper = errorReportsDataHelper;
+    this._logger = logger;
   }
 
   [HttpPost("{environment}", Name = "CreateErrorReport")]
   [Consumes(typeof(ErrorReportDetails), contentType: "application/json")]
-  [ProducesResponseType(typeof(ErrorReportDetails), statusCode: 201)]
+  [ProducesResponseType(typeof(ErrorReportDetails), statusCode: 202)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 400)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
   [ProducesResponseType(typeof(ProblemDetails), statusCode: 500)]
@@ -76,10 +80,19 @@ public class ErrorReportsController : ControllerBase {
           reportDetails.StackTrace),
         cancellationToken);
 
-    await this._dbContext.SaveChangesAsync(cancellationToken);
+    // attempt to save error report
+    try {
+      await this._dbContext.SaveChangesAsync(cancellationToken);
+      this._errorReportsDataHelper.LogErrorReport(LogLevel.Debug, entity, environment, reportDetails.Tenant);
+
+
+    } catch (DbUpdateException e) {
+      this._logger.LogError(e, message: "Unable to save errorReport to Database");
+      this._errorReportsDataHelper.LogErrorReport(LogLevel.Warning, entity, environment, reportDetails.Tenant);
+    }
 
     return this.StatusCode(
-      (Int32)HttpStatusCode.Created,
+      (Int32)HttpStatusCode.Accepted,
       new ErrorReportDetails(
         entity.Timestamp,
         validatedConfiguration.ExistingTenant?.Name,

@@ -214,12 +214,12 @@ namespace Cms.BatCave.Sonar.Agent
         /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task DeleteEnvironmentAsync(string environment, System.Threading.CancellationToken cancellationToken);
 
-        /// <returns>Created</returns>
+        /// <returns>Accepted</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task<ErrorReportDetails> CreateErrorReportAsync(string environment, ErrorReportDetails body);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <returns>Created</returns>
+        /// <returns>Accepted</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task<ErrorReportDetails> CreateErrorReportAsync(string environment, ErrorReportDetails body, System.Threading.CancellationToken cancellationToken);
 
@@ -1856,7 +1856,7 @@ namespace Cms.BatCave.Sonar.Agent
             }
         }
 
-        /// <returns>Created</returns>
+        /// <returns>Accepted</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         public virtual System.Threading.Tasks.Task<ErrorReportDetails> CreateErrorReportAsync(string environment, ErrorReportDetails body)
         {
@@ -1864,7 +1864,7 @@ namespace Cms.BatCave.Sonar.Agent
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
-        /// <returns>Created</returns>
+        /// <returns>Accepted</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
         public virtual async System.Threading.Tasks.Task<ErrorReportDetails> CreateErrorReportAsync(string environment, ErrorReportDetails body, System.Threading.CancellationToken cancellationToken)
         {
@@ -1909,7 +1909,7 @@ namespace Cms.BatCave.Sonar.Agent
                         ProcessResponse(client_, response_);
 
                         var status_ = (int)response_.StatusCode;
-                        if (status_ == 201)
+                        if (status_ == 202)
                         {
                             var objectResponse_ = await ReadObjectResponseAsync<ErrorReportDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)

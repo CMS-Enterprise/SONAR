@@ -93,7 +93,7 @@ public class ErrorReportsControllerIntegrationTests : ApiControllerTestsBase {
   }
 
   [Fact]
-  public async Task CreateErrorReport_UnknownTenantIsCreated() {
+  public async Task CreateErrorReport_UnknownTenantIsAccepted() {
     var existingEnvironmentName = Guid.NewGuid().ToString();
     var missingTenantName = Guid.NewGuid().ToString();
     // Create existing Environment
@@ -124,7 +124,7 @@ public class ErrorReportsControllerIntegrationTests : ApiControllerTestsBase {
         .PostAsync();
 
     Assert.Equal(
-      expected: HttpStatusCode.Created,
+      expected: HttpStatusCode.Accepted,
       actual: createResponse.StatusCode);
 
     var listResponse = await

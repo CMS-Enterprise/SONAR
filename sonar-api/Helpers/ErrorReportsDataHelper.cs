@@ -8,19 +8,23 @@ using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Extensions;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Cms.BatCave.Sonar.Helpers;
 
 public class ErrorReportsDataHelper {
   private readonly DbSet<ErrorReport> _errorReportTable;
   private readonly DbSet<Tenant> _tenantsTable;
+  private readonly ILogger<ErrorReportsDataHelper> _logger;
 
   public ErrorReportsDataHelper(
     DbSet<ErrorReport> errorReportTable,
-    DbSet<Tenant> tenantsTable) {
+    DbSet<Tenant> tenantsTable,
+    ILogger<ErrorReportsDataHelper> logger) {
 
     this._errorReportTable = errorReportTable;
     this._tenantsTable = tenantsTable;
+    this._logger = logger;
   }
 
   public async Task<ErrorReport> AddErrorReportAsync(
@@ -88,5 +92,22 @@ public class ErrorReportsDataHelper {
       ep.ErrorReport.Message,
       ep.ErrorReport.Configuration,
       ep.ErrorReport.StackTrace)).ToList();
+  }
+
+  public void LogErrorReport(LogLevel logLevel, ErrorReport? report, String? environment, String? tenant) {
+    this._logger.Log(
+      logLevel,
+      "Environment:{Environment}, TenantName:{Tenant}, ServiceName:{ServiceName}, " +
+      "HealthCheckName:{HealthCheckName}, AgentErrorLevel:{Level}, AgentErrorType:{Type}, Message:{Message}, " +
+      "Configuration:{Configuration}, StackTrace:{StackTrace}",
+      environment,
+      tenant,
+      report?.ServiceName,
+      report?.HealthCheckName,
+      report?.Level,
+      report?.Type,
+      report?.Message,
+      report?.Configuration,
+      report?.StackTrace);
   }
 }
