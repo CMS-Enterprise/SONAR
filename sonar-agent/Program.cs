@@ -323,7 +323,8 @@ internal class Program {
     using var httpHealthCheckQueue = new HealthCheckQueueProcessor<HttpHealthCheckDefinition>(
       new HttpHealthCheckEvaluator(
         agentConfig,
-        loggerFactory.CreateLogger<HttpHealthCheckEvaluator>()),
+        loggerFactory.CreateLogger<HttpHealthCheckEvaluator>(),
+        SonarClientFactory),
       httpHealthCheckConfiguration,
       loggerFactory.CreateLogger<HealthCheckQueueProcessor<HttpHealthCheckDefinition>>()
     );

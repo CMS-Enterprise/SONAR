@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -32,13 +33,16 @@ public class HttpHealthCheckEvaluator : IHealthCheckEvaluator<HttpHealthCheckDef
   private readonly IOptions<AgentConfiguration> _agentConfig;
   private readonly ILogger<HttpHealthCheckEvaluator> _logger;
   private readonly Func<HttpHealthCheckDefinition, HttpMessageHandler> _httpMsgHandlerFactory;
+  private readonly Func<(IDisposable, ISonarClient)> _sonarClientFactory;
 
   public HttpHealthCheckEvaluator(
     IOptions<AgentConfiguration> agentConfig,
-    ILogger<HttpHealthCheckEvaluator> logger) {
+    ILogger<HttpHealthCheckEvaluator> logger,
+    Func<(IDisposable, ISonarClient)> sonarClientFactory) {
 
     this._agentConfig = agentConfig;
     this._logger = logger;
+    this._sonarClientFactory = sonarClientFactory;
 
     this._httpMsgHandlerFactory = this.CreateHttpClientHandler;
   }
@@ -46,11 +50,13 @@ public class HttpHealthCheckEvaluator : IHealthCheckEvaluator<HttpHealthCheckDef
   public HttpHealthCheckEvaluator(
     IOptions<AgentConfiguration> agentConfig,
     ILogger<HttpHealthCheckEvaluator> logger,
-    Func<HttpHealthCheckDefinition, HttpMessageHandler> httpMsgHandlerFactory) {
+    Func<HttpHealthCheckDefinition, HttpMessageHandler> httpMsgHandlerFactory,
+    Func<(IDisposable, ISonarClient)> sonarClientFactory) {
 
     this._agentConfig = agentConfig;
     this._logger = logger;
     this._httpMsgHandlerFactory = httpMsgHandlerFactory;
+    this._sonarClientFactory = sonarClientFactory;
   }
 
   public async Task<HealthStatus> EvaluateHealthCheckAsync(
@@ -156,6 +162,9 @@ public class HttpHealthCheckEvaluator : IHealthCheckEvaluator<HttpHealthCheckDef
           currCheck = responseCondition.Status;
         }
       }
+
+      // Report response time data to sonar api
+      await ReportResponseTimeData(healthCheck, duration, cancellationToken);
 
       //Get content from response.
       var contentString = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -277,4 +286,53 @@ public class HttpHealthCheckEvaluator : IHealthCheckEvaluator<HttpHealthCheckDef
     return currCheck;
   }
 
+  private async Task ReportResponseTimeData(
+    HealthCheckIdentifier healthCheck,
+    TimeSpan duration,
+    CancellationToken cancellationToken) {
+
+    var now = DateTime.UtcNow;
+    var (httpClient, sonarClient) = this._sonarClientFactory();
+
+    try {
+      this._logger.LogTrace(
+        "Reporting HTTP response time data for health check {HealthCheck}",
+        healthCheck
+      );
+
+      await sonarClient.RecordHealthCheckDataAsync(
+        healthCheck.Environment,
+        healthCheck.Tenant,
+        healthCheck.Service,
+        new ServiceHealthData(
+          ImmutableDictionary<String, IImmutableList<(DateTime Timestamp, Double Value)>>.Empty.Add(
+            healthCheck.Name,
+            ImmutableList<(DateTime Timestamp, Double Value)>.Empty.Add((now, duration.TotalSeconds)))),
+        cancellationToken);
+    } catch (ApiException ex) {
+      this._logger.LogError(
+        ex,
+        "SONAR API Returned a non-success status code when attempting to report HTTP response time data for health check {HealthCheck}: {Message}",
+        healthCheck,
+        ex.Message
+      );
+    } catch (HttpRequestException ex) {
+      this._logger.LogError(
+        ex,
+        "A network error occurred while attempting to report HTTP response time data metric values for health check {HealthCheck}: {Message}",
+        healthCheck,
+        ex.Message
+      );
+    } catch (TaskCanceledException ex) {
+      if (cancellationToken.IsCancellationRequested) {
+        throw;
+      } else {
+        this._logger.LogError(
+          "HTTP request timed out attempting to report HTTP response time data to SONAR API, Message: {Message}",
+          ex.Message);
+      }
+    } finally {
+      httpClient.Dispose();
+    }
+  }
 }

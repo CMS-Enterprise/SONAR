@@ -64,7 +64,7 @@ public class ReportingMetricQueryRunner : IMetricQueryRunner {
     } catch (ApiException ex) {
       this._logger.LogError(
         ex,
-        "SONAR API Returned an non-success status code when attempting to report {MetricCount} metric values for health check {HealthCheck}: {Message}",
+        "SONAR API Returned a non-success status code when attempting to report {MetricCount} metric values for health check {HealthCheck}: {Message}",
         results?.Count,
         healthCheck,
         ex.Message
@@ -72,7 +72,7 @@ public class ReportingMetricQueryRunner : IMetricQueryRunner {
     } catch (HttpRequestException ex) {
       this._logger.LogError(
         ex,
-        "An network error occurred attempting when attempting to report {MetricCount} metric values for health check {HealthCheck}: {Message}",
+        "A network error occurred attempting when attempting to report {MetricCount} metric values for health check {HealthCheck}: {Message}",
         results?.Count,
         healthCheck,
         ex.Message

@@ -94,7 +94,8 @@ public class HttpHealthCheckEvaluatorUnitTest {
     var evaluator = new HttpHealthCheckEvaluator(
       testAgentConfig.Object,
       this._mockLogger.Object,
-      testHttpHealthCheckDef => mockHttpMessageHandler.Object
+      testHttpHealthCheckDef => mockHttpMessageHandler.Object,
+      () => (Mock.Of<IDisposable>(), Mock.Of<ISonarClient>())
     );
 
     var result = await evaluator.EvaluateHealthCheckAsync(
@@ -146,7 +147,8 @@ public class HttpHealthCheckEvaluatorUnitTest {
     var evaluator = new HttpHealthCheckEvaluator(
       testAgentConfig.Object,
       this._mockLogger.Object,
-      testHttpHealthCheckDef => mockHttpMessageHandler.Object
+      testHttpHealthCheckDef => mockHttpMessageHandler.Object,
+      () => (Mock.Of<IDisposable>(), Mock.Of<ISonarClient>())
     );
 
     var result = await evaluator.EvaluateHealthCheckAsync(
@@ -186,7 +188,8 @@ public class HttpHealthCheckEvaluatorUnitTest {
     var evaluator = new HttpHealthCheckEvaluator(
       testAgentConfig.Object,
       this._mockLogger.Object,
-      testHttpHealthCheckDef => mockHttpMessageHandler.Object
+      testHttpHealthCheckDef => mockHttpMessageHandler.Object,
+      () => (Mock.Of<IDisposable>(), Mock.Of<ISonarClient>())
     );
 
     cts.CancelAfter(TimeSpan.FromMilliseconds(1));
@@ -224,7 +227,8 @@ public class HttpHealthCheckEvaluatorUnitTest {
     var evaluator = new HttpHealthCheckEvaluator(
       testAgentConfig.Object,
       this._mockLogger.Object,
-      testHttpHealthCheckDef => mockHttpMessageHandler.Object
+      testHttpHealthCheckDef => mockHttpMessageHandler.Object,
+      () => (Mock.Of<IDisposable>(), Mock.Of<ISonarClient>())
     );
 
     var result = await evaluator.EvaluateHealthCheckAsync(
@@ -262,7 +266,8 @@ public class HttpHealthCheckEvaluatorUnitTest {
     var evaluator = new HttpHealthCheckEvaluator(
       testAgentConfig.Object,
       this._mockLogger.Object,
-      testHttpHealthCheckDef => mockHttpMessageHandler.Object
+      testHttpHealthCheckDef => mockHttpMessageHandler.Object,
+      () => (Mock.Of<IDisposable>(), Mock.Of<ISonarClient>())
     );
 
     var result = await evaluator.EvaluateHealthCheckAsync(
@@ -315,7 +320,8 @@ public class HttpHealthCheckEvaluatorUnitTest {
     var evaluator = new HttpHealthCheckEvaluator(
       mockAgentConfig.Object,
       this._mockLogger.Object,
-      testHttpHealthCheckDef => mockHttpMessageHandler.Object
+      testHttpHealthCheckDef => mockHttpMessageHandler.Object,
+      () => (Mock.Of<IDisposable>(), Mock.Of<ISonarClient>())
     );
 
     var result = await evaluator.EvaluateHealthCheckAsync(
@@ -363,7 +369,8 @@ public class HttpHealthCheckEvaluatorUnitTest {
     var evaluator = new HttpHealthCheckEvaluator(
       testAgentConfig.Object,
       this._mockLogger.Object,
-      testHttpHealthCheckDef => mockHttpMessageHandler.Object
+      testHttpHealthCheckDef => mockHttpMessageHandler.Object,
+      () => (Mock.Of<IDisposable>(), Mock.Of<ISonarClient>())
     );
 
     var result = await evaluator.EvaluateHealthCheckAsync(
@@ -419,7 +426,8 @@ public class HttpHealthCheckEvaluatorUnitTest {
     var evaluator = new HttpHealthCheckEvaluator(
       testAgentConfig.Object,
       this._mockLogger.Object,
-      testHttpHealthCheckDef => mockHttpMessageHandler.Object
+      testHttpHealthCheckDef => mockHttpMessageHandler.Object,
+      () => (Mock.Of<IDisposable>(), Mock.Of<ISonarClient>())
     );
 
     var result = await evaluator.EvaluateHealthCheckAsync(
