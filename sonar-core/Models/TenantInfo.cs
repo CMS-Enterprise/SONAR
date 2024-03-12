@@ -14,7 +14,9 @@ public record TenantInfo {
     Boolean isNonProd,
     DateTime? timestamp = null,
     HealthStatus? aggregateStatus = null,
-    ServiceHierarchyInfo[]? rootServices = null) {
+    ServiceHierarchyInfo[]? rootServices = null,
+    Boolean isInMaintenance = false,
+    String? inMaintenanceTypes = null) {
 
     this.EnvironmentName = environmentName;
     this.TenantName = tenantName;
@@ -22,6 +24,8 @@ public record TenantInfo {
     this.Timestamp = timestamp;
     this.AggregateStatus = aggregateStatus;
     this.RootServices = rootServices;
+    this.IsInMaintenance = isInMaintenance;
+    this.InMaintenanceTypes = inMaintenanceTypes;
   }
 
   [Required]
@@ -38,4 +42,15 @@ public record TenantInfo {
   public HealthStatus? AggregateStatus { get; init; }
 
   public ServiceHierarchyInfo[]? RootServices { get; init; }
+
+  /// <summary>
+  /// Whether the entire tenant is currently in maintenance.
+  /// </summary>
+  public Boolean IsInMaintenance { get; init; }
+
+  /// <summary>
+  /// If <see cref="IsInMaintenance"/> is true, a comma-separated list of which maintenance types apply
+  /// (ad-hoc, scheduled, or both; usually just one, but both are possible); otherwise null.
+  /// </summary>
+  public String? InMaintenanceTypes { get; init; }
 }
