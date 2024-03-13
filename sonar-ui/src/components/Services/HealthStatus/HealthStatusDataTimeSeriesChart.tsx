@@ -1,20 +1,90 @@
+import { useTheme } from '@emotion/react';
 import React, { useState } from 'react';
 import Chart from 'react-apexcharts';
 import { ApexOptions } from "apexcharts";
-import { IHealthCheckCondition, IHealthCheckDefinition } from 'types';
+import { IHealthCheckCondition, IHealthCheckDefinition, IHealthCheckHttpCondition } from 'types';
+import { HealthStatus } from '../../../api/data-contracts';
+import { getStatusColors } from '../../../helpers/StyleHelper';
+import { v4 as uuidv4 } from 'uuid';
+
+function hmsToSecondsOnly(str: string | undefined) {
+  if (!str) {
+    return 0;
+  }
+
+  const p = str.split(':');
+  let s = 0, m = 1;
+
+  while (p.length > 0) {
+    s += m * parseInt(p.pop() as string, 10);
+    m *= 60;
+  }
+
+  return s;
+}
 
 const HealthStatusDataTimeSeriesChart: React.FC<{
   svcDefinitions: IHealthCheckDefinition | null,
   healthCheckName: string,
-  timeSeriesData: number[][]
-}> = ({ svcDefinitions, healthCheckName, timeSeriesData }) => {
-  const [displayAnnotation, setDisplayAnnotation] = useState(false);
+  timeSeriesData: number[][],
+  responseTimeData: IHealthCheckHttpCondition | undefined
+}> = ({ svcDefinitions, healthCheckName, timeSeriesData, responseTimeData }) => {
 
+  const theme = useTheme();
+  const [displayAnnotation, setDisplayAnnotation] = useState(false);
   const chartSeries = {
     series: [{
       data: [...timeSeriesData]
     }]
   };
+  const [renderedAnnotations, setRenderedAnnotations] = useState<string[]>([]);
+
+  // function that creates annotation object based on type of health check (response time or metric)
+  const renderAnnotations = () => {
+    const annotations = responseTimeData ? [
+      {
+        id: responseTimeData.status + '-' + uuidv4(),
+        y: hmsToSecondsOnly(responseTimeData.responseTime),
+        borderColor: getStatusColors(theme, HealthStatus[responseTimeData.status as keyof typeof HealthStatus]),
+        borderWidth: 3,
+        strokeDashArray: 4,
+        label: {
+          text: `Response Time Threshold`,
+          position: 'left',
+          textAnchor: 'start',
+          offsetX: 10,
+          borderColor: 'grey',
+          style: {
+            color: 'white',
+            background: 'grey',
+          },
+        }
+      }
+    ] : svcDefinitions?.conditions.map((c: IHealthCheckCondition) => (
+      {
+        id: c.status + '-' + uuidv4(),
+        y: c.threshold,
+        borderColor: getStatusColors(theme, HealthStatus[c.status as keyof typeof HealthStatus]),
+        borderWidth: 3,
+        strokeDashArray: 4,
+        label: {
+          text: `${c.status}`,
+          position: 'left',
+          textAnchor: 'start',
+          offsetX: 10,
+          borderColor: 'grey',
+          style: {
+            color: 'white',
+            background: 'grey',
+          },
+        }
+      }
+    )) ?? [];
+    annotations.forEach((annotation: YAxisAnnotations) => {
+      ApexCharts.exec(healthCheckName, 'addYaxisAnnotation', annotation, true)
+    })
+    setRenderedAnnotations(annotations.map(e => e.id));
+  }
 
   const chartOptions:ApexOptions = {
     chart: {
@@ -51,10 +121,14 @@ const HealthStatusDataTimeSeriesChart: React.FC<{
         format: 'yyyy-MM-dd hh:mm:ss'
       },
       custom: function({series, seriesIndex, dataPointIndex, w}) {
-        return '<div>' +
+        return responseTimeData ?
+          '<div>' +
+          '<div><b>Response Time</b>: ' + series[seriesIndex][dataPointIndex] + '</div>' +
+          '</div>' :
+          '<div>' +
           '<div><b>'+ healthCheckName + '</b></div>' +
           '<div><b>HealthStatus</b>: ' + series[seriesIndex][dataPointIndex] + '</div>' +
-        '</div>';
+          '</div>';
       }
     }
   }
@@ -101,31 +175,15 @@ const HealthStatusDataTimeSeriesChart: React.FC<{
 
   const displayAnnotations = () => {
     setDisplayAnnotation(true);
-    svcDefinitions?.conditions.forEach((c: IHealthCheckCondition) => (
-      ApexCharts.exec(healthCheckName, 'addYaxisAnnotation', {
-        y: c.threshold,
-        borderColor: 'grey',
-        label: {
-          text: `${c.status}`,
-          position: 'left',
-          textAnchor: 'start',
-          offsetX: 10,
-          borderColor: 'grey',
-          style: {
-            color: 'white',
-            background: 'grey',
-          },
-        }
-      }, true)
-    ))
+    renderAnnotations();
   };
 
   const clearAnnotations = () => {
+    renderedAnnotations.forEach(id =>
+      ApexCharts.exec(healthCheckName, 'removeAnnotation', id)
+    );
+    setRenderedAnnotations([]);
     setDisplayAnnotation(false);
-
-    //TODO BATAPI-241
-    ApexCharts.exec(healthCheckName, 'clearAnnotations');
-    ApexCharts.exec(healthCheckName, 'clearAnnotations');
   }
 
   return (
@@ -138,8 +196,8 @@ const HealthStatusDataTimeSeriesChart: React.FC<{
       &nbsp;
       <button id="all" onClick={() => updateData('all')}>All</button>
       &nbsp;
-      { displayAnnotation?
-        <button id="hideAnnotation" onClick={() => clearAnnotations()}>Hide Annotations</button>:
+      { displayAnnotation ?
+        <button id="hideAnnotation" onClick={() => clearAnnotations()}>Hide Annotations</button> :
         <button id="displayAnnotation" onClick={() => displayAnnotations()}>Display Annotations</button>
       }
 

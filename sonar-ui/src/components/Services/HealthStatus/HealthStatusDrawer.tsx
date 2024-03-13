@@ -4,7 +4,7 @@ import { HealthCheckType, HealthStatus } from 'api/data-contracts';
 import { DynamicTextFontStyle } from 'App.Style'
 import HealthStatusBadge from 'components/Badges/HealthStatusBadge';
 import React, { useContext } from 'react';
-import { IHealthCheckDefinition } from 'types';
+import { IHealthCheckDefinition, IHealthCheckHttpCondition } from 'types';
 import { getDrawerSectionHeaderStyle, getDrawerStyle } from '../Drawer.Style';
 import { ServiceOverviewContext } from '../ServiceOverviewContext';
 import { useGetServiceHealthCheckData } from '../Services.Hooks';
@@ -25,7 +25,8 @@ const HealthStatusDrawer: React.FC<{
     context.serviceHierarchyHealth.healthChecks![healthCheck.name][1] as HealthStatus :
     null;
   const healthCheckDefinition = healthCheck.definition as IHealthCheckDefinition;
-  const isMetricHealthCheck = [HealthCheckType.LokiMetric, HealthCheckType.PrometheusMetric].includes(healthCheck.type);
+  const responseTimeData = (healthCheckDefinition.conditions as IHealthCheckHttpCondition[]).find((c: IHealthCheckHttpCondition) => c.type === "HttpResponseTime");
+  const isMetricHealthCheck = [HealthCheckType.LokiMetric, HealthCheckType.PrometheusMetric, HealthCheckType.HttpRequest].includes(healthCheck.type);
   const drawerHeading = `Health Checks`;
   const healthCheckData = useGetServiceHealthCheckData(
     healthCheck,
@@ -55,18 +56,29 @@ const HealthStatusDrawer: React.FC<{
           <h4 css={getDrawerSectionHeaderStyle}>Health Conditions&nbsp;-&nbsp;{healthCheck.type}</h4>
           <HealthMetricThresholds service={serviceConfiguration} healthCheck={healthCheck} healthCheckStatus={healthCheckStatus} />
 
-          { isMetricHealthCheck && (
+          { isMetricHealthCheck || responseTimeData ? (
             <>
-              <h4 css={getDrawerSectionHeaderStyle}>Health Check Metrics</h4>
+              <h4 css={getDrawerSectionHeaderStyle}>{responseTimeData ? "Http Response Time Data" : "Health Check Metrics"}</h4>
               {(timeSeriesData[0] != null) ?
                 <>
-                  <HealthStatusDataTimeSeriesChart key={`${healthCheck.name}-ts`} svcDefinitions={healthCheckDefinition} healthCheckName={healthCheck.name} timeSeriesData={timeSeriesData} />
-                  <HealthStatusDataTable key={`${healthCheck.name}-dt`} healthCheckName={healthCheck.name} timeSeriesData={timeSeriesData} />
+                  <HealthStatusDataTimeSeriesChart
+                    key={`${healthCheck.name}-ts`}
+                    svcDefinitions={healthCheckDefinition}
+                    healthCheckName={healthCheck.name}
+                    timeSeriesData={timeSeriesData}
+                    responseTimeData={responseTimeData}
+                  />
+                  <HealthStatusDataTable
+                    key={`${healthCheck.name}-dt`}
+                    healthCheckName={healthCheck.name}
+                    timeSeriesData={timeSeriesData}
+                    isResponseTimeCondition={responseTimeData ? true : false}
+                  />
                 </>
                 : <p>No data available</p>
               }
             </>
-          )}
+          ) : null}
         </>
       )}
     </Drawer>

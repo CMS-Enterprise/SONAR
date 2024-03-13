@@ -23,7 +23,6 @@ const StatusHistoryDrawer: React.FC<{
   const utcDateTimestamp = statusHistoryViewData?.statusTimestampTuple[0];
   const convertedTimestamp = convertUtcTimestampToLocal(utcDateTimestamp!, showDate);
   const dateTimestampStatus = statusHistoryViewData?.statusTimestampTuple[1] as HealthStatus;
-  console.log(utcDateTimestamp);
   const {isLoading, data} = useGetHistoricalHealthCheckResults(
     context.environmentName,
     context.tenantName,
