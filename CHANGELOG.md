@@ -1,3 +1,96 @@
+## 0.6.1
+
+### Http response time data UI
+
+* [view commit 665de43](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/665de43067745ae669d6ed33a6bb9b2312e0be5d)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Wed, 13 Mar 2024 00:34:30 +0000
+
+```
+Closes BATAPI-638
+
+## Description:
+
+* Implements chart for response time data
+* Refactors logic in `HealthStatusDataTimeSeriesChart` to handle different types of metric data
+
+Closes BATAPI-638
+```
+
+### Add maintenance status fields to entity health/info query response models
+
+* [view commit 19305e0](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/19305e07b4de71ea6f820299fbcfad708967277b)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Tue, 12 Mar 2024 20:51:07 +0000
+
+```
+Closes BATAPI-639
+```
+
+### Log additional debug information when creating errorReports on the API and warnings when unable to save errorReports to DB
+
+* [view commit 1bf9503](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/1bf95038cab2c939f2b264a5fc4c6c01b2698ea1)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Wed, 6 Mar 2024 19:05:08 -0800
+
+
+
+### Add functionality to sonar agent to report HTTP response time metrics to sonar api
+
+* [view commit e5036d0](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/e5036d0353e3139042792b60a9e249a4aa012137)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Fri, 8 Mar 2024 23:02:34 +0000
+
+```
+Closes BATAPI-637
+
+## Description:
+
+* Add functionality to sonar agent to report HTTP response time metrics to sonar api
+
+Closes BATAPI-637
+```
+
+### BATAPI-585: dashboard ability to view a service's status history with different date/time ranges
+
+* [view commit 1bf09bd](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/1bf09bde8113fc221c3da70aee812e8730bf754f)
+* Author (Committer): Teresa Tran (Teresa Tran)
+* Date: Wed, 6 Mar 2024 22:49:35 +0000
+
+```
+Closes BATAPI-585
+
+## Description:
+
+* User has the ability to request a time range for a service's status history (quick range or custom range via date picker).
+* User has the ability to shift the status history range forwards or backwards in time, depending on the current range in view.
+* Up to ~20 status history tiles are displayed at a time in the current view.
+* When selecting a custom status history range, the user must select a start date before an end date AND the user must select both a start and end date before being able to query
+* NOTE: the earliest choosable start date was hardcoded to 15 days before the current date and time--this can be changed
+```
+
+### Adds deployment job for sonar-agent in dev environment
+
+* [view commit 158ed60](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/158ed606cdf0f098f3e072953f246a812cbee171)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Wed, 21 Feb 2024 17:05:44 -0700
+
+
+
+### Format Error Config Info
+
+* [view commit 7a372fe](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/7a372fe96a71b311db96e077aa57cd0d5ee44786)
+* Author (Committer): Albert Tran (Albert Tran)
+* Date: Wed, 28 Feb 2024 18:41:26 +0000
+
+```
+Closes BATAPI-487
+
+## Description:
+
+* Format Error Config Info
+```
+
 ## 0.6.0
 
 ### Adds built-in alerting capabilities to SONAR.
