@@ -25,7 +25,10 @@ const HealthStatusDrawer: React.FC<{
     context.serviceHierarchyHealth.healthChecks![healthCheck.name][1] as HealthStatus :
     null;
   const healthCheckDefinition = healthCheck.definition as IHealthCheckDefinition;
-  const responseTimeData = (healthCheckDefinition.conditions as IHealthCheckHttpCondition[]).find((c: IHealthCheckHttpCondition) => c.type === "HttpResponseTime");
+  const responseTimeData = healthCheckDefinition.conditions ?
+    (healthCheckDefinition.conditions as IHealthCheckHttpCondition[])
+      .find((c: IHealthCheckHttpCondition) => c.type === "HttpResponseTime") :
+    undefined;
   const isMetricHealthCheck = [HealthCheckType.LokiMetric, HealthCheckType.PrometheusMetric, HealthCheckType.HttpRequest].includes(healthCheck.type);
   const drawerHeading = `Health Checks`;
   const healthCheckData = useGetServiceHealthCheckData(
