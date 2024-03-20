@@ -103,7 +103,7 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
         .AddHeader(name: "Accept", value: "application/json")
         .GetAsync();
 
-    var body = await getResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
+    var body = await getResponse.Content.ReadAsStringAsync();
 
     Assert.Equal(
       expected: HttpStatusCode.OK,
@@ -127,7 +127,7 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
         .AddHeader(name: "Accept", value: "application/json")
         .GetAsync();
 
-    var body = await getResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
+    var body = await getResponse.Content.ReadAsStringAsync();
 
     Assert.Equal(
       expected: HttpStatusCode.BadRequest,

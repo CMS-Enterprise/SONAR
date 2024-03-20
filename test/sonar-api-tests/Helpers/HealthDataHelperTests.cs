@@ -69,7 +69,7 @@ public class HealthDataHelperTests : ApiControllerTestsBase {
 
       var listNamespacedConfigMapResponse = await this.GetConfigMapList(PathToFileWithAlertmanagerConfigOnly);
 
-      Assert.Equal(1, listNamespacedConfigMapResponse.Body.Items.Count);
+      Assert.Single(listNamespacedConfigMapResponse.Body.Items);
       var alertmanagerConfigMap = listNamespacedConfigMapResponse.Body.Items[0];
 
       var currentTimestamp = DateTime.UtcNow;
@@ -102,7 +102,7 @@ public class HealthDataHelperTests : ApiControllerTestsBase {
 
       var listNamespacedConfigMapResponse = await this.GetConfigMapList(PathToFileWithAlertingRulesOnly);
 
-      Assert.Equal(1, listNamespacedConfigMapResponse.Body.Items.Count);
+      Assert.Single(listNamespacedConfigMapResponse.Body.Items);
       var prometheusAlertingRulesConfigMap = listNamespacedConfigMapResponse.Body.Items[0];
 
       var currentTimestamp = DateTime.UtcNow;
@@ -135,7 +135,7 @@ public class HealthDataHelperTests : ApiControllerTestsBase {
 
       var listNamespacedSecretResponse = await this.GetSecretList();
 
-      Assert.Equal(1, listNamespacedSecretResponse.Body.Items.Count);
+      Assert.Single(listNamespacedSecretResponse.Body.Items);
       var alertmanagerSecret = listNamespacedSecretResponse.Body.Items[0];
 
       var currentTimestamp = DateTime.UtcNow;
@@ -205,8 +205,8 @@ public class HealthDataHelperTests : ApiControllerTestsBase {
       var listNamespacedConfigMapResponse = await this.GetConfigMapList(PathToFileWithAlertmanagerConfigOnly);
       var listNamespacedSecretResponse = await this.GetSecretList();
 
-      Assert.Equal(1, listNamespacedConfigMapResponse.Body.Items.Count);
-      Assert.Equal(1, listNamespacedSecretResponse.Body.Items.Count);
+      Assert.Single(listNamespacedConfigMapResponse.Body.Items);
+      Assert.Single(listNamespacedSecretResponse.Body.Items);
       var alertmanagerConfigMap = listNamespacedConfigMapResponse.Body.Items[0];
       var alertmanagerSecret = listNamespacedSecretResponse.Body.Items[0];
 
@@ -241,8 +241,8 @@ public class HealthDataHelperTests : ApiControllerTestsBase {
       var listNamespacedConfigMapResponse = await this.GetConfigMapList(PathToFileWithAlertingRulesOnly);
       var listNamespacedSecretResponse = await this.GetSecretList();
 
-      Assert.Equal(1, listNamespacedConfigMapResponse.Body.Items.Count);
-      Assert.Equal(1, listNamespacedSecretResponse.Body.Items.Count);
+      Assert.Single(listNamespacedConfigMapResponse.Body.Items);
+      Assert.Single(listNamespacedSecretResponse.Body.Items);
       var prometheusAlertingRulesConfigMap = listNamespacedConfigMapResponse.Body.Items[0];
       var alertmanagerSecret = listNamespacedSecretResponse.Body.Items[0];
 
@@ -280,7 +280,7 @@ public class HealthDataHelperTests : ApiControllerTestsBase {
       var listNamespacedSecretResponse = await this.GetSecretList();
 
       Assert.Equal(2, listNamespacedConfigMapResponse.Body.Items.Count);
-      Assert.Equal(1, listNamespacedSecretResponse.Body.Items.Count);
+      Assert.Single(listNamespacedSecretResponse.Body.Items);
 
       var alertmanagerConfigMap = listNamespacedConfigMapResponse.Body.Items[0];
       var prometheusAlertingRulesConfigMap = listNamespacedConfigMapResponse.Body.Items[1];
@@ -341,7 +341,7 @@ public class HealthDataHelperTests : ApiControllerTestsBase {
       Assert.Equal(2, listNamespacedConfigMapResponse.Body.Items.Count);
       var alertmanagerConfigMap = listNamespacedConfigMapResponse.Body.Items[0];
       var prometheusAlertingRulesConfigMap = listNamespacedConfigMapResponse.Body.Items[1];
-      Assert.Equal(1, listNamespacedSecretResponse.Body.Items.Count);
+      Assert.Single(listNamespacedSecretResponse.Body.Items);
       var alertmanagerSecret = listNamespacedSecretResponse.Body.Items[0];
 
       // current timestamp is past the last possible alerting config sync

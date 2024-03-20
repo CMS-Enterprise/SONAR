@@ -7,7 +7,7 @@ stages:
   - deliver
 
 .with-dotnet-sdk:
-  image: artifactory.cloud.cms.gov/docker/bitnami/dotnet-sdk:7.0.202
+  image: mcr.microsoft.com/dotnet/sdk:8.0-alpine3.19
 
 build:
   stage: build
@@ -38,7 +38,7 @@ test:
         - --enable-feature=remote-write-receiver
         - --config.file=/etc/prometheus/prometheus.yml
   before_script:
-    - apt-get update && apt-get install -y libsnappy1v5 libsnappy-dev
+    - apk add --no-cache snappy-dev
   script:
     - dotnet test
 

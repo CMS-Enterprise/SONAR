@@ -56,6 +56,7 @@ public class InvalidConfigurationException : Exception {
     this._data = data.ToImmutableDictionary();
   }
 
+  [Obsolete(DiagnosticId = "SYSLIB0051")]
   protected InvalidConfigurationException(SerializationInfo info, StreamingContext context) : base(info, context) {
     this.ErrorType = (InvalidConfigurationErrorType)info.GetInt32(nameof(InvalidConfigurationException.ErrorType));
     this._data =
@@ -66,6 +67,7 @@ public class InvalidConfigurationException : Exception {
       );
   }
 
+  [Obsolete(DiagnosticId = "SYSLIB0051")]
   public override void GetObjectData(SerializationInfo info, StreamingContext context) {
     // Copy our Data to serialized version of Data
     if (this._data != null) {

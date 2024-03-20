@@ -3,11 +3,12 @@
   <Import Project="../test-with-coverage.targets" />
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>Cms.BatCave.Sonar.Agent.Tests</RootNamespace>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <LangVersion>preview</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -31,5 +32,5 @@
   <ItemGroup>
     <None Include="test-inputs/**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
-  
+
 </Project>

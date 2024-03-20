@@ -17,10 +17,12 @@ public abstract class ProblemDetailException : Exception {
     this.Status = status;
   }
 
+  [Obsolete(DiagnosticId = "SYSLIB0051")]
   protected ProblemDetailException(SerializationInfo info, StreamingContext context) : base(info, context) {
     this.Status = (HttpStatusCode)info.GetInt32(nameof(this.Status));
   }
 
+  [Obsolete(DiagnosticId = "SYSLIB0051")]
   public override void GetObjectData(SerializationInfo info, StreamingContext context) {
     base.GetObjectData(info, context);
     info.AddValue(nameof(this.Status), this.Status);

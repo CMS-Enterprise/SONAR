@@ -17,6 +17,7 @@ public class InternalServerErrorException : ProblemDetailException {
     this(errorType: InternalServerErrorException.DefaultErrorType, message) {
   }
 
+  [Obsolete(DiagnosticId = "SYSLIB0051")]
   public InternalServerErrorException(SerializationInfo info, StreamingContext context) : base(info, context) {
     this.ProblemType = info.GetString(nameof(this.ProblemType)) ?? InternalServerErrorException.DefaultErrorType;
   }

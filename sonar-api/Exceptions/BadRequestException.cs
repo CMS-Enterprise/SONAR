@@ -30,6 +30,7 @@ public class BadRequestException : ProblemDetailException {
     this._data = ImmutableDictionary.CreateRange(data);
   }
 
+  [Obsolete(DiagnosticId = "SYSLIB0051")]
   public BadRequestException(SerializationInfo info, StreamingContext context) : base(info, context) {
     this.ProblemType = info.GetString(nameof(this.ProblemType)) ?? BadRequestException.DefaultProblemTypeName;
     this._data =
@@ -40,6 +41,7 @@ public class BadRequestException : ProblemDetailException {
       );
   }
 
+  [Obsolete(DiagnosticId = "SYSLIB0051")]
   public override void GetObjectData(SerializationInfo info, StreamingContext context) {
     // Copy our Data to serialized version of Data
     foreach (var kvp in this._data) {

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- File name extension must be .runsettings -->
+<RunSettings>
+  <RunConfiguration>
+    <EnvironmentVariables>
+      <DYLD_FALLBACK_LIBRARY_PATH>/opt/homebrew/lib:/usr/local/lib:/usr/local/opt/snappy/lib</DYLD_FALLBACK_LIBRARY_PATH>
+    </EnvironmentVariables>
+  </RunConfiguration>
+</RunSettings>

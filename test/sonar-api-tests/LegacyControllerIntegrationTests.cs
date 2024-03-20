@@ -233,6 +233,7 @@ public class LegacyControllerIntegrationTests : ApiControllerTestsBase {
           .AddHeader(name: "Accept", value: "application/json")
           .GetAsync();
     });
+
   }
 
   private void SetLegacyConfig(String testId) {

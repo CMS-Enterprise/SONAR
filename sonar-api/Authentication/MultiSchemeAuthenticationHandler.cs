@@ -16,8 +16,7 @@ public class MultiSchemeAuthenticationHandler : AuthenticationHandler<Authentica
     IOptionsMonitor<AuthenticationSchemeOptions> options,
     ILoggerFactory logger,
     UrlEncoder encoder,
-    ISystemClock clock,
-    IAuthenticationSchemeProvider schemes) : base(options, logger, encoder, clock) {
+    IAuthenticationSchemeProvider schemes) : base(options, logger, encoder) {
 
     this._schemes = schemes;
   }

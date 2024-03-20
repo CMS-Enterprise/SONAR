@@ -27,8 +27,7 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<AuthenticationS
     IOptions<SecurityConfiguration> securityConfiguration,
     ILoggerFactory loggerFactory,
     UrlEncoder encoder,
-    ISystemClock clock,
-    KeyHashHelper keyHashHelper) : base(options, loggerFactory, encoder, clock) {
+    KeyHashHelper keyHashHelper) : base(options, loggerFactory, encoder) {
     this._dbConfiguration = dbConfiguration;
     this._securityConfiguration = securityConfiguration;
     this._loggerFactory = loggerFactory;

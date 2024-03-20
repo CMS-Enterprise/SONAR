@@ -29,6 +29,7 @@ public class ResourceNotFoundException : ProblemDetailException {
     this.ResourceId = resourceId;
   }
 
+  [Obsolete(DiagnosticId = "SYSLIB0051")]
   protected ResourceNotFoundException(SerializationInfo info, StreamingContext context) : base(info, context) {
     this.TypeName =
       info.GetString(nameof(this.TypeName)) ??
@@ -46,6 +47,7 @@ public class ResourceNotFoundException : ProblemDetailException {
       throw new InvalidDataException($"Required property not found: {nameof(this.ResourceId)}");
   }
 
+  [Obsolete(DiagnosticId = "SYSLIB0051")]
   public override void GetObjectData(SerializationInfo info, StreamingContext context) {
     base.GetObjectData(info, context);
     info.AddValue(nameof(this.TypeName), this.TypeName);

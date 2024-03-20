@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:7.0-alpine3.18 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine3.19 AS build
 WORKDIR /sonar/sonar-agent
 COPY sonar-agent/sonar-agent.csproj .
 RUN mkdir /sonar/sonar-core
@@ -9,7 +9,7 @@ COPY sonar-agent .
 COPY sonar-core /sonar/sonar-core
 RUN dotnet build -c Release
 
-FROM mcr.microsoft.com/dotnet/runtime:7.0-alpine3.18
+FROM mcr.microsoft.com/dotnet/runtime:8.0-alpine3.19
 
 # make sure we are running the most recent version of these libraries
 RUN apk upgrade --no-cache libssl3 libcrypto3
@@ -18,5 +18,5 @@ RUN apk upgrade --no-cache libssl3 libcrypto3
 RUN rm /bin/*
 
 WORKDIR /sonar/sonar-agent
-COPY --from=build /sonar/sonar-agent/bin/Release/net7.0/* .
+COPY --from=build /sonar/sonar-agent/bin/Release/net8.0/* .
 ENTRYPOINT ["/sonar/sonar-agent/sonar-agent.exe"]

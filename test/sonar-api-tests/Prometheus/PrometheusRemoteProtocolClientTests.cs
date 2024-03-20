@@ -85,7 +85,7 @@ public class PrometheusRemoteProtocolClientTests {
       var writeRequest = parser.ParseFrom(writeRequestBytes);
       Assert.Equal(expected: "Test Metric Metadata", writeRequest.Metadata[0].Help);
     } else {
-      Assert.True(condition: false, $"Captured message content is not {typeof(ByteArrayContent)}");
+      Assert.Fail($"Captured message content is not {typeof(ByteArrayContent)}");
     }
   }
 }
