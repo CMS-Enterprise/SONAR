@@ -1,3 +1,42 @@
+## 0.6.2
+
+### fix bug for internal health checks not displaying in status drawer
+
+* [view commit 437deaf6](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/437deaf6a87d82bf562f38011316fc3711c20c24)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Wed, 20 Mar 2024 19:48:54 +0000
+
+```
+## Description:
+
+* fixes bug for internal health checks not displaying in status drawer
+```
+
+### Net8 Migration
+
+* [view commit fcd011f0](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/fcd011f055fba81a551614d7142eab6b77841f78)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Wed, 20 Mar 2024 00:37:17 +0000
+
+```
+Closes BATAPI-527
+
+## Description:
+
+* Migrate to Net8. 2 breaking changes addressed:
+  * ISystemClock is obsolete: https://learn.microsoft.com/en-us/dotnet/core/compatibility/aspnet-core/8.0/isystemclock-obsolete
+  * Legacy serialization support APIs are obsolete: https://learn.microsoft.com/en-us/dotnet/fundamentals/syslib-diagnostics/syslib0051
+
+Closes BATAPI-527
+```
+
+### SONAR Release v0.6.1
+
+* [view commit 3f4d49b4](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/3f4d49b4294ec5699e3fa2f950534d302050a33a)
+* Author (Committer): Stephen Brey (Stephen Brey)
+* Date: Tue, 19 Mar 2024 21:33:31 +0000
+
+
 ## 0.6.1
 
 ### Http response time data UI
