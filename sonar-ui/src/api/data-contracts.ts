@@ -157,6 +157,10 @@ export interface ErrorReportDetails {
 
 export type HealthCheckDefinition = object;
 
+export interface HealthCheckHistory {
+  healthChecks: Record<string, DateTimeHealthStatusValueTuple[]>[];
+}
+
 export interface HealthCheckModel {
   /**
    * @minLength 0

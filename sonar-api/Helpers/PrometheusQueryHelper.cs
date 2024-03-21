@@ -99,17 +99,16 @@ public class PrometheusQueryHelper {
   }
 
   public async Task<T> GetPrometheusQueryRangeValue<T>(
-    IPrometheusClient prometheusClient,
+    String queryTopic,
     String promQuery,
     DateTime start,
     DateTime end,
     TimeSpan step,
     Func<QueryResults, T> processResult,
-    String queryTopic,
     CancellationToken cancellationToken) {
 
     try {
-      var response = await prometheusClient.QueryRangeAsync(
+      var response = await this._prometheusClient.QueryRangeAsync(
         $"{promQuery}",
         start.ToUniversalTime(),
         end.ToUniversalTime(),
@@ -148,5 +147,34 @@ public class PrometheusQueryHelper {
         message: $"Error querying {queryTopic} history. {e.Message}"
       );
     }
+  }
+
+  public (DateTime, DateTime, Int32) ValidateParameters(
+    DateTime? queryStart,
+    DateTime? queryEnd,
+    Int32? queryStep) {
+
+    var end = queryEnd?.ToUniversalTime() ?? DateTime.UtcNow;
+    var start = queryStart?.ToUniversalTime() ?? end.Subtract(TimeSpan.FromHours(1));
+    var step = queryStep ?? 30;
+
+    var dataPoints = (end - start).TotalSeconds / step;
+    if (dataPoints > 100) {
+      throw new BadRequestException($"The number of data points (range in seconds / step in seconds) " +
+        $"in the returned time series must be less than or equal to 100.");
+    }
+
+    if (end <= start) {
+      throw new BadRequestException("End date cannot be earlier or equal to the start date");
+    }
+
+    // End - Start cannot be greater than 7 days to be consistent with Metric history restriction.
+    if ((end - start) > TimeSpan.FromDays(7)) {
+      throw new BadRequestException(
+        $"The number of days must be less than or equal to {TimeSpan.FromDays(7).Days}"
+      );
+    }
+
+    return (start, end, step);
   }
 }

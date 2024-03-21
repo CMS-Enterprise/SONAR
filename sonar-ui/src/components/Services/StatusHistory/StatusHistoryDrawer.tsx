@@ -3,7 +3,7 @@ import { Drawer, Spinner } from '@cmsgov/design-system';
 import React, { useContext } from 'react';
 import { StatusHistoryView } from 'interfaces/global_interfaces';
 import { ServiceOverviewContext } from '../ServiceOverviewContext';
-import { useGetHistoricalHealthCheckResults } from '../Services.Hooks';
+import { useGetHealthCheckResultForService } from '../Services.Hooks';
 import StatusHistoryHealthCheckList from './StatusHistoryHealthCheckList';
 import { StatusHistoryDrawerSubsectionStyle } from './StatusHistory.Style';
 import HealthStatusBadge from '../../Badges/HealthStatusBadge';
@@ -23,7 +23,7 @@ const StatusHistoryDrawer: React.FC<{
   const utcDateTimestamp = statusHistoryViewData?.statusTimestampTuple[0];
   const convertedTimestamp = convertUtcTimestampToLocal(utcDateTimestamp!, showDate);
   const dateTimestampStatus = statusHistoryViewData?.statusTimestampTuple[1] as HealthStatus;
-  const {isLoading, data} = useGetHistoricalHealthCheckResults(
+  const {isLoading, data} = useGetHealthCheckResultForService(
     context.environmentName,
     context.tenantName,
     statusHistoryViewData?.serviceData.name as string,

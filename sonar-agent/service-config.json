@@ -44,38 +44,12 @@
             "conditions": [
               {
                 "operator": "GreaterThan",
-                "threshold": 4,
-                "status": "Offline"
-              },
-              {
-                "operator": "GreaterThan",
-                "threshold": 3,
-                "status": "Degraded"
-              },
-              {
-                "operator": "GreaterThan",
                 "threshold": 2,
                 "status": "AtRisk"
               }
             ]
           },
           "type": "lokiMetric"
-        }
-      ],
-      "versionChecks": [
-        {
-          "versionCheckType": "FluxKustomization",
-          "definition": {
-            "k8sNamespace": "sample-kustomization",
-            "kustomization": "sample-kustomization"
-          }
-        },
-        {
-          "versionCheckType": "FluxHelmRelease",
-          "definition": {
-            "k8sNamespace": "test-helmrelease",
-            "helmRelease": "podinfo"
-          }
         }
       ],
       "tags": {

@@ -20,6 +20,7 @@ import {
   EnvironmentHealth,
   EnvironmentModel,
   ErrorReportDetails,
+  HealthCheckHistory,
   MetricDataCollection,
   PermissionConfiguration,
   PermissionDetails,
@@ -434,6 +435,62 @@ tenant, service, and health check in Prometheus. Filters out samples outside of 
   /**
    * No description
    *
+   * @tags HealthCheckHistory
+   * @name GetHealthCheckResultForService
+   * @summary Retrieves the instantaneous prometheus health status each healthcheck given the service.
+   * @request GET:/api/v2/health-check-history/{environment}/tenants/{tenant}/services/{service}/health-check-result
+   */
+  getHealthCheckResultForService = (
+    environment: string,
+    tenant: string,
+    service: string,
+    query?: {
+      /** @format date-time */
+      timeQuery?: string;
+    },
+    params: RequestParams = {},
+  ) =>
+    this.request<Record<string, DateTimeHealthStatusValueTuple>, ProblemDetails | void>({
+      path: `/api/v2/health-check-history/${environment}/tenants/${tenant}/services/${service}/health-check-result`,
+      method: "GET",
+      query: query,
+      format: "json",
+      ...params,
+    });
+  /**
+ * No description
+ *
+ * @tags HealthCheckHistory
+ * @name GetHealthCheckResultsForService
+ * @summary Retrieves prometheus health status time series for each healthcheck given the
+service. Filters out samples outside of the given start and end date time
+(or if those are not given, filters out samples from more than 10 minutes ago UTC) prior to calling P8s.
+ * @request GET:/api/v2/health-check-history/{environment}/tenants/{tenant}/services/{service}/health-check-results
+ */
+  getHealthCheckResultsForService = (
+    environment: string,
+    tenant: string,
+    service: string,
+    query?: {
+      /** @format date-time */
+      queryStart?: string;
+      /** @format date-time */
+      queryEnd?: string;
+      /** @format int32 */
+      step?: number;
+    },
+    params: RequestParams = {},
+  ) =>
+    this.request<HealthCheckHistory, ProblemDetails>({
+      path: `/api/v2/health-check-history/${environment}/tenants/${tenant}/services/${service}/health-check-results`,
+      method: "GET",
+      query: query,
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
    * @tags HealthHistory
    * @name GetServicesHealthHistory
    * @summary Get the health history for all services within the specified Tenant.
@@ -507,30 +564,6 @@ tenant, service, and health check in Prometheus. Filters out samples outside of 
   ) =>
     this.request<ServiceHierarchyHealthHistory, ProblemDetails | void>({
       path: `/api/v2/health-history/${environment}/tenants/${tenant}/services/${servicePath}`,
-      method: "GET",
-      query: query,
-      format: "json",
-      ...params,
-    });
-  /**
-   * No description
-   *
-   * @tags HealthHistory
-   * @name GetHistoricalHealthCheckResultsForService
-   * @request GET:/api/v2/health-history/{environment}/tenants/{tenant}/services/{service}/health-check-results
-   */
-  getHistoricalHealthCheckResultsForService = (
-    environment: string,
-    tenant: string,
-    service: string,
-    query?: {
-      /** @format date-time */
-      timeQuery?: string;
-    },
-    params: RequestParams = {},
-  ) =>
-    this.request<Record<string, DateTimeHealthStatusValueTuple>, ProblemDetails | void>({
-      path: `/api/v2/health-history/${environment}/tenants/${tenant}/services/${service}/health-check-results`,
       method: "GET",
       query: query,
       format: "json",

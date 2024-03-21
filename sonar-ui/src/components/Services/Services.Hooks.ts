@@ -67,7 +67,7 @@ export const useGetServiceVersion = (
   });
 }
 
-export const useGetHistoricalHealthCheckResults = (
+export const useGetHealthCheckResultForService = (
   env: string,
   tenant: string,
   service: string,
@@ -77,7 +77,7 @@ export const useGetHistoricalHealthCheckResults = (
   return useQuery({
     queryKey: ['HealthCheckHistory', env, tenant, service, timestamp],
     queryFn: () => {
-      return sonarClient.getHistoricalHealthCheckResultsForService(
+      return sonarClient.getHealthCheckResultForService(
         env,
         tenant,
         service,

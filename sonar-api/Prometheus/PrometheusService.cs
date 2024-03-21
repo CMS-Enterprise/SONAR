@@ -20,15 +20,18 @@ public class PrometheusService : IPrometheusService {
   private readonly ILogger<PrometheusService> _logger;
   private readonly IPrometheusRemoteProtocolClient _prometheusRemoteProtocolClient;
   private readonly IPrometheusClient _prometheusClient;
+  private readonly PrometheusQueryHelper _prometheusQueryHelper;
 
   public PrometheusService(
     ILogger<PrometheusService> logger,
     IPrometheusRemoteProtocolClient prometheusRemoteProtocolClient,
-    IPrometheusClient prometheusClient) {
+    IPrometheusClient prometheusClient,
+    PrometheusQueryHelper prometheusQueryHelper) {
 
     this._logger = logger;
     this._prometheusRemoteProtocolClient = prometheusRemoteProtocolClient;
     this._prometheusClient = prometheusClient;
+    this._prometheusQueryHelper = prometheusQueryHelper;
   }
 
   /// <inheritdoc/>
@@ -172,7 +175,8 @@ public class PrometheusService : IPrometheusService {
 
     this._logger.LogDebug("Querying latest health check data timestamps: {query}", query);
 
-    var queryResponse = await this._prometheusClient.QueryAsync(query, DateTime.UtcNow, cancellationToken: cancellationToken);
+    var queryResponse =
+      await this._prometheusClient.QueryAsync(query, DateTime.UtcNow, cancellationToken: cancellationToken);
 
     var latestServiceHealthMetricsTimestamps = queryResponse.Data?.Result.ToDictionary(
       keySelector: result => result.Labels[HealthDataHelper.MetricLabelKeys.HealthCheck],
@@ -230,6 +234,7 @@ public class PrometheusService : IPrometheusService {
             timestampMetrics.Add((unixDateTimeOffset.DateTime, Convert.ToDouble(metricValue)));
           }
         }
+
         return timestampMetrics;
       });
     if ((serviceHealthMetrics == null) || serviceHealthMetrics.ToImmutableDictionary().IsEmpty) {

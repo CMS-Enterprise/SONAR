@@ -26,7 +26,6 @@ namespace Cms.BatCave.Sonar.Controllers;
 [AllowAnonymous]
 [Route("api/v{version:apiVersion}/health-history")]
 public class HealthHistoryController : ControllerBase {
-  private readonly IPrometheusClient _prometheusClient;
   private readonly ServiceDataHelper _serviceDataHelper;
   private readonly HealthDataHelper _healthDataHelper;
   private readonly PrometheusQueryHelper _prometheusQueryHelper;
@@ -34,13 +33,11 @@ public class HealthHistoryController : ControllerBase {
 
   public HealthHistoryController(
     ServiceDataHelper serviceDataHelper,
-    IPrometheusClient prometheusClient,
     HealthDataHelper healthDataHelper,
     PrometheusQueryHelper prometheusQueryHelper,
     IOptions<SonarHealthCheckConfiguration> sonarHealthConfig) {
 
     this._serviceDataHelper = serviceDataHelper;
-    this._prometheusClient = prometheusClient;
     this._healthDataHelper = healthDataHelper;
     this._prometheusQueryHelper = prometheusQueryHelper;
     this._sonarEnvironment = sonarHealthConfig.Value.SonarEnvironment;
@@ -77,7 +74,7 @@ public class HealthHistoryController : ControllerBase {
     [Optional] Int32? step,
     CancellationToken cancellationToken) {
 
-    (DateTime startTime, DateTime endTime, Int32 stepIncrement) = ValidateParameters(start, end, step);
+    (DateTime startTime, DateTime endTime, Int32 stepIncrement) = this._prometheusQueryHelper.ValidateParameters(start, end, step);
 
     var (_, _, services) =
       await this._serviceDataHelper.FetchExistingConfiguration(environment, tenant, cancellationToken);
@@ -135,7 +132,7 @@ public class HealthHistoryController : ControllerBase {
     [Optional] Int32? step,
     CancellationToken cancellationToken) {
 
-    var (startTime, endTime, stepIncrement) = ValidateParameters(start, end, step);
+    var (startTime, endTime, stepIncrement) = this._prometheusQueryHelper.ValidateParameters(start, end, step);
 
     // Checks if polling for Sonar Health
     if (String.Equals(environment, this._sonarEnvironment, StringComparison.OrdinalIgnoreCase) &&
@@ -167,34 +164,6 @@ public class HealthHistoryController : ControllerBase {
         serviceChildIdsLookup,
         healthChecksByService)
     );
-  }
-
-  [HttpGet("{environment}/tenants/{tenant}/services/{service}/health-check-results",
-    Name = "GetHistoricalHealthCheckResultsForService")]
-  [ProducesResponseType(typeof(Dictionary<String, (DateTime Timestamp, HealthStatus Status)>), statusCode: 200)]
-  [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
-  [ProducesResponseType(typeof(ProblemDetails), statusCode: 400)]
-  [ProducesResponseType(500)]
-  public async Task<IActionResult> GetHistoricalHealthCheckResultsForService(
-    [FromRoute] String environment,
-    [FromRoute] String tenant,
-    [FromRoute] String service,
-    [FromQuery] DateTime? timeQuery,
-    CancellationToken cancellationToken) {
-
-    var timestamp = timeQuery ?? DateTime.UtcNow;
-    if (timestamp.Kind != DateTimeKind.Utc) {
-      return this.BadRequest("Invalid timestamp");
-    }
-
-    var result = await this._healthDataHelper.GetHistoricalHealthCheckResultsForService(
-      environment,
-      tenant,
-      service,
-      timestamp,
-      cancellationToken);
-
-    return this.Ok(result);
   }
 
   private ServiceHierarchyHealthHistory GetSonarHealthHierarchy(
@@ -234,7 +203,7 @@ public class HealthHistoryController : ControllerBase {
       CancellationToken cancellationToken) {
 
     return await this._prometheusQueryHelper.GetPrometheusQueryRangeValue(
-      this._prometheusClient,
+      "service health status",
       $"max_over_time({HealthDataHelper.ServiceHealthAggregateMetricName}{{environment=\"{environment}\", tenant=\"{tenant}\"}}[{PrometheusClient.ToPrometheusDuration(TimeSpan.FromSeconds(step))}])",
       start, end, TimeSpan.FromSeconds(step),
       processResult: results => {
@@ -297,7 +266,6 @@ public class HealthHistoryController : ControllerBase {
 
         return serviceStatusHistoryDictionary;
       },
-      "service health status",
       cancellationToken
     );
   }
@@ -381,34 +349,4 @@ public class HealthHistoryController : ControllerBase {
       }
     }
   }
-
-  private static (DateTime, DateTime, Int32) ValidateParameters(
-    DateTime? queryStart,
-    DateTime? queryEnd,
-    Int32? queryStep) {
-
-    var end = queryEnd?.ToUniversalTime() ?? DateTime.UtcNow;
-    var start = queryStart?.ToUniversalTime() ?? end.Subtract(TimeSpan.FromHours(1));
-    var step = queryStep ?? 30;
-
-    var dataPoints = (end - start).TotalSeconds / step;
-    if (dataPoints > 100) {
-      throw new BadRequestException($"The number of data points (range in seconds / step in seconds) " +
-        $"in the returned time series must be less than or equal to 100.");
-    }
-
-    if (end <= start) {
-      throw new BadRequestException("End date cannot be earlier or equal to the start date");
-    }
-
-    // End - Start cannot be greater than 7 days to be consistent with Metric history restriction.
-    if ((end - start) > PrometheusQueryHelper.QueryRangeMaximumNumberDays) {
-      throw new BadRequestException(
-        $"The number of days must be less than or equal to {PrometheusQueryHelper.QueryRangeMaximumNumberDays.Days}"
-      );
-    }
-
-    return (start, end, step);
-  }
-
 }

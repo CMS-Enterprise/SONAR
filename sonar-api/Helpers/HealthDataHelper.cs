@@ -358,52 +358,6 @@ public class HealthDataHelper {
     return $"{dashboardBaseUrl}/{environment}/tenants/{tenant}/services/{servicePath}";
   }
 
-  public async Task<T>
-  GetPrometheusQueryRangeValue<T>(
-    IPrometheusClient prometheusClient,
-    String promQuery, DateTime start, DateTime end, TimeSpan step,
-    Func<QueryResults, T> processResult, CancellationToken cancellationToken) {
-
-    try {
-      var response = await prometheusClient.QueryRangeAsync(
-        $"{promQuery}",
-        start.ToUniversalTime(),
-        end.ToUniversalTime(),
-        step,
-        cancellationToken: cancellationToken
-      );
-
-      if (response.Status != ResponseStatus.Success) {
-        this._logger.LogError(
-          message: "Unexpected error querying service health status from Prometheus ({ErrorType}): {ErrorMessage}",
-          response.ErrorType,
-          response.Error
-        );
-        throw new InternalServerErrorException(
-          errorType: "PrometheusApiError",
-          message: "Error querying service health status."
-        );
-      }
-
-      if (response.Data == null) {
-        this._logger.LogError(
-          message: "Prometheus unexpectedly returned null data for query {Query}",
-          promQuery
-        );
-        throw new InternalServerErrorException(
-          errorType: "PrometheusApiError",
-          message: "Error querying service health status."
-        );
-      }
-      return processResult(response.Data);
-    } catch (Exception e) {
-
-      throw new InternalServerErrorException(
-        errorType: "PrometheusApiError",
-        message: $"Error querying service health history status. {e.Message}"
-      );
-    }
-  }
   private (DateTime timestamp, HealthStatus status)? GetEffectiveHealthStatus(
     String metricName,
     IEnumerable<(IImmutableDictionary<String, String> Labels, (Decimal Timestamp, String Flag) Value)> group) {
@@ -688,7 +642,7 @@ public class HealthDataHelper {
     return ts;
   }
 
-  public async Task<Dictionary<String, (DateTime Timestamp, HealthStatus Status)>> GetHistoricalHealthCheckResultsForService(
+  public async Task<Dictionary<String, (DateTime Timestamp, HealthStatus Status)>> GetHealthCheckResultForService(
     String environment,
     String tenant,
     String service,
@@ -752,6 +706,97 @@ public class HealthDataHelper {
 
     return result;
   }
+
+  public async Task<Dictionary<String, List<(DateTime Timestamp, HealthStatus Value)>>> GetHealthCheckResultsForService(
+  String environment,
+  String tenant,
+  String service,
+  String healthCheck,
+  DateTime start,
+  DateTime end,
+  Int32 step,
+  CancellationToken cancellationToken) {
+
+  // Example query:
+  // TODO sonar_healthcheck_data{environment='foo',tenant='baz',service='my-root',check='my-root-health-check'}[start:end]
+  var query = String.Format(
+    format: "max_over_time({0}{{environment='{1}',tenant='{2}',service='{3}',check='{4}'}}[{5}])",
+    HealthDataHelper.ServiceHealthCheckMetricName,
+    environment,
+    tenant,
+    service,
+    healthCheck,
+    PrometheusClient.ToPrometheusDuration(TimeSpan.FromSeconds(step)));
+
+  this._logger.LogDebug(
+    "Querying health check data timestamps from {start} to {end} (UTC): {query}",
+    start, end, query);
+
+  var result = await this._prometheusQueryHelper.GetPrometheusQueryRangeValue(
+    "healthCheck history",
+    query,
+    start,
+    end,
+    TimeSpan.FromSeconds(step),
+    processResult: results => {
+      // StateSet metrics are split into separate metric per-state
+      // This code groups all the metrics for a given service and then determines which state is currently set.
+      var metricByService =
+        results.Result
+          .Where(series => series.Values != null)
+          .Select(series => (series.Labels, series.Values!.ToList()))
+          .ToLookup(
+            keySelector: metric =>
+              metric.Labels.TryGetValue("check", out var healthCheckName) ?
+                healthCheckName :
+                null, StringComparer.OrdinalIgnoreCase);
+
+      var healthCheckStatusHistoryDictionary = new Dictionary<String, List<(DateTime Timestamp, HealthStatus Value)>>();
+      // Iterate though the services grouping and create a time series list of each health status.
+      foreach (var service in metricByService) {
+        if (service.Key is null) {
+          throw new InvalidOperationException("The time series for health status is missing the service label");
+        }
+
+        var statusList = new List<(DateTime, HealthStatus)>();
+
+        // group metrics by timestamp to determine worst status at that particular time
+        // resulting data structure will look like:
+        //  timestamp: [ { labels, value }, { labels, value } ]
+        var r = service.SelectMany(e => e.Item2.Select(timestampValTuple => new { e.Labels, timestampValTuple }))
+          .GroupBy(
+            val => val.timestampValTuple.Timestamp,
+            val => (val.Labels, val.timestampValTuple.Value));
+
+        foreach (var timestampGroup in r) {
+          var statusTimestamp = DateTime.UnixEpoch.AddSeconds((Double)timestampGroup.Key);
+          HealthStatus? status = null;
+
+          // only iterate over values that have a reported status, determine the worst status in that subset
+          foreach (var metric in timestampGroup
+            .Where(e => e.Value == "1")) {
+
+            // throw exception if metric does not have the sonar health status label
+            if (!metric.Labels.TryGetValue("sonar_service_health_check_status",
+              out var healthStatusValue)) {
+              throw new InvalidOperationException("The times series for a health status is missing a status label");
+            }
+
+            if (Enum.TryParse<HealthStatus>(healthStatusValue, out var value)) {
+              status = value;
+            }
+          }
+          statusList.Add((statusTimestamp, status ?? HealthStatus.Unknown));
+        }
+
+        healthCheckStatusHistoryDictionary.Add(service.Key, statusList);
+      }
+      return healthCheckStatusHistoryDictionary;
+    },
+    cancellationToken);
+
+  return result;
+}
 
   private DateTime ConvertDecimalTimestampToDateTime(Decimal timestamp) {
     return DateTime.UnixEpoch.AddMilliseconds((Int64)(timestamp * 1000));
