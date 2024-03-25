@@ -9,6 +9,7 @@ using PrometheusQuerySdk.Models;
 namespace Cms.BatCave.Sonar.Helpers;
 
 public class PrometheusQueryHelper {
+  public static readonly TimeSpan QueryRangeMaximumNumberDays = TimeSpan.FromDays(7);
   private readonly IPrometheusClient _prometheusClient;
   private readonly ILogger<PrometheusQueryHelper> _logger;
 
@@ -95,5 +96,57 @@ public class PrometheusQueryHelper {
     }
 
     return processResult(response.Data);
+  }
+
+  public async Task<T> GetPrometheusQueryRangeValue<T>(
+    IPrometheusClient prometheusClient,
+    String promQuery,
+    DateTime start,
+    DateTime end,
+    TimeSpan step,
+    Func<QueryResults, T> processResult,
+    String queryTopic,
+    CancellationToken cancellationToken) {
+
+    try {
+      var response = await prometheusClient.QueryRangeAsync(
+        $"{promQuery}",
+        start.ToUniversalTime(),
+        end.ToUniversalTime(),
+        step,
+        cancellationToken: cancellationToken
+      );
+
+      if (response.Status != ResponseStatus.Success) {
+        this._logger.LogError(
+          message: "Unexpected error querying {queryTopic} from Prometheus ({ErrorType}): {ErrorMessage}",
+        queryTopic,
+          response.ErrorType,
+          response.Error
+        );
+        throw new InternalServerErrorException(
+          errorType: "PrometheusApiError",
+          message: $"Error querying {queryTopic}."
+        );
+      }
+
+      if (response.Data == null) {
+        this._logger.LogError(
+          message: "Prometheus unexpectedly returned null data for query {Query}",
+          promQuery
+        );
+        throw new InternalServerErrorException(
+          errorType: "PrometheusApiError",
+          message: $"Error querying {queryTopic}."
+        );
+      }
+      return processResult(response.Data);
+    } catch (Exception e) {
+
+      throw new InternalServerErrorException(
+        errorType: "PrometheusApiError",
+        message: $"Error querying {queryTopic} history. {e.Message}"
+      );
+    }
   }
 }

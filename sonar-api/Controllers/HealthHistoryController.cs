@@ -26,21 +26,23 @@ namespace Cms.BatCave.Sonar.Controllers;
 [AllowAnonymous]
 [Route("api/v{version:apiVersion}/health-history")]
 public class HealthHistoryController : ControllerBase {
-  private static readonly TimeSpan QueryRangeMaximumNumberDays = TimeSpan.FromDays(7);
   private readonly IPrometheusClient _prometheusClient;
   private readonly ServiceDataHelper _serviceDataHelper;
   private readonly HealthDataHelper _healthDataHelper;
+  private readonly PrometheusQueryHelper _prometheusQueryHelper;
   private readonly String _sonarEnvironment;
 
   public HealthHistoryController(
     ServiceDataHelper serviceDataHelper,
     IPrometheusClient prometheusClient,
     HealthDataHelper healthDataHelper,
+    PrometheusQueryHelper prometheusQueryHelper,
     IOptions<SonarHealthCheckConfiguration> sonarHealthConfig) {
 
     this._serviceDataHelper = serviceDataHelper;
     this._prometheusClient = prometheusClient;
     this._healthDataHelper = healthDataHelper;
+    this._prometheusQueryHelper = prometheusQueryHelper;
     this._sonarEnvironment = sonarHealthConfig.Value.SonarEnvironment;
   }
 
@@ -231,7 +233,7 @@ public class HealthHistoryController : ControllerBase {
       String environment, String tenant, DateTime start, DateTime end, Int32 step,
       CancellationToken cancellationToken) {
 
-    return await this._healthDataHelper.GetPrometheusQueryRangeValue(
+    return await this._prometheusQueryHelper.GetPrometheusQueryRangeValue(
       this._prometheusClient,
       $"max_over_time({HealthDataHelper.ServiceHealthAggregateMetricName}{{environment=\"{environment}\", tenant=\"{tenant}\"}}[{PrometheusClient.ToPrometheusDuration(TimeSpan.FromSeconds(step))}])",
       start, end, TimeSpan.FromSeconds(step),
@@ -295,6 +297,7 @@ public class HealthHistoryController : ControllerBase {
 
         return serviceStatusHistoryDictionary;
       },
+      "service health status",
       cancellationToken
     );
   }
@@ -399,9 +402,9 @@ public class HealthHistoryController : ControllerBase {
     }
 
     // End - Start cannot be greater than 7 days to be consistent with Metric history restriction.
-    if ((end - start) > QueryRangeMaximumNumberDays) {
+    if ((end - start) > PrometheusQueryHelper.QueryRangeMaximumNumberDays) {
       throw new BadRequestException(
-        $"The number of days must be less than or equal to {QueryRangeMaximumNumberDays.Days}"
+        $"The number of days must be less than or equal to {PrometheusQueryHelper.QueryRangeMaximumNumberDays.Days}"
       );
     }
 

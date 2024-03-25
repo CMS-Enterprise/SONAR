@@ -2289,6 +2289,83 @@
 				}
 			]
 		},
+    {
+      "name": "Version-History",
+      "item": [
+        {
+          "name": "Get Tenant Services Version History",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{SONAR_BASE_URL}}/api/v2/version-history/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}",
+              "host": [
+                "{{SONAR_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "version-history",
+                "{{TEST_ENVIRONMENT}}",
+                "tenants",
+                "{{TEST_TENANT}}"
+              ],
+              "query": [
+                {
+                  "key": "duration",
+                  "value": "120"
+                },
+                {
+                  "key": "timeQuery",
+                  "value": "{{now}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Service Version History",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{SONAR_BASE_URL}}/api/v2/version-history/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE}}",
+              "host": [
+                "{{SONAR_BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "v2",
+                "version-history",
+                "{{TEST_ENVIRONMENT}}",
+                "tenants",
+                "{{TEST_TENANT}}",
+                "services",
+                "{{TEST_SERVICE}}"
+              ],
+              "query": [
+                {
+                  "key": "duration",
+                  "value": "120"
+                },
+                {
+                  "key": "timeQuery",
+                  "value": "{{now}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
 		{
 			"name": "Alerts",
 			"item": [

@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.Extensions.Logging;
-using PrometheusQuerySdk;
 
 namespace Cms.BatCave.Sonar.Helpers;
 
@@ -22,21 +21,15 @@ public class VersionDataHelper {
   // this the services version will not be returned.
   private static readonly TimeSpan MaximumServiceVersionAge = TimeSpan.FromHours(1);
 
-  private readonly HealthDataHelper _healthDataHelper;
   private readonly PrometheusQueryHelper _prometheusQueryHelper;
-  private readonly IPrometheusClient _prometheusClient;
   private readonly ILogger<VersionDataHelper> _logger;
   private readonly ServiceVersionCacheHelper _versionCacheHelper;
 
   public VersionDataHelper(
-    HealthDataHelper healthDataHelper,
     PrometheusQueryHelper prometheusQueryHelper,
-    IPrometheusClient prometheusClient,
     ILogger<VersionDataHelper> logger,
     ServiceVersionCacheHelper versionCacheHelper) {
-    this._healthDataHelper = healthDataHelper;
     this._prometheusQueryHelper = prometheusQueryHelper;
-    this._prometheusClient = prometheusClient;
     this._logger = logger;
     this._versionCacheHelper = versionCacheHelper;
   }
@@ -186,7 +179,7 @@ public class VersionDataHelper {
     return result;
   }
 
-  private DateTime ConvertDecimalTimestampToDateTime(Decimal timestamp) {
+  public DateTime ConvertDecimalTimestampToDateTime(Decimal timestamp) {
     return DateTime.UnixEpoch.AddMilliseconds((Int64)(timestamp * 1000));
   }
 

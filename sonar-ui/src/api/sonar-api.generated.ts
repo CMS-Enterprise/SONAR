@@ -15,6 +15,7 @@ import {
   AlertSilenceDetails,
   ApiKeyConfiguration,
   ApiKeyDetails,
+  BadRequestException,
   CurrentUserView,
   DateTimeHealthStatusValueTuple,
   EnvironmentHealth,
@@ -24,6 +25,7 @@ import {
   PermissionConfiguration,
   PermissionDetails,
   ProblemDetails,
+  ResourceNotFoundException,
   ServiceAlert,
   ServiceHealth,
   ServiceHealthData,
@@ -32,6 +34,7 @@ import {
   ServiceHierarchyHealthHistory,
   ServiceVersion,
   ServiceVersionDetails,
+  ServiceVersionHistory,
   TenantInfo,
   UptimeModel,
   UserPermissionsView,
@@ -334,11 +337,11 @@ permissions to the requested environment/tenant.
    *
    * @tags Health
    * @name GetSonarHealth
-   * @request GET:/api/v2/health/{environment}/tenants/sonar
+   * @request GET:/api/v2/health/{environment}/tenants/sonar-internal
    */
   getSonarHealth = (environment: string, params: RequestParams = {}) =>
     this.request<ServiceHierarchyHealth[], ProblemDetails>({
-      path: `/api/v2/health/${environment}/tenants/sonar`,
+      path: `/api/v2/health/${environment}/tenants/sonar-internal`,
       method: "GET",
       format: "json",
       ...params,
@@ -800,6 +803,71 @@ to the requested environment/tenant.
     this.request<ServiceVersionDetails[], ProblemDetails | void>({
       path: `/api/v2/version/${environment}/tenants/${tenant}/services/${servicePath}`,
       method: "GET",
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags VersionHistory
+   * @name GetServicesVersionHistory
+   * @summary Get the version history for all services within the specified Tenant.
+   * @request GET:/api/v2/version-history/{environment}/tenants/{tenant}
+   */
+  getServicesVersionHistory = (
+    environment: string,
+    tenant: string,
+    query?: {
+      /**
+       * How far back in time values should be fetched (in seconds).
+       * @format int32
+       */
+      duration?: number;
+      /**
+       * The timestamp at which to sample data.
+       * @format date-time
+       */
+      timeQuery?: string;
+    },
+    params: RequestParams = {},
+  ) =>
+    this.request<ServiceVersionHistory[], BadRequestException | ResourceNotFoundException>({
+      path: `/api/v2/version-history/${environment}/tenants/${tenant}`,
+      method: "GET",
+      query: query,
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags VersionHistory
+   * @name GetServiceVersionHistory
+   * @summary Get the version history for a specific Service, specified by its path in the service hierarchy.
+   * @request GET:/api/v2/version-history/{environment}/tenants/{tenant}/services/{servicePath}
+   */
+  getServiceVersionHistory = (
+    environment: string,
+    tenant: string,
+    servicePath: string,
+    query?: {
+      /**
+       * How far back in time values should be fetched (in seconds).
+       * @format int32
+       */
+      duration?: number;
+      /**
+       * The timestamp at which to sample data.
+       * @format date-time
+       */
+      timeQuery?: string;
+    },
+    params: RequestParams = {},
+  ) =>
+    this.request<ServiceVersionHistory, BadRequestException | ResourceNotFoundException>({
+      path: `/api/v2/version-history/${environment}/tenants/${tenant}/services/${servicePath}`,
+      method: "GET",
+      query: query,
       format: "json",
       ...params,
     });

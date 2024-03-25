@@ -605,6 +605,36 @@ namespace Cms.BatCave.Sonar.Agent
         /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task<System.Collections.Generic.ICollection<ServiceVersionDetails>> GetSpecificServiceVersionDetailsAsync(string environment, string tenant, string servicePath, System.Threading.CancellationToken cancellationToken);
 
+        /// <summary>
+        /// Get the version history for all services within the specified Tenant.
+        /// </summary>
+        /// <returns>Successfully retrieved the version history for all the Tenant's services.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task GetServicesVersionHistoryAsync(string environment, string tenant);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Get the version history for all services within the specified Tenant.
+        /// </summary>
+        /// <returns>Successfully retrieved the version history for all the Tenant's services.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task GetServicesVersionHistoryAsync(string environment, string tenant, System.Threading.CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Get the version history for a specific Service, specified by its path in the service hierarchy.
+        /// </summary>
+        /// <returns>Successfully retrieved the version history for the specified Service.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task GetServiceVersionHistoryAsync(string environment, string tenant, string servicePath);
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Get the version history for a specific Service, specified by its path in the service hierarchy.
+        /// </summary>
+        /// <returns>Successfully retrieved the version history for the specified Service.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        System.Threading.Tasks.Task GetServiceVersionHistoryAsync(string environment, string tenant, string servicePath, System.Threading.CancellationToken cancellationToken);
+
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NSwag", "13.18.2.0 (NJsonSchema v10.8.0.0 (Newtonsoft.Json v13.0.0.0))")]
@@ -4852,6 +4882,186 @@ namespace Cms.BatCave.Sonar.Agent
                         {
                             string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
                             throw new ApiException("Server Error", status_, responseText_, headers_, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Get the version history for all services within the specified Tenant.
+        /// </summary>
+        /// <returns>Successfully retrieved the version history for all the Tenant's services.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task GetServicesVersionHistoryAsync(string environment, string tenant)
+        {
+            return GetServicesVersionHistoryAsync(environment, tenant, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Get the version history for all services within the specified Tenant.
+        /// </summary>
+        /// <returns>Successfully retrieved the version history for all the Tenant's services.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task GetServicesVersionHistoryAsync(string environment, string tenant, System.Threading.CancellationToken cancellationToken)
+        {
+            if (environment == null)
+                throw new System.ArgumentNullException("environment");
+
+            if (tenant == null)
+                throw new System.ArgumentNullException("tenant");
+
+            var urlBuilder_ = new System.Text.StringBuilder();
+            urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/api/v2/version-history/{environment}/tenants/{tenant}");
+            urlBuilder_.Replace("{environment}", System.Uri.EscapeDataString(ConvertToString(environment, System.Globalization.CultureInfo.InvariantCulture)));
+            urlBuilder_.Replace("{tenant}", System.Uri.EscapeDataString(ConvertToString(tenant, System.Globalization.CultureInfo.InvariantCulture)));
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            return;
+                        }
+                        else
+                        if (status_ == 404)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("The specified environment or tenant does not exist.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Get the version history for a specific Service, specified by its path in the service hierarchy.
+        /// </summary>
+        /// <returns>Successfully retrieved the version history for the specified Service.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual System.Threading.Tasks.Task GetServiceVersionHistoryAsync(string environment, string tenant, string servicePath)
+        {
+            return GetServiceVersionHistoryAsync(environment, tenant, servicePath, System.Threading.CancellationToken.None);
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Get the version history for a specific Service, specified by its path in the service hierarchy.
+        /// </summary>
+        /// <returns>Successfully retrieved the version history for the specified Service.</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task GetServiceVersionHistoryAsync(string environment, string tenant, string servicePath, System.Threading.CancellationToken cancellationToken)
+        {
+            if (environment == null)
+                throw new System.ArgumentNullException("environment");
+
+            if (tenant == null)
+                throw new System.ArgumentNullException("tenant");
+
+            if (servicePath == null)
+                throw new System.ArgumentNullException("servicePath");
+
+            var urlBuilder_ = new System.Text.StringBuilder();
+            urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/api/v2/version-history/{environment}/tenants/{tenant}/services/{servicePath}");
+            urlBuilder_.Replace("{environment}", System.Uri.EscapeDataString(ConvertToString(environment, System.Globalization.CultureInfo.InvariantCulture)));
+            urlBuilder_.Replace("{tenant}", System.Uri.EscapeDataString(ConvertToString(tenant, System.Globalization.CultureInfo.InvariantCulture)));
+            urlBuilder_.Replace("{servicePath}", System.Uri.EscapeDataString(ConvertToString(servicePath, System.Globalization.CultureInfo.InvariantCulture)));
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = System.Linq.Enumerable.ToDictionary(response_.Headers, h_ => h_.Key, h_ => h_.Value);
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            return;
+                        }
+                        else
+                        if (status_ == 404)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("The specified environment, tenant, or service does not exist.", status_, responseText_, headers_, null);
                         }
                         else
                         {
