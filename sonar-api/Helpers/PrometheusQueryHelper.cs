@@ -152,29 +152,32 @@ public class PrometheusQueryHelper {
   public (DateTime, DateTime, Int32) ValidateParameters(
     DateTime? queryStart,
     DateTime? queryEnd,
-    Int32? queryStep) {
+    Int32? queryStepSeconds) {
 
-    var end = queryEnd?.ToUniversalTime() ?? DateTime.UtcNow;
-    var start = queryStart?.ToUniversalTime() ?? end.Subtract(TimeSpan.FromHours(1));
-    var step = queryStep ?? 30;
+    queryEnd ??= DateTime.UtcNow;
+    queryStart ??= queryEnd.Value.Subtract(TimeSpan.FromHours(1));
+    queryStepSeconds ??= 30;
 
-    var dataPoints = (end - start).TotalSeconds / step;
+    ValidationHelper.ValidateTimestampHasTimezone(queryEnd.Value, nameof(queryEnd));
+    ValidationHelper.ValidateTimestampHasTimezone(queryStart.Value, nameof(queryStart));
+
+    var dataPoints = (queryEnd - queryStart).Value.TotalSeconds / queryStepSeconds;
     if (dataPoints > 100) {
       throw new BadRequestException($"The number of data points (range in seconds / step in seconds) " +
         $"in the returned time series must be less than or equal to 100.");
     }
 
-    if (end <= start) {
+    if (queryEnd <= queryStart) {
       throw new BadRequestException("End date cannot be earlier or equal to the start date");
     }
 
     // End - Start cannot be greater than 7 days to be consistent with Metric history restriction.
-    if ((end - start) > TimeSpan.FromDays(7)) {
+    if ((queryEnd - queryStart) > QueryRangeMaximumNumberDays) {
       throw new BadRequestException(
-        $"The number of days must be less than or equal to {TimeSpan.FromDays(7).Days}"
+        $"The number of days must be less than or equal to {QueryRangeMaximumNumberDays}"
       );
     }
 
-    return (start, end, step);
+    return (queryStart.Value, queryEnd.Value, queryStepSeconds.Value);
   }
 }

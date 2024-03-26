@@ -20,18 +20,15 @@ public class PrometheusService : IPrometheusService {
   private readonly ILogger<PrometheusService> _logger;
   private readonly IPrometheusRemoteProtocolClient _prometheusRemoteProtocolClient;
   private readonly IPrometheusClient _prometheusClient;
-  private readonly PrometheusQueryHelper _prometheusQueryHelper;
 
   public PrometheusService(
     ILogger<PrometheusService> logger,
     IPrometheusRemoteProtocolClient prometheusRemoteProtocolClient,
-    IPrometheusClient prometheusClient,
-    PrometheusQueryHelper prometheusQueryHelper) {
+    IPrometheusClient prometheusClient) {
 
     this._logger = logger;
     this._prometheusRemoteProtocolClient = prometheusRemoteProtocolClient;
     this._prometheusClient = prometheusClient;
-    this._prometheusQueryHelper = prometheusQueryHelper;
   }
 
   /// <inheritdoc/>

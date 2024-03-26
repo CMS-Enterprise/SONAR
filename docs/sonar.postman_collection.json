@@ -1,11 +1,132 @@
 {
 	"info": {
-		"_postman_id": "cedd22d9-bc2c-4c4a-9705-b7aa71459052",
-		"name": "SONAR",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "30159347"
+		"_postman_id": "c914ab25-2849-4437-ba34-f28dc2a29c86",
+		"name": "SONAR Copy 3",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
+		{
+			"name": "Alerts",
+			"item": [
+				{
+					"name": "Silences",
+					"item": [
+						{
+							"name": "[JWT] Create Silence",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"alerting-test-app-is-offline\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{SONAR_BASE_URL}}/api/v2/alerts/silences/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE_PATH}}",
+									"host": [
+										"{{SONAR_BASE_URL}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"alerts",
+										"silences",
+										"{{TEST_ENVIRONMENT}}",
+										"tenants",
+										"{{TEST_TENANT}}",
+										"services",
+										"{{TEST_SERVICE_PATH}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "[JWT] Remove Silence",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{ID_TOKEN}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"alerting-test-app-is-offline\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{SONAR_BASE_URL}}/api/v2/alerts/silences/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE_PATH}}",
+									"host": [
+										"{{SONAR_BASE_URL}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"alerts",
+										"silences",
+										"{{TEST_ENVIRONMENT}}",
+										"tenants",
+										"{{TEST_TENANT}}",
+										"services",
+										"{{TEST_SERVICE_PATH}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Get Service Alerts",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/alerts/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE_PATH}}",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"alerts",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}",
+								"services",
+								"{{TEST_SERVICE_PATH}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
 		{
 			"name": "API Keys",
 			"item": [
@@ -1127,6 +1248,95 @@
 			]
 		},
 		{
+			"name": "Health-History",
+			"item": [
+				{
+					"name": "Get Service Health History",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/health-history/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE}}?step=10",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"health-history",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}",
+								"services",
+								"{{TEST_SERVICE}}"
+							],
+							"query": [
+								{
+									"key": "start",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "end",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "step",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Tenant Health History",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/health-history/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}?step=10",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"health-history",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}"
+							],
+							"query": [
+								{
+									"key": "start",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "end",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "step",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "Health-Check-Data",
 			"item": [
 				{
@@ -1326,14 +1536,6 @@
 					"script": {
 						"type": "text/javascript",
 						"exec": [
-							"var now = Date.now();",
-							"pm.environment.set(\"now\", new Date(now));",
-							"pm.environment.set(\"now_minus_5s\", new Date(now - 5 * 1000));",
-							"pm.environment.set(\"now_minus_10s\", new Date(now - 10 * 1000));",
-							"pm.environment.set(\"now_minus_15s\", new Date(now - 15 * 1000));",
-							"pm.environment.set(\"now_minus_20s\", new Date(now - 20 * 1000));",
-							"pm.environment.set(\"now_minus_30m\", new Date(now - 30 * 60 * 1000));",
-							"pm.environment.set(\"now_minus_61m\", new Date(now - 61 * 60 * 1000));",
 							""
 						]
 					}
@@ -1350,86 +1552,62 @@
 			]
 		},
 		{
-			"name": "Health-History",
+			"name": "Health-Check-History",
 			"item": [
 				{
-					"name": "Get Service Health History",
+					"name": "Health Check History Result",
 					"request": {
-						"auth": {
-							"type": "noauth"
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{SONAR_BASE_URL}}/api/v2/health-history/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE}}?step=10",
+							"raw": "{{SONAR_BASE_URL}}/api/v2/health-check-history/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE}}/health-check-result",
 							"host": [
 								"{{SONAR_BASE_URL}}"
 							],
 							"path": [
 								"api",
 								"v2",
-								"health-history",
+								"health-check-history",
 								"{{TEST_ENVIRONMENT}}",
 								"tenants",
 								"{{TEST_TENANT}}",
 								"services",
-								"{{TEST_SERVICE}}"
-							],
-							"query": [
-								{
-									"key": "start",
-									"value": "",
-									"disabled": true
-								},
-								{
-									"key": "end",
-									"value": "",
-									"disabled": true
-								},
-								{
-									"key": "step",
-									"value": "10"
-								}
+								"{{TEST_SERVICE}}",
+								"health-check-result"
 							]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "Get Tenant Health History",
+					"name": "Health Check History Time Series Results",
 					"request": {
-						"auth": {
-							"type": "noauth"
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{SONAR_BASE_URL}}/api/v2/health-history/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}?step=10",
+							"raw": "{{SONAR_BASE_URL}}/api/v2/health-check-history/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE}}/health-check-results?duration=100&start={{now}}",
 							"host": [
 								"{{SONAR_BASE_URL}}"
 							],
 							"path": [
 								"api",
 								"v2",
-								"health-history",
+								"health-check-history",
 								"{{TEST_ENVIRONMENT}}",
 								"tenants",
-								"{{TEST_TENANT}}"
+								"{{TEST_TENANT}}",
+								"services",
+								"{{TEST_SERVICE}}",
+								"health-check-results"
 							],
 							"query": [
 								{
+									"key": "duration",
+									"value": "100"
+								},
+								{
 									"key": "start",
-									"value": "",
-									"disabled": true
-								},
-								{
-									"key": "end",
-									"value": null,
-									"disabled": true
-								},
-								{
-									"key": "step",
-									"value": "10"
+									"value": "{{now}}"
 								}
 							]
 						}
@@ -2289,198 +2467,76 @@
 				}
 			]
 		},
-    {
-      "name": "Version-History",
-      "item": [
-        {
-          "name": "Get Tenant Services Version History",
-          "request": {
-            "auth": {
-              "type": "noauth"
-            },
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{SONAR_BASE_URL}}/api/v2/version-history/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}",
-              "host": [
-                "{{SONAR_BASE_URL}}"
-              ],
-              "path": [
-                "api",
-                "v2",
-                "version-history",
-                "{{TEST_ENVIRONMENT}}",
-                "tenants",
-                "{{TEST_TENANT}}"
-              ],
-              "query": [
-                {
-                  "key": "duration",
-                  "value": "120"
-                },
-                {
-                  "key": "timeQuery",
-                  "value": "{{now}}"
-                }
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Service Version History",
-          "request": {
-            "auth": {
-              "type": "noauth"
-            },
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{SONAR_BASE_URL}}/api/v2/version-history/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE}}",
-              "host": [
-                "{{SONAR_BASE_URL}}"
-              ],
-              "path": [
-                "api",
-                "v2",
-                "version-history",
-                "{{TEST_ENVIRONMENT}}",
-                "tenants",
-                "{{TEST_TENANT}}",
-                "services",
-                "{{TEST_SERVICE}}"
-              ],
-              "query": [
-                {
-                  "key": "duration",
-                  "value": "120"
-                },
-                {
-                  "key": "timeQuery",
-                  "value": "{{now}}"
-                }
-              ]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
 		{
-			"name": "Alerts",
+			"name": "Version-History",
 			"item": [
 				{
-					"name": "Silences",
-					"item": [
-						{
-							"name": "[JWT] Create Silence",
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"name\": \"alerting-test-app-is-offline\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{SONAR_BASE_URL}}/api/v2/alerts/silences/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE_PATH}}",
-									"host": [
-										"{{SONAR_BASE_URL}}"
-									],
-									"path": [
-										"api",
-										"v2",
-										"alerts",
-										"silences",
-										"{{TEST_ENVIRONMENT}}",
-										"tenants",
-										"{{TEST_TENANT}}",
-										"services",
-										"{{TEST_SERVICE_PATH}}"
-									]
-								}
-							},
-							"response": []
-						},
-						{
-							"name": "[JWT] Remove Silence",
-							"request": {
-								"auth": {
-									"type": "bearer",
-									"bearer": [
-										{
-											"key": "token",
-											"value": "{{ID_TOKEN}}",
-											"type": "string"
-										}
-									]
-								},
-								"method": "PUT",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"name\": \"alerting-test-app-is-offline\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{SONAR_BASE_URL}}/api/v2/alerts/silences/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE_PATH}}",
-									"host": [
-										"{{SONAR_BASE_URL}}"
-									],
-									"path": [
-										"api",
-										"v2",
-										"alerts",
-										"silences",
-										"{{TEST_ENVIRONMENT}}",
-										"tenants",
-										"{{TEST_TENANT}}",
-										"services",
-										"{{TEST_SERVICE_PATH}}"
-									]
-								}
-							},
-							"response": []
-						}
-					]
-				},
-				{
-					"name": "Get Service Alerts",
+					"name": "Get Tenant Services Version History",
 					"request": {
+						"auth": {
+							"type": "noauth"
+						},
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{SONAR_BASE_URL}}/api/v2/alerts/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE_PATH}}",
+							"raw": "{{SONAR_BASE_URL}}/api/v2/version-history/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}?duration=120&timeQuery={{now}}",
 							"host": [
 								"{{SONAR_BASE_URL}}"
 							],
 							"path": [
 								"api",
 								"v2",
-								"alerts",
+								"version-history",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}"
+							],
+							"query": [
+								{
+									"key": "duration",
+									"value": "120"
+								},
+								{
+									"key": "timeQuery",
+									"value": "{{now}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Service Version History",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/version-history/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE}}?duration=120&timeQuery={{now}}",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"version-history",
 								"{{TEST_ENVIRONMENT}}",
 								"tenants",
 								"{{TEST_TENANT}}",
 								"services",
-								"{{TEST_SERVICE_PATH}}"
+								"{{TEST_SERVICE}}"
+							],
+							"query": [
+								{
+									"key": "duration",
+									"value": "120"
+								},
+								{
+									"key": "timeQuery",
+									"value": "{{now}}"
+								}
 							]
 						}
 					},
@@ -2555,6 +2611,15 @@
 			"script": {
 				"type": "text/javascript",
 				"exec": [
+					"var now = Date.now();",
+					"pm.environment.set(\"now\", new Date(now));",
+					"pm.environment.set(\"now_minus_5s\", new Date(now - 5 * 1000));",
+					"pm.environment.set(\"now_minus_10s\", new Date(now - 10 * 1000));",
+					"pm.environment.set(\"now_minus_15s\", new Date(now - 15 * 1000));",
+					"pm.environment.set(\"now_minus_20s\", new Date(now - 20 * 1000));",
+					"pm.environment.set(\"now_minus_10m\", new Date(now - 10 * 60 * 1000))",
+					"pm.environment.set(\"now_minus_30m\", new Date(now - 30 * 60 * 1000));",
+					"pm.environment.set(\"now_minus_61m\", new Date(now - 61 * 60 * 1000));",
 					""
 				]
 			}

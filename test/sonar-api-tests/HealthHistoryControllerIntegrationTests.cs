@@ -333,48 +333,6 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
     }
   }
 
-  [Fact]
-  public async Task HistoricalHealthCheckTest() {
-
-    var testStatus = HealthStatus.Offline;
-    var (testEnvironment, testTenant) =
-      await this.CreateTestConfiguration(HealthHistoryControllerIntegrationTests.TestRootOnlyConfiguration);
-    var sampleTimestamp = DateTime.UtcNow.AddMinutes(-10);
-    var queryTimestamp = sampleTimestamp.AddMinutes(1);
-
-    await this.RecordServiceHealth(
-      testEnvironment,
-      testTenant,
-      HealthHistoryControllerIntegrationTests.RootServiceName,
-      HealthHistoryControllerIntegrationTests.HealthCheckName,
-      sampleTimestamp,
-      testStatus);
-
-    var getResponse = await
-      this.Fixture.Server.CreateRequest($"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}/services/{RootServiceName}/health-check-results?timeQuery={queryTimestamp.ToString("yyyy-MM-ddTHH:mm:ssZ")}")
-        .AddHeader(name: "Accept", value: "application/json")
-        .GetAsync();
-
-    Assert.Equal(
-      expected: HttpStatusCode.OK,
-      actual: getResponse.StatusCode);
-
-    var body = await getResponse.Content
-      .ReadFromJsonAsync<Dictionary<String, (DateTime Timestamp, HealthStatus Status)>>(
-        HealthControllerIntegrationTests.SerializerOptions
-      );
-
-    Assert.NotNull(body);
-    var healthCheckHistory = Assert.Single(body);
-
-    // create new timestamp without milliseconds since prometheus query doesn't return timestamps with ms.
-    var truncatedQueryTimestamp = new DateTime(queryTimestamp.Year, queryTimestamp.Month, queryTimestamp.Day,
-      queryTimestamp.Hour, queryTimestamp.Minute, queryTimestamp.Second);
-    Assert.Equal(HealthCheckName, healthCheckHistory.Key);
-    Assert.Equal(truncatedQueryTimestamp, healthCheckHistory.Value.Timestamp);
-    Assert.Equal(testStatus, healthCheckHistory.Value.Status);
-  }
-
   /// <summary>
   ///   This test validates that the GetServiceHealthHistory endpoint is correctly
   ///   aggregating the worst status over a given step.
@@ -461,7 +419,7 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
 
     var getResponse = await
       this.Fixture.CreateAdminRequest(
-          $"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?start={start}&end={end}&step={Step}")
+          $"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?start={start:o}&end={end:o}&step={Step}")
         .GetAsync();
 
     Assert.True(
@@ -491,7 +449,7 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
 
     var getResponse = await
       this.Fixture.CreateAuthenticatedRequest(
-          $"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?start={start}&end={end}&step={Step}",
+          $"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?start={start:o}&end={end:o}&step={Step}",
           PermissionType.Standard,
           testEnvironment,
           testTenant)
@@ -524,7 +482,7 @@ public class HealthHistoryControllerIntegrationTests : ApiControllerTestsBase {
 
     var getResponse = await
       this.Fixture.Server.CreateRequest(
-          $"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?start={start}&end={end}&step={Step}")
+          $"/api/v2/health-history/{testEnvironment}/tenants/{testTenant}?start={start:O}&end={end:O}&step={Step}")
         .GetAsync();
 
     Assert.True(

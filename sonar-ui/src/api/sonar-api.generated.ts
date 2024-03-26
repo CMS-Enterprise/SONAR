@@ -437,7 +437,7 @@ tenant, service, and health check in Prometheus. Filters out samples outside of 
    *
    * @tags HealthCheckHistory
    * @name GetHealthCheckResultForService
-   * @summary Retrieves the instantaneous prometheus health status each healthcheck given the service.
+   * @summary Retrieves the instantaneous prometheus health status for each healthcheck given the service at a specific time.
    * @request GET:/api/v2/health-check-history/{environment}/tenants/{tenant}/services/{service}/health-check-result
    */
   getHealthCheckResultForService = (
@@ -462,9 +462,8 @@ tenant, service, and health check in Prometheus. Filters out samples outside of 
  *
  * @tags HealthCheckHistory
  * @name GetHealthCheckResultsForService
- * @summary Retrieves prometheus health status time series for each healthcheck given the
-service. Filters out samples outside of the given start and end date time
-(or if those are not given, filters out samples from more than 10 minutes ago UTC) prior to calling P8s.
+ * @summary Retrieves the prometheus health status time series for each healthcheck given the
+service. Filters out samples outside of the given start and end date time.
  * @request GET:/api/v2/health-check-history/{environment}/tenants/{tenant}/services/{service}/health-check-results
  */
   getHealthCheckResultsForService = (
@@ -473,9 +472,9 @@ service. Filters out samples outside of the given start and end date time
     service: string,
     query?: {
       /** @format date-time */
-      queryStart?: string;
+      start?: string;
       /** @format date-time */
-      queryEnd?: string;
+      end?: string;
       /** @format int32 */
       step?: number;
     },

@@ -6,15 +6,11 @@ using Cms.BatCave.Sonar.Enumeration;
 
 namespace Cms.BatCave.Sonar.Models;
 
-public class HealthCheckHistory {
-
-    public HealthCheckHistory(
-      List<Dictionary<String, List<(DateTime, HealthStatus)>>> healthChecks) {
-
+public record HealthCheckHistory {
+  public HealthCheckHistory(Dictionary<String, List<(DateTime, HealthStatus)>> healthChecks) {
     this.HealthChecks = healthChecks;
   }
 
   [Required]
-  public List<Dictionary<String, List<(DateTime, HealthStatus)>>> HealthChecks { get; init; }
-
+  public Dictionary<String, List<(DateTime, HealthStatus)>> HealthChecks { get; init; }
 }

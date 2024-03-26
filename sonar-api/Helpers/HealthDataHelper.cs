@@ -10,7 +10,6 @@ using Cms.BatCave.Sonar.Alertmanager;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Enumeration;
-using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Models;
 using Cms.BatCave.Sonar.Prometheus;
 using k8s.Models;
@@ -707,7 +706,7 @@ public class HealthDataHelper {
     return result;
   }
 
-  public async Task<Dictionary<String, List<(DateTime Timestamp, HealthStatus Value)>>> GetHealthCheckResultsForService(
+  public async Task<List<(DateTime Timestamp, HealthStatus Value)>> GetHealthCheckResultsForService(
   String environment,
   String tenant,
   String service,
@@ -717,86 +716,80 @@ public class HealthDataHelper {
   Int32 step,
   CancellationToken cancellationToken) {
 
-  // Example query:
-  // TODO sonar_healthcheck_data{environment='foo',tenant='baz',service='my-root',check='my-root-health-check'}[start:end]
-  var query = String.Format(
-    format: "max_over_time({0}{{environment='{1}',tenant='{2}',service='{3}',check='{4}'}}[{5}])",
-    HealthDataHelper.ServiceHealthCheckMetricName,
-    environment,
-    tenant,
-    service,
-    healthCheck,
-    PrometheusClient.ToPrometheusDuration(TimeSpan.FromSeconds(step)));
+    // Example query:
+    // sonar_healthcheck_data{environment='foo',tenant='baz',service='test-metric-app',check='example'}[100s]
+    var query = String.Format(
+      format: "max_over_time({0}{{environment='{1}',tenant='{2}',service='{3}',check='{4}'}}[{5}])",
+      HealthDataHelper.ServiceHealthCheckMetricName,
+      environment,
+      tenant,
+      service,
+      healthCheck,
+      PrometheusClient.ToPrometheusDuration(TimeSpan.FromSeconds(step)));
 
-  this._logger.LogDebug(
-    "Querying health check data timestamps from {start} to {end} (UTC): {query}",
-    start, end, query);
-
-  var result = await this._prometheusQueryHelper.GetPrometheusQueryRangeValue(
-    "healthCheck history",
-    query,
-    start,
-    end,
-    TimeSpan.FromSeconds(step),
-    processResult: results => {
-      // StateSet metrics are split into separate metric per-state
-      // This code groups all the metrics for a given service and then determines which state is currently set.
-      var metricByService =
-        results.Result
-          .Where(series => series.Values != null)
-          .Select(series => (series.Labels, series.Values!.ToList()))
-          .ToLookup(
-            keySelector: metric =>
-              metric.Labels.TryGetValue("check", out var healthCheckName) ?
-                healthCheckName :
-                null, StringComparer.OrdinalIgnoreCase);
-
-      var healthCheckStatusHistoryDictionary = new Dictionary<String, List<(DateTime Timestamp, HealthStatus Value)>>();
-      // Iterate though the services grouping and create a time series list of each health status.
-      foreach (var service in metricByService) {
-        if (service.Key is null) {
-          throw new InvalidOperationException("The time series for health status is missing the service label");
-        }
+    return await this._prometheusQueryHelper.GetPrometheusQueryRangeValue(
+      "health check history",
+      query,
+      start,
+      end,
+      TimeSpan.FromSeconds(step),
+      processResult: results => {
+        // StateSet metrics are split into separate metric per-state
+        // This code groups all the metrics for a given service and then determines which state is currently set.
+        var metricByService = //TODO rename Healthcheck
+          results.Result
+            .Where(series => series.Values != null && series.Values.Any())
+            .Select(series => (series.Labels, series.Values!.ToList()))
+            .ToLookup(
+              keySelector: metric =>
+                metric.Labels.TryGetValue(MetricLabelKeys.HealthCheck, out var healthCheckName) ?
+                  healthCheckName :
+                  null, StringComparer.OrdinalIgnoreCase);
 
         var statusList = new List<(DateTime, HealthStatus)>();
-
-        // group metrics by timestamp to determine worst status at that particular time
-        // resulting data structure will look like:
-        //  timestamp: [ { labels, value }, { labels, value } ]
-        var r = service.SelectMany(e => e.Item2.Select(timestampValTuple => new { e.Labels, timestampValTuple }))
-          .GroupBy(
-            val => val.timestampValTuple.Timestamp,
-            val => (val.Labels, val.timestampValTuple.Value));
-
-        foreach (var timestampGroup in r) {
-          var statusTimestamp = DateTime.UnixEpoch.AddSeconds((Double)timestampGroup.Key);
-          HealthStatus? status = null;
-
-          // only iterate over values that have a reported status, determine the worst status in that subset
-          foreach (var metric in timestampGroup
-            .Where(e => e.Value == "1")) {
-
-            // throw exception if metric does not have the sonar health status label
-            if (!metric.Labels.TryGetValue("sonar_service_health_check_status",
-              out var healthStatusValue)) {
-              throw new InvalidOperationException("The times series for a health status is missing a status label");
-            }
-
-            if (Enum.TryParse<HealthStatus>(healthStatusValue, out var value)) {
-              status = value;
-            }
+        // Iterate though the services grouping and create a time series list of each health status.
+        foreach (var svc in metricByService) {
+          if (svc.Key is null) {
+            throw new InvalidOperationException("The time series for health status is missing the service label");
           }
-          statusList.Add((statusTimestamp, status ?? HealthStatus.Unknown));
+
+          // group metrics by timestamp to determine worst status at that particular time
+          // resulting data structure will look like:
+          //  timestamp: [ { labels, value }, { labels, value } ]
+          var r = svc.SelectMany(e => e.Item2.Select(timestampValTuple => new { e.Labels, timestampValTuple }))
+            .GroupBy(
+              val => val.timestampValTuple.Timestamp,
+              val => (val.Labels, val.timestampValTuple.Value));
+
+          foreach (var timestampGroup in r) {
+            var statusTimestamp = DateTime.UnixEpoch.AddSeconds((Double)timestampGroup.Key);
+            HealthStatus? worstStatus = null;
+
+            // only iterate over values that have a reported status, determine the worst status in that subset
+            foreach (var metric in timestampGroup
+              .Where(e => e.Value == "1")) {
+
+              // throw exception if metric does not have the sonar health status label
+              if (!metric.Labels.TryGetValue(ServiceHealthCheckMetricName,
+                out var healthStatusValue)) {
+                throw new InvalidOperationException("The times series for a health status is missing a status label");
+              }
+
+              // if extracted health status is valid, determine the worst status
+              if (Enum.TryParse<HealthStatus>(healthStatusValue, out var status)) {
+                if (!worstStatus.HasValue ||
+                  status.IsWorseThan((HealthStatus)worstStatus)) {
+                  worstStatus = status;
+                }
+              }
+            }
+            statusList.Add((statusTimestamp, worstStatus ?? HealthStatus.Unknown));
+          }
         }
-
-        healthCheckStatusHistoryDictionary.Add(service.Key, statusList);
-      }
-      return healthCheckStatusHistoryDictionary;
-    },
-    cancellationToken);
-
-  return result;
-}
+        return statusList;
+      },
+      cancellationToken);
+  }
 
   private DateTime ConvertDecimalTimestampToDateTime(Decimal timestamp) {
     return DateTime.UnixEpoch.AddMilliseconds((Int64)(timestamp * 1000));
