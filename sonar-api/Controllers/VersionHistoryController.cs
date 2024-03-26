@@ -13,6 +13,7 @@ using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
 using PrometheusQuerySdk;
+using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
 
 namespace Cms.BatCave.Sonar.Controllers;
 
@@ -49,8 +50,8 @@ public class VersionHistoryController : ControllerBase {
   /// <response code="404">The specified environment or tenant does not exist.</response>
   [HttpGet("{environment}/tenants/{tenant}", Name = "GetServicesVersionHistory")]
   [ProducesResponseType(typeof(ServiceVersionHistory[]), statusCode: 200)]
-  [ProducesResponseType(typeof(BadRequestException), statusCode: 400)]
-  [ProducesResponseType(typeof(ResourceNotFoundException), statusCode: 404)]
+  [ProducesResponseType(typeof(ProblemDetails), statusCode: 400)]
+  [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
   public async Task<IActionResult> GetServicesVersionHistory(
     [FromRoute] String environment,
     [FromRoute] String tenant,
@@ -103,8 +104,8 @@ public class VersionHistoryController : ControllerBase {
   /// <response code="404">The specified environment, tenant, or service does not exist.</response>
   [HttpGet("{environment}/tenants/{tenant}/services/{*servicePath}", Name = "GetServiceVersionHistory")]
   [ProducesResponseType(typeof(ServiceVersionHistory), statusCode: 200)]
-  [ProducesResponseType(typeof(BadRequestException), statusCode: 400)]
-  [ProducesResponseType(typeof(ResourceNotFoundException), statusCode: 404)]
+  [ProducesResponseType(typeof(ProblemDetails), statusCode: 400)]
+  [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
   public async Task<IActionResult> GetServiceVersionHistory(
     [FromRoute] String environment,
     [FromRoute] String tenant,

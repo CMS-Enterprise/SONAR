@@ -15,7 +15,6 @@ import {
   AlertSilenceDetails,
   ApiKeyConfiguration,
   ApiKeyDetails,
-  BadRequestException,
   CurrentUserView,
   DateTimeHealthStatusValueTuple,
   EnvironmentHealth,
@@ -25,7 +24,6 @@ import {
   PermissionConfiguration,
   PermissionDetails,
   ProblemDetails,
-  ResourceNotFoundException,
   ServiceAlert,
   ServiceHealth,
   ServiceHealthData,
@@ -831,7 +829,7 @@ to the requested environment/tenant.
     },
     params: RequestParams = {},
   ) =>
-    this.request<ServiceVersionHistory[], BadRequestException | ResourceNotFoundException>({
+    this.request<ServiceVersionHistory[], ProblemDetails>({
       path: `/api/v2/version-history/${environment}/tenants/${tenant}`,
       method: "GET",
       query: query,
@@ -864,7 +862,7 @@ to the requested environment/tenant.
     },
     params: RequestParams = {},
   ) =>
-    this.request<ServiceVersionHistory, BadRequestException | ResourceNotFoundException>({
+    this.request<ServiceVersionHistory, ProblemDetails>({
       path: `/api/v2/version-history/${environment}/tenants/${tenant}/services/${servicePath}`,
       method: "GET",
       query: query,

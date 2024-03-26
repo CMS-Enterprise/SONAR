@@ -608,32 +608,50 @@ namespace Cms.BatCave.Sonar.Agent
         /// <summary>
         /// Get the version history for all services within the specified Tenant.
         /// </summary>
+        /// <param name="environment">The name of the environment.</param>
+        /// <param name="tenant">The name of the tenant.</param>
+        /// <param name="duration">How far back in time values should be fetched (in seconds).</param>
+        /// <param name="timeQuery">The timestamp at which to sample data.</param>
         /// <returns>Successfully retrieved the version history for all the Tenant's services.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task GetServicesVersionHistoryAsync(string environment, string tenant);
+        System.Threading.Tasks.Task<System.Collections.Generic.ICollection<ServiceVersionHistory>> GetServicesVersionHistoryAsync(string environment, string tenant, int? duration, System.DateTimeOffset? timeQuery);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <summary>
         /// Get the version history for all services within the specified Tenant.
         /// </summary>
+        /// <param name="environment">The name of the environment.</param>
+        /// <param name="tenant">The name of the tenant.</param>
+        /// <param name="duration">How far back in time values should be fetched (in seconds).</param>
+        /// <param name="timeQuery">The timestamp at which to sample data.</param>
         /// <returns>Successfully retrieved the version history for all the Tenant's services.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task GetServicesVersionHistoryAsync(string environment, string tenant, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task<System.Collections.Generic.ICollection<ServiceVersionHistory>> GetServicesVersionHistoryAsync(string environment, string tenant, int? duration, System.DateTimeOffset? timeQuery, System.Threading.CancellationToken cancellationToken);
 
         /// <summary>
         /// Get the version history for a specific Service, specified by its path in the service hierarchy.
         /// </summary>
+        /// <param name="environment">The name of the environment.</param>
+        /// <param name="tenant">The name of the tenant.</param>
+        /// <param name="servicePath">The path to the service in the service hierarchy.</param>
+        /// <param name="duration">How far back in time values should be fetched (in seconds).</param>
+        /// <param name="timeQuery">The timestamp at which to sample data.</param>
         /// <returns>Successfully retrieved the version history for the specified Service.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task GetServiceVersionHistoryAsync(string environment, string tenant, string servicePath);
+        System.Threading.Tasks.Task<ServiceVersionHistory> GetServiceVersionHistoryAsync(string environment, string tenant, string servicePath, int? duration, System.DateTimeOffset? timeQuery);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <summary>
         /// Get the version history for a specific Service, specified by its path in the service hierarchy.
         /// </summary>
+        /// <param name="environment">The name of the environment.</param>
+        /// <param name="tenant">The name of the tenant.</param>
+        /// <param name="servicePath">The path to the service in the service hierarchy.</param>
+        /// <param name="duration">How far back in time values should be fetched (in seconds).</param>
+        /// <param name="timeQuery">The timestamp at which to sample data.</param>
         /// <returns>Successfully retrieved the version history for the specified Service.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task GetServiceVersionHistoryAsync(string environment, string tenant, string servicePath, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task<ServiceVersionHistory> GetServiceVersionHistoryAsync(string environment, string tenant, string servicePath, int? duration, System.DateTimeOffset? timeQuery, System.Threading.CancellationToken cancellationToken);
 
     }
 
@@ -4906,20 +4924,28 @@ namespace Cms.BatCave.Sonar.Agent
         /// <summary>
         /// Get the version history for all services within the specified Tenant.
         /// </summary>
+        /// <param name="environment">The name of the environment.</param>
+        /// <param name="tenant">The name of the tenant.</param>
+        /// <param name="duration">How far back in time values should be fetched (in seconds).</param>
+        /// <param name="timeQuery">The timestamp at which to sample data.</param>
         /// <returns>Successfully retrieved the version history for all the Tenant's services.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task GetServicesVersionHistoryAsync(string environment, string tenant)
+        public virtual System.Threading.Tasks.Task<System.Collections.Generic.ICollection<ServiceVersionHistory>> GetServicesVersionHistoryAsync(string environment, string tenant, int? duration, System.DateTimeOffset? timeQuery)
         {
-            return GetServicesVersionHistoryAsync(environment, tenant, System.Threading.CancellationToken.None);
+            return GetServicesVersionHistoryAsync(environment, tenant, duration, timeQuery, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <summary>
         /// Get the version history for all services within the specified Tenant.
         /// </summary>
+        /// <param name="environment">The name of the environment.</param>
+        /// <param name="tenant">The name of the tenant.</param>
+        /// <param name="duration">How far back in time values should be fetched (in seconds).</param>
+        /// <param name="timeQuery">The timestamp at which to sample data.</param>
         /// <returns>Successfully retrieved the version history for all the Tenant's services.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task GetServicesVersionHistoryAsync(string environment, string tenant, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<System.Collections.Generic.ICollection<ServiceVersionHistory>> GetServicesVersionHistoryAsync(string environment, string tenant, int? duration, System.DateTimeOffset? timeQuery, System.Threading.CancellationToken cancellationToken)
         {
             if (environment == null)
                 throw new System.ArgumentNullException("environment");
@@ -4928,9 +4954,18 @@ namespace Cms.BatCave.Sonar.Agent
                 throw new System.ArgumentNullException("tenant");
 
             var urlBuilder_ = new System.Text.StringBuilder();
-            urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/api/v2/version-history/{environment}/tenants/{tenant}");
+            urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/api/v2/version-history/{environment}/tenants/{tenant}?");
             urlBuilder_.Replace("{environment}", System.Uri.EscapeDataString(ConvertToString(environment, System.Globalization.CultureInfo.InvariantCulture)));
             urlBuilder_.Replace("{tenant}", System.Uri.EscapeDataString(ConvertToString(tenant, System.Globalization.CultureInfo.InvariantCulture)));
+            if (duration != null)
+            {
+                urlBuilder_.Append(System.Uri.EscapeDataString("duration") + "=").Append(System.Uri.EscapeDataString(ConvertToString(duration, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            }
+            if (timeQuery != null)
+            {
+                urlBuilder_.Append(System.Uri.EscapeDataString("timeQuery") + "=").Append(System.Uri.EscapeDataString(timeQuery.Value.ToString("s", System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            }
+            urlBuilder_.Length--;
 
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -4939,6 +4974,7 @@ namespace Cms.BatCave.Sonar.Agent
                 using (var request_ = new System.Net.Http.HttpRequestMessage())
                 {
                     request_.Method = new System.Net.Http.HttpMethod("GET");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     PrepareRequest(client_, request_, urlBuilder_);
 
@@ -4963,13 +4999,32 @@ namespace Cms.BatCave.Sonar.Agent
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            return;
+                            var objectResponse_ = await ReadObjectResponseAsync<System.Collections.Generic.ICollection<ServiceVersionHistory>>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("The given timestamp was not expressed in UTC.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 404)
                         {
-                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
-                            throw new ApiException("The specified environment or tenant does not exist.", status_, responseText_, headers_, null);
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("The specified environment or tenant does not exist.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         {
@@ -4994,20 +5049,30 @@ namespace Cms.BatCave.Sonar.Agent
         /// <summary>
         /// Get the version history for a specific Service, specified by its path in the service hierarchy.
         /// </summary>
+        /// <param name="environment">The name of the environment.</param>
+        /// <param name="tenant">The name of the tenant.</param>
+        /// <param name="servicePath">The path to the service in the service hierarchy.</param>
+        /// <param name="duration">How far back in time values should be fetched (in seconds).</param>
+        /// <param name="timeQuery">The timestamp at which to sample data.</param>
         /// <returns>Successfully retrieved the version history for the specified Service.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task GetServiceVersionHistoryAsync(string environment, string tenant, string servicePath)
+        public virtual System.Threading.Tasks.Task<ServiceVersionHistory> GetServiceVersionHistoryAsync(string environment, string tenant, string servicePath, int? duration, System.DateTimeOffset? timeQuery)
         {
-            return GetServiceVersionHistoryAsync(environment, tenant, servicePath, System.Threading.CancellationToken.None);
+            return GetServiceVersionHistoryAsync(environment, tenant, servicePath, duration, timeQuery, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <summary>
         /// Get the version history for a specific Service, specified by its path in the service hierarchy.
         /// </summary>
+        /// <param name="environment">The name of the environment.</param>
+        /// <param name="tenant">The name of the tenant.</param>
+        /// <param name="servicePath">The path to the service in the service hierarchy.</param>
+        /// <param name="duration">How far back in time values should be fetched (in seconds).</param>
+        /// <param name="timeQuery">The timestamp at which to sample data.</param>
         /// <returns>Successfully retrieved the version history for the specified Service.</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task GetServiceVersionHistoryAsync(string environment, string tenant, string servicePath, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<ServiceVersionHistory> GetServiceVersionHistoryAsync(string environment, string tenant, string servicePath, int? duration, System.DateTimeOffset? timeQuery, System.Threading.CancellationToken cancellationToken)
         {
             if (environment == null)
                 throw new System.ArgumentNullException("environment");
@@ -5019,10 +5084,19 @@ namespace Cms.BatCave.Sonar.Agent
                 throw new System.ArgumentNullException("servicePath");
 
             var urlBuilder_ = new System.Text.StringBuilder();
-            urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/api/v2/version-history/{environment}/tenants/{tenant}/services/{servicePath}");
+            urlBuilder_.Append(BaseUrl != null ? BaseUrl.TrimEnd('/') : "").Append("/api/v2/version-history/{environment}/tenants/{tenant}/services/{servicePath}?");
             urlBuilder_.Replace("{environment}", System.Uri.EscapeDataString(ConvertToString(environment, System.Globalization.CultureInfo.InvariantCulture)));
             urlBuilder_.Replace("{tenant}", System.Uri.EscapeDataString(ConvertToString(tenant, System.Globalization.CultureInfo.InvariantCulture)));
             urlBuilder_.Replace("{servicePath}", System.Uri.EscapeDataString(ConvertToString(servicePath, System.Globalization.CultureInfo.InvariantCulture)));
+            if (duration != null)
+            {
+                urlBuilder_.Append(System.Uri.EscapeDataString("duration") + "=").Append(System.Uri.EscapeDataString(ConvertToString(duration, System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            }
+            if (timeQuery != null)
+            {
+                urlBuilder_.Append(System.Uri.EscapeDataString("timeQuery") + "=").Append(System.Uri.EscapeDataString(timeQuery.Value.ToString("s", System.Globalization.CultureInfo.InvariantCulture))).Append("&");
+            }
+            urlBuilder_.Length--;
 
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -5031,6 +5105,7 @@ namespace Cms.BatCave.Sonar.Agent
                 using (var request_ = new System.Net.Http.HttpRequestMessage())
                 {
                     request_.Method = new System.Net.Http.HttpMethod("GET");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
                     PrepareRequest(client_, request_, urlBuilder_);
 
@@ -5055,13 +5130,32 @@ namespace Cms.BatCave.Sonar.Agent
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            return;
+                            var objectResponse_ = await ReadObjectResponseAsync<ServiceVersionHistory>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("The given timestamp was not expressed in UTC.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         if (status_ == 404)
                         {
-                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
-                            throw new ApiException("The specified environment, tenant, or service does not exist.", status_, responseText_, headers_, null);
+                            var objectResponse_ = await ReadObjectResponseAsync<ProblemDetails>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ProblemDetails>("The specified environment, tenant, or service does not exist.", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
                         }
                         else
                         {
