@@ -32,6 +32,8 @@ public class DbMigrationService : IDbMigrationService {
 
   /// <inheritdoc />
   public async Task<Boolean> MigrateDbAsync(CancellationToken cancellationToken = default) {
+    this.LogSearchPaths();
+
     await using var transaction = await this.LockMigrationsHistoryTable(cancellationToken);
 
     var pendingMigrations =
@@ -101,17 +103,21 @@ public class DbMigrationService : IDbMigrationService {
 
   /// <inheritdoc />
   public async Task<Boolean> ProvisionMigrationsHistoryTable(CancellationToken cancellationToken = default) {
+    var dbUsername = this._databaseConfiguration.Value.Username;
+    var dbSchema = this._databaseConfiguration.Value.MigrationsHistoryTableSchema;
     var provisionMigrationsHistoryTableSql = $@"
       BEGIN;
 
-      CREATE TABLE ""__EFMigrationsHistory"" (
+      CREATE SCHEMA IF NOT EXISTS {dbSchema} AUTHORIZATION {dbUsername};
+
+      CREATE TABLE {dbSchema}.""__EFMigrationsHistory"" (
         migration_id character varying(150) NOT NULL,
         product_version character varying(32) NOT NULL
       );
 
-      ALTER TABLE ""__EFMigrationsHistory"" OWNER TO {this._databaseConfiguration.Value.Username};
+      ALTER TABLE {dbSchema}.""__EFMigrationsHistory"" OWNER TO {dbUsername};
 
-      ALTER TABLE ONLY ""__EFMigrationsHistory""
+      ALTER TABLE ONLY {dbSchema}.""__EFMigrationsHistory""
         ADD CONSTRAINT pk__ef_migrations_history PRIMARY KEY (migration_id);
 
       COMMIT;
@@ -131,12 +137,13 @@ public class DbMigrationService : IDbMigrationService {
   }
 
   private async Task<IDbContextTransaction> LockMigrationsHistoryTable(CancellationToken cancellationToken = default) {
+    var dbSchema = this._databaseConfiguration.Value.MigrationsHistoryTableSchema;
     var transaction = await this._dataContext.Database.BeginTransactionAsync(cancellationToken);
-
+    var lockSql = $@"LOCK TABLE ONLY {dbSchema}.""__EFMigrationsHistory"" IN ACCESS EXCLUSIVE MODE;";
     this._logger.LogInformation("Awaiting lock on migrations history table to perform database migrations.");
 
     await this._dataContext.Database.ExecuteSqlRawAsync(
-      sql: @"LOCK TABLE ONLY ""__EFMigrationsHistory"" IN ACCESS EXCLUSIVE MODE;",
+      sql: lockSql,
       cancellationToken);
 
     this._logger.LogInformation("Migrations history table lock acquired.");
@@ -147,5 +154,11 @@ public class DbMigrationService : IDbMigrationService {
   private async Task MigrateDbTo(String targetMigration, CancellationToken cancellationToken) {
     var migrator = this._dataContext.Database.GetInfrastructure().GetRequiredService<IMigrator>();
     await migrator.MigrateAsync(targetMigration, cancellationToken);
+  }
+
+  private void LogSearchPaths() {
+    this._logger.LogInformation(
+      message: "Search paths: {searchPaths}",
+      String.Join(", ", this._dataContext.Database.SqlQueryRaw<String>("SHOW search_path").ToList()));
   }
 }

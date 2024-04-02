@@ -1,6 +1,7 @@
 using System;
 using Cms.BatCave.Sonar.Configuration;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Npgsql;
@@ -26,11 +27,13 @@ public class DataContext : DbContext {
       Port = configInstance.Port,
       Username = configInstance.Username,
       Password = configInstance.Password,
-      Database = configInstance.Database
+      Database = configInstance.Database,
     };
 
     options
-      .UseNpgsql(connectionStringBuilder.ToString())
+      .UseNpgsql(connectionStringBuilder.ToString(), o => {
+        o.MigrationsHistoryTable(HistoryRepository.DefaultTableName, configInstance.MigrationsHistoryTableSchema);
+      })
       .UseSnakeCaseNamingConvention()
       .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking)
       .AddInterceptors(new DbMetrics());

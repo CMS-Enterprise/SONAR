@@ -9,4 +9,5 @@ public record DatabaseConfiguration(
   String Username = "root",
   String Password = "password",
   String Database = "sonar",
-  Boolean DbLogging = false);
+  Boolean DbLogging = false,
+  String MigrationsHistoryTableSchema = "public");
