@@ -1,3 +1,41 @@
+## 0.6.3
+
+### Resolve BATAPI-660 "Sonar test schema bug"
+
+* [view commit 9279d9d4](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/9279d9d49633350838cc22d42b3037ffe758c70d)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Tue, 2 Apr 2024 23:10:29 +0000
+
+```
+Closes BATAPI-660
+
+## Description:
+
+* implement workaround using migrationshistoryschema
+
+Closes BATAPI-660
+```
+
+### BATAPI-661: fixed ProduceResponseType and regenerated the UI and Agent autogen code
+
+* [view commit 128a83a2](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/128a83a2d8f9775df0544d4804cf55e5a904e730)
+* Author (Committer): Teresa Tran (Teresa Tran)
+* Date: Tue, 26 Mar 2024 10:34:36 -0700
+
+
+
+### BATAPI-417: added API controller and tests for fetching the version history of a service or tenant's services
+
+* [view commit 978f3424](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/978f3424f7d632600a41f294df926575cdfde6e0)
+* Author (Committer): Teresa Tran (Teresa Tran)
+* Date: Mon, 25 Mar 2024 17:11:30 +0000
+
+```
+Closes BATAPI-417
+
+## Description:
+
+* Add API controller to fetch historical time series of a version for a service or a tenant's services.
 ## 0.6.2
 
 ### fix bug for internal health checks not displaying in status drawer
