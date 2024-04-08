@@ -389,17 +389,28 @@ public class HealthDataHelper {
   public async Task<List<ServiceHierarchyHealth>> CheckSonarHealth(
     CancellationToken cancellationToken) {
 
-    var sonarHealthCheckTasks = new List<Task<ServiceHierarchyHealth>> {
-      this.RunPostgresHealthCheck(cancellationToken),
-      this.RunPrometheusSelfCheck(cancellationToken),
-      this.RunAlertDeliveryHealthChecks(cancellationToken)
+    // Put sonar health check task delegates into a list to be executed serially.
+    // For health check tasks that talk to the DB, only one of them may use the data context's DB connection at a time within the same IServiceProvider scope (this is an EntityFramework restriction).
+    // If we execute two or more such tasks concurrently, we run the risk of a race condition causing a "connection already open" exception from one of the tasks, so we execute the health checks one at a time.
+    var coldHealthCheckTasks = new List<Func<Task<ServiceHierarchyHealth>>> {
+      () => this.RunPostgresHealthCheck(cancellationToken),
+      () => this.RunPrometheusSelfCheck(cancellationToken),
+      () => this.RunAlertDeliveryHealthChecks(cancellationToken)
     };
 
     if (this._kubernetesApiAccessConfig.Value.IsEnabled) {
-      sonarHealthCheckTasks.Add(this.RunAlertingConfigHealthCheck(cancellationToken));
+      coldHealthCheckTasks.Add(
+        () => this.RunAlertingConfigHealthCheck(cancellationToken));
     }
 
-    return (await Task.WhenAll(sonarHealthCheckTasks)).ToList();
+    var sonarHealthCheckResults = new List<ServiceHierarchyHealth>();
+
+    // Run each "cold" task serially
+    foreach (var healthCheckTask in coldHealthCheckTasks) {
+      sonarHealthCheckResults.Add(await healthCheckTask());
+    }
+
+    return sonarHealthCheckResults;
   }
 
   private async Task<ServiceHierarchyHealth> RunAlertDeliveryHealthChecks(CancellationToken cancellationToken) {
@@ -446,6 +457,8 @@ public class HealthDataHelper {
 
     try {
       await _dbContext.Database.OpenConnectionAsync(cancellationToken: cancellationToken);
+      // We manually opened the db connection, so we need to manually close the connection
+      await this._dbContext.Database.CloseConnectionAsync();
     } catch (InvalidOperationException e) {
       // Db connection issue
       this._logger.LogError(
