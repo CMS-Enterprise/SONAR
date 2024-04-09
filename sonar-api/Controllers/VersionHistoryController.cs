@@ -293,9 +293,7 @@ public class VersionHistoryController : ControllerBase {
     var queryDuration = PrometheusClient.ToPrometheusDuration(TimeSpan.FromSeconds(durationInSeconds));
 
     var queryTimestamp = timeQuery ?? DateTime.UtcNow;
-    if (queryTimestamp.Kind != DateTimeKind.Utc) {
-      throw new BadRequestException("Invalid timestamp. Time must be expressed in UTC.");
-    }
+    ValidationHelper.ValidateTimestamp(queryTimestamp);
 
     return (queryDuration, queryTimestamp);
   }

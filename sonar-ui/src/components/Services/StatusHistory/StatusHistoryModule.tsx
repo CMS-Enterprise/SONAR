@@ -1,7 +1,10 @@
 import { DropdownValue } from '@cmsgov/design-system/dist/types/Dropdown/Dropdown';
 import { ArrowIcon, Spinner } from '@cmsgov/design-system';
 import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import {  DateTimeHealthStatusValueTuple,  ServiceHierarchyHealth,} from 'api/data-contracts';
+import {
+  DateTimeHealthStatusValueTuple,
+  ServiceHierarchyHealth
+} from 'api/data-contracts';
 import ThemedDropdown from 'components/Common/ThemedDropdown';
 import PrimaryActionButton from 'components/Common/PrimaryActionButton';
 import {
@@ -28,11 +31,16 @@ import {
 } from './StatusHistory.Style';
 
 const StatusHistoryModule: React.FC<{
-  addTimestamp: (tupleData: DateTimeHealthStatusValueTuple, tileId: string, serviceData: ServiceHierarchyHealth) => void,
+  addTimestamp: (
+    tupleData: DateTimeHealthStatusValueTuple,
+    tileId: string,
+    serviceData: ServiceHierarchyHealth
+  ) => void,
   closeDrawer: () => void,
   selectedTileId: string,
   servicePath: string,
-  serviceHealth: ServiceHierarchyHealth
+  serviceHealth: ServiceHierarchyHealth,
+  setRangeInSeconds: React.Dispatch<React.SetStateAction<number>>
 }> =
   ({
     addTimestamp,
@@ -40,6 +48,7 @@ const StatusHistoryModule: React.FC<{
     selectedTileId,
     servicePath,
     serviceHealth,
+    setRangeInSeconds
   }) => {
     const context = useContext(ServiceOverviewContext)!;
     const currentDateTime = useMemo(() => {
@@ -113,6 +122,8 @@ const StatusHistoryModule: React.FC<{
     // is disabled. If going forwards in time involves dates beyond the current
     // date and time, the next button is disabled.
     const updatePrevNextButtons = useCallback(() => {
+      setRangeInSeconds(rangeInMsec / 1000);
+
       const potentialStartDate = getNewRangeBasedDate(statusStartDate, -rangeInMsec);
       if (potentialStartDate.getTime() < earliestStartDateTime.getTime()) {
         setDisablePrevious(true);
@@ -127,7 +138,7 @@ const StatusHistoryModule: React.FC<{
       } else {
         setDisableNext(false);
       }
-    }, [earliestStartDateTime, statusStartDate, statusEndDate, rangeInMsec]);
+    }, [earliestStartDateTime, statusStartDate, statusEndDate, rangeInMsec, setRangeInSeconds]);
 
     // This hook is triggered whenever the data returned from the query changes.
     // If the query's range includes multiple dates, the current date string
@@ -292,6 +303,10 @@ const StatusHistoryModule: React.FC<{
                       selectedTileId={selectedTileId}
                       serviceHealth={serviceHealth}
                       showDate={diffDates}
+                      envName={context.environmentName}
+                      tenantName={context.tenantName}
+                      servicePath={servicePath}
+                      rangeInSeconds={rangeInMsec / 1000}
                     />
                   ))}
                 </div>

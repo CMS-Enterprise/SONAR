@@ -1,6 +1,11 @@
-import { DateTimeHealthStatusValueTuple, ServiceHierarchyHealth } from '../api/data-contracts';
+import {
+  DateTimeHealthStatusValueTuple,
+  ServiceHierarchyHealth
+} from '../api/data-contracts';
 
 export interface StatusHistoryView {
   serviceData: ServiceHierarchyHealth,
-  statusTimestampTuple: DateTimeHealthStatusValueTuple
+  servicePath: string,
+  statusTimestampTuple: DateTimeHealthStatusValueTuple,
+  rangeInSeconds: number
 }

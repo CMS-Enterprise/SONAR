@@ -2,7 +2,8 @@ import { useMutation, useQuery, useQueryClient } from 'react-query';
 import {
   AlertSilenceDetails,
   HealthCheckModel,
-  ServiceHierarchyConfiguration
+  ServiceHierarchyConfiguration,
+  ServiceVersionTypeInfo
 } from '../../api/data-contracts';
 import { getQueryRangeParameters } from '../../helpers/StatusHistoryHelper';
 import { useSonarApi } from '../AppContext/AppContextProvider';
@@ -63,6 +64,37 @@ export const useGetServiceVersion = (
     queryFn: () => {
       return sonarClient.getSpecificServiceVersionDetails(envName, tenantName, servicePath)
         .then((res) => (res.data || []).sort((v1, v2) => v1.versionType.localeCompare(v2.versionType)))
+    }
+  });
+}
+
+export const useGetServiceVersionAtTimestamp = (
+  envName: string,
+  tenantName: string,
+  servicePath: string,
+  duration: number,
+  timestamp: string
+) => {
+  const sonarClient = useSonarApi();
+  return useQuery({
+    queryKey: ['ServiceVersionHistory', envName, tenantName, servicePath, duration, timestamp],
+    queryFn: () => {
+      return sonarClient.getServiceVersionHistory(
+        envName,
+        tenantName,
+        servicePath,
+        {
+          duration: duration,
+          timeQuery: timestamp
+        })
+        .then((res) => {
+          // If there are versions recorded for the service within the given duration,
+          // return list of version type(s) and version(s); otherwise, return empty list
+          const numVersionsInRange = res.data.versionHistory?.length;
+          return (numVersionsInRange) ?
+            (res.data.versionHistory![numVersionsInRange-1][1].valueOf() as ServiceVersionTypeInfo[])
+            : [];
+        });
     }
   });
 }

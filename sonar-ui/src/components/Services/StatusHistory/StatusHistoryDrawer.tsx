@@ -3,8 +3,12 @@ import { Drawer, Spinner } from '@cmsgov/design-system';
 import React, { useContext } from 'react';
 import { StatusHistoryView } from 'interfaces/global_interfaces';
 import { ServiceOverviewContext } from '../ServiceOverviewContext';
-import { useGetHealthCheckResultForService } from '../Services.Hooks';
+import {
+  useGetHealthCheckResultForService,
+  useGetServiceVersionAtTimestamp
+} from '../Services.Hooks';
 import StatusHistoryHealthCheckList from './StatusHistoryHealthCheckList';
+import StatusHistoryVersionAtTimestamp from './StatusHistoryVersionAtTimestamp';
 import { StatusHistoryDrawerSubsectionStyle } from './StatusHistory.Style';
 import HealthStatusBadge from '../../Badges/HealthStatusBadge';
 import { getBadgeSpanNoLinkStyle } from '../../Badges/HealthStatusBadge.Style';
@@ -23,12 +27,23 @@ const StatusHistoryDrawer: React.FC<{
   const utcDateTimestamp = statusHistoryViewData?.statusTimestampTuple[0];
   const convertedTimestamp = convertUtcTimestampToLocal(utcDateTimestamp!, showDate);
   const dateTimestampStatus = statusHistoryViewData?.statusTimestampTuple[1] as HealthStatus;
-  const {isLoading, data} = useGetHealthCheckResultForService(
-    context.environmentName,
-    context.tenantName,
-    statusHistoryViewData?.serviceData.name as string,
-    utcDateTimestamp as string
-  );
+
+  const { isLoading: healthChecksLoading, data: healthChecks } =
+    useGetHealthCheckResultForService(
+      context.environmentName,
+      context.tenantName,
+      statusHistoryViewData?.serviceData.name as string,
+      utcDateTimestamp as string
+    );
+
+  const { isLoading: versionLoading, data: versionAtTimestamp } =
+    useGetServiceVersionAtTimestamp(
+      context.environmentName,
+      context.tenantName,
+      statusHistoryViewData?.servicePath as string,
+      statusHistoryViewData?.rangeInSeconds as number,
+      utcDateTimestamp as string
+    );
 
   return (
     <Drawer css={getDrawerStyle} heading={"Selected Timestamps"} headingLevel="3" onCloseClick={closeDrawer}>
@@ -44,9 +59,15 @@ const StatusHistoryDrawer: React.FC<{
             <span css={[getBadgeSpanNoLinkStyle(theme), DynamicTextFontStyle]}>{convertedTimestamp}</span>
           </div>
           {
-            isLoading ? (<Spinner />) :
-              data ? (<StatusHistoryHealthCheckList healthChecks={data} />) :
+            healthChecksLoading ? (<Spinner />) :
+              healthChecks ? (<StatusHistoryHealthCheckList healthChecks={healthChecks} />) :
                 null
+          }
+          {
+            versionLoading ? (<Spinner />) :
+              versionAtTimestamp ? (
+                <StatusHistoryVersionAtTimestamp versionAtTimestamp={versionAtTimestamp} />
+                ) : null
           }
         </>
 

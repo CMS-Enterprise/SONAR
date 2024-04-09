@@ -1,5 +1,8 @@
 import { useTheme } from '@emotion/react';
-import {  DateTimeHealthStatusValueTuple, ServiceHierarchyHealth} from 'api/data-contracts';
+import {
+  DateTimeHealthStatusValueTuple,
+  ServiceHierarchyHealth
+} from 'api/data-contracts';
 import ExternalLinkIcon from 'components/Icons/ExternalLinkIcon';
 import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
@@ -23,16 +26,22 @@ import { ServiceOverviewContext } from './ServiceOverviewContext';
 const ServiceOverview: React.FC<{
   serviceHealth: ServiceHierarchyHealth,
   servicePath: string,
-  addTimestamp: (tupleData: DateTimeHealthStatusValueTuple, tileId: string, serviceData: ServiceHierarchyHealth) => void,
+  addTimestamp: (
+    tupleData: DateTimeHealthStatusValueTuple,
+    tileId: string,
+    serviceData: ServiceHierarchyHealth
+  ) => void,
   closeDrawer: () => void,
-  selectedTileId: string
+  selectedTileId: string,
+  setRangeInSeconds: React.Dispatch<React.SetStateAction<number>>
 }> =
   ({
     serviceHealth,
     servicePath,
     addTimestamp,
     closeDrawer,
-    selectedTileId
+    selectedTileId,
+    setRangeInSeconds
   }) => {
     const context = useContext(ServiceOverviewContext)!;
     const serviceConfiguration = context.serviceConfiguration;
@@ -56,6 +65,7 @@ const ServiceOverview: React.FC<{
               selectedTileId={selectedTileId}
               servicePath={servicePath}
               serviceHealth={serviceHealth}
+              setRangeInSeconds={setRangeInSeconds}
             />
           )}
         </div>

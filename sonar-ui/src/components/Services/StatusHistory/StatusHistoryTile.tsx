@@ -15,11 +15,19 @@ import { getStatusHistoryTileStyle, getTileSpanStyle } from './StatusHistory.Sty
 const StatusHistoryTile: React.FC<{
   id: string,
   statusTimestampTuple: DateTimeHealthStatusValueTuple,
-  addTimestamp: (tupleData: DateTimeHealthStatusValueTuple, tileId: string, serviceData: ServiceHierarchyHealth) => void,
+  addTimestamp: (
+    tupleData: DateTimeHealthStatusValueTuple,
+    tileId: string,
+    serviceData: ServiceHierarchyHealth
+  ) => void,
   closeDrawer: () => void,
   selectedTileId: string,
   serviceHealth: ServiceHierarchyHealth,
-  showDate: boolean
+  showDate: boolean,
+  envName: string,
+  tenantName: string,
+  servicePath: string,
+  rangeInSeconds: number
 }> = ({
   id,
   statusTimestampTuple,
@@ -27,9 +35,14 @@ const StatusHistoryTile: React.FC<{
   closeDrawer,
   selectedTileId,
   serviceHealth,
-  showDate
+  showDate,
+  envName,
+  tenantName,
+  servicePath,
+  rangeInSeconds
 }) => {
   const theme = useTheme();
+
   const handleSelect = () => {
     if (selectedTileId !== id) {
       addTimestamp(statusTimestampTuple, id, serviceHealth);

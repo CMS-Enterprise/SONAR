@@ -2,7 +2,8 @@ import {
   DateTimeHealthStatusValueTuple,
   HealthCheckModel,
   ServiceConfiguration,
-  ServiceHierarchyHealth, ServiceVersionDetails
+  ServiceHierarchyHealth,
+  ServiceVersionDetails
 } from 'api/data-contracts';
 import ServiceOverview from 'components/Services/ServiceOverview';
 import { StatusHistoryView } from 'interfaces/global_interfaces';
@@ -43,6 +44,7 @@ const Service = () => {
   const [utcTimestampDate, setUtcTimestampDate] = useState<string>('');
   const [dataHasDifferentDates, setDataHasDifferentDates] = useState(false);
   const [firstTimestampDate, setFirstTimestampDate] = useState<string>('');
+  const [rangeInSeconds, setRangeInSeconds] = useState<number>(0);
 
   useEffect(() => {
     if (statusHistoryViewData) {
@@ -59,7 +61,11 @@ const Service = () => {
     }
   }, [firstTimestampDate, utcTimestampDate]);
 
-  const addTimestamp = (tupleData: DateTimeHealthStatusValueTuple, tileId: string, serviceData: ServiceHierarchyHealth) => {
+  const addTimestamp = (
+    tupleData: DateTimeHealthStatusValueTuple,
+    tileId: string,
+    serviceData: ServiceHierarchyHealth
+  ) => {
     setSelectedTileId(tileId);
     if (firstTimestampDate === '') {
       setFirstTimestampDate(tupleData[0].split('T')[0]);
@@ -67,7 +73,9 @@ const Service = () => {
     setUtcTimestampDate(tupleData[0].split('T')[0]);
     const viewData: StatusHistoryView = {
       serviceData: serviceData,
-      statusTimestampTuple: tupleData
+      servicePath: servicePath,
+      statusTimestampTuple: tupleData,
+      rangeInSeconds: rangeInSeconds
     }
     setStatusHistoryViewData(viewData);
   }
@@ -149,6 +157,7 @@ const Service = () => {
             addTimestamp={addTimestamp}
             closeDrawer={closeDrawer}
             selectedTileId={selectedTileId}
+            setRangeInSeconds={setRangeInSeconds}
           />
         </div>
       </section>
