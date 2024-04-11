@@ -1,3 +1,59 @@
+## 0.6.4
+
+### Display service version info in side panel
+
+* [view commit f4bace8](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/f4bace888bf49b3754191ae6e0bc1be1dda9b69c)
+* Author (Committer): Teresa Tran (Teresa Tran)
+* Date: Tue, 9 Apr 2024 18:44:33 +0000
+
+```
+Closes BATAPI-418
+
+## Description:
+
+* When the user clicks on a tile in the health history, the panel that appears on the right hand side should display version information for the service at that time.
+* Also updated `VersionHistoryController` to use `ValidationHelper`'s `ValidateTimestamp` function.
+```
+
+### Resolve occasional connection already open bug
+
+* [view commit af0cb8a](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/af0cb8a0efd7855356548a392771ef0729fb59f3)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Mon, 8 Apr 2024 18:41:50 +0000
+
+```
+Closes BATAPI-658
+
+## Description:
+
+* resolve race condition where two tasks try to open a db connection
+
+Closes BATAPI-658
+```
+
+### SONAR Agent Helm Chart Release v0.6.3
+
+* [view commit 611e5b7](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/611e5b76bd03b05b5a46eadd8ab74786f0e55290)
+* Author (Committer): Blaise Takushi (Stephen Brey)
+* Date: Thu, 4 Apr 2024 20:51:57 +0000
+
+
+
+### Update model, additional code refactor, update return type, add unit tests, update postman
+
+* [view commit 592a8da](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/592a8da4aea062260288a79a4c8ce0f2bc5d25cf)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Mon, 25 Mar 2024 23:29:46 -0700
+
+
+
+### Initial commit, working health history output, refactor health history
+
+* [view commit ad22045](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/ad22045073fd42d65dcf881d791aad4df5840d5f)
+* Author (Committer): Kevin Ly (Kevin Ly)
+* Date: Wed, 20 Mar 2024 18:11:50 -0700
+
+
 ## 0.6.3
 
 ### Resolve BATAPI-660 "Sonar test schema bug"
