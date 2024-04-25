@@ -1,3 +1,29 @@
+## 0.7.0
+
+### Feature Maintenance
+
+* [view commit 4df6b3a7](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/4df6b3a723721c871d7683295d31c64b13872c38)
+* Author (Committer): Stephen Brey (Blaise Takushi)
+* Date: Thu, 25 Apr 2024 19:53:14 +0000
+
+```
+Closes BATAPI-652
+
+## Description:
+
+Adds environment/tenant/service maintenance tracking to SONAR
+```
+
+### update OpenTelemetry.Instrumentation.AspNetCore to 1.8.1
+
+* [view commit 436bb0be](https://code.batcave.internal.cms.gov/ado-repositories/oit/waynetech/sonar/-/commit/436bb0be0afca9f65bb864b62bda1728231627bc)
+* Author (Committer): Blaise Takushi (Blaise Takushi)
+* Date: Tue, 16 Apr 2024 03:20:14 +0000
+
+```
+## Description:
+
+* update OpenTelemetry.Instrumentation.AspNetCore to 1.8.1 as recommended by GitHub advisory database
 ## 0.6.4
 
 ### Display service version info in side panel
