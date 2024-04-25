@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Immutable;
+using Cms.BatCave.Sonar.Models;
 
 namespace Cms.BatCave.Sonar.Agent.Configuration;
 
@@ -7,5 +9,5 @@ public record ApiConfiguration(
   String BaseUrl,
   String ApiKey,
   Guid? ApiKeyId = null,
-  Boolean? IsNonProd = null
-  );
+  Boolean? IsNonProd = null,
+  ScheduledMaintenanceConfiguration[]? ScheduledMaintenances = null);

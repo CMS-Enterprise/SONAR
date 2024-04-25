@@ -90,7 +90,7 @@ public class AlertingConfigurationManager {
       this._globalConfigurationGenerator.GenerateAlertmanagerConfigData();
     var receivers =
       await this._receiverConfigurationGenerator.GenerateAlertmanagerReceiverConfiguration(cancellationToken);
-    var (rules, rootRoute) =
+    var (rules, rootRoute, inhibitRules) =
       await this._ruleConfigurationGenerator.GenerateAlertingRulesConfiguration(cancellationToken);
 
     var alertmanagerConfigMapData = new Dictionary<String, String> {
@@ -102,7 +102,8 @@ public class AlertingConfigurationManager {
           // The "templates" key of Alertmanager config is a list of files from which custom notification template
           // definitions are read. The last component of the file path may use a wildcard matcher. In our case, we
           // give the wildcard path where we mount the custom SONAR notification templates in the Alertmanager pod.
-          ["templates"] = new List<String> { $"{AlertmanagerTemplatesMountPath}/*.tmpl" }
+          ["templates"] = new List<String> { $"{AlertmanagerTemplatesMountPath}/*.tmpl" },
+          ["inhibit_rules"] = inhibitRules
         },
         AlertmanagerJsonSerializerOptions
       )

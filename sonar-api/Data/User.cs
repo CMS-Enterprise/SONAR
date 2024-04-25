@@ -24,4 +24,12 @@ public class User {
     this.FullName = fullName;
   }
 
+  public static User New(
+    String email,
+    String fullName) =>
+    new User(
+      Guid.Empty,
+      email,
+      fullName);
+
 }

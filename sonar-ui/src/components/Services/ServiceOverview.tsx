@@ -15,6 +15,7 @@ import {
   getServiceOverviewStyle,
   getSubContainerStyle,
   getSubsectionContainerStyle,
+  getServiceMaintenanceBannerStyle,
   ServiceOverviewContentStyle,
   ServiceOverviewHeaderStyle
 } from './ServiceOverview.Style';
@@ -48,7 +49,11 @@ const ServiceOverview: React.FC<{
     const location = useLocation();
     const theme = useTheme();
     return (
-      <div css={getServiceOverviewStyle(theme)}>
+      <div css={getServiceOverviewStyle(theme, serviceHealth.isInMaintenance!)}>
+        <div css={getServiceMaintenanceBannerStyle(theme, serviceHealth.isInMaintenance!)}>
+          {`Service: ${serviceHealth.name}` +
+            (serviceHealth.isInMaintenance ? ` is currently undergoing maintenance.` : "")}
+        </div>
         <div>
           <ServiceAlertsModule />
         </div>

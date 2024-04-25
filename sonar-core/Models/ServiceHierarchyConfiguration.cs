@@ -16,12 +16,14 @@ public record ServiceHierarchyConfiguration : IValidatableObject {
     IImmutableList<ServiceConfiguration> services,
     IImmutableSet<String> rootServices,
     IImmutableDictionary<String, String?>? tags = null,
-    AlertingConfiguration? alerting = null) {
+    AlertingConfiguration? alerting = null,
+    IImmutableList<ScheduledMaintenanceConfiguration>? scheduledMaintenances = null) {
 
     this.Services = services;
     this.RootServices = rootServices;
     this.Tags = tags;
     this.Alerting = alerting;
+    this.ScheduledMaintenances = scheduledMaintenances;
   }
 
   [Required]
@@ -33,6 +35,8 @@ public record ServiceHierarchyConfiguration : IValidatableObject {
   public IImmutableDictionary<String, String?>? Tags { get; init; }
 
   public AlertingConfiguration? Alerting { get; init; }
+
+  public IImmutableList<ScheduledMaintenanceConfiguration>? ScheduledMaintenances { get; init; }
 
   public IEnumerable<ValidationResult> Validate(ValidationContext validationContext) {
     var validationResults = new List<ValidationResult>();

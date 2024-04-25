@@ -3,7 +3,7 @@ import { useTheme } from '@emotion/react';
 import React from 'react';
 import { ApiKeyConfiguration } from '../../api/data-contracts';
 import ApiKeyTableItem from './ApiKeyTableItem';
-import { getEmptyTableMessageStyle } from './ApiKeyTable.Style';
+import {getEmptyTableMessageStyle} from '../Common/ThemedTableStyle';
 import ThemedTable from 'components/Common/ThemedTable';
 
 const ApiKeyTable: React.FC<{

@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Json;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -30,6 +32,8 @@ public class ApiControllerTestsBase : IClassFixture<ApiIntegrationTestFixture>, 
   }
 
   protected virtual void OnInitializing(WebApplicationBuilder builder) {
+    // Remove hosted services (background processes) from DI container, we don't want them running during tests.
+    builder.Services.RemoveAll<IHostedService>();
   }
 
   protected async Task<(String, String)> CreateTestConfiguration(

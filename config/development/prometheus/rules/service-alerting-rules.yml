@@ -11,3 +11,11 @@ groups:
           service: alerting-test-app
         annotations:
           sonar_dashboard_uri: "http://localhost:8080/foo/tenants/baz/services/alerting-test-app"
+      - alert: alerting-test-app-is-in-maintenance
+        expr: sonar_service_maintenance_status{environment="foo",tenant="baz",service="alerting-test-app"} > 0
+        for: 0s
+        labels:
+          environment: foo
+          tenant: baz
+          service: alerting-test-app
+          purpose: maintenance

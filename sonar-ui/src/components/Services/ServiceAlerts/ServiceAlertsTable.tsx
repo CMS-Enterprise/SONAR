@@ -2,7 +2,7 @@ import { TableBody, TableCell, TableHead, TableRow } from '@cmsgov/design-system
 import { useTheme } from '@emotion/react';
 import React from 'react';
 import { ServiceAlert } from '../../../api/data-contracts';
-import { getEmptyTableMessageStyle } from '../../ApiKeys/ApiKeyTable.Style';
+import {getEmptyTableMessageStyle} from '../../Common/ThemedTableStyle';
 import ThemedTable from '../../Common/ThemedTable';
 import ServiceAlertTableItem from './ServiceAlertTableItem';
 

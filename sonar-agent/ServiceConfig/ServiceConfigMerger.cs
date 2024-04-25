@@ -64,7 +64,8 @@ public static class ServiceConfigMerger {
       serviceResults,
       NullableSetUnion(prev.RootServices, next.RootServices) ?? ImmutableHashSet<String>.Empty,
       MergeTags(prev.Tags, next.Tags),
-      MergeAlertingConfiguration(prev.Alerting, next.Alerting)
+      MergeAlertingConfiguration(prev.Alerting, next.Alerting),
+      MergeScheduledMaintenances(prev.ScheduledMaintenances, next.ScheduledMaintenances)
     );
   }
 
@@ -84,7 +85,8 @@ public static class ServiceConfigMerger {
       MergeVersionCheckLists(prevService.VersionChecks, nextService.VersionChecks),
       NullableSetUnion(prevService.Children, nextService.Children),
       MergeTags(prevService.Tags, nextService.Tags),
-      MergeAlertingRuleLists(prevService.AlertingRules, nextService.AlertingRules)
+      MergeAlertingRuleLists(prevService.AlertingRules, nextService.AlertingRules),
+      MergeScheduledMaintenances(prevService.ScheduledMaintenances, nextService.ScheduledMaintenances)
     );
   }
 
@@ -358,6 +360,25 @@ public static class ServiceConfigMerger {
       return new AlertingConfiguration(merged);
     }
   }
+
+  private static IImmutableList<ScheduledMaintenanceConfiguration>? MergeScheduledMaintenances(
+    IImmutableList<ScheduledMaintenanceConfiguration>? prevMaintenances,
+    IImmutableList<ScheduledMaintenanceConfiguration>? nextMaintenances) {
+
+    if (prevMaintenances == null) {
+      return nextMaintenances;
+    }
+
+    if (nextMaintenances == null) {
+      return prevMaintenances;
+    }
+
+    return prevMaintenances
+      .Union(nextMaintenances)
+      .ToImmutableHashSet()
+      .ToImmutableList();
+  }
+
   private static IImmutableSet<String>? NullableSetUnion(
     IImmutableSet<String>? prevSet,
     IImmutableSet<String>? nextSet) {

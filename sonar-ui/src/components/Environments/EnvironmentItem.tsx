@@ -38,17 +38,22 @@ const EnvironmentItem: React.FC<{
     }
 
     const memoizedStyle = useMemo(() =>
-        getEnvironmentStatusStyle(theme),
-      [theme]);
+        getEnvironmentStatusStyle(theme, environment.isInMaintenance!),
+      [environment.isInMaintenance, theme]);
 
     return (
       <div
         className="ds-l-sm-col--10 ds-u-margin-left--auto ds-u-margin-right--auto"
         css={EnvironmentItemContainerStyle}
         data-test="env-view-accordion">
-        <Accordion bordered css={memoizedStyle}>
+        <Accordion css={memoizedStyle}>
           <AccordionItem
-            heading={<Link to={'/' + environment.environmentName}>Environment: {environment.environmentName}</Link>}
+            heading={
+              <Link to={'/' + environment.environmentName}>
+                {"Environment: " + environment.environmentName +
+                  (environment.isInMaintenance ? " is currently undergoing maintenance" : "")}
+              </Link>
+            }
             isControlledOpen={expanded}
             onChange={handleToggle}
             closeIcon={<ArrowIcon direction={'up'} />}

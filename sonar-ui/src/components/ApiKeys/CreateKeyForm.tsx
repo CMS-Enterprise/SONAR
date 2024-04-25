@@ -14,7 +14,7 @@ import PrimaryActionButton from '../Common/PrimaryActionButton';
 import SecondaryActionButton from '../Common/SecondaryActionButton';
 import ThemedDropdown from '../Common/ThemedDropdown';
 import ThemedTextField from '../Common/ThemedTextField';
-import { useGetEnvironments, useGetTenants } from '../Environments/Environments.Hooks';
+import { useGetEnvironmentsView, useGetTenantsView } from '../Environments/Environments.Hooks';
 
 const CreateKeyForm: React.FC<{
   handleModalToggle: () => void
@@ -34,13 +34,13 @@ const CreateKeyForm: React.FC<{
   const [alertText, setAlertText] = useState("Set all fields to add a new user permission.");
   const [keyCreated, setKeyCreated] = useState(false);
 
-  const environmentData = useGetEnvironments();
+  const environmentData = useGetEnvironmentsView();
   const environmentOptions = (!environmentData  || !environmentData.data) ?
     [initialEnvOption] : getEnvironmentOptions(environmentData.data);
 
   const [tenantOptions, setTenantOptions] =
     useState<DropdownOptions[]>([initialTenantOption]);
-  const tenantData = useGetTenants(true);
+  const tenantData = useGetTenantsView(true);
 
   useEffect(() => {
     const allTenants = !tenantData.data ? [] : tenantData.data;

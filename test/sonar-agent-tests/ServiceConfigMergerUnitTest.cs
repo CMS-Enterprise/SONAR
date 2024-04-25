@@ -70,6 +70,21 @@ public class ServiceConfigMergerUnitTest {
     null
   );
 
+  // maintenance test config
+  private const String Svc1Name = "service-1";
+  private const String Svc1Exp = "0 0 * * FRI";
+  private const Int32 Svc1Duration = 1440;
+  private const String Svc1Tz = "US/Eastern";
+
+  private const String Svc2Name = "service-2";
+  private const String Svc2Exp = "0 0 * * SAT";
+  private const Int32 Svc2Duration = 1440;
+  private const String Svc2Tz = "US/Central";
+
+  private const String UpdatedSvc2Exp = "0 0 * * WED";
+  private const Int32 UpdatedSvc2Duration = 1440;
+  private const String UpdatedSvc2Tz = "US/Central";
+
   // Add new ServiceConfiguration
   [Fact]
   public void MergeConfigs_AddServiceConfiguration() {
@@ -600,5 +615,150 @@ public class ServiceConfigMergerUnitTest {
     }
 
     return config;
+  }
+
+  // Tests that scheduled maintenances are created when merge is performed.
+  [Fact]
+  public void MergeConfigurations_CreateScheduledMaintenances() {
+
+    var mergedConfig = this.MaintenanceBaseConfigSetup();
+
+    var svc1 = Assert.Single(
+      mergedConfig.Services.Where(svc =>
+        svc.Name == Svc1Name));
+
+    Assert.NotNull(svc1.ScheduledMaintenances);
+    var svc1Maintenance = Assert.Single(svc1.ScheduledMaintenances);
+
+    Assert.Equal(Svc1Exp, svc1Maintenance.ScheduleExpression);
+    Assert.Equal(Svc1Duration, svc1Maintenance.DurationMinutes);
+    Assert.Equal(Svc1Tz, svc1Maintenance.ScheduleTimeZone);
+
+    var svc2 = Assert.Single(
+      mergedConfig.Services.Where(svc =>
+        svc.Name == Svc2Name));
+
+    Assert.NotNull(svc2.ScheduledMaintenances);
+    var svc2Maintenance = Assert.Single(svc2.ScheduledMaintenances);
+
+    Assert.Equal(Svc2Exp, svc2Maintenance.ScheduleExpression);
+    Assert.Equal(Svc2Duration, svc2Maintenance.DurationMinutes);
+    Assert.Equal(Svc2Tz, svc2Maintenance.ScheduleTimeZone);
+  }
+
+  // Tests two scenarios
+  //  1. svc1 contains an exact copy of the existing maintenance config in the previous config, this should
+  //     persist through the set union operation and be unchanged.
+  //  2. svc2 contains an updated config, the old and the new config should be present in the resulting merged config.
+  [Fact]
+  public void MergeConfigurations_UpdateExistingScheduledMaintenance() {
+
+    var initialConfig = this.MaintenanceBaseConfigSetup();
+
+    var svc2OriginalMaintenance = new ScheduledMaintenanceConfiguration(Svc2Exp, Svc2Duration,
+      Svc2Tz);
+    var svc2UpdatedMaintenance = new ScheduledMaintenanceConfiguration(UpdatedSvc2Exp,
+      UpdatedSvc2Duration,
+      UpdatedSvc2Tz);
+
+    var overlayConfig2 =
+      new ServiceHierarchyConfiguration(
+        services: ImmutableList.Create(
+          new ServiceConfiguration(
+            name: Svc1Name,
+            displayName: Svc1Name,
+            scheduledMaintenances: ImmutableList.Create(
+              new ScheduledMaintenanceConfiguration(
+                Svc1Exp,
+                Svc1Duration,
+                Svc1Tz
+              ))),
+          new ServiceConfiguration(
+            name: Svc2Name,
+            displayName: Svc2Name,
+            scheduledMaintenances: ImmutableList.Create(
+              svc2UpdatedMaintenance))),
+        rootServices: ImmutableHashSet.Create(
+          Svc1Name,
+          Svc2Name));
+
+
+    var mergedConfig2 =
+      ServiceConfigMerger.MergeConfigurations(initialConfig, overlayConfig2);
+
+    var updatedSvc1 = Assert.Single(
+      mergedConfig2.Services.Where(svc =>
+        svc.Name == Svc1Name));
+
+    Assert.NotNull(updatedSvc1.ScheduledMaintenances);
+
+    // Verify that the set union worked, only one scheduled maintenance should be present
+    // with the same values since it was not updated.
+    var updatedSvc1Maintenance = Assert.Single(updatedSvc1.ScheduledMaintenances);
+
+    Assert.Equal(Svc1Exp, updatedSvc1Maintenance.ScheduleExpression);
+    Assert.Equal(Svc1Duration, updatedSvc1Maintenance.DurationMinutes);
+    Assert.Equal(Svc1Tz, updatedSvc1Maintenance.ScheduleTimeZone);
+
+    // Verify that the updated scheduled maintenances include both the old maintenance and new maintenance.
+    var updatedSvc2 = Assert.Single(
+      mergedConfig2.Services.Where(svc =>
+        svc.Name == Svc2Name));
+
+    Assert.NotNull(updatedSvc2.ScheduledMaintenances);
+    var nonUpdatedMaintenanceResult = Assert.Single(updatedSvc2.ScheduledMaintenances
+      .Where(sm =>
+        sm.ScheduleExpression == svc2OriginalMaintenance.ScheduleExpression));
+    Assert.Equal(svc2OriginalMaintenance, nonUpdatedMaintenanceResult);
+
+    var updatedMaintenanceResult = Assert.Single(updatedSvc2.ScheduledMaintenances
+      .Where(sm =>
+        sm.ScheduleExpression == svc2UpdatedMaintenance.ScheduleExpression));
+    Assert.Equal(svc2UpdatedMaintenance, updatedMaintenanceResult);
+  }
+
+  private ServiceHierarchyConfiguration MaintenanceBaseConfigSetup() {
+    // Base config has 2 services with no scheduled maintenances
+    var baseConfig =
+      new ServiceHierarchyConfiguration(
+        services: ImmutableList.Create(
+          new ServiceConfiguration(
+            name: "service-1",
+            displayName: "service-1"),
+          new ServiceConfiguration(
+            name: "service-2",
+            displayName: "service-2")),
+        rootServices: ImmutableHashSet.Create(
+          "service-1",
+          "service-2"));
+
+    // Overlay config 1 has the same two services updated to contain
+    // scheduled maintenance config.
+    var overlayConfig1 =
+      new ServiceHierarchyConfiguration(
+        services: ImmutableList.Create(
+          new ServiceConfiguration(
+            name: Svc1Name,
+            displayName: Svc1Name,
+            scheduledMaintenances: ImmutableList.Create(
+              new ScheduledMaintenanceConfiguration(
+                Svc1Exp,
+                Svc1Duration,
+                Svc1Tz
+              ))),
+          new ServiceConfiguration(
+            name: Svc2Name,
+            displayName: Svc2Name,
+            scheduledMaintenances: ImmutableList.Create(
+              new ScheduledMaintenanceConfiguration(
+                Svc2Exp,
+                Svc2Duration,
+                Svc2Tz
+              )))),
+        rootServices: ImmutableHashSet.Create(
+          Svc1Name,
+          Svc2Name));
+
+    return ServiceConfigMerger.MergeConfigurations(baseConfig, overlayConfig1);
   }
 }

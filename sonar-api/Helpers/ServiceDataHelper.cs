@@ -10,6 +10,7 @@ using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Extensions;
 using Cms.BatCave.Sonar.Models;
+using Cms.BatCave.Sonar.Prometheus;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Environment = Cms.BatCave.Sonar.Data.Environment;
@@ -25,6 +26,7 @@ public class ServiceDataHelper {
   private readonly DbSet<VersionCheck> _versionChecksTable;
   private readonly Uri _prometheusUrl;
   private readonly IOptions<DatabaseConfiguration> _dbConfig;
+  private readonly IPrometheusService _prometheusService;
 
   public ServiceDataHelper(
     DbSet<Environment> environmentsTable,
@@ -34,7 +36,8 @@ public class ServiceDataHelper {
     DbSet<HealthCheck> healthChecksTable,
     DbSet<VersionCheck> versionChecksTable,
     IOptions<PrometheusConfiguration> prometheusConfig,
-    IOptions<DatabaseConfiguration> dbConfig) {
+    IOptions<DatabaseConfiguration> dbConfig,
+    IPrometheusService prometheusService) {
 
     this._environmentsTable = environmentsTable;
     this._tenantsTable = tenantsTable;
@@ -46,6 +49,7 @@ public class ServiceDataHelper {
       $"{prometheusConfig.Value.Protocol}://{prometheusConfig.Value.Host}:{prometheusConfig.Value.Port}/"
     );
     this._dbConfig = dbConfig;
+    this._prometheusService = prometheusService;
   }
 
   public async Task<(Environment, Tenant, ImmutableDictionary<Guid, Service>)> FetchExistingConfiguration(
@@ -87,6 +91,17 @@ public class ServiceDataHelper {
         .ToImmutableDictionary(svc => svc.Id);
 
     return (environment, tenant, serviceMap);
+  }
+
+  public async Task<IList<Service>> FetchByServiceIdsAsync(
+    List<Guid> ids,
+    CancellationToken cancellationToken) {
+
+    var result =
+      await this._servicesTable.Where(e => ids.Contains(e.Id))
+        .ToListAsync(cancellationToken);
+
+    return result;
   }
 
   public async Task<Service> FetchExistingService(
@@ -390,6 +405,27 @@ public class ServiceDataHelper {
     }
 
     return existingService;
+  }
+
+  public async Task<Dictionary<Guid, (Boolean IsInMaintenance, String? MaintenanceTypes)>> GetMaintenanceStatusByService(
+    String environment,
+    String tenant,
+    ImmutableDictionary<Guid, Service> services,
+    CancellationToken cancellationToken
+  ) {
+    var maintenanceStatusByServiceIdDictionary = new Dictionary<Guid, (Boolean IsInMaintenance, String? MaintenanceTypes)>();
+    foreach (var service in services) {
+      var maintenanceStatusData = await this._prometheusService
+        .GetScopedCurrentMaintenanceStatus(
+          environment,
+          tenant,
+          service.Value.Name,
+          MaintenanceScope.Service,
+          cancellationToken);
+      maintenanceStatusByServiceIdDictionary.Add(service.Key, maintenanceStatusData);
+    }
+
+    return maintenanceStatusByServiceIdDictionary;
   }
 
   public async Task<List<Service>> TraverseServiceFamilyTree(

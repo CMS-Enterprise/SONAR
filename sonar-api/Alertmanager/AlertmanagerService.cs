@@ -32,7 +32,7 @@ public class AlertmanagerService : IAlertmanagerService {
     var activeAlerts = await this._alertmanager.GetAlertsAsync(
       active: true,
       silenced: true,
-      inhibited: true,
+      inhibited: false,
       unprocessed: true,
       filter: new[] {
         $"{IAlertmanagerService.EnvironmentLabel}={environmentName}",

@@ -156,6 +156,31 @@ public class AlertingRulesConfigMapGeneratorIntegrationTests : ApiControllerTest
         )))
     );
 
+  private static ServiceHierarchyConfiguration SimpleAlertingConfigWithUniqueServiceName(String serviceName) =>
+    new(
+      ImmutableList.Create(
+        new ServiceConfiguration(
+          serviceName,
+          displayName: "Display Name",
+          alertingRules: ImmutableArray<AlertingRuleConfiguration>.Empty
+            .Add(new AlertingRuleConfiguration(
+              $"{serviceName}-is-offline",
+              HealthStatus.Offline,
+              TestReceiverName,
+              delay: 240)),
+          healthChecks: ImmutableList.Create(TestHealthCheck)
+        )
+      ),
+      ImmutableHashSet<String>.Empty.Add(serviceName),
+      tags: null,
+      alerting: new AlertingConfiguration(ImmutableList<AlertReceiverConfiguration>.Empty
+        .Add(new AlertReceiverConfiguration(
+          name: TestReceiverName,
+          AlertReceiverType.Email,
+          new AlertReceiverOptionsEmail("user@host.com")
+        )))
+    );
+
   public AlertingRulesConfigMapGeneratorIntegrationTests(
     ApiIntegrationTestFixture fixture,
     ITestOutputHelper outputHelper) : base(fixture, outputHelper) {
@@ -173,11 +198,11 @@ public class AlertingRulesConfigMapGeneratorIntegrationTests : ApiControllerTest
     await this.Fixture.WithDependenciesAsync(async (services, cancellationToken) => {
       var generator = services.GetRequiredService<AlertingRulesConfigurationGenerator>();
 
-      var (result, _) = await generator.GenerateAlertingRulesConfiguration(cancellationToken);
+      var (result, _, _) = await generator.GenerateAlertingRulesConfiguration(cancellationToken);
 
       var group = Assert.Single(result.Groups.Where(g => g.Name == $"{testEnvironment}_{testTenant}"));
 
-      var rule = Assert.Single(group.Rules);
+      var rule = Assert.Single(group.Rules.Where(a => a.Alert == TestAlertName));
       Assert.Equal(4, rule.For.TotalMinutes);
       Assert.Contains("environment", (IReadOnlyDictionary<String, String>)rule.Labels);
       Assert.Contains("tenant", (IReadOnlyDictionary<String, String>)rule.Labels);
@@ -203,11 +228,11 @@ public class AlertingRulesConfigMapGeneratorIntegrationTests : ApiControllerTest
     await this.Fixture.WithDependenciesAsync(async (services, cancellationToken) => {
       var generator = services.GetRequiredService<AlertingRulesConfigurationGenerator>();
 
-      var (result, _) = await generator.GenerateAlertingRulesConfiguration(cancellationToken);
+      var (result, _, _) = await generator.GenerateAlertingRulesConfiguration(cancellationToken);
 
       var group = Assert.Single(result.Groups.Where(g => g.Name == $"{testEnvironment}_{testTenant}"));
 
-      var rule = Assert.Single(group.Rules);
+      var rule = Assert.Single(group.Rules.Where(a => a.Alert == TestAlertName));
       Assert.Equal(4, rule.For.TotalMinutes);
       Assert.Contains("environment", (IReadOnlyDictionary<String, String>)rule.Labels);
       Assert.Contains("tenant", (IReadOnlyDictionary<String, String>)rule.Labels);
@@ -240,11 +265,11 @@ public class AlertingRulesConfigMapGeneratorIntegrationTests : ApiControllerTest
     await this.Fixture.WithDependenciesAsync(async (services, cancellationToken) => {
       var generator = services.GetRequiredService<AlertingRulesConfigurationGenerator>();
 
-      var (result, _) = await generator.GenerateAlertingRulesConfiguration(cancellationToken);
+      var (result, _, _) = await generator.GenerateAlertingRulesConfiguration(cancellationToken);
 
       var group = Assert.Single(result.Groups.Where(g => g.Name == $"{testEnvironment}_{testTenant}"));
 
-      var rule = Assert.Single(group.Rules);
+      var rule = Assert.Single(group.Rules.Where(a => a.Alert == TestAlertName));
       Assert.Equal(4, rule.For.TotalMinutes);
       Assert.Contains("environment", (IReadOnlyDictionary<String, String>)rule.Labels);
       Assert.Contains("tenant", (IReadOnlyDictionary<String, String>)rule.Labels);
@@ -282,10 +307,10 @@ public class AlertingRulesConfigMapGeneratorIntegrationTests : ApiControllerTest
     await this.Fixture.WithDependenciesAsync(async (services, cancellationToken) => {
       var generator = services.GetRequiredService<AlertingRulesConfigurationGenerator>();
 
-      var (result, _) = await generator.GenerateAlertingRulesConfiguration(cancellationToken);
+      var (result, _, _) = await generator.GenerateAlertingRulesConfiguration(cancellationToken);
 
       var group = Assert.Single(result.Groups.Where(g => g.Name == $"{testEnvironment}_{testTenant}"));
-      var rule = Assert.Single(group.Rules);
+      var rule = Assert.Single(group.Rules.Where(a => a.Alert == TestAlertName));
       Assert.NotEqual(InvalidRootServiceName, rule.Labels["service"]);
     });
 
@@ -330,7 +355,7 @@ public class AlertingRulesConfigMapGeneratorIntegrationTests : ApiControllerTest
     await this.Fixture.WithDependenciesAsync(async (services, cancellationToken) => {
       var generator = services.GetRequiredService<AlertingRulesConfigurationGenerator>();
 
-      var (result, _) = await generator.GenerateAlertingRulesConfiguration(cancellationToken);
+      var (result, _, _) = await generator.GenerateAlertingRulesConfiguration(cancellationToken);
       Assert.Empty(result.Groups.Where(g => g.Name == $"{testEnvironment}_{testTenant}"));
     });
 
@@ -405,5 +430,60 @@ public class AlertingRulesConfigMapGeneratorIntegrationTests : ApiControllerTest
     Assert.NotNull(rule.labels.testing);
     Assert.Equal("123", rule.labels.testing);
     Assert.Equal("annotation", rule.annotations.test);
+  }
+
+  // Maintenance alerting and inhibit rules test
+  [Fact]
+  public async Task SimpleAlerting_GeneratesValidMaintenanceCompanionRuleAndInhibitRule() {
+    // Inhibit rules are generated without unique environment/tenant labels because
+    // prometheus takes care of the matching for us, but this causes issues when testing
+    // because when running all unit tests the inhibit rules of all environments will be generated.
+    // To work around this, generate a configuration with a unique service name and find the inhibit rule
+    // associated with unique service.
+    var uniqueServiceName = new Guid().ToString();
+    var uniqueServiceAlertName = $"{uniqueServiceName}-is-offline";
+    var uniqueServiceMaintenanceAlertName = $"{uniqueServiceName}-is-in-maintenance";
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(SimpleAlertingConfigWithUniqueServiceName(uniqueServiceName));
+
+    await this.Fixture.WithDependenciesAsync(async (services, cancellationToken) => {
+      var generator = services.GetRequiredService<AlertingRulesConfigurationGenerator>();
+
+      var (result, _, inhibitRuleResult) = await generator.GenerateAlertingRulesConfiguration(cancellationToken);
+
+      var group = Assert.Single(result.Groups.Where(g => g.Name == $"{testEnvironment}_{testTenant}"));
+
+      var maintenanceRule = Assert.Single(group.Rules.Where(a => a.Alert == uniqueServiceMaintenanceAlertName));
+      Assert.Contains("environment", (IReadOnlyDictionary<String, String>)maintenanceRule.Labels);
+      Assert.Contains("tenant", (IReadOnlyDictionary<String, String>)maintenanceRule.Labels);
+      Assert.Contains("service", (IReadOnlyDictionary<String, String>)maintenanceRule.Labels);
+      Assert.Contains("purpose", (IReadOnlyDictionary<String, String>)maintenanceRule.Labels);
+
+      Assert.Equal(testEnvironment, maintenanceRule.Labels["environment"]);
+      Assert.Equal(testTenant, maintenanceRule.Labels["tenant"]);
+      Assert.Equal(uniqueServiceName, maintenanceRule.Labels["service"]);
+      Assert.Equal("maintenance", maintenanceRule.Labels["purpose"]);
+
+      Assert.Contains(uniqueServiceName, maintenanceRule.Expression);
+
+      // Test inhibit rules
+      var sourceMatcherString = $"alertname={uniqueServiceMaintenanceAlertName}";
+      var expectedSourceMatchers =
+        ImmutableList<String>.Empty.Add(sourceMatcherString);
+      var targetMatcherString = $"alertname={uniqueServiceAlertName}";
+      var expectedTargetMatchers =
+        ImmutableList<String>.Empty.Add(targetMatcherString);
+      var expectedEqual = ImmutableList<String>.Empty.AddRange(
+        new[] {
+          "environment", "tenant", "service"
+        });
+
+      // Take first match because prometheus will take care of matching the environment/tenant labels
+      var actualInhibitRule = inhibitRuleResult.First(r =>
+        r.SourceMatchers.Contains(sourceMatcherString) && r.TargetMatchers.Contains(targetMatcherString));
+      Assert.Equal(expectedEqual, actualInhibitRule.Equal);
+      Assert.Equal(expectedSourceMatchers, actualInhibitRule.SourceMatchers);
+      Assert.Equal(expectedTargetMatchers, actualInhibitRule.TargetMatchers);
+    });
   }
 }

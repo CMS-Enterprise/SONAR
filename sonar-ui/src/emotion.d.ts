@@ -9,12 +9,14 @@ declare module '@emotion/react' {
     backgroundColor: string,
     accentColor: string,
     accentShadedColor: string,
+    maintenanceBannerTextColor: string,
     sonarColors: {
       sonarGreen: string,
       sonarGrey: string,
       sonarGold: string,
       sonarOrange: string,
-      sonarRed: string
+      sonarRed: string,
+      sonarYellow: string
     }
   }
 

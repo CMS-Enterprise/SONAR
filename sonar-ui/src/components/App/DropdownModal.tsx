@@ -1,3 +1,4 @@
+import { MinusCircleIcon } from '@cmsgov/design-system';
 import React from 'react';
 import { useNavigate } from 'react-router';
 import * as styles from './Header.Style';
@@ -25,6 +26,9 @@ const DropdownModal: React.FC<{
               </GhostActionButton>
               <GhostActionButton onClick={() => navigate('/api-keys')}>
                 <KeyIcon /> Manage your API Keys
+              </GhostActionButton>
+              <GhostActionButton onClick={() => navigate('/maintenance-management')}>
+                <MinusCircleIcon /> Maintenance Management
               </GhostActionButton>
               <div css={styles.DropdownLine} />
             </>

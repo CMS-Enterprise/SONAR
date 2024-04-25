@@ -1,25 +1,36 @@
 import { css, Theme } from '@emotion/react';
 
-export function getEnvironmentStatusStyle(theme: Theme) {
+export function getEnvironmentStatusStyle(theme: Theme, inMaintenance: boolean) {
   return css({
+    border: inMaintenance ? `15px ${theme.sonarColors.sonarYellow} solid` : "none",
     backgroundColor: theme.foregroundColor,
     "--accordion__background-color": "none",
     "--accordion-content__background-color": "none",
     "--accordion__background-color--hover": theme.highlightColor,
     boxShadow: "rgba(50, 50, 93, 0.25) 0px 30px 60px -12px, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px",
     borderRadius: 40,
-    padding: "15px 15px 15px 15px",
+    padding: inMaintenance ? "0px" : "15px",
     "& .ds-c-accordion__button": {
-      color: theme.textColor,
+      "& a": {
+        color: inMaintenance ? theme.maintenanceBannerTextColor : theme.textColor,
+        ":hover": {
+          color: inMaintenance ? theme.highlightColor : theme.accentColor
+        },
+        ":focus": {
+          backgroundColor: inMaintenance ? theme.sonarColors.sonarYellow : theme.foregroundColor
+        },
+      },
+      backgroundColor: inMaintenance ? theme.sonarColors.sonarYellow : "",
+      color: inMaintenance ? theme.maintenanceBannerTextColor : theme.textColor,
       fontSize: "22px",
       fontWeight: "600",
-      padding: "3px 20px 2px 20px",
-      borderRadius: 40,
+      padding: inMaintenance ? "3px 20px 5px 20px" : "3px 20px 2px 20px",
+      borderRadius: inMaintenance ? "40 0" : 40,
       ":focus": {
         boxShadow: "none"
       },
       ":hover": {
-        color: theme.accentColor
+        color: inMaintenance ? theme.highlightColor : theme.accentColor
       }
     },
     "& .ds-c-accordion__content": {
@@ -28,6 +39,7 @@ export function getEnvironmentStatusStyle(theme: Theme) {
       fontWeight: "400",
       padding: "0px 20px 5px 20px",
       borderRadius: 40,
+      marginTop: "10px"
     },
     "& .ds-c-accordion__content h3": {
       marginTop: "15px",

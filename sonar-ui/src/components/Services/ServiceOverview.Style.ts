@@ -1,11 +1,13 @@
 import { css, CSSObject, Theme } from '@emotion/react';
 
-export function getServiceOverviewStyle(theme: Theme) {
+export function getServiceOverviewStyle(theme: Theme, inMaintenance: boolean) {
   return css({
     backgroundColor: theme.foregroundColor,
     boxShadow: "rgba(50, 50, 93, 0.25) 0px 30px 60px -12px, rgba(0, 0, 0, 0.3) 0px 18px 36px -18px",
     borderRadius: 40,
-    padding: 20
+    padding: 20,
+    border: inMaintenance ? `15px ${theme.sonarColors.sonarYellow} solid` : "none",
+    marginBottom: 50
   });
 }
 
@@ -13,6 +15,18 @@ export const ServiceOverviewHeaderStyle: CSSObject = {
   padding: 10,
   fontSize: 18,
   fontWeight: 500
+}
+
+export function getServiceMaintenanceBannerStyle(theme: Theme, inMaintenance: boolean) {
+  return css({
+    backgroundColor: inMaintenance ? theme.sonarColors.sonarYellow : theme.foregroundColor,
+    color: theme.maintenanceBannerTextColor,
+    padding: 10,
+    fontSize: 18,
+    fontWeight: 500,
+    borderRadius: 40,
+    textAlign: "center"
+  });
 }
 
 export const CollapsibleHeaderStyle: CSSObject = {

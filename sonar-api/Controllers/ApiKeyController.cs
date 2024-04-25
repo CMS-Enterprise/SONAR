@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Asp.Versioning;
@@ -9,11 +8,11 @@ using Cms.BatCave.Sonar.Authentication;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
+using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Environment = Cms.BatCave.Sonar.Data.Environment;
 using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
 
@@ -24,20 +23,15 @@ namespace Cms.BatCave.Sonar.Controllers;
 [Authorize(Policy = "AllowAnyScope")]
 [Route("api/v{version:apiVersion}/keys")]
 public class ApiKeyController : ControllerBase {
-  private const String ApiKeyHeader = "ApiKey";
-
-  private readonly IConfiguration _configuration;
   private readonly IApiKeyRepository _apiKeys;
   private readonly DbSet<Environment> _environmentsTable;
   private readonly DbSet<Tenant> _tenantsTable;
 
   public ApiKeyController(
-    IConfiguration configuration,
     IApiKeyRepository apiKeys,
     DbSet<Environment> environmentsTable,
     DbSet<Tenant> tenantsTable) {
 
-    this._configuration = configuration;
     this._apiKeys = apiKeys;
     this._environmentsTable = environmentsTable;
     this._tenantsTable = tenantsTable;
@@ -76,8 +70,14 @@ public class ApiKeyController : ControllerBase {
       !String.IsNullOrEmpty(apiKeyDetails.Tenant) ?
         await this._tenantsTable.FirstOrDefaultAsync(t => t.Name == apiKeyDetails.Tenant, cancellationToken) :
         null;
-    //If permissions are good create the key
-    ValidatePermission(this.User, environment?.Id, tenant?.Id, activity);
+
+    //If permissions are good, create the key
+    ValidationHelper.ValidatePermissionScope(
+      this.User,
+      environment?.Id,
+      tenant?.Id,
+      activity);
+
     var createdApiKey = await this._apiKeys.AddAsync(apiKeyDetails, cancellationToken);
     return this.StatusCode((Int32)HttpStatusCode.Created, createdApiKey);
   }
@@ -104,7 +104,7 @@ public class ApiKeyController : ControllerBase {
 
     var targetApiKey = await this._apiKeys.FindAsync(keyId, cancellationToken);
 
-    ValidatePermission(
+    ValidationHelper.ValidatePermissionScope(
       this.User,
       targetApiKey.EnvironmentId,
       targetApiKey.TenantId,
@@ -166,34 +166,6 @@ public class ApiKeyController : ControllerBase {
         message: "Tenant is in configuration, but associated Environment is missing.",
         ProblemTypes.InvalidConfiguration
       );
-    }
-  }
-
-  private static void ValidatePermission(
-    ClaimsPrincipal principal,
-    Guid? environmentScope,
-    Guid? tenantScope,
-    String activity) {
-
-    // Make sure that the Api Key being created is within a scope that the API client has Admin access to
-    if (environmentScope.HasValue) {
-      if (tenantScope.HasValue) {
-        if (!principal.HasTenantAccess(environmentScope.Value, tenantScope.Value, PermissionType.Admin)) {
-          throw new ForbiddenException(
-            $"Api Key not authorized to {activity}, because it has a different Tenant scope."
-          );
-        }
-      } else if (!principal.HasEnvironmentAccess(environmentScope.Value, PermissionType.Admin)) {
-        throw new ForbiddenException(
-          $"Api Key not authorized to {activity} because it has a different Environment scope."
-        );
-      }
-    } else {
-      //If scope of work requires global admin, make sure authenticated key has global admin scope.
-      if (!principal.HasGlobalAccess(PermissionType.Admin)) {
-        throw new ForbiddenException(
-          $"Api Key not authorized to {activity}, must have global Admin scope.");
-      }
     }
   }
 }

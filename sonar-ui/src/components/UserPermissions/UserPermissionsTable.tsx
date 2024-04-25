@@ -15,7 +15,7 @@ import { OutletContextType as UserPermissionsOutletContextType } from "pages/Use
 import { useUserContext } from "components/AppContext/AppContextProvider";
 import { Link } from "react-router-dom";
 import { PermissionConfiguration } from 'api/data-contracts';
-import { getEmptyTableMessageStyle } from './UserPermissions.Style';
+import {getEmptyTableMessageStyle} from '../Common/ThemedTableStyle';
 import { useTheme } from '@emotion/react';
 
 enum ColumnName {

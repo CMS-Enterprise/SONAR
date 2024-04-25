@@ -17,7 +17,8 @@ public record ServiceConfiguration : IValidatableObject {
     IImmutableList<VersionCheckModel>? versionChecks = null,
     IImmutableSet<String>? children = null,
     IImmutableDictionary<String, String?>? tags = null,
-    IImmutableList<AlertingRuleConfiguration>? alertingRules = null) {
+    IImmutableList<AlertingRuleConfiguration>? alertingRules = null,
+    IImmutableList<ScheduledMaintenanceConfiguration>? scheduledMaintenances = null) {
 
     this.Name = name;
     this.DisplayName = displayName;
@@ -28,6 +29,7 @@ public record ServiceConfiguration : IValidatableObject {
     this.Children = children;
     this.Tags = tags;
     this.AlertingRules = alertingRules;
+    this.ScheduledMaintenances = scheduledMaintenances;
   }
 
   [StringLength(100)]
@@ -51,6 +53,8 @@ public record ServiceConfiguration : IValidatableObject {
   public IImmutableDictionary<String, String?>? Tags { get; init; }
 
   public IImmutableList<AlertingRuleConfiguration>? AlertingRules { get; init; }
+
+  public IImmutableList<ScheduledMaintenanceConfiguration>? ScheduledMaintenances { get; init; }
 
   public IEnumerable<ValidationResult> Validate(ValidationContext validationContext) {
     var validationResults = new List<ValidationResult>();

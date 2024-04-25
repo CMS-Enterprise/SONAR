@@ -23,6 +23,54 @@ namespace Cms.BatCave.Sonar.Data.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Cms.BatCave.Sonar.Data.AdHocMaintenance", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AppliedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("applied_by_user_id");
+
+                    b.Property<string>("Discriminator")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("discriminator")
+                        .UseCollation("ci_collation");
+
+                    b.Property<DateTime>("EndTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("end_time");
+
+                    b.Property<bool>("IsRecording")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_recording");
+
+                    b.Property<DateTime?>("LastRecorded")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_recorded");
+
+                    b.Property<DateTime>("StartTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("start_time");
+
+                    b.HasKey("Id")
+                        .HasName("pk_ad_hoc_maintenance");
+
+                    b.HasIndex("AppliedByUserId")
+                        .HasDatabaseName("ix_ad_hoc_maintenance_applied_by_user_id");
+
+                    b.ToTable("ad_hoc_maintenance");
+
+                    b.HasDiscriminator<string>("Discriminator").HasValue("AdHocMaintenance");
+
+                    b.UseTphMappingStrategy();
+                });
+
             modelBuilder.Entity("Cms.BatCave.Sonar.Data.AlertReceiver", b =>
                 {
                     b.Property<Guid>("Id")
@@ -341,6 +389,55 @@ namespace Cms.BatCave.Sonar.Data.Migrations
                         .HasDatabaseName("ix_health_check_cache_service_health_id_health_check");
 
                     b.ToTable("health_check_cache", (string)null);
+                });
+
+            modelBuilder.Entity("Cms.BatCave.Sonar.Data.ScheduledMaintenance", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Discriminator")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("discriminator")
+                        .UseCollation("ci_collation");
+
+                    b.Property<int>("DurationMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("duration_minutes");
+
+                    b.Property<bool>("IsRecording")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_recording");
+
+                    b.Property<DateTime?>("LastRecorded")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_recorded");
+
+                    b.Property<string>("ScheduleExpression")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("schedule_expression")
+                        .UseCollation("ci_collation");
+
+                    b.Property<string>("ScheduleTimeZone")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("schedule_time_zone")
+                        .UseCollation("ci_collation");
+
+                    b.HasKey("Id")
+                        .HasName("pk_scheduled_maintenance");
+
+                    b.ToTable("scheduled_maintenance");
+
+                    b.HasDiscriminator<string>("Discriminator").HasValue("ScheduledMaintenance");
+
+                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("Cms.BatCave.Sonar.Data.Service", b =>
@@ -703,6 +800,115 @@ namespace Cms.BatCave.Sonar.Data.Migrations
                     b.ToTable("version_check", (string)null);
                 });
 
+            modelBuilder.Entity("Cms.BatCave.Sonar.Data.AdHocEnvironmentMaintenance", b =>
+                {
+                    b.HasBaseType("Cms.BatCave.Sonar.Data.AdHocMaintenance");
+
+                    b.Property<Guid>("EnvironmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("environment_id");
+
+                    b.HasIndex("EnvironmentId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_ad_hoc_maintenance_environment_id");
+
+                    b.ToTable("ad_hoc_maintenance");
+
+                    b.HasDiscriminator().HasValue("AdHocEnvironmentMaintenance");
+                });
+
+            modelBuilder.Entity("Cms.BatCave.Sonar.Data.AdHocServiceMaintenance", b =>
+                {
+                    b.HasBaseType("Cms.BatCave.Sonar.Data.AdHocMaintenance");
+
+                    b.Property<Guid>("ServiceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("service_id");
+
+                    b.HasIndex("ServiceId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_ad_hoc_maintenance_service_id");
+
+                    b.ToTable("ad_hoc_maintenance");
+
+                    b.HasDiscriminator().HasValue("AdHocServiceMaintenance");
+                });
+
+            modelBuilder.Entity("Cms.BatCave.Sonar.Data.AdHocTenantMaintenance", b =>
+                {
+                    b.HasBaseType("Cms.BatCave.Sonar.Data.AdHocMaintenance");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.HasIndex("TenantId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_ad_hoc_maintenance_tenant_id");
+
+                    b.ToTable("ad_hoc_maintenance");
+
+                    b.HasDiscriminator().HasValue("AdHocTenantMaintenance");
+                });
+
+            modelBuilder.Entity("Cms.BatCave.Sonar.Data.ScheduledEnvironmentMaintenance", b =>
+                {
+                    b.HasBaseType("Cms.BatCave.Sonar.Data.ScheduledMaintenance");
+
+                    b.Property<Guid>("EnvironmentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("environment_id");
+
+                    b.HasIndex("EnvironmentId")
+                        .HasDatabaseName("ix_scheduled_maintenance_environment_id");
+
+                    b.ToTable("scheduled_maintenance");
+
+                    b.HasDiscriminator().HasValue("ScheduledEnvironmentMaintenance");
+                });
+
+            modelBuilder.Entity("Cms.BatCave.Sonar.Data.ScheduledServiceMaintenance", b =>
+                {
+                    b.HasBaseType("Cms.BatCave.Sonar.Data.ScheduledMaintenance");
+
+                    b.Property<Guid>("ServiceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("service_id");
+
+                    b.HasIndex("ServiceId")
+                        .HasDatabaseName("ix_scheduled_maintenance_service_id");
+
+                    b.ToTable("scheduled_maintenance");
+
+                    b.HasDiscriminator().HasValue("ScheduledServiceMaintenance");
+                });
+
+            modelBuilder.Entity("Cms.BatCave.Sonar.Data.ScheduledTenantMaintenance", b =>
+                {
+                    b.HasBaseType("Cms.BatCave.Sonar.Data.ScheduledMaintenance");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tenant_id");
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("ix_scheduled_maintenance_tenant_id");
+
+                    b.ToTable("scheduled_maintenance");
+
+                    b.HasDiscriminator().HasValue("ScheduledTenantMaintenance");
+                });
+
+            modelBuilder.Entity("Cms.BatCave.Sonar.Data.AdHocMaintenance", b =>
+                {
+                    b.HasOne("Cms.BatCave.Sonar.Data.User", null)
+                        .WithMany()
+                        .HasForeignKey("AppliedByUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ad_hoc_maintenance_user_applied_by_user_id");
+                });
+
             modelBuilder.Entity("Cms.BatCave.Sonar.Data.AlertReceiver", b =>
                 {
                     b.HasOne("Cms.BatCave.Sonar.Data.Tenant", null)
@@ -868,6 +1074,66 @@ namespace Cms.BatCave.Sonar.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_version_check_service_service_id");
+                });
+
+            modelBuilder.Entity("Cms.BatCave.Sonar.Data.AdHocEnvironmentMaintenance", b =>
+                {
+                    b.HasOne("Cms.BatCave.Sonar.Data.Environment", null)
+                        .WithOne()
+                        .HasForeignKey("Cms.BatCave.Sonar.Data.AdHocEnvironmentMaintenance", "EnvironmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ad_hoc_maintenance_environment_environment_id");
+                });
+
+            modelBuilder.Entity("Cms.BatCave.Sonar.Data.AdHocServiceMaintenance", b =>
+                {
+                    b.HasOne("Cms.BatCave.Sonar.Data.Service", null)
+                        .WithOne()
+                        .HasForeignKey("Cms.BatCave.Sonar.Data.AdHocServiceMaintenance", "ServiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ad_hoc_maintenance_service_service_id");
+                });
+
+            modelBuilder.Entity("Cms.BatCave.Sonar.Data.AdHocTenantMaintenance", b =>
+                {
+                    b.HasOne("Cms.BatCave.Sonar.Data.Tenant", null)
+                        .WithOne()
+                        .HasForeignKey("Cms.BatCave.Sonar.Data.AdHocTenantMaintenance", "TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ad_hoc_maintenance_tenant_tenant_id");
+                });
+
+            modelBuilder.Entity("Cms.BatCave.Sonar.Data.ScheduledEnvironmentMaintenance", b =>
+                {
+                    b.HasOne("Cms.BatCave.Sonar.Data.Environment", null)
+                        .WithMany()
+                        .HasForeignKey("EnvironmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_scheduled_maintenance_environment_environment_id");
+                });
+
+            modelBuilder.Entity("Cms.BatCave.Sonar.Data.ScheduledServiceMaintenance", b =>
+                {
+                    b.HasOne("Cms.BatCave.Sonar.Data.Service", null)
+                        .WithMany()
+                        .HasForeignKey("ServiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_scheduled_maintenance_service_service_id");
+                });
+
+            modelBuilder.Entity("Cms.BatCave.Sonar.Data.ScheduledTenantMaintenance", b =>
+                {
+                    b.HasOne("Cms.BatCave.Sonar.Data.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_scheduled_maintenance_tenant_tenant_id");
                 });
 #pragma warning restore 612, 618
         }

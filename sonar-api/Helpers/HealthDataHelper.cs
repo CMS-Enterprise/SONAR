@@ -248,7 +248,8 @@ public class HealthDataHelper {
     IImmutableDictionary<String, String?> inheritedTags,
     String environment,
     String tenant,
-    ImmutableQueue<String> servicePathQueue) {
+    ImmutableQueue<String> servicePathQueue,
+    Dictionary<Guid, (Boolean IsInMaintenance, String? MaintenanceTypes)> maintenanceStatusByServiceId) {
     // The service will have its own status if it has health checks that have recorded status.
     var hasServiceStatus = serviceStatuses.TryGetValue(service.Name, out var serviceStatus);
     var children =
@@ -266,7 +267,8 @@ public class HealthDataHelper {
               tagsByService[service.Id].ToList()),
             environment,
             tenant,
-            servicePathQueue.Enqueue(services[sid].Name)
+            servicePathQueue.Enqueue(services[sid].Name),
+            maintenanceStatusByServiceId
           )
         )
         .ToImmutableHashSet();
@@ -325,6 +327,8 @@ public class HealthDataHelper {
       statusTimestamp = null;
     }
 
+    var currServiceMaintenanceStatus = maintenanceStatusByServiceId[service.Id];
+
     return new ServiceHierarchyHealth(
       service.Name,
       service.DisplayName,
@@ -342,7 +346,9 @@ public class HealthDataHelper {
       children,
       this._tagsDataHelper.GetResolvedServiceTags(
         inheritedTags,
-        tagsByService[service.Id].ToList())
+        tagsByService[service.Id].ToList()),
+      currServiceMaintenanceStatus.IsInMaintenance,
+      currServiceMaintenanceStatus.MaintenanceTypes
     );
   }
 

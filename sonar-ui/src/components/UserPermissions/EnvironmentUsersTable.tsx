@@ -3,7 +3,7 @@ import { Link, useOutletContext } from "react-router-dom";
 import PeopleIcon from "components/Icons/PeopleIcon";
 import ThemedTable from "components/Common/ThemedTable";
 import { OutletContextType as UserPermissionsOutletContextType } from "pages/UserPermissions";
-import { getEmptyTableMessageStyle } from "./UserPermissions.Style";
+import {getEmptyTableMessageStyle} from '../Common/ThemedTableStyle';
 import { useTheme } from "@emotion/react";
 
 const EnvironmentUsersTable = () => {

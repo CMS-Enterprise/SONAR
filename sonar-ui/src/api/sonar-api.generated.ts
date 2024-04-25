@@ -10,6 +10,9 @@
  */
 
 import {
+  ActiveAdHocMaintenanceView,
+  ActiveScheduledMaintenanceView,
+  AdHocMaintenanceConfiguration,
   AgentErrorLevel,
   AgentErrorType,
   AlertSilenceDetails,
@@ -234,6 +237,21 @@ permissions to the requested environment/tenant.
     this.request<void, ProblemDetails>({
       path: `/api/v2/environments/${environment}`,
       method: "DELETE",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags Environment
+   * @name GetEnvironmentsView
+   * @summary Fetch a list of all environments without health data
+   * @request GET:/api/v2/environments/view
+   */
+  getEnvironmentsView = (params: RequestParams = {}) =>
+    this.request<EnvironmentModel[], ProblemDetails>({
+      path: `/api/v2/environments/view`,
+      method: "GET",
+      format: "json",
       ...params,
     });
   /**
@@ -571,6 +589,153 @@ service. Filters out samples outside of the given start and end date time.
   /**
    * No description
    *
+   * @tags Maintenance
+   * @name GetActiveScheduledEnvironmentMaintenance
+   * @request GET:/api/v2/maintenance/environments/scheduled
+   */
+  getActiveScheduledEnvironmentMaintenance = (params: RequestParams = {}) =>
+    this.request<ActiveScheduledMaintenanceView[], any>({
+      path: `/api/v2/maintenance/environments/scheduled`,
+      method: "GET",
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags Maintenance
+   * @name GetActiveScheduledTenantMaintenance
+   * @request GET:/api/v2/maintenance/tenants/scheduled
+   */
+  getActiveScheduledTenantMaintenance = (params: RequestParams = {}) =>
+    this.request<ActiveScheduledMaintenanceView[], any>({
+      path: `/api/v2/maintenance/tenants/scheduled`,
+      method: "GET",
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags Maintenance
+   * @name GetActiveScheduledServiceMaintenance
+   * @request GET:/api/v2/maintenance/services/scheduled
+   */
+  getActiveScheduledServiceMaintenance = (params: RequestParams = {}) =>
+    this.request<ActiveScheduledMaintenanceView[], any>({
+      path: `/api/v2/maintenance/services/scheduled`,
+      method: "GET",
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags Maintenance
+   * @name GetActiveAdHocEnvironmentMaintenance
+   * @request GET:/api/v2/maintenance/environments/ad-hoc
+   */
+  getActiveAdHocEnvironmentMaintenance = (params: RequestParams = {}) =>
+    this.request<ActiveAdHocMaintenanceView[], any>({
+      path: `/api/v2/maintenance/environments/ad-hoc`,
+      method: "GET",
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags Maintenance
+   * @name GetActiveAdHocTenantMaintenance
+   * @request GET:/api/v2/maintenance/tenants/ad-hoc
+   */
+  getActiveAdHocTenantMaintenance = (params: RequestParams = {}) =>
+    this.request<ActiveAdHocMaintenanceView[], any>({
+      path: `/api/v2/maintenance/tenants/ad-hoc`,
+      method: "GET",
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags Maintenance
+   * @name GetActiveAdHocServiceMaintenance
+   * @request GET:/api/v2/maintenance/services/ad-hoc
+   */
+  getActiveAdHocServiceMaintenance = (params: RequestParams = {}) =>
+    this.request<ActiveAdHocMaintenanceView[], any>({
+      path: `/api/v2/maintenance/services/ad-hoc`,
+      method: "GET",
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags Maintenance
+   * @name ToggleAdhocEnvironmentMaintenance
+   * @request PUT:/api/v2/maintenance/{environment}/ad-hoc
+   */
+  toggleAdhocEnvironmentMaintenance = (
+    environment: string,
+    data: AdHocMaintenanceConfiguration,
+    params: RequestParams = {},
+  ) =>
+    this.request<ActiveAdHocMaintenanceView, ProblemDetails>({
+      path: `/api/v2/maintenance/${environment}/ad-hoc`,
+      method: "PUT",
+      body: data,
+      type: ContentType.Json,
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags Maintenance
+   * @name ToggleAdhocTenantMaintenance
+   * @request PUT:/api/v2/maintenance/{environment}/tenants/{tenant}/ad-hoc
+   */
+  toggleAdhocTenantMaintenance = (
+    environment: string,
+    tenant: string,
+    data: AdHocMaintenanceConfiguration,
+    params: RequestParams = {},
+  ) =>
+    this.request<ActiveAdHocMaintenanceView, ProblemDetails>({
+      path: `/api/v2/maintenance/${environment}/tenants/${tenant}/ad-hoc`,
+      method: "PUT",
+      body: data,
+      type: ContentType.Json,
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags Maintenance
+   * @name ToggleAdhocServiceMaintenance
+   * @request PUT:/api/v2/maintenance/{environment}/tenants/{tenant}/services/{service}/ad-hoc
+   */
+  toggleAdhocServiceMaintenance = (
+    environment: string,
+    tenant: string,
+    service: string,
+    data: AdHocMaintenanceConfiguration,
+    params: RequestParams = {},
+  ) =>
+    this.request<ActiveAdHocMaintenanceView, ProblemDetails>({
+      path: `/api/v2/maintenance/${environment}/tenants/${tenant}/services/${service}/ad-hoc`,
+      method: "PUT",
+      body: data,
+      type: ContentType.Json,
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
    * @tags ServiceAlert
    * @name GetServiceAlerts
    * @request GET:/api/v2/alerts/{environment}/tenants/{tenant}/services/{servicePath}
@@ -644,6 +809,30 @@ will return all tenants for all environments if query params aren't supplied.
   ) =>
     this.request<TenantInfo[], ProblemDetails>({
       path: `/api/v2/tenants`,
+      method: "GET",
+      query: query,
+      format: "json",
+      ...params,
+    });
+  /**
+   * No description
+   *
+   * @tags Tenant
+   * @name GetTenantsView
+   * @summary Fetch a list of tenants without health data
+   * @request GET:/api/v2/tenants/view
+   */
+  getTenantsView = (
+    query?: {
+      /** @default "" */
+      environment?: string;
+      /** @default "" */
+      tenant?: string;
+    },
+    params: RequestParams = {},
+  ) =>
+    this.request<TenantInfo[], ProblemDetails>({
+      path: `/api/v2/tenants/view`,
       method: "GET",
       query: query,
       format: "json",

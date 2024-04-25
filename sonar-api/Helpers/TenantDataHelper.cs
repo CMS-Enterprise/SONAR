@@ -10,6 +10,7 @@ using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
 using Cms.BatCave.Sonar.Extensions;
 using Cms.BatCave.Sonar.Models;
+using Cms.BatCave.Sonar.Prometheus;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Environment = Cms.BatCave.Sonar.Data.Environment;
@@ -27,6 +28,7 @@ public class TenantDataHelper {
   private readonly String _sonarEnvironment;
   private readonly TagsDataHelper _tagsDataHelper;
   private readonly DataContext _dbContext;
+  private readonly IPrometheusService _prometheusService;
 
   public TenantDataHelper(
     DbSet<Environment> environmentsTable,
@@ -36,7 +38,8 @@ public class TenantDataHelper {
     VersionDataHelper versionDataHelper,
     IOptions<SonarHealthCheckConfiguration> sonarHealthConfig,
     TagsDataHelper tagsDataHelper,
-    DataContext dbContext) {
+    DataContext dbContext,
+    IPrometheusService prometheusService) {
 
     this._environmentsTable = environmentsTable;
     this._tenantsTable = tenantsTable;
@@ -46,6 +49,7 @@ public class TenantDataHelper {
     this._tagsDataHelper = tagsDataHelper;
     this._sonarEnvironment = sonarHealthConfig.Value.SonarEnvironment;
     this._dbContext = dbContext;
+    this._prometheusService = prometheusService;
   }
 
   public async Task<Tenant> FetchOrCreateTenantAsync(
@@ -83,6 +87,17 @@ public class TenantDataHelper {
     }
 
     return tenant;
+  }
+
+  public async Task<IList<Tenant>> FetchByTenantIdsAsync(
+    List<Guid> ids,
+    CancellationToken cancellationToken) {
+
+    var result =
+      await this._tenantsTable.Where(e => ids.Contains(e.Id))
+        .ToListAsync(cancellationToken);
+
+    return result;
   }
 
   public async Task<(Environment?, Tenant?)> TryFetchTenantAsync(
@@ -127,11 +142,18 @@ public class TenantDataHelper {
 
   public async Task<IList<TenantInfo>> GetTenantsInfo(
     Environment environment,
+    String? tenantName,
     CancellationToken cancellationToken) {
 
-    var tenants = await
-      this._tenantsTable.Where(t => t.EnvironmentId == environment.Id)
-        .ToListAsync(cancellationToken);
+    var tenantsQuery = this._tenantsTable
+      .Where(t => t.EnvironmentId == environment.Id);
+
+    if (!String.IsNullOrEmpty(tenantName)) {
+      tenantsQuery = tenantsQuery.Where(t => t.Name == tenantName);
+    }
+
+    // Execute query
+    var tenants = await tenantsQuery.ToListAsync(cancellationToken);
 
     var tenantList = new List<TenantInfo>();
     foreach (var tenant in tenants) {
@@ -150,6 +172,18 @@ public class TenantDataHelper {
         await this._versionDataHelper.GetServiceVersionLookup(environment.Name, tenant.Name, cancellationToken);
       var tagsByService = await this._tagsDataHelper.FetchExistingServiceTags(services.Keys, cancellationToken);
       var tenantTags = await this._tagsDataHelper.FetchExistingTenantTags(existingTenant.Id, cancellationToken);
+      var maintenanceStatusByService = await this._serviceDataHelper.GetMaintenanceStatusByService(
+        environment.Name,
+        tenant.Name,
+        services,
+        cancellationToken);
+
+      var (isInMaintenance, maintenanceTypes) = await this._prometheusService.GetScopedCurrentMaintenanceStatus(
+        environment.Name,
+        tenant.Name,
+        null,
+        MaintenanceScope.Tenant,
+        cancellationToken);
       //All root services for tenant
       var rootServiceHealth = services.Values.Where(svc => svc.IsRootService)
         .Select(svc => this._healthDataHelper.ToServiceHealth(
@@ -163,10 +197,17 @@ public class TenantDataHelper {
           this._tagsDataHelper.GetResolvedTenantTags(tenantTags.ToList()),
           environment.Name,
           tenant.Name,
-          ImmutableQueue.Create<String>(svc.Name))
+          ImmutableQueue.Create<String>(svc.Name),
+          maintenanceStatusByService)
         ).ToArray();
 
-      tenantList.Add(ToTenantInfo(tenant.Name, environment, serviceVersionLookup, rootServiceHealth));
+      tenantList.Add(ToTenantInfo(
+        tenant.Name,
+        environment,
+        serviceVersionLookup,
+        rootServiceHealth,
+        isInMaintenance,
+        maintenanceTypes));
     }
 
     if (environment.Name == this._sonarEnvironment) {
@@ -175,18 +216,102 @@ public class TenantDataHelper {
         environment,
         // Note: we could fetch version information for our built in dependencies
         ImmutableDictionary<String, IImmutableList<ServiceVersionDetails>>.Empty,
-        (await this._healthDataHelper.CheckSonarHealth(cancellationToken)).ToArray()
-      ));
+        (await this._healthDataHelper.CheckSonarHealth(cancellationToken)).ToArray(),
+        false,
+        null));
     }
 
     return tenantList;
+  }
+
+  // Get tenant/service hierarchy without health info
+  public async Task<IList<TenantInfo>> GetTenantsView(
+    Environment environment,
+    String? tenantName,
+    CancellationToken cancellationToken) {
+
+    var tenantsQuery = this._tenantsTable
+      .Where(t => t.EnvironmentId == environment.Id);
+
+    if (!String.IsNullOrEmpty(tenantName)) {
+      tenantsQuery = tenantsQuery.Where(t => t.Name == tenantName);
+    }
+
+    // Execute query
+    var tenants = await tenantsQuery.ToListAsync(cancellationToken);
+
+    var tenantList = new List<TenantInfo>();
+    foreach (var tenant in tenants) {
+      var (_, existingTenant, services) =
+        await this._serviceDataHelper.FetchExistingConfiguration(environment.Name, tenant.Name, cancellationToken);
+      var serviceChildIdsLookup = await this._serviceDataHelper.GetServiceChildIdsLookup(services, cancellationToken);
+
+      var rootServices = services.Values.Where(svc => svc.IsRootService)
+        .Select(svc => ToServiceHierarchyInfoView(
+          service: svc,
+          services: services,
+          serviceChildIdsLookup: serviceChildIdsLookup,
+          environment: environment.Name,
+          tenant: tenant.Name,
+          servicePathQueue: ImmutableQueue.Create<String>(svc.Name))
+        ).ToArray();
+
+      tenantList.Add(new TenantInfo(
+        environmentName: environment.Name,
+        tenantName: tenant.Name,
+        environment.IsNonProd,
+        rootServices: rootServices));
+    }
+
+    if (environment.Name == this._sonarEnvironment) {
+      tenantList.Add(ToTenantInfo(
+        SonarTenantName,
+        environment,
+        // Note: we could fetch version information for our built in dependencies
+        ImmutableDictionary<String, IImmutableList<ServiceVersionDetails>>.Empty,
+        (await this._healthDataHelper.CheckSonarHealth(cancellationToken)).ToArray(),
+        false,
+        null));
+    }
+
+    return tenantList;
+  }
+
+  private ServiceHierarchyInfo ToServiceHierarchyInfoView(
+    Service service,
+    ImmutableDictionary<Guid, Service> services,
+    ILookup<Guid, Guid> serviceChildIdsLookup,
+    String environment,
+    String tenant,
+    ImmutableQueue<String> servicePathQueue) {
+
+    var children = serviceChildIdsLookup[service.Id].Select(sid =>
+      ToServiceHierarchyInfoView(
+        services[sid],
+        services,
+        serviceChildIdsLookup,
+        environment,
+        tenant,
+        servicePathQueue)
+      );
+
+    return new ServiceHierarchyInfo(
+      name: service.Name,
+      displayName: service.DisplayName,
+      dashboardLink: this._healthDataHelper.BuildDashboardLink(
+        servicePathQueue,
+        environment,
+        tenant),
+      children: children.ToImmutableHashSet());
   }
 
   private static TenantInfo ToTenantInfo(
     String tenantName,
     Environment environment,
     IImmutableDictionary<String, IImmutableList<ServiceVersionDetails>> serviceVersionLookup,
-    ServiceHierarchyHealth[] rootServiceHealth
+    ServiceHierarchyHealth[] rootServiceHealth,
+    Boolean isInMaintenance,
+    String? maintenanceTypes
   ) {
     HealthStatus? aggregateStatus = HealthStatus.Unknown;
     DateTime? statusTimestamp = null;
@@ -221,7 +346,9 @@ public class TenantDataHelper {
       environment.IsNonProd,
       statusTimestamp,
       aggregateStatus,
-      AddVersionInfo(rootServiceHealth, serviceVersionLookup).ToArray()
+      AddVersionInfo(rootServiceHealth, serviceVersionLookup).ToArray(),
+      isInMaintenance,
+      maintenanceTypes
     );
   }
 
@@ -241,7 +368,9 @@ public class TenantDataHelper {
           versionDetailsList.ToImmutableDictionary(v => v.VersionType, v => v.Version) : null,
         svc.HealthChecks,
         svc.Children != null ? AddVersionInfo(svc.Children, serviceVersionLookup).ToImmutableHashSet() : null,
-        svc.Tags
+        svc.Tags,
+        svc.IsInMaintenance,
+        svc.InMaintenanceTypes
       );
     }
   }

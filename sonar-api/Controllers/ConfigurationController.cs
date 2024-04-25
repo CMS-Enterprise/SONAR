@@ -9,13 +9,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using Asp.Versioning;
 using Cms.BatCave.Sonar.Alerting;
-using Cms.BatCave.Sonar.Alertmanager;
 using Cms.BatCave.Sonar.Authentication;
 using Cms.BatCave.Sonar.Configuration;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Extensions;
 using Cms.BatCave.Sonar.Helpers;
+using Cms.BatCave.Sonar.Helpers.Maintenance;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -48,6 +48,8 @@ public class ConfigurationController : ControllerBase {
   private readonly AlertingDataHelper _alertingDataHelper;
   private readonly AlertingConfigurationManager _alertmanagerHelper;
   private readonly IOptions<KubernetesApiAccessConfiguration> _kubernetesApiAccessConfig;
+  private readonly MaintenanceDataHelper<ScheduledTenantMaintenance> _scheduledTenantMaintenanceDataHelper;
+  private readonly MaintenanceDataHelper<ScheduledServiceMaintenance> _scheduledServiceMaintenanceDataHelper;
 
   public ConfigurationController(
     DataContext dbContext,
@@ -67,7 +69,9 @@ public class ConfigurationController : ControllerBase {
     AlertingDataHelper alertingDataHelper,
     DbSet<AlertingConfigurationVersion> alertingConfigurationVersionTable,
     AlertingConfigurationManager alertmanagerHelper,
-    IOptions<KubernetesApiAccessConfiguration> kubernetesApiAccessConfig) {
+    IOptions<KubernetesApiAccessConfiguration> kubernetesApiAccessConfig,
+    MaintenanceDataHelper<ScheduledTenantMaintenance> scheduledTenantMaintenanceDataHelper,
+    MaintenanceDataHelper<ScheduledServiceMaintenance> scheduledServiceMaintenanceDataHelper) {
     this._dbContext = dbContext;
     this._environmentsTable = environmentsTable;
     this._tenantsTable = tenantsTable;
@@ -85,6 +89,8 @@ public class ConfigurationController : ControllerBase {
     this._alertingConfigurationVersionTable = alertingConfigurationVersionTable;
     this._alertmanagerHelper = alertmanagerHelper;
     this._kubernetesApiAccessConfig = kubernetesApiAccessConfig;
+    this._scheduledTenantMaintenanceDataHelper = scheduledTenantMaintenanceDataHelper;
+    this._scheduledServiceMaintenanceDataHelper = scheduledServiceMaintenanceDataHelper;
   }
 
   /// <summary>
@@ -151,6 +157,15 @@ public class ConfigurationController : ControllerBase {
       (await this._alertingDataHelper.FetchAlertingRulesAsync(serviceMap.Keys, cancellationToken))
       .ToLookup(keySelector: r => r.ServiceId);
 
+    var scheduledTenantMaintenances =
+      (await this._scheduledTenantMaintenanceDataHelper
+        .FindAllByAssocEntityIdAsync(tenantEntity.Id, cancellationToken))
+      .Select(ToScheduledMaintenanceConfiguration).ToImmutableList();
+
+    var scheduledServiceMaintenancesByServiceId = (await this._scheduledServiceMaintenanceDataHelper
+        .FindAllByAssocEntityIdsAsync(serviceMap.Keys.ToImmutableList(), cancellationToken))
+      .ToLookup(m => m.ServiceId, ToScheduledMaintenanceConfiguration);
+
     var serviceHierarchy = CreateServiceHierarchy(
       serviceMap,
       healthCheckByService,
@@ -159,7 +174,9 @@ public class ConfigurationController : ControllerBase {
       tenantTags,
       serviceTags,
       alertReceiversById,
-      alertingRulesByServiceId);
+      alertingRulesByServiceId,
+      scheduledTenantMaintenances,
+      scheduledServiceMaintenancesByServiceId);
 
     if (!isAuthorized) {
       serviceHierarchy = ServiceDataHelper.Redact(serviceHierarchy);
@@ -386,6 +403,38 @@ public class ConfigurationController : ControllerBase {
           cancellationToken);
       }
 
+      // Create scheduled maintenances.
+      var createdScheduledTenantMaintenances =
+        ImmutableList<ScheduledTenantMaintenance>.Empty;
+      var createdScheduledServiceMaintenances =
+        ImmutableList<ScheduledServiceMaintenance>.Empty;
+
+      // Tenant maintenance.
+      if (hierarchy.ScheduledMaintenances is not null) {
+        createdScheduledTenantMaintenances = (ImmutableList<ScheduledTenantMaintenance>)await this._scheduledTenantMaintenanceDataHelper.AddAllAsync(
+          hierarchy.ScheduledMaintenances.Select(m =>
+            ScheduledTenantMaintenance.New(
+              m.ScheduleExpression,
+              m.ScheduleTimeZone,
+              m.DurationMinutes,
+              createdTenant.Entity.Id)).ToImmutableList(),
+          cancellationToken);
+      }
+
+      // Service maintenance.
+      foreach (var svc in hierarchy.Services) {
+        if (svc.ScheduledMaintenances is not null) {
+          createdScheduledServiceMaintenances = (ImmutableList<ScheduledServiceMaintenance>)await this._scheduledServiceMaintenanceDataHelper.AddAllAsync(
+            svc.ScheduledMaintenances.Select(m =>
+              ScheduledServiceMaintenance.New(
+                m.ScheduleExpression,
+                m.ScheduleTimeZone,
+                m.DurationMinutes,
+                servicesByName[svc.Name].Id)),
+            cancellationToken);
+        }
+      }
+
       await this._dbContext.SaveChangesAsync(cancellationToken);
 
       response = this.Created(
@@ -398,7 +447,10 @@ public class ConfigurationController : ControllerBase {
           createdTenantTags.NullIfEmpty()?.ToImmutableDictionary(tt => tt.Name, tt => tt.Value),
           createdServiceTags.ToLookup(st => st.ServiceId),
           createdAlertReceivers.ToImmutableDictionary(keySelector: r => r.Id),
-          createdAlertingRules.ToLookup(keySelector: r => r.ServiceId)
+          createdAlertingRules.ToLookup(keySelector: r => r.ServiceId),
+          createdScheduledTenantMaintenances.Select(ToScheduledMaintenanceConfiguration).ToImmutableList(),
+          createdScheduledServiceMaintenances.ToLookup(m => m.ServiceId,
+            ToScheduledMaintenanceConfiguration)
         )
       );
 
@@ -947,6 +999,44 @@ public class ConfigurationController : ControllerBase {
           cancellationToken);
       }
 
+      // Scheduled tenant maintenance updates.
+      // Remove previous maintenances associated with tenant.
+      await this._scheduledTenantMaintenanceDataHelper.ExecuteDeleteByAssocEntityIdAsync(existingTenant.Id,
+        cancellationToken);
+
+      if (hierarchy.ScheduledMaintenances is not null) {
+        // Create new tenant maintenances.
+        await this._scheduledTenantMaintenanceDataHelper.AddAllAsync(
+          hierarchy.ScheduledMaintenances.Select(m =>
+            ScheduledTenantMaintenance.New(
+              m.ScheduleExpression,
+              m.ScheduleTimeZone,
+              m.DurationMinutes,
+              existingTenant.Id)),
+          cancellationToken);
+      }
+
+      // Scheduled service maintenance updates.
+      foreach (var svc in hierarchy.Services) {
+        // Remove any existing service maintenances.
+        await this._scheduledServiceMaintenanceDataHelper.ExecuteDeleteByAssocEntityIdAsync(
+          existingServicesByName[svc.Name].Id,
+          cancellationToken);
+
+        if (svc.ScheduledMaintenances is not null) {
+          // Service has maintenance config.
+          // Create new service maintenances
+          await this._scheduledServiceMaintenanceDataHelper.AddAllAsync(
+            svc.ScheduledMaintenances.Select(m =>
+              ScheduledServiceMaintenance.New(
+                m.ScheduleExpression,
+                m.ScheduleTimeZone,
+                m.DurationMinutes,
+                existingServicesByName[svc.Name].Id)),
+            cancellationToken);
+        }
+      }
+
       // Delete servicesToDelete
       this._servicesTable.RemoveRange(servicesToDelete);
 
@@ -965,6 +1055,11 @@ public class ConfigurationController : ControllerBase {
         await this._tagsDataHelper.FetchExistingTenantTags(existingTenant.Id, cancellationToken);
       var updatedServiceTags =
         await this._tagsDataHelper.FetchExistingServiceTags(updatedServiceMap.Keys, cancellationToken);
+      var updatedScheduledTenantMaintenances =
+        await this._scheduledTenantMaintenanceDataHelper.FindAllByAssocEntityIdAsync(existingTenant.Id, cancellationToken);
+      var updatedScheduledServiceMaintenances =
+        await this._scheduledServiceMaintenanceDataHelper.FindAllByAssocEntityIdsAsync(updatedServiceMap.Keys.ToImmutableList(),
+          cancellationToken);
 
       response = this.Ok(CreateServiceHierarchy(
         updatedServiceMap,
@@ -974,7 +1069,11 @@ public class ConfigurationController : ControllerBase {
         updatedTenantTags.NullIfEmpty()?.ToImmutableDictionary(k => k.Name, k => k.Value),
         updatedServiceTags.ToLookup(s => s.ServiceId),
         updatedAlertReceivers.ToImmutableDictionary(keySelector: r => r.Id),
-        updatedAlertingRules.ToLookup(keySelector: r => r.ServiceId)
+        updatedAlertingRules.ToLookup(keySelector: r => r.ServiceId),
+        updatedScheduledTenantMaintenances
+          .Select(ToScheduledMaintenanceConfiguration).ToImmutableList(),
+        updatedScheduledServiceMaintenances.ToLookup(m => m.ServiceId,
+          ToScheduledMaintenanceConfiguration)
       ));
 
       await tx.CommitAsync(cancellationToken);
@@ -1029,6 +1128,13 @@ public class ConfigurationController : ControllerBase {
     return this.StatusCode((Int32)HttpStatusCode.NoContent);
   }
 
+  private static ScheduledMaintenanceConfiguration ToScheduledMaintenanceConfiguration(ScheduledMaintenance maintenance) {
+    return new ScheduledMaintenanceConfiguration(
+      maintenance.ScheduleExpression,
+      maintenance.DurationMinutes,
+      maintenance.ScheduleTimeZone);
+  }
+
   //Converts to Model
   private static ServiceHierarchyConfiguration CreateServiceHierarchy(
     IImmutableDictionary<Guid, Service> serviceMap,
@@ -1038,7 +1144,9 @@ public class ConfigurationController : ControllerBase {
     IImmutableDictionary<String, String?>? tenantTags,
     ILookup<Guid, ServiceTag>? serviceTagByService,
     IImmutableDictionary<Guid, AlertReceiver> alertReceiversById,
-    ILookup<Guid, AlertingRule> alertingRulesByServiceId) {
+    ILookup<Guid, AlertingRule> alertingRulesByServiceId,
+    ImmutableList<ScheduledMaintenanceConfiguration> scheduledTenantMaintenances,
+    ILookup<Guid, ScheduledMaintenanceConfiguration> scheduledServiceMaintenancesById) {
 
     AlertingConfiguration? alertingConfiguration = null;
     if (alertReceiversById.Any()) {
@@ -1090,6 +1198,8 @@ public class ConfigurationController : ControllerBase {
               receiverName: alertReceiversById[r.AlertReceiverId].Name,
               delay: r.Delay
             ))
+            .ToImmutableList(),
+          scheduledServiceMaintenancesById[svc.Id]
             .ToImmutableList()
         ))
         .ToImmutableList(),
@@ -1098,7 +1208,8 @@ public class ConfigurationController : ControllerBase {
         .Select(svc => svc.Name)
         .ToImmutableHashSet(),
       tenantTags,
-      alertingConfiguration
+      alertingConfiguration,
+      scheduledTenantMaintenances
     );
   }
 }

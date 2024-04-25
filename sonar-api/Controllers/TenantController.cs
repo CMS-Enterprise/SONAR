@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Asp.Versioning;
@@ -50,7 +49,43 @@ public class TenantController : ControllerBase {
     var environments = await this._environmentDataHelper.FetchAllExistingEnvAsync(cancellationToken);
 
     foreach (var e in environments) {
-      var res = await this._tenantDataHelper.GetTenantsInfo(e, cancellationToken);
+      var res = await this._tenantDataHelper.GetTenantsInfo(e, tenantName, cancellationToken);
+      tenantList.AddRange(res);
+    }
+
+    return this.Ok(tenantList);
+  }
+
+  /// <summary>
+  ///   Fetch a list of tenants without health data
+  /// </summary>
+  [HttpGet("view", Name = "GetTenantsView")]
+  [ProducesResponseType(typeof(TenantInfo[]), statusCode: 200)]
+  [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
+  public async Task<ActionResult> GetTenantsView(
+    [FromQuery(Name = "environment")] String environmentName = "",
+    [FromQuery(Name = "tenant")] String tenantName = "",
+    CancellationToken cancellationToken = default) {
+
+    if ((!environmentName.IsNullOrEmpty()) || (!tenantName.IsNullOrEmpty())) {
+      var env = await this._environmentDataHelper
+        .FetchExistingEnvAsync(environmentName, cancellationToken);
+      var tenants = await this._tenantDataHelper
+        .GetTenantsView(env, tenantName, cancellationToken);
+
+      // Throw not found exception if specific tenant requested but none found
+      if (!String.IsNullOrEmpty(tenantName) && tenants.Count == 0) {
+        throw new ResourceNotFoundException(nameof(Tenant), tenantName);
+      }
+
+      return this.Ok(tenants);
+    }
+
+    var tenantList = new List<TenantInfo>();
+    var environments = await this._environmentDataHelper.FetchAllExistingEnvAsync(cancellationToken);
+
+    foreach (var e in environments) {
+      var res = await this._tenantDataHelper.GetTenantsView(e, null, cancellationToken);
       tenantList.AddRange(res);
     }
 
@@ -58,23 +93,14 @@ public class TenantController : ControllerBase {
   }
 
   private async Task<ActionResult> GetTenantDetails(String environmentName, String tenantName, CancellationToken cancelToken) {
-    var tenantList = new List<TenantInfo>();
-
     var env = await this._environmentDataHelper.FetchExistingEnvAsync(environmentName, cancelToken);
-    var tenantsInfo = await this._tenantDataHelper.GetTenantsInfo(env, cancelToken);
+    var tenantsInfo = await this._tenantDataHelper.GetTenantsInfo(env, tenantName, cancelToken);
 
-    if (tenantName.IsNullOrEmpty()) {
-      //Get all tenants details for the environment
-      tenantList = tenantsInfo as List<TenantInfo>;
-    } else {
-      //Get a single tenant details for the environment
-      var tenantInfo = tenantsInfo.FirstOrDefault(t => t.TenantName == tenantName);
-      if (tenantInfo != null) {
-        tenantList.Add(tenantInfo);
-      } else {
-        throw new ResourceNotFoundException(nameof(Tenant), tenantName);
-      }
+    // Throw not found exception if specific tenant requested but none found
+    if (!String.IsNullOrEmpty(tenantName) && tenantsInfo.Count == 0) {
+      throw new ResourceNotFoundException(nameof(Tenant), tenantName);
     }
-    return this.Ok(tenantList);
+
+    return this.Ok(tenantsInfo);
   }
 }

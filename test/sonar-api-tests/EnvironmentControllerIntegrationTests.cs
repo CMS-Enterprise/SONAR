@@ -1,12 +1,17 @@
 using System;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Enumeration;
+using Cms.BatCave.Sonar.Helpers.Maintenance;
 using Cms.BatCave.Sonar.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;
+using Environment = Cms.BatCave.Sonar.Data.Environment;
 
 namespace Cms.BatCave.Sonar.Tests;
 
@@ -16,6 +21,8 @@ public class EnvironmentControllerIntegrationTests : ApiControllerTestsBase {
     ITestOutputHelper outputHelper) :
     base(fixture, outputHelper) {
   }
+
+  private readonly String TestScheduledMaintenanceEnvName = "env-test";
 
   // List Environments Anonymously
   [Fact]
@@ -129,6 +136,101 @@ public class EnvironmentControllerIntegrationTests : ApiControllerTestsBase {
 
     Assert.NotNull(body);
     Assert.Equal(testName, body.Name);
+  }
+
+  // Create Environment With Scheduled Maintenance Config
+  [Fact]
+  public async Task CreateEnvironment_WithScheduledMaintenanceConfig_Success() {
+    var scheduledMaintenances = ImmutableList<ScheduledMaintenanceConfiguration>.Empty
+      .Add(new ScheduledMaintenanceConfiguration(
+        scheduleExpression: "* 20 4 * ?",
+        durationMinutes: 60
+      ));
+
+    var environmentToCreate = new EnvironmentModel(
+      name: "test-environment-1",
+      isNonProd: true,
+      scheduledMaintenances: scheduledMaintenances
+    );
+
+    var response = await
+      this.Fixture.CreateAuthenticatedRequest(url: "api/v2/environments", PermissionType.Admin)
+        .And(req => {
+          req.Content = JsonContent.Create(environmentToCreate);
+        })
+        .PostAsync();
+
+    Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+    var createdEnvironment = await response.Content.ReadFromJsonAsync<EnvironmentModel>(
+      SerializerOptions
+    );
+
+    Assert.NotNull(createdEnvironment);
+    Assert.Equal(environmentToCreate.Name, createdEnvironment.Name);
+    Assert.Equivalent(scheduledMaintenances, createdEnvironment.ScheduledMaintenances);
+
+  }
+
+  // Update Environment with scheduled maintenance config
+  [Fact]
+  public async Task UpdateEnvironment_WithScheduledMaintenanceConfig_Success() {
+    var scheduledMaintenances = ImmutableList<ScheduledMaintenanceConfiguration>.Empty
+      .Add(new ScheduledMaintenanceConfiguration(
+        scheduleExpression: "* 12 * * ?",
+        durationMinutes: 40
+      ));
+
+    var environmentToCreate = new EnvironmentModel(
+      name: TestScheduledMaintenanceEnvName,
+      isNonProd: false,
+      scheduledMaintenances: scheduledMaintenances
+    );
+
+    var creation = await
+      this.Fixture.CreateAdminRequest($"api/v2/environments")
+        .And(req => {
+          req.Content = JsonContent.Create(environmentToCreate);
+        })
+        .PostAsync();
+
+    AssertHelper.Precondition(
+      creation.StatusCode == HttpStatusCode.Created,
+      "Unable to create environment"
+    );
+
+    var expectedScheduledMaintenanceConfig = new ScheduledMaintenanceConfiguration(
+      scheduleExpression: "* 10 11 * ?",
+      durationMinutes: 60);
+
+    var newScheduledMaintenances = ImmutableList<ScheduledMaintenanceConfiguration>.Empty
+      .Add(expectedScheduledMaintenanceConfig);
+
+    var updatedEnvironmentModel = new EnvironmentModel(
+      name: TestScheduledMaintenanceEnvName,
+      isNonProd: false,
+      scheduledMaintenances: newScheduledMaintenances
+    );
+    // then request for an update
+    var response = await
+      this.Fixture.CreateAuthenticatedRequest(url: $"api/v2/environments/{this.TestScheduledMaintenanceEnvName}", PermissionType.Admin)
+        .And(req => {
+          req.Content = JsonContent.Create(updatedEnvironmentModel);
+        })
+        .SendAsync("PUT");
+
+    Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+    var createdEnvironment = await response.Content.ReadFromJsonAsync<EnvironmentModel>(
+      SerializerOptions
+    );
+
+    Assert.NotNull(createdEnvironment);
+    Assert.Equal(environmentToCreate.Name, createdEnvironment.Name);
+
+    var updatedMaintenanceConfig = Assert.Single(createdEnvironment.ScheduledMaintenances);
+
+    Assert.Equal(expectedScheduledMaintenanceConfig, updatedMaintenanceConfig);
   }
 
   // Delete Environment Anon - 401

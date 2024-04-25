@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Extensions;
 using Cms.BatCave.Sonar.Helpers;
+using Cms.BatCave.Sonar.Maintenance;
 using Cms.BatCave.Sonar.Models;
 using Cms.BatCave.Sonar.Prometheus;
 using Microsoft.Extensions.Logging;
@@ -642,6 +643,94 @@ public class PrometheusServiceTests {
   }
 
   #endregion GetAlertmanagerNotificationsStatusAsync Tests
+
+  #region WriteServiceMaintenanceStatusAsync Tests
+
+  [Fact]
+  public async Task WriteServiceMaintenanceStatusAsync_WriteRequestContainsExpectedSamples() {
+    WriteRequest? actualWriteRequest = null;
+
+    this.MockPrometheusRemoteProtocolClient
+      .Setup(p => p.WriteAsync(
+        It.IsAny<WriteRequest>(),
+        It.IsAny<CancellationToken>()))
+      .Callback((WriteRequest? writeRequest, CancellationToken _) => actualWriteRequest = writeRequest);
+
+    await this._prometheusService.WriteServiceMaintenanceStatusAsync(
+      records: TestServiceMaintenances,
+      cancellationToken: default);
+
+    Assert.Equal(expected: 2, actual: actualWriteRequest!.Timeseries.Count);
+    foreach (var timeSeries in actualWriteRequest.Timeseries) {
+      Assert.Single(timeSeries.Samples);
+      Assert.Equal(expected: 1, timeSeries.Samples[0].Value);
+    }
+  }
+
+  [Fact]
+  public async Task WriteServiceMaintenanceStatusAsync_WriteRequestContainsExpectedLabels() {
+    WriteRequest? actualWriteRequest = null;
+
+    this.MockPrometheusRemoteProtocolClient
+      .Setup(p => p.WriteAsync(
+        It.IsAny<WriteRequest>(),
+        It.IsAny<CancellationToken>()))
+      .Callback((WriteRequest? writeRequest, CancellationToken _) => actualWriteRequest = writeRequest);
+
+    await this._prometheusService.WriteServiceMaintenanceStatusAsync(
+      records: TestServiceMaintenances,
+      cancellationToken: default);
+
+    var expectedLabels = new List<Object> {
+      new { Name = "__name__", Value = MaintenanceStatusMetricMetadata.MetricFamilyName },
+      new { Name = MaintenanceStatusMetricMetadata.EnvironmentLabel, Value = "environment-1" },
+      new { Name = MaintenanceStatusMetricMetadata.TenantLabel, Value = "tenant-1" },
+      new { Name = MaintenanceStatusMetricMetadata.ServiceLabel, Value = "service-1" },
+      new { Name = MaintenanceStatusMetricMetadata.MaintenanceScopeLabel, Value = "service" },
+      new { Name = MaintenanceStatusMetricMetadata.MaintenanceTypeLabel, Value = "adhoc" },
+      new { Name = "__name__", Value = MaintenanceStatusMetricMetadata.MetricFamilyName },
+      new { Name = MaintenanceStatusMetricMetadata.EnvironmentLabel, Value = "environment-2" },
+      new { Name = MaintenanceStatusMetricMetadata.TenantLabel, Value = "tenant-2" },
+      new { Name = MaintenanceStatusMetricMetadata.ServiceLabel, Value = "service-2" },
+      new { Name = MaintenanceStatusMetricMetadata.MaintenanceScopeLabel, Value = "environment" },
+      new { Name = MaintenanceStatusMetricMetadata.MaintenanceTypeLabel, Value = "scheduled" },
+    };
+
+    Assert.Equal(expected: 2, actual: actualWriteRequest!.Timeseries.Count);
+    foreach (var timeSeries in actualWriteRequest.Timeseries) {
+      Assert.Equal(expected: 6, actual: timeSeries.Labels.Count);
+    }
+
+    Assert.Equivalent(
+      expected: expectedLabels,
+      actual: actualWriteRequest.Timeseries.SelectMany(ts => ts.Labels));
+  }
+
+  private static IImmutableList<ServiceMaintenance> TestServiceMaintenances =>
+    ImmutableList<ServiceMaintenance>.Empty
+      .Add(new ServiceMaintenance {
+        EnvironmentId = Guid.Empty,
+        EnvironmentName = "environment-2",
+        TenantId = Guid.Empty,
+        TenantName = "tenant-2",
+        ServiceId = Guid.Empty,
+        ServiceName = "service-2",
+        MaintenanceScope = "environment",
+        MaintenanceType = "scheduled"
+      })
+      .Add(new ServiceMaintenance {
+        EnvironmentId = Guid.Empty,
+        EnvironmentName = "environment-1",
+        TenantId = Guid.Empty,
+        TenantName = "tenant-1",
+        ServiceId = Guid.Empty,
+        ServiceName = "service-1",
+        MaintenanceScope = "service",
+        MaintenanceType = "adhoc"
+      });
+
+
+  #endregion WriteServiceMaintenanceStatusAsync Tests
 
 }
 

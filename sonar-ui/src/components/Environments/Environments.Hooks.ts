@@ -6,8 +6,11 @@ import { useSonarApi } from '../AppContext/AppContextProvider';
 
 export enum QueryKeys {
   GetEnvironments = 'environments',
-  GetTenants = 'tenants'
+  GetTenants = 'tenants',
+  GetEnvironmentsView = 'environments-view',
+  GetTenantsView = 'tenants-view'
 }
+
 export const useGetEnvironments = () => {
   const sonarClient = useSonarApi();
   const { createAlert } = useAlertContext();
@@ -27,6 +30,25 @@ export const useGetEnvironments = () => {
   });
 }
 
+export const useGetEnvironmentsView = () => {
+  const sonarClient = useSonarApi();
+  const { createAlert } = useAlertContext();
+  return useQuery({
+    queryKey: QueryKeys.GetEnvironmentsView,
+    queryFn: () => sonarClient.getEnvironmentsView()
+      .then((res) => {
+        return res.data;
+      }),
+    onError: () => {
+      createAlert(
+        "Unable to fetch environments view.",
+        "System unable to fetch environments from SONAR API. Please try again later.",
+        "error",
+        QueryKeys.GetEnvironmentsView);
+    }
+  });
+}
+
 export const useCreateEnvironment = () => {
   const sonarClient = useSonarApi();
   return useMutation({
@@ -34,12 +56,30 @@ export const useCreateEnvironment = () => {
   });
 }
 
-export const useGetTenants = (enabled: boolean) => {
+export const useGetTenants = (enabled: boolean, environment?: string, tenant?: string) => {
   const sonarClient = useSonarApi();
   return useQuery({
     queryKey: QueryKeys.GetTenants,
     enabled: enabled,
-    queryFn: () => sonarClient.getTenants()
+    queryFn: () => sonarClient.getTenants({
+      environment: environment,
+      tenant: tenant
+    })
+      .then((res) => {
+        return res.data;
+      })
+  });
+}
+
+export const useGetTenantsView = (enabled: boolean, environment?: string, tenant?: string) => {
+  const sonarClient = useSonarApi();
+  return useQuery({
+    queryKey: QueryKeys.GetTenantsView,
+    enabled: enabled,
+    queryFn: () => sonarClient.getTenantsView({
+      environment: environment,
+      tenant: tenant
+    })
       .then((res) => {
         return res.data;
       })

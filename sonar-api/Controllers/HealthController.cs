@@ -214,6 +214,11 @@ public class HealthController : ControllerBase {
     var healthChecksByService = await this._healthDataHelper.GetHealthChecksByService(services, cancellationToken);
     var tagsByService = await this._tagsDataHelper.FetchExistingServiceTags(services.Keys, cancellationToken);
     var tenantTags = await this._tagsDataHelper.FetchExistingTenantTags(existingTenant.Id, cancellationToken);
+    var maintenanceStatusByService = await this._serviceDataHelper.GetMaintenanceStatusByService(
+      environment,
+      tenant,
+      services,
+      cancellationToken);
     return this.Ok(
       services.Values.Where(svc => svc.IsRootService)
         .Select(svc => this._healthDataHelper.ToServiceHealth(
@@ -227,7 +232,8 @@ public class HealthController : ControllerBase {
           this._tagsDataHelper.GetResolvedTenantTags(tenantTags.ToList()),
           environment,
           existingTenant.Name,
-          ImmutableQueue.Create(svc.Name))
+          ImmutableQueue.Create(svc.Name),
+          maintenanceStatusByService)
         )
         .ToArray()
     );
@@ -266,6 +272,11 @@ public class HealthController : ControllerBase {
     var healthChecksByService = await this._healthDataHelper.GetHealthChecksByService(services, cancellationToken);
     var tagsByService = await this._tagsDataHelper.FetchExistingServiceTags(services.Keys, cancellationToken);
     var tenantTags = await this._tagsDataHelper.FetchExistingTenantTags(existingTenant.Id, cancellationToken);
+    var maintenanceStatusByService = await this._serviceDataHelper.GetMaintenanceStatusByService(
+      environment,
+      tenant,
+      services,
+      cancellationToken);
     var serviceHierarchy = services.Values
       .Where(svc => svc.IsRootService)
       .Select(svc => this._healthDataHelper.ToServiceHealth(
@@ -279,7 +290,8 @@ public class HealthController : ControllerBase {
         this._tagsDataHelper.GetResolvedTenantTags(tenantTags.ToList()),
         environment,
         existingTenant.Name,
-        ImmutableQueue.Create(svc.Name)));
+        ImmutableQueue.Create(svc.Name),
+        maintenanceStatusByService));
 
     var flattenedHierarchy = FlattenHierarchy(serviceHierarchy);
 

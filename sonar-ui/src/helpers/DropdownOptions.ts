@@ -1,7 +1,8 @@
 import { DropdownOptions, DropdownValue } from '@cmsgov/design-system/dist/types/Dropdown/Dropdown';
 import {
-  EnvironmentHealth,
+  EnvironmentModel,
   PermissionConfiguration,
+  ServiceHierarchyInfo,
   TenantInfo
 } from '../api/data-contracts';
 import { UsersByEmail } from '../pages/UserPermissions.Hooks';
@@ -31,6 +32,16 @@ export const initialEnvOption: DropdownOptions = {
 
 export const initialTenantOption: DropdownOptions = {
   label: "All Tenants",
+  value: 0
+}
+
+export const initialServiceOption: DropdownOptions = {
+  label: "All Services",
+  value: 0
+}
+
+export const requiredEnvOption: DropdownOptions = {
+  label: "Please Select Environment",
   value: 0
 }
 
@@ -95,13 +106,13 @@ export function getPermissionOptions(
 }
 
 export function getEnvironmentOptions(
-  allEnvironments: EnvironmentHealth[]
+  allEnvironments: EnvironmentModel[]
 ) {
-  return [initialEnvOption].concat(
+  return [requiredEnvOption].concat(
     allEnvironments.map((env) => {
       const option: DropdownOptions = {
-        label: env.environmentName,
-        value: env.environmentName
+        label: env.name,
+        value: env.name
       }
       return option;
     })
@@ -122,6 +133,27 @@ export function getTenantOptions(
       return option;
     })
   return tenantOptions;
+}
+
+export function getServiceOptionsByTenant(allTenants: TenantInfo[], selectedEnvironment: DropdownValue, selectedTenant: DropdownValue) {
+  return allTenants.filter(t => t.environmentName === selectedEnvironment && t.tenantName === selectedTenant).flatMap((tenant) => {
+    const flattenedChildren = flattenChildren(tenant.rootServices);
+    return flattenedChildren.map(c => {
+      const option: DropdownOptions = {
+        label: c,
+        value: c
+      }
+      return option;
+    })
+  })
+}
+
+function flattenChildren(services: ServiceHierarchyInfo[] | null | undefined): string[] {
+  return services ?
+    services.flatMap(({name, children}) => [
+      name,
+      ...flattenChildren(children)
+    ]) : [];
 }
 
 export function getUserOptions(

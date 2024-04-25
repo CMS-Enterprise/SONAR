@@ -24,9 +24,28 @@ const Tenant = () => {
     useListErrorReportsForTenant(environmentName, tenantName);
   const errorReportsCount = errorReportsData?.length ?? 0;
 
-  const memoizedStyle = useMemo(() =>
-      getEnvironmentStatusStyle(theme),
-    [theme]);
+  const TenantItems = useMemo(() => {
+    return (
+      <>
+        {tenantsData?.filter(t => (t.environmentName === environmentName) && (t.tenantName === tenantName))
+          .map(t =>
+            <div key={t.tenantName}>
+              <Accordion bordered css={getEnvironmentStatusStyle(theme, t.isInMaintenance!)}>
+                <AccordionItem
+                  heading={t.isInMaintenance ? `Tenant: ${t.tenantName} is currently undergoing maintenance` : "Services"}
+                  defaultOpen={true}
+                  closeIcon={<ArrowIcon direction={'up'} />}
+                  openIcon={<ArrowIcon direction={'down'} />}>
+
+                  <TenantItem tenant={t} flattenServices={true} />
+                </AccordionItem>
+              </Accordion>
+              <p />
+            </div>
+          )}
+      </>
+    )
+  }, [environmentName, tenantName, tenantsData, theme])
 
   return (
     <div
@@ -44,24 +63,9 @@ const Tenant = () => {
       </div>
 
       {
-        isLoading ? (<Spinner />) :
-          tenantsData?.filter(t => (t.environmentName === environmentName) && (t.tenantName === tenantName))
-            .map(t =>
-              <div key={t.tenantName}>
-                <Accordion bordered css={memoizedStyle}>
-                  <AccordionItem
-                    heading={'Services'}
-                    defaultOpen={true}
-                    closeIcon={<ArrowIcon direction={'up'} />}
-                    openIcon={<ArrowIcon direction={'down'} />}>
-
-                    <TenantItem tenant={t} flattenServices={true} />
-                  </AccordionItem>
-                </Accordion>
-                <p />
-              </div>
-            )
-      }</div>
+        isLoading ? (<Spinner />) : TenantItems
+      }
+    </div>
   );
 
 }

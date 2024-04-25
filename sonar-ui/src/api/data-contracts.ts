@@ -9,6 +9,43 @@
  * ---------------------------------------------------------------
  */
 
+export interface ActiveAdHocMaintenanceView {
+  /** @format uuid */
+  id: string;
+  scope: MaintenanceScope;
+  /** @minLength 1 */
+  environment: string;
+  tenant?: string | null;
+  service?: string | null;
+  /** @minLength 1 */
+  appliedByUserName: string;
+  /** @format date-time */
+  startTime: string;
+  /** @format date-time */
+  endTime: string;
+}
+
+export interface ActiveScheduledMaintenanceView {
+  /** @format uuid */
+  id: string;
+  scope: MaintenanceScope;
+  /** @minLength 1 */
+  environment: string;
+  tenant?: string | null;
+  service?: string | null;
+  /** @minLength 1 */
+  scheduleExpression: string;
+  /** @format int32 */
+  duration?: number;
+  timeZone?: string | null;
+}
+
+export interface AdHocMaintenanceConfiguration {
+  isEnabled: boolean;
+  /** @format date-time */
+  endTime?: string;
+}
+
 export enum AgentErrorLevel {
   Fatal = "Fatal",
   Error = "Error",
@@ -139,6 +176,7 @@ export interface EnvironmentModel {
    */
   name: string;
   isNonProd?: boolean;
+  scheduledMaintenances?: ScheduledMaintenanceConfiguration[] | null;
 }
 
 export interface ErrorReportDetails {
@@ -191,6 +229,12 @@ export enum HealthStatus {
   Maintenance = "Maintenance",
 }
 
+export enum MaintenanceScope {
+  Environment = "Environment",
+  Tenant = "Tenant",
+  Service = "Service",
+}
+
 export interface MetricDataCollection {
   timeSeries: DateTimeDoubleValueTuple[];
 }
@@ -227,6 +271,14 @@ export interface ProblemDetails {
   [key: string]: any;
 }
 
+export interface ScheduledMaintenanceConfiguration {
+  /** @minLength 1 */
+  scheduleExpression: string;
+  /** @format int32 */
+  durationMinutes: number;
+  scheduleTimeZone?: string | null;
+}
+
 export interface ServiceAlert {
   /** @minLength 1 */
   name: string;
@@ -258,6 +310,7 @@ export interface ServiceConfiguration {
   children?: string[] | null;
   tags?: Record<string, string>;
   alertingRules?: AlertingRuleConfiguration[] | null;
+  scheduledMaintenances?: ScheduledMaintenanceConfiguration[] | null;
 }
 
 export interface ServiceHealth {
@@ -280,6 +333,7 @@ export interface ServiceHierarchyConfiguration {
   rootServices: string[];
   tags?: Record<string, string>;
   alerting?: AlertingConfiguration;
+  scheduledMaintenances?: ScheduledMaintenanceConfiguration[] | null;
 }
 
 export interface ServiceHierarchyHealth {

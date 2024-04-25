@@ -1,0 +1,234 @@
+{
+  "services": [
+    {
+      "name": "http-metric-test-app",
+      "displayName": "Test Application for HTTP Health Check",
+      "description": "A test application that has one endpoint to simulate different HTTP status codes.",
+      "url": "http://localhost:8082/api/ready",
+      "children": ["test-metric-app-child", "test-metric-app-child-sibling"],
+      "versionChecks": [
+        {
+          "versionCheckType": "HttpResponseBody",
+          "definition": {
+            "url": "http://localhost:8082/api/version",
+            "path": "$.version",
+            "bodyType": "json"
+          }
+        },
+        {
+          "versionCheckType": "KubernetesImage",
+          "definition": {
+            "resourceNamespace": "baz",
+            "resourceType": "Deployment",
+            "resourceName": "my-argocd-redis",
+            "containerName": "redis"
+          }
+        }
+      ],
+      "scheduledMaintenances": [
+        {
+          "scheduleExpression": "* * * * *",
+          "scheduleTimeZone": "US/Eastern",
+          "durationMinutes": 60
+        }
+      ],
+      "healthChecks": [
+        {
+          "name": "HttpReadyTest",
+          "description": "Check to see if request contains failed status code and/or request duration greater than specified threshold.",
+          "definition": {
+            "url": "http://localhost:8082/api/ready",
+            "followRedirects": true,
+            "authorizationHeader": "test-header",
+            "conditions": [
+              {
+                "status": "Online",
+                "statusCodes": [200],
+                "type": "HttpStatusCode"
+              },
+              {
+                "status": "Degraded",
+                "responseTime": "00:00:02",
+                "type": "HttpResponseTime"
+              }
+            ]
+          },
+          "type": "httpRequest"
+        },
+        {
+          "name": "HttpJsonTest",
+          "description": "Check response status code, duration of request greater than specified threshold, and Json status",
+          "definition": {
+            "url": "http://localhost:8082/api/ready/statusjson",
+            "followRedirects": true,
+            "authorizationHeader": "test-header",
+            "conditions": [
+              {
+                "status": "Online",
+                "statusCodes": [200],
+                "type": "HttpStatusCode"
+              },
+              {
+                "status": "Online",
+                "path": "$.status",
+                "value": "OK",
+                "type": "HttpBodyJson"
+              },
+              {
+                "status": "Offline",
+                "path": "$.status",
+                "value": "Down",
+                "type": "HttpBodyJson"
+              },
+              {
+                "status": "Online",
+                "path": "$.badPath",
+                "value": "Up",
+                "type": "HttpBodyJson",
+                "NoMatchStatus": "Degraded"
+              },
+              {
+                "status": "Degraded",
+                "path": "$.status",
+                "value": "(Iffy|Down)",
+                "type": "HttpBodyJson"
+              },
+              {
+                "status": "Unknown",
+                "path": "$.status",
+                "value": "^e...$r",
+                "type": "HttpBodyJson"
+              },
+              {
+                "status": "Degraded",
+                "responseTime": "00:00:02",
+                "type": "HttpResponseTime"
+              }
+            ]
+          },
+          "type": "httpRequest"
+        },
+        {
+          "name": "HttpXmlTest",
+          "description": "Check response status code, duration of request greater than specified threshold, and Xml status",
+          "definition": {
+            "url": "http://localhost:8082/api/ready/statusxml",
+            "followRedirects": true,
+            "authorizationHeader": "test-header",
+            "conditions": [
+              {
+                "status": "Online",
+                "statusCodes": [200],
+                "type": "HttpStatusCode"
+              },
+              {
+                "status": "Degraded",
+                "responseTime": "00:00:02",
+                "type": "HttpResponseTime"
+              },
+              {
+                "status": "Online",
+                "path": "GetSystemCheckResponse/status",
+                "value": "success",
+                "type": "HttpBodyXml"
+              }
+            ]
+          },
+          "type": "httpRequest",
+          "smoothingTolerance": 2
+        }
+      ]
+    },
+    {
+      "name": "test-metric-app-child",
+      "displayName": "Test Application Child",
+      "description": "A test application that generates arbitrary metrics for testing purpose",
+      "url": "http://test-metric-app:2020/metrics",
+      "children": null,
+      "healthChecks": [
+        {
+          "name": "example-child",
+          "description": "Degraded and Offline periodically based on an example metric.",
+          "definition": {
+            "duration": "0.00:00:10",
+            "expression": "example_saw_wave",
+            "conditions": [
+              {
+                "operator": "GreaterThan",
+                "threshold": 60,
+                "status": "Offline"
+              },
+              {
+                "operator": "GreaterThan",
+                "threshold": 20,
+                "status": "Degraded"
+              }
+            ]
+          },
+          "type": "prometheusMetric"
+        }
+      ]
+    },
+    {
+      "name": "test-metric-app-child-sibling",
+      "displayName": "Test Application Child",
+      "description": "A test application that generates arbitrary metrics for testing purpose",
+      "url": "http://test-metric-app:2020/metrics",
+      "children": null,
+      "healthChecks": [
+        {
+          "name": "example-child",
+          "description": "Degraded and Offline periodically based on an example metric.",
+          "definition": {
+            "duration": "0.00:00:10",
+            "expression": "example_saw_wave",
+            "conditions": [
+              {
+                "operator": "GreaterThan",
+                "threshold": 60,
+                "status": "Offline"
+              },
+              {
+                "operator": "GreaterThan",
+                "threshold": 20,
+                "status": "Degraded"
+              }
+            ]
+          },
+          "type": "prometheusMetric"
+        }
+      ]
+    }
+  ],
+  "rootServices": [
+    "http-metric-test-app"
+  ],
+  "alerting": {
+    "receivers": [
+      {
+        "name": "receiver1",
+        "type": "email",
+        "options": {
+          "address": "user1@gmail.com"
+        }
+      },
+      {
+        "name": "receiver2",
+        "type": "email",
+        "options": {
+          "address": "user2@gmail.com"
+        }
+      }
+    ]
+  },
+  "tags": {
+    "test-tag-1": "test-original"
+  },
+  "scheduledMaintenances": [
+    {
+      "scheduleExpression": "* * * * *",
+      "scheduleTimeZone": "US/Eastern",
+      "durationMinutes": 60
+    }
+  ]
+}

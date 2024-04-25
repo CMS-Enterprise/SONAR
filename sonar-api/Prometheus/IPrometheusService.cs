@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
+using Cms.BatCave.Sonar.Maintenance;
 using Cms.BatCave.Sonar.Models;
 
 namespace Cms.BatCave.Sonar.Prometheus;
@@ -118,4 +119,28 @@ public interface IPrometheusService {
   /// <see cref="HealthStatus.Unknown"/> if there was any unexpected error querying the metric data.
   /// </returns>
   Task<HealthStatus> GetAlertmanagerNotificationsStatusAsync(String integration, CancellationToken cancellationToken);
+
+  /// <summary>
+  /// Write time series samples for the given <see cref="ServiceMaintenance"/> records to Prometheus using P8s'
+  /// remote write API using metric metadata from <see cref="MaintenanceStatusMetricMetadata"/>. A value of 1
+  /// is written for each time sample at the current timestamp.
+  /// </summary>
+  /// <param name="records">The <see cref="ServiceMaintenance"/>s to write samples for.</param>
+  /// <param name="cancellationToken">The cancellation token for the async operation.</param>
+  Task WriteServiceMaintenanceStatusAsync(IImmutableList<ServiceMaintenance> records, CancellationToken cancellationToken);
+
+  /// <summary>
+  /// Get the maintenance status for a given scope
+  /// </summary>
+  /// <param name="environment">Environment to query maintenance status for</param>
+  /// <param name="tenant">Tenant to include in query</param>
+  /// <param name="service">Service to include in query</param>
+  /// <param name="scope">Scope for requested maintenance status</param>
+  /// <param name="cancellationToken">The cancellation token for the async operation.</param>
+  Task<(Boolean IsInMaintenance, String? MaintenanceTypes)> GetScopedCurrentMaintenanceStatus(
+    String environment,
+    String? tenant,
+    String? service,
+    MaintenanceScope scope,
+    CancellationToken cancellationToken);
 }

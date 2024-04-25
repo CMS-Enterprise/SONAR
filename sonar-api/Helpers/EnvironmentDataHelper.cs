@@ -72,6 +72,17 @@ public class EnvironmentDataHelper {
     return result;
   }
 
+  public async Task<IList<Environment>> FetchByEnvIdsAsync(
+    List<Guid> ids,
+    CancellationToken cancellationToken) {
+
+    var result =
+      await this._environmentsTable.Where(e => ids.Contains(e.Id))
+        .ToListAsync(cancellationToken);
+
+    return result;
+  }
+
   public async Task<Environment> AddAsync(
     Environment environment,
     CancellationToken cancellationToken) {

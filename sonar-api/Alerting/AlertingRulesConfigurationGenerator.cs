@@ -57,7 +57,7 @@ public class AlertingRulesConfigurationGenerator {
     this._logger = logger;
   }
 
-  internal async Task<(PrometheusAlertingConfiguration, AlertmanagerRoute)> GenerateAlertingRulesConfiguration(
+  internal async Task<(PrometheusAlertingConfiguration, AlertmanagerRoute, ImmutableList<AlertmanagerInhibitRuleConfiguration>)> GenerateAlertingRulesConfiguration(
     CancellationToken cancellationToken) {
 
     var allServicesList =
@@ -113,6 +113,7 @@ public class AlertingRulesConfigurationGenerator {
         "http://localhost:8080";
     var resultGroups = new List<PrometheusAlertingGroup>();
     var routes = new List<AlertmanagerRoute>();
+    var inhibitRules = new List<AlertmanagerInhibitRuleConfiguration>();
     foreach (var (environmentName, environment) in serviceHierarchy) {
       foreach (var (tenantName, tenant) in environment.Tenants) {
         var resultRules = new List<PrometheusAlertingRule>();
@@ -216,6 +217,51 @@ public class AlertingRulesConfigurationGenerator {
                     $"alertname=\"{alertingRule.Name}\""),
                   ImmutableHashSet.Create<String>("environment", "tenant", "service")
                 ));
+
+                // Generate maintenance alerting rules and inhibitions for services
+                foreach (var serviceInMaintenance in serviceNames) {
+                  // Create in-maintenance rule
+                  var maintenanceExpr = new StringBuilder();
+                  maintenanceExpr.PromQlSelector(
+                    metric: "sonar_service_maintenance_status",
+                    selectors: new[] {
+                      new PromQlLabelFilter("environment", PromQlOperator.Equal, environmentName),
+                      new PromQlLabelFilter("tenant", PromQlOperator.Equal, tenantName),
+                      new PromQlLabelFilter("service", PromQlOperator.Equal, serviceInMaintenance),
+                    }
+                  ).Append(" > 0");
+
+                  var serviceInMaintenanceAlertName = $"{serviceInMaintenance}-is-in-maintenance";
+                  resultRules.Add(new PrometheusAlertingRule(
+                    serviceInMaintenanceAlertName,
+                    maintenanceExpr.ToString(),
+                    TimeSpan.FromSeconds(alertingRule.Delay),
+                    ImmutableDictionary<String, String>.Empty
+                      .Add("environment", environmentName)
+                      .Add("tenant", tenantName)
+                      .Add("service", rootAlertingSvc.Service.Name)
+                      .Add("purpose", "maintenance"),
+                    ImmutableDictionary<String, String>.Empty
+                  ));
+
+                  // Create inhibition rule
+                  var sourceMatchers = new List<String> {
+                    $"alertname={serviceInMaintenanceAlertName}"
+                  }.ToImmutableList();
+                  var targetMatchers = new List<String> {
+                    $"alertname={alertingRule.Name}"
+                  }.ToImmutableList();
+                  var labels = new List<String> {
+                    "environment",
+                    "tenant",
+                    "service"
+                  }.ToImmutableList();
+
+                  inhibitRules.Add(new AlertmanagerInhibitRuleConfiguration(
+                    sourceMatchers,
+                    targetMatchers,
+                    labels));
+                }
               } else {
                 this._logger.LogWarning(
                   "Service '{Service}' has an invalid alert threshold: {Threshold} (Environment: {Environment}, Tenant: {Tenant})",
@@ -278,13 +324,20 @@ public class AlertingRulesConfigurationGenerator {
       Matchers: ImmutableList.Create("alertname=\"always-firing\"")
     ));
 
+    // route maintenance alerts to null receiver so that they don't trigger notifications
+    routes.Add(new AlertmanagerRoute(
+      Receiver: AlertingReceiverConfigurationGenerator.NullReceiverName,
+      Matchers: ImmutableList.Create("purpose=\"maintenance\"")
+    ));
+
     return (
       new PrometheusAlertingConfiguration(resultGroups.ToImmutableList()),
       new AlertmanagerRoute(
         Receiver: AlertingReceiverConfigurationGenerator.DefaultReceiverName,
         Matchers: ImmutableList<String>.Empty,
         GroupBy: ImmutableHashSet<String>.Empty,
-        Routes: routes.ToImmutableList())
+        Routes: routes.ToImmutableList()),
+      inhibitRules.ToImmutableList()
     );
   }
 

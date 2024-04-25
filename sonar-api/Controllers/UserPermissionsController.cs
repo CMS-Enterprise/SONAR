@@ -1,15 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using Asp.Versioning;
 using Cms.BatCave.Sonar.Authentication;
 using Cms.BatCave.Sonar.Data;
-using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Exceptions;
+using Cms.BatCave.Sonar.Helpers;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -59,9 +57,13 @@ permissionDetails.Environment,
 
     ValidatePermissionDetails(permissionDetails, user, environment, tenant);
 
+    //If permissions are valid, create user permissions
+    ValidationHelper.ValidatePermissionScope(
+      this.User,
+      environment?.Id,
+      tenant?.Id,
+      activity);
 
-    //If permissions are valid create user permissions
-    ValidatePermission(this.User, environment?.Id, tenant?.Id, activity);
     var createdUserPermission = await this._permissionsRepository.AddAsync(
       new UserPermission(Guid.Empty, user!.Id, environment?.Id, tenant?.Id, permissionDetails.Permission),
       cancellationToken);
@@ -94,7 +96,11 @@ permissionDetails.Environment,
     var userPermission = await this._permissionsRepository.GetAsync(permissionId, cancellationToken);
 
     if (userPermission != null) {
-      ValidatePermission(this.User, userPermission.EnvironmentId, userPermission.TenantId, activity);
+      ValidationHelper.ValidatePermissionScope(
+        this.User,
+        userPermission.EnvironmentId,
+        userPermission.TenantId,
+        activity);
     } else {
       throw new ResourceNotFoundException("UserPermission");
     }
@@ -136,7 +142,11 @@ permissionDetails.Environment,
     var userPermission = await this._permissionsRepository.GetAsync(permissionId, cancellationToken);
 
     if (userPermission != null) {
-      ValidatePermission(this.User, userPermission.EnvironmentId, userPermission.TenantId, activity);
+      ValidationHelper.ValidatePermissionScope(
+        this.User,
+        userPermission.EnvironmentId,
+        userPermission.TenantId,
+        activity);
     } else {
       throw new ResourceNotFoundException("UserPermission");
     }
@@ -241,33 +251,6 @@ permissionDetails.Environment,
           (Int32)HttpStatusCode.OK,
           await this._permissionsRepository.GetPermissionsScopeAsync(new Guid(subjectId), cancellationToken)
           );
-      }
-    }
-  }
-  private static void ValidatePermission(
-      ClaimsPrincipal principal,
-      Guid? environmentScope,
-      Guid? tenantScope,
-      String activity) {
-
-    // Make sure that the Api Key being created is within a scope that the API client has Admin access to
-    if (environmentScope.HasValue) {
-      if (tenantScope.HasValue) {
-        if (!principal.HasTenantAccess(environmentScope.Value, tenantScope.Value, PermissionType.Admin)) {
-          throw new ForbiddenException(
-            $"Not authorized to {activity}, because it has a different Tenant scope."
-          );
-        }
-      } else if (!principal.HasEnvironmentAccess(environmentScope.Value, PermissionType.Admin)) {
-        throw new ForbiddenException(
-          $"Not authorized to {activity} because it has a different Environment scope."
-        );
-      }
-    } else {
-      //If scope of work requires global admin, make sure authenticated key has global admin scope.
-      if (!principal.HasGlobalAccess(PermissionType.Admin)) {
-        throw new ForbiddenException(
-          $"Not authorized to {activity}, must have global Admin scope.");
       }
     }
   }

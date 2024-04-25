@@ -10,6 +10,7 @@ import Header from './components/App/Header';
 import Environment from './pages/Environment';
 import ApiKeys from './pages/ApiKeys';
 import Environments from './pages/Environments';
+import MaintenanceManagement from './pages/MaintenanceManagement';
 import Service from './pages/Service';
 import Tenant from './pages/Tenant';
 import ErrorReports from './pages/ErrorReports';
@@ -58,6 +59,9 @@ function App() {
                       <Route path=":permissionId/delete" element={<DeletePermissionModal />}/>
                     </Route>
                   </Route>
+                </Route>
+                <Route path="/maintenance-management" element={<ProtectedRoute />}>
+                  <Route path="" element={<MaintenanceManagement />} />
                 </Route>
                 <Route path="/error-reports" element={<ProtectedRoute />}>
                   <Route path="environments/:environment" element={<ErrorReports />}/>

@@ -1,8 +1,9 @@
 {
 	"info": {
-		"_postman_id": "c914ab25-2849-4437-ba34-f28dc2a29c86",
-		"name": "SONAR Copy 3",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+		"_postman_id": "bf92fd57-f7ab-4dd3-97ce-54a2b6f99a91",
+		"name": "SONAR",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "30159347"
 	},
 	"item": [
 		{
@@ -473,264 +474,6 @@
 			]
 		},
 		{
-			"name": "Service Hierarchy Configuration",
-			"item": [
-				{
-					"name": "Get Service Hierarchy",
-					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "GET",
-						"header": [
-							{
-								"key": "Accept",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
-						"url": {
-							"raw": "{{SONAR_BASE_URL}}/api/v2/config/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}",
-							"host": [
-								"{{SONAR_BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"v2",
-								"config",
-								"{{TEST_ENVIRONMENT}}",
-								"tenants",
-								"{{TEST_TENANT}}"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Create Service Hierarchy",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Accept",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"services\": [\n        {\n            \"name\": \"my-root\",\n            \"displayName\": \"My Root Service\",\n            \"description\": \"Example root service\",\n            \"url\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"RootHealth\",\n                    \"description\": \"Desc\",\n                    \"type\": \"prometheusMetric\",\n                    \"definition\": {\n                        \"duration\": \"08:00:00\",\n                        \"expression\": \"promExpression1\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"NotEqual\",\n                                \"threshold\": 1.0,\n                                \"healthStatus\": \"Offline\"\n                            }\n                        ]\n                    }\n                },\n                {\n                    \"name\": \"RootHealth2\",\n                    \"type\": \"prometheusMetric\",\n                    \"description\": \"What Another Health Check?\",\n                    \"definition\": {\n                        \"duration\": \"08:00:00\",\n                        \"expression\": \"promExpression2\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"GreaterThan\",\n                                \"threshold\": 1.0,\n                                \"healthStatus\": \"Online\"\n                            }\n                        ]\n                    }\n                }\n            ],\n            \"children\": [\n                \"my-child\",\n                \"my-child2\"\n            ]\n        },\n        {\n            \"name\": \"my-child\",\n            \"displayName\": \"My Child Service\",\n            \"description\": \"Example child service\",\n            \"url\": null,\n            \"children\": null\n        },\n        {\n            \"name\": \"my-child2\",\n            \"displayName\": \"My Child Service2\",\n            \"description\": \"Example child service2\",\n            \"url\": null,\n            \"children\": null\n        },\n        {\n            \"name\": \"http-metric-test-app\",\n            \"displayName\": \"Test Application for HTTP Health Check\",\n            \"description\": \"A test application that has one endpoint to simulate different HTTP status codes.\",\n            \"url\": \"http://localhost:8082/api/ready\",\n            \"children\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"exampleHttpTest\",\n                    \"description\": \"Check to see if request contains failed status code and/or request duration greater than specified threshold.\",\n                    \"definition\": {\n                        \"url\": \"http://localhost:8082/api/ready\",\n                        \"followRedirects\": true,\n                        \"authorizationHeader\": \"test-header\",\n                        \"conditions\": [\n                            {\n                                \"status\": \"Online\",\n                                \"statusCodes\": [\n                                    200\n                                ],\n                                \"type\": \"HttpStatusCode\"\n                            },\n                            {\n                                \"status\": \"Degraded\",\n                                \"responseTime\": \"00:00:02\",\n                                \"type\": \"HttpResponseTime\"\n                            }\n                        ]\n                    },\n                    \"type\": \"httpRequest\"\n                }\n            ]\n        }\n    ],\n    \"rootServices\": [\n        \"my-root\",\n        \"http-metric-test-app\"\n    ]\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{SONAR_BASE_URL}}/api/v2/config/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}",
-							"host": [
-								"{{SONAR_BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"v2",
-								"config",
-								"{{TEST_ENVIRONMENT}}",
-								"tenants",
-								"{{TEST_TENANT}}"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "[JWT] Create Service Hierarchy",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{ID_TOKEN}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [
-							{
-								"key": "Accept",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"services\": [\n        {\n            \"name\": \"my-root\",\n            \"displayName\": \"My Root Service\",\n            \"description\": \"Example root service\",\n            \"url\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"RootHealth\",\n                    \"description\": \"Desc\",\n                    \"type\": \"prometheusMetric\",\n                    \"definition\": {\n                        \"duration\": \"08:00:00\",\n                        \"expression\": \"promExpression1\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"NotEqual\",\n                                \"threshold\": 1.0,\n                                \"healthStatus\": \"Offline\"\n                            }\n                        ]\n                    }\n                },\n                {\n                    \"name\": \"RootHealth2\",\n                    \"type\": \"prometheusMetric\",\n                    \"description\": \"What Another Health Check?\",\n                    \"definition\": {\n                        \"duration\": \"08:00:00\",\n                        \"expression\": \"promExpression2\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"GreaterThan\",\n                                \"threshold\": 1.0,\n                                \"healthStatus\": \"Online\"\n                            }\n                        ]\n                    }\n                }\n            ],\n            \"children\": [\n                \"my-child\",\n                \"my-child2\"\n            ]\n        },\n        {\n            \"name\": \"my-child\",\n            \"displayName\": \"My Child Service\",\n            \"description\": \"Example child service\",\n            \"url\": null,\n            \"children\": null\n        },\n        {\n            \"name\": \"my-child2\",\n            \"displayName\": \"My Child Service2\",\n            \"description\": \"Example child service2\",\n            \"url\": null,\n            \"children\": null\n        },\n        {\n            \"name\": \"http-metric-test-app\",\n            \"displayName\": \"Test Application for HTTP Health Check\",\n            \"description\": \"A test application that has one endpoint to simulate different HTTP status codes.\",\n            \"url\": \"http://localhost:8082/api/ready\",\n            \"children\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"exampleHttpTest\",\n                    \"description\": \"Check to see if request contains failed status code and/or request duration greater than specified threshold.\",\n                    \"definition\": {\n                        \"url\": \"http://localhost:8082/api/ready\",\n                        \"followRedirects\": true,\n                        \"authorizationHeader\": \"test-header\",\n                        \"conditions\": [\n                            {\n                                \"status\": \"Online\",\n                                \"statusCodes\": [\n                                    200\n                                ],\n                                \"type\": \"HttpStatusCode\"\n                            },\n                            {\n                                \"status\": \"Degraded\",\n                                \"responseTime\": \"00:00:02\",\n                                \"type\": \"HttpResponseTime\"\n                            }\n                        ]\n                    },\n                    \"type\": \"httpRequest\"\n                }\n            ]\n        }\n    ],\n    \"rootServices\": [\n        \"my-root\",\n        \"http-metric-test-app\"\n    ]\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{SONAR_BASE_URL}}/api/v2/config/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}",
-							"host": [
-								"{{SONAR_BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"v2",
-								"config",
-								"{{TEST_ENVIRONMENT}}",
-								"tenants",
-								"{{TEST_TENANT}}"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Update Service Hierarchy",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Accept",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"services\": [\n        {\n            \"name\": \"my-root\",\n            \"displayName\": \"My Root Service\",\n            \"description\": \"Example root service\",\n            \"url\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"Root-Health2\",\n                    \"description\": \"What Another Health Check?\",\n                    \"type\": \"prometheusMetric\",\n                    \"definition\": {\n                        \"duration\": \"420.03:14:56.1667000\",\n                        \"expression\": \"Expression\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"GreaterThan\",\n                                \"threshold\": 1.0,\n                                \"healthStatus\": \"Online\"\n                            }\n                        ]\n                    }\n                }\n            ],\n            \"children\": [\"my-CHILD\"]\n        },\n        {\n            \"name\": \"MY-child\",\n            \"displayName\": \"My Child Service!!!!\",\n            \"description\": \"Example child service NEAT!\",\n            \"url\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"Not-RootHealth\",\n                    \"description\": \"Moved from Root\",\n                    \"type\": \"prometheusMetric\",\n                    \"definition\": {\n                        \"duration\": \"1.03:14:56.1667000\",\n                        \"expression\": \"Not expresso, Expression!!!\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"NotEqual\",\n                                \"threshold\": 1,\n                                \"healthStatus\": \"Degraded\"\n                            }\n                        ]\n                    }\n                }\n            ],\n            \"children\": [\"sub-SUB-service\"]\n        },\n        {\n            \"name\": \"MY-child2\",\n            \"displayName\": \"My Child Service2!!!!\",\n            \"description\": \"Example child service NEAT2!\",\n            \"url\": null,\n            \"children\": [\"sub-SUB-service\"]\n        },\n        {\n            \"name\": \"sub-sub-service\",\n            \"displayName\": \"New Sub Service\",\n            \"description\": \"Example sub-sub-service.\",\n            \"url\": null,\n            \"children\": []\n        },\n        {\n            \"name\": \"another-root\",\n            \"displayName\": \"My Second Root Service\"\n        }\n    ],\n    \"rootServices\": [\n        \"my-ROOT\",\n        \"another-ROOT\"\n    ]\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{SONAR_BASE_URL}}/api/v2/config/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}",
-							"host": [
-								"{{SONAR_BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"v2",
-								"config",
-								"{{TEST_ENVIRONMENT}}",
-								"tenants",
-								"{{TEST_TENANT}}"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "[JWT] Update Service Hierarchy",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{ID_TOKEN}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Accept",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"services\": [\n        {\n            \"name\": \"my-root\",\n            \"displayName\": \"My Root Service\",\n            \"description\": \"Example root service\",\n            \"url\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"Root-Health2\",\n                    \"description\": \"What Another Health Check?\",\n                    \"type\": \"prometheusMetric\",\n                    \"definition\": {\n                        \"duration\": \"420.03:14:56.1667000\",\n                        \"expression\": \"Expression\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"GreaterThan\",\n                                \"threshold\": 1.0,\n                                \"healthStatus\": \"Online\"\n                            }\n                        ]\n                    }\n                }\n            ],\n            \"children\": [\"my-CHILD\"]\n        },\n        {\n            \"name\": \"MY-child\",\n            \"displayName\": \"My Child Service!!!!\",\n            \"description\": \"Example child service NEAT!\",\n            \"url\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"Not-RootHealth\",\n                    \"description\": \"Moved from Root\",\n                    \"type\": \"prometheusMetric\",\n                    \"definition\": {\n                        \"duration\": \"1.03:14:56.1667000\",\n                        \"expression\": \"Not expresso, Expression!!!\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"NotEqual\",\n                                \"threshold\": 1,\n                                \"healthStatus\": \"Degraded\"\n                            }\n                        ]\n                    }\n                }\n            ],\n            \"children\": [\"sub-SUB-service\"]\n        },\n        {\n            \"name\": \"MY-child2\",\n            \"displayName\": \"My Child Service2!!!!\",\n            \"description\": \"Example child service NEAT2!\",\n            \"url\": null,\n            \"children\": [\"sub-SUB-service\"]\n        },\n        {\n            \"name\": \"sub-sub-service\",\n            \"displayName\": \"New Sub Service\",\n            \"description\": \"Example sub-sub-service.\",\n            \"url\": null,\n            \"children\": []\n        },\n        {\n            \"name\": \"another-root\",\n            \"displayName\": \"My Second Root Service\"\n        }\n    ],\n    \"rootServices\": [\n        \"my-ROOT\",\n        \"another-ROOT\"\n    ]\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{SONAR_BASE_URL}}/api/v2/config/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}",
-							"host": [
-								"{{SONAR_BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"v2",
-								"config",
-								"{{TEST_ENVIRONMENT}}",
-								"tenants",
-								"{{TEST_TENANT}}"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Delete Tenant",
-					"request": {
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{SONAR_BASE_URL}}/api/v2/config/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}",
-							"host": [
-								"{{SONAR_BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"v2",
-								"config",
-								"{{TEST_ENVIRONMENT}}",
-								"tenants",
-								"{{TEST_TENANT}}"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "[JWT] Delete Tenant",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{ID_TOKEN}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{SONAR_BASE_URL}}/api/v2/config/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}",
-							"host": [
-								"{{SONAR_BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"v2",
-								"config",
-								"{{TEST_ENVIRONMENT}}",
-								"tenants",
-								"{{TEST_TENANT}}"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
 			"name": "Environments",
 			"item": [
 				{
@@ -893,29 +636,31 @@
 						}
 					},
 					"response": []
-				}
-			]
-		},
-		{
-			"name": "Tenants",
-			"item": [
+				},
 				{
-					"name": "Get Aggregate Health - Tenants",
+					"name": "Update Environment",
 					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "GET",
+						"method": "PUT",
 						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"{{TEST_ENVIRONMENT2}}\",\n    \"isNonProd\": true,\n    \"scheduledMaintenances\":[{\n      \"scheduleExpression\": \"0 0 ? * SUN,SAT\",\n      \"scheduleTimeZone\": \"US/Eastern\",\n      \"durationMinutes\": 60\n    }]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
 						"url": {
-							"raw": "{{SONAR_BASE_URL}}/api/v2/tenants",
+							"raw": "{{SONAR_BASE_URL}}/api/v2/environments/{{TEST_ENVIRONMENT2}}",
 							"host": [
 								"{{SONAR_BASE_URL}}"
 							],
 							"path": [
 								"api",
 								"v2",
-								"tenants"
+								"environments",
+								"{{TEST_ENVIRONMENT2}}"
 							]
 						}
 					},
@@ -1322,7 +1067,7 @@
 								},
 								{
 									"key": "end",
-									"value": "",
+									"value": null,
 									"disabled": true
 								},
 								{
@@ -1617,6 +1362,236 @@
 			]
 		},
 		{
+			"name": "Maintenance",
+			"item": [
+				{
+					"name": "[JWT] Toggle Environment Ad-hoc Maintenance",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ID_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"isEnabled\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/maintenance/{{TEST_ENVIRONMENT}}/ad-hoc",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"maintenance",
+								"{{TEST_ENVIRONMENT}}",
+								"ad-hoc"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[JWT] Toggle Tenant Ad-hoc Maintenance",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ID_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"isEnabled\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/maintenance/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/ad-hoc",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"maintenance",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}",
+								"ad-hoc"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[JWT] Toggle Service Ad-hoc Maintenance",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ID_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"isEnabled\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/maintenance/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}/services/{{TEST_SERVICE}}/ad-hoc",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"maintenance",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}",
+								"services",
+								"{{TEST_SERVICE}}",
+								"ad-hoc"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Fetch All Environment-scoped Ad-hoc Maintenances",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"isEnabled\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/maintenance/environments/ad-hoc",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"maintenance",
+								"environments",
+								"ad-hoc"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Fetch All Tenant-scoped Ad-hoc Maintenances",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"isEnabled\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/maintenance/tenants/ad-hoc",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"maintenance",
+								"tenants",
+								"ad-hoc"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Fetch All Service-scoped Ad-hoc Maintenances",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"isEnabled\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/maintenance/tenants/ad-hoc",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"maintenance",
+								"tenants",
+								"ad-hoc"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "Prometheus Test Data",
 			"item": [
 				{
@@ -1898,6 +1873,291 @@
 							""
 						]
 					}
+				}
+			]
+		},
+		{
+			"name": "Service Hierarchy Configuration",
+			"item": [
+				{
+					"name": "Get Service Hierarchy",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/config/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"config",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Service Hierarchy",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"services\": [\n        {\n            \"name\": \"my-root\",\n            \"displayName\": \"My Root Service\",\n            \"description\": \"Example root service\",\n            \"url\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"RootHealth\",\n                    \"description\": \"Desc\",\n                    \"type\": \"prometheusMetric\",\n                    \"definition\": {\n                        \"duration\": \"08:00:00\",\n                        \"expression\": \"promExpression1\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"NotEqual\",\n                                \"threshold\": 1.0,\n                                \"healthStatus\": \"Offline\"\n                            }\n                        ]\n                    }\n                },\n                {\n                    \"name\": \"RootHealth2\",\n                    \"type\": \"prometheusMetric\",\n                    \"description\": \"What Another Health Check?\",\n                    \"definition\": {\n                        \"duration\": \"08:00:00\",\n                        \"expression\": \"promExpression2\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"GreaterThan\",\n                                \"threshold\": 1.0,\n                                \"healthStatus\": \"Online\"\n                            }\n                        ]\n                    }\n                }\n            ],\n            \"children\": [\n                \"my-child\",\n                \"my-child2\"\n            ]\n        },\n        {\n            \"name\": \"my-child\",\n            \"displayName\": \"My Child Service\",\n            \"description\": \"Example child service\",\n            \"url\": null,\n            \"children\": null\n        },\n        {\n            \"name\": \"my-child2\",\n            \"displayName\": \"My Child Service2\",\n            \"description\": \"Example child service2\",\n            \"url\": null,\n            \"children\": null\n        },\n        {\n            \"name\": \"http-metric-test-app\",\n            \"displayName\": \"Test Application for HTTP Health Check\",\n            \"description\": \"A test application that has one endpoint to simulate different HTTP status codes.\",\n            \"url\": \"http://localhost:8082/api/ready\",\n            \"children\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"exampleHttpTest\",\n                    \"description\": \"Check to see if request contains failed status code and/or request duration greater than specified threshold.\",\n                    \"definition\": {\n                        \"url\": \"http://localhost:8082/api/ready\",\n                        \"followRedirects\": true,\n                        \"authorizationHeader\": \"test-header\",\n                        \"conditions\": [\n                            {\n                                \"status\": \"Online\",\n                                \"statusCodes\": [\n                                    200\n                                ],\n                                \"type\": \"HttpStatusCode\"\n                            },\n                            {\n                                \"status\": \"Degraded\",\n                                \"responseTime\": \"00:00:02\",\n                                \"type\": \"HttpResponseTime\"\n                            }\n                        ]\n                    },\n                    \"type\": \"httpRequest\"\n                }\n            ],\n            \"scheduledMaintenances\": [\n                {\n                \"scheduleExpression\": \"0 12 ? * MON-FRI\",\n                \"scheduleTimeZone\": \"US/Pacific\",\n                \"durationMinutes\": 60\n                }\n            ]\n        }\n    ],\n    \"rootServices\": [\n        \"my-root\",\n        \"http-metric-test-app\"\n    ],\n    \"scheduledMaintenances\": [\n    {\n      \"scheduleExpression\": \"0 0 ? * SUN,SAT\",\n      \"scheduleTimeZone\": \"US/Eastern\",\n      \"durationMinutes\": 60\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/config/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"config",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[JWT] Create Service Hierarchy",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ID_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"services\": [\n        {\n            \"name\": \"my-root\",\n            \"displayName\": \"My Root Service\",\n            \"description\": \"Example root service\",\n            \"url\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"RootHealth\",\n                    \"description\": \"Desc\",\n                    \"type\": \"prometheusMetric\",\n                    \"definition\": {\n                        \"duration\": \"08:00:00\",\n                        \"expression\": \"promExpression1\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"NotEqual\",\n                                \"threshold\": 1.0,\n                                \"healthStatus\": \"Offline\"\n                            }\n                        ]\n                    }\n                },\n                {\n                    \"name\": \"RootHealth2\",\n                    \"type\": \"prometheusMetric\",\n                    \"description\": \"What Another Health Check?\",\n                    \"definition\": {\n                        \"duration\": \"08:00:00\",\n                        \"expression\": \"promExpression2\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"GreaterThan\",\n                                \"threshold\": 1.0,\n                                \"healthStatus\": \"Online\"\n                            }\n                        ]\n                    }\n                }\n            ],\n            \"children\": [\n                \"my-child\",\n                \"my-child2\"\n            ]\n        },\n        {\n            \"name\": \"my-child\",\n            \"displayName\": \"My Child Service\",\n            \"description\": \"Example child service\",\n            \"url\": null,\n            \"children\": null\n        },\n        {\n            \"name\": \"my-child2\",\n            \"displayName\": \"My Child Service2\",\n            \"description\": \"Example child service2\",\n            \"url\": null,\n            \"children\": null\n        },\n        {\n            \"name\": \"http-metric-test-app\",\n            \"displayName\": \"Test Application for HTTP Health Check\",\n            \"description\": \"A test application that has one endpoint to simulate different HTTP status codes.\",\n            \"url\": \"http://localhost:8082/api/ready\",\n            \"children\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"exampleHttpTest\",\n                    \"description\": \"Check to see if request contains failed status code and/or request duration greater than specified threshold.\",\n                    \"definition\": {\n                        \"url\": \"http://localhost:8082/api/ready\",\n                        \"followRedirects\": true,\n                        \"authorizationHeader\": \"test-header\",\n                        \"conditions\": [\n                            {\n                                \"status\": \"Online\",\n                                \"statusCodes\": [\n                                    200\n                                ],\n                                \"type\": \"HttpStatusCode\"\n                            },\n                            {\n                                \"status\": \"Degraded\",\n                                \"responseTime\": \"00:00:02\",\n                                \"type\": \"HttpResponseTime\"\n                            }\n                        ]\n                    },\n                    \"type\": \"httpRequest\"\n                }\n            ]\n        }\n    ],\n    \"rootServices\": [\n        \"my-root\",\n        \"http-metric-test-app\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/config/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"config",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Service Hierarchy",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"services\": [\n        {\n            \"name\": \"my-root\",\n            \"displayName\": \"My Root Service\",\n            \"description\": \"Example root service\",\n            \"url\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"Root-Health2\",\n                    \"description\": \"What Another Health Check?\",\n                    \"type\": \"prometheusMetric\",\n                    \"definition\": {\n                        \"duration\": \"420.03:14:56.1667000\",\n                        \"expression\": \"Expression\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"GreaterThan\",\n                                \"threshold\": 1.0,\n                                \"healthStatus\": \"Online\"\n                            }\n                        ]\n                    }\n                }\n            ],\n            \"children\": [\"my-CHILD\"]\n        },\n        {\n            \"name\": \"MY-child\",\n            \"displayName\": \"My Child Service!!!!\",\n            \"description\": \"Example child service NEAT!\",\n            \"url\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"Not-RootHealth\",\n                    \"description\": \"Moved from Root\",\n                    \"type\": \"prometheusMetric\",\n                    \"definition\": {\n                        \"duration\": \"1.03:14:56.1667000\",\n                        \"expression\": \"Not expresso, Expression!!!\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"NotEqual\",\n                                \"threshold\": 1,\n                                \"healthStatus\": \"Degraded\"\n                            }\n                        ]\n                    }\n                }\n            ],\n            \"children\": [\"sub-SUB-service\"]\n        },\n        {\n            \"name\": \"MY-child2\",\n            \"displayName\": \"My Child Service2!!!!\",\n            \"description\": \"Example child service NEAT2!\",\n            \"url\": null,\n            \"children\": [\"sub-SUB-service\"]\n        },\n        {\n            \"name\": \"sub-sub-service\",\n            \"displayName\": \"New Sub Service\",\n            \"description\": \"Example sub-sub-service.\",\n            \"url\": null,\n            \"children\": []\n        },\n        {\n            \"name\": \"another-root\",\n            \"displayName\": \"My Second Root Service\"\n        }\n    ],\n    \"rootServices\": [\n        \"my-ROOT\",\n        \"another-ROOT\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/config/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"config",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[JWT] Update Service Hierarchy",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ID_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"services\": [\n        {\n            \"name\": \"my-root\",\n            \"displayName\": \"My Root Service\",\n            \"description\": \"Example root service\",\n            \"url\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"Root-Health2\",\n                    \"description\": \"What Another Health Check?\",\n                    \"type\": \"prometheusMetric\",\n                    \"definition\": {\n                        \"duration\": \"420.03:14:56.1667000\",\n                        \"expression\": \"Expression\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"GreaterThan\",\n                                \"threshold\": 1.0,\n                                \"healthStatus\": \"Online\"\n                            }\n                        ]\n                    }\n                }\n            ],\n            \"children\": [\"my-CHILD\"]\n        },\n        {\n            \"name\": \"MY-child\",\n            \"displayName\": \"My Child Service!!!!\",\n            \"description\": \"Example child service NEAT!\",\n            \"url\": null,\n            \"healthChecks\": [\n                {\n                    \"name\": \"Not-RootHealth\",\n                    \"description\": \"Moved from Root\",\n                    \"type\": \"prometheusMetric\",\n                    \"definition\": {\n                        \"duration\": \"1.03:14:56.1667000\",\n                        \"expression\": \"Not expresso, Expression!!!\",\n                        \"conditions\": [\n                            {\n                                \"healthOperator\": \"NotEqual\",\n                                \"threshold\": 1,\n                                \"healthStatus\": \"Degraded\"\n                            }\n                        ]\n                    }\n                }\n            ],\n            \"children\": [\"sub-SUB-service\"]\n        },\n        {\n            \"name\": \"MY-child2\",\n            \"displayName\": \"My Child Service2!!!!\",\n            \"description\": \"Example child service NEAT2!\",\n            \"url\": null,\n            \"children\": [\"sub-SUB-service\"]\n        },\n        {\n            \"name\": \"sub-sub-service\",\n            \"displayName\": \"New Sub Service\",\n            \"description\": \"Example sub-sub-service.\",\n            \"url\": null,\n            \"children\": []\n        },\n        {\n            \"name\": \"another-root\",\n            \"displayName\": \"My Second Root Service\"\n        }\n    ],\n    \"rootServices\": [\n        \"my-ROOT\",\n        \"another-ROOT\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/config/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"config",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Tenant",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/config/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"config",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "[JWT] Delete Tenant",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ID_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/config/{{TEST_ENVIRONMENT}}/tenants/{{TEST_TENANT}}",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"config",
+								"{{TEST_ENVIRONMENT}}",
+								"tenants",
+								"{{TEST_TENANT}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Tenants",
+			"item": [
+				{
+					"name": "Get Aggregate Health - Tenants",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{SONAR_BASE_URL}}/api/v2/tenants",
+							"host": [
+								"{{SONAR_BASE_URL}}"
+							],
+							"path": [
+								"api",
+								"v2",
+								"tenants"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},

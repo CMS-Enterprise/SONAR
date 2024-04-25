@@ -15,6 +15,7 @@ receivers:
       - to: dev-receiver@mailserver.local
         html: '{{ template "email.sonar-alerts.html" . }}'
         text: '{{ template "email.sonar-alerts.text" . }}'
+  - name: null-receiver
 
 route:
   receiver: default-receiver
@@ -38,6 +39,19 @@ route:
             - tenant
             - service
           receiver: dev-receiver
+    - matchers:
+        - purpose = "maintenance"
+      receiver: null-receiver
 
 templates:
   - /etc/alertmanager/templates/*.tmpl
+
+inhibit_rules:
+  - source_matchers:
+      - alertname = alerting-test-app-is-in-maintenance
+    target_matchers:
+      - alertname = alerting-test-app-is-offline
+    equal:
+      - environment
+      - tenant
+      - service

@@ -13,6 +13,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Cronos" Version="0.8.4" />
     <PackageReference Include="JsonPath.Net" Version="0.6.4" />
     <PackageReference Include="KubernetesClient" Version="10.0.27" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" />

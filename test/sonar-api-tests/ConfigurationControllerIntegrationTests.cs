@@ -63,6 +63,15 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
   private const String TestUpdateServiceTagRemoveKey = "removed-key";
   private const String TestUpdateServiceTagRemoveVal = "removed-val";
 
+  // maintenance config test constants
+  private const String TestBaseScheduledMaintenanceSchedExp = "0 0 ? * SUN,SAT";
+  private const String TestBaseScheduledMaintenanceTz = "US/Eastern";
+  private const Int32 TestBaseScheduledMaintenanceDuration = 60;
+
+  private const String TestNewScheduledMaintenanceSchedExp = "0 12 ? * MON-FRI";
+  private const String TestNewScheduledMaintenanceTz = "US/Pacific";
+  private const Int32 TestNewScheduledMaintenanceDuration = 80;
+
   private static readonly JsonSerializerOptions SerializerOptions = new JsonSerializerOptions {
     Converters = { new JsonStringEnumConverter(), new ArrayTupleConverterFactory() },
     PropertyNameCaseInsensitive = true
@@ -498,6 +507,151 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
       {TestNullTenantTagKey, null},
     }.ToImmutableDictionary()
   );
+
+  private static readonly ScheduledMaintenanceConfiguration BaseScheduledMaintenance = new(
+    TestBaseScheduledMaintenanceSchedExp,
+    TestBaseScheduledMaintenanceDuration,
+    TestBaseScheduledMaintenanceTz);
+
+  private static readonly ScheduledMaintenanceConfiguration NewScheduledMaintenance = new(
+    TestNewScheduledMaintenanceSchedExp,
+    TestNewScheduledMaintenanceDuration,
+    TestNewScheduledMaintenanceTz);
+
+  private static readonly ServiceHierarchyConfiguration TestEmptyScheduledMaintenanceConfig = new(
+    ImmutableList.Create(
+      new ServiceConfiguration(
+        TestRootServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        null,
+        null,
+        ImmutableHashSet<String>.Empty.Add(TestChildServiceName),
+        null),
+      new ServiceConfiguration(
+        TestChildServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        healthChecks: null,
+        children: null,
+        tags: null
+      )
+    ),
+    ImmutableHashSet<String>.Empty.Add(TestRootServiceName),
+    null,
+    null,
+  null);
+
+  private static readonly ServiceHierarchyConfiguration TestBaseScheduledTenantMaintenanceConfig = new(
+    ImmutableList.Create(
+      new ServiceConfiguration(
+        TestRootServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        null,
+        null,
+        ImmutableHashSet<String>.Empty.Add(TestChildServiceName),
+        null),
+      new ServiceConfiguration(
+        TestChildServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        healthChecks: null,
+        children: null,
+        tags: null
+      )
+    ),
+    ImmutableHashSet<String>.Empty.Add(TestRootServiceName),
+    null,
+    null,
+    ImmutableList<ScheduledMaintenanceConfiguration>.Empty.Add(BaseScheduledMaintenance)
+  );
+
+  private static readonly ServiceHierarchyConfiguration TestNewScheduledTenantMaintenanceConfig = new(
+    ImmutableList.Create(
+      new ServiceConfiguration(
+        TestRootServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        null,
+        null,
+        ImmutableHashSet<String>.Empty.Add(TestChildServiceName),
+        null),
+      new ServiceConfiguration(
+        TestChildServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        healthChecks: null,
+        children: null,
+        tags: null
+      )
+    ),
+    ImmutableHashSet<String>.Empty.Add(TestRootServiceName),
+    null,
+    null,
+    ImmutableList<ScheduledMaintenanceConfiguration>.Empty.Add(NewScheduledMaintenance)
+  );
+
+  private static readonly ServiceHierarchyConfiguration TestBaseScheduledServiceMaintenanceConfig = new(
+    ImmutableList.Create(
+      new ServiceConfiguration(
+        TestRootServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        null,
+        null,
+        ImmutableHashSet<String>.Empty.Add(TestChildServiceName),
+        null,
+        null,
+        ImmutableList<ScheduledMaintenanceConfiguration>.Empty.Add(BaseScheduledMaintenance)
+        ),
+      new ServiceConfiguration(
+        TestChildServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        healthChecks: null,
+        children: null,
+        tags: null,
+        scheduledMaintenances: null
+      )
+    ),
+    ImmutableHashSet<String>.Empty.Add(TestRootServiceName));
+
+  private static readonly ServiceHierarchyConfiguration TestNewScheduledServiceMaintenanceConfig = new(
+    ImmutableList.Create(
+      new ServiceConfiguration(
+        TestRootServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        null,
+        null,
+        ImmutableHashSet<String>.Empty.Add(TestChildServiceName),
+        null,
+        null,
+        ImmutableList<ScheduledMaintenanceConfiguration>.Empty.Add(NewScheduledMaintenance)
+      ),
+      new ServiceConfiguration(
+        TestChildServiceName,
+        displayName: "Display Name",
+        description: null,
+        url: null,
+        healthChecks: null,
+        children: null,
+        tags: null,
+        scheduledMaintenances: ImmutableList<ScheduledMaintenanceConfiguration>.Empty.Add(NewScheduledMaintenance)
+
+      )
+    ),
+    ImmutableHashSet<String>.Empty.Add(TestRootServiceName));
 
   public ConfigurationControllerIntegrationTests(ApiIntegrationTestFixture fixture, ITestOutputHelper outputHelper) :
     base(fixture, outputHelper) { }
@@ -2257,6 +2411,176 @@ public class ConfigurationControllerIntegrationTests : ApiControllerTestsBase {
     Assert.Contains(rule2, configOut!.Services[0].AlertingRules!);
     Assert.DoesNotContain(rule1Prime, configOut!.Services[0].AlertingRules!);
     Assert.DoesNotContain(rule3, configOut!.Services[0].AlertingRules!);
+  }
+
+  #endregion
+
+  #region Scheduled Maintenance Configuration Tests
+
+  // Scheduled Maintenance Tests
+  //  Tenant-scoped and service-scoped
+  //    Create configuration with scheduled maintenance
+  //    Update configuration with scheduled maintenance
+  //      New maintenance is created when previous does not exist
+  //      Maintenance is updated when previous exists
+  //    Fetch configuration with scheduled maintenance (in every test using GET)
+
+  // ***** TENANT-SCOPED MAINTENANCE TESTS ***** //
+
+  // Create tenant-scoped maintenance
+  [Fact]
+  public async Task CreateTenantScopedMaintenanceConfiguration_Success() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestBaseScheduledTenantMaintenanceConfig);
+
+    var getConfigResponse = await
+      this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    var body = await getConfigResponse.Content.ReadFromJsonAsync<ServiceHierarchyConfiguration>(
+      SerializerOptions);
+
+    Assert.NotNull(body);
+    var scheduledTenantMaintenances = body.ScheduledMaintenances;
+    Assert.NotNull(scheduledTenantMaintenances);
+    Assert.NotEmpty(scheduledTenantMaintenances);
+    var scheduledTenantMaintenance = Assert.Single(scheduledTenantMaintenances);
+    Assert.Equal(expected: BaseScheduledMaintenance, actual: scheduledTenantMaintenance);
+  }
+
+  // Update tenant-scoped maintenance
+  //  Scenario 1: test that tenant maintenance is created when previous does not exist
+  [Fact]
+  public async Task UpdateTenantScopedMaintenanceConfiguration_NoPreviousConfig_Success() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestEmptyScheduledMaintenanceConfig);
+
+    var updateConfigResponse = await
+      this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+        .And(req => {
+          req.Content = JsonContent.Create(
+            TestBaseScheduledTenantMaintenanceConfig);
+        })
+        .SendAsync("PUT");
+
+    var body = await updateConfigResponse.Content.ReadFromJsonAsync<ServiceHierarchyConfiguration>(
+      SerializerOptions);
+
+    Assert.NotNull(body);
+    var scheduledTenantMaintenances = body.ScheduledMaintenances;
+    Assert.NotNull(scheduledTenantMaintenances);
+    Assert.NotEmpty(scheduledTenantMaintenances);
+    var scheduledTenantMaintenance = Assert.Single(scheduledTenantMaintenances);
+    Assert.Equal(expected: BaseScheduledMaintenance, actual: scheduledTenantMaintenance);
+  }
+
+  // Update tenant-scoped maintenance
+  //  Scenario 2: test that tenant maintenance is updated when previous exists
+  [Fact]
+  public async Task UpdateTenantScopedMaintenanceConfiguration_ExistingConfig_Success() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestBaseScheduledTenantMaintenanceConfig);
+
+    var updateConfigResponse = await
+      this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+        .And(req => {
+          req.Content = JsonContent.Create(
+            TestNewScheduledTenantMaintenanceConfig);
+        })
+        .SendAsync("PUT");
+
+    var body = await updateConfigResponse.Content.ReadFromJsonAsync<ServiceHierarchyConfiguration>(
+      SerializerOptions);
+
+    Assert.NotNull(body);
+    var scheduledTenantMaintenances = body.ScheduledMaintenances;
+    Assert.NotNull(scheduledTenantMaintenances);
+    Assert.NotEmpty(scheduledTenantMaintenances);
+    var scheduledTenantMaintenance = Assert.Single(scheduledTenantMaintenances);
+    Assert.Equal(expected: NewScheduledMaintenance, actual: scheduledTenantMaintenance);
+  }
+
+  // ***** SERVICE-SCOPED MAINTENANCE TESTS ***** //
+
+  // Create service-scoped maintenance
+  [Fact]
+  public async Task CreateServiceScopedMaintenanceConfiguration_Success() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestBaseScheduledServiceMaintenanceConfig);
+
+    var getConfigResponse = await
+      this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+        .AddHeader(name: "Accept", value: "application/json")
+        .GetAsync();
+
+    var body = await getConfigResponse.Content.ReadFromJsonAsync<ServiceHierarchyConfiguration>(
+      SerializerOptions);
+
+    Assert.NotNull(body);
+    var rootService = Assert.Single(body.Services.Where(svc => svc.Name == TestRootServiceName));
+    var rootServiceScheduledMaintenances = rootService.ScheduledMaintenances;
+    Assert.NotNull(rootServiceScheduledMaintenances);
+    Assert.NotEmpty(rootServiceScheduledMaintenances);
+    var rootServiceScheduledMaintenance = Assert.Single(rootServiceScheduledMaintenances);
+    Assert.Equal(expected: BaseScheduledMaintenance, actual: rootServiceScheduledMaintenance);
+  }
+
+  // Update service-scoped maintenance
+  //  Scenario 1: test that tenant maintenance is created when previous does not exist
+  [Fact]
+  public async Task UpdateServiceScopedMaintenanceConfiguration_NoPreviousConfig_Success() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestEmptyScheduledMaintenanceConfig);
+
+    var updateConfigResponse = await
+      this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+        .And(req => {
+          req.Content = JsonContent.Create(
+            TestBaseScheduledServiceMaintenanceConfig);
+        })
+        .SendAsync("PUT");
+
+    var body = await updateConfigResponse.Content.ReadFromJsonAsync<ServiceHierarchyConfiguration>(
+      SerializerOptions);
+
+    Assert.NotNull(body);
+    var serviceWithConfig = Assert.Single(body.Services.Where(s => s.Name == TestRootServiceName));
+    var scheduledServiceMaintenances = serviceWithConfig.ScheduledMaintenances;
+    Assert.NotNull(scheduledServiceMaintenances);
+    Assert.NotEmpty(scheduledServiceMaintenances);
+
+    var scheduledServiceMaintenance = Assert.Single(scheduledServiceMaintenances);
+    Assert.Equal(expected: BaseScheduledMaintenance, actual: scheduledServiceMaintenance);
+  }
+
+  // Update service-scoped maintenance
+  //  Scenario 2: test that tenant maintenance is updated when previous exists
+  [Fact]
+  public async Task UpdateServiceScopedMaintenanceConfiguration_ExistingConfig_Success() {
+    var (testEnvironment, testTenant) =
+      await this.CreateTestConfiguration(TestBaseScheduledServiceMaintenanceConfig);
+
+    var updateConfigResponse = await
+      this.Fixture.CreateAdminRequest($"/api/v2/config/{testEnvironment}/tenants/{testTenant}")
+        .And(req => {
+          req.Content = JsonContent.Create(
+            TestNewScheduledServiceMaintenanceConfig);
+        })
+        .SendAsync("PUT");
+
+    var body = await updateConfigResponse.Content.ReadFromJsonAsync<ServiceHierarchyConfiguration>(
+      SerializerOptions);
+
+    Assert.NotNull(body);
+    foreach (var svc in body.Services) {
+      var scheduledServiceMaintenances = svc.ScheduledMaintenances;
+      Assert.NotNull(scheduledServiceMaintenances);
+      Assert.NotEmpty(scheduledServiceMaintenances);
+
+      var scheduledServiceMaintenance = Assert.Single(scheduledServiceMaintenances);
+      Assert.Equal(expected: NewScheduledMaintenance, actual: scheduledServiceMaintenance);
+    }
   }
 
   #endregion

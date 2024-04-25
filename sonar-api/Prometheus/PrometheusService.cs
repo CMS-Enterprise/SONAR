@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Extensions;
 using Cms.BatCave.Sonar.Helpers;
+using Cms.BatCave.Sonar.Maintenance;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.Extensions.Logging;
 using Prometheus;
@@ -333,5 +334,94 @@ public class PrometheusService : IPrometheusService {
     }
 
     return status;
+  }
+
+  /// <inheritdoc />
+  public async Task WriteServiceMaintenanceStatusAsync(
+    IImmutableList<ServiceMaintenance> records,
+    CancellationToken cancellationToken) {
+
+    var writeRequest = new WriteRequest {
+      Metadata = { MaintenanceStatusMetricMetadata.MetricMetadata },
+      Timeseries = {
+        records.Select(sm => new TimeSeries {
+          Labels = {
+            new Label { Name = "__name__", Value = MaintenanceStatusMetricMetadata.MetricFamilyName },
+            new Label { Name = MaintenanceStatusMetricMetadata.EnvironmentLabel, Value = sm.EnvironmentName },
+            new Label { Name = MaintenanceStatusMetricMetadata.TenantLabel, Value = sm.TenantName },
+            new Label { Name = MaintenanceStatusMetricMetadata.ServiceLabel, Value = sm.ServiceName },
+            new Label { Name = MaintenanceStatusMetricMetadata.MaintenanceScopeLabel, Value = sm.MaintenanceScope },
+            new Label { Name = MaintenanceStatusMetricMetadata.MaintenanceTypeLabel, Value = sm.MaintenanceType }
+          },
+          Samples = {
+            new Sample { Timestamp = (Int64)Math.Round(DateTime.UtcNow.MillisSinceUnixEpoch()), Value = 1 }
+          }
+        })
+      }
+    };
+
+    await this._prometheusRemoteProtocolClient.WriteAsync(writeRequest, cancellationToken);
+  }
+
+  /// <inheritdoc />
+  public async Task<(Boolean IsInMaintenance, String? MaintenanceTypes)> GetScopedCurrentMaintenanceStatus(
+    String environment,
+    String? tenant,
+    String? service,
+    MaintenanceScope scope,
+    CancellationToken cancellationToken) {
+
+    // Build scope query string.
+    // For example, if Service-scoped maintenance is requested, we would want to
+    // find all Service-scoped, Tenant-scoped, and Environment-scoped maintenances.
+    var scopeQueryString = Enum.GetValues<MaintenanceScope>()
+      .Where(s => s <= scope)
+      .Select(s => s.ToString().ToLower())
+      .Aggregate((current, next) =>
+        $"{current.ToString().ToLower()}|{next.ToString().ToLower()}");
+
+    String labelMatchers = $"{MaintenanceStatusMetricMetadata.MaintenanceScopeLabel}=~\"{scopeQueryString}\", " +
+      $"{MaintenanceStatusMetricMetadata.EnvironmentLabel}=\"{environment}\"";
+
+    if (!String.IsNullOrEmpty(tenant)) {
+      labelMatchers += $", {MaintenanceStatusMetricMetadata.TenantLabel}=\"{tenant}\"";
+    }
+
+    if (!String.IsNullOrEmpty(service)) {
+      labelMatchers += $", {MaintenanceStatusMetricMetadata.ServiceLabel}=\"{service}\"";
+    }
+
+    String promQuery = $"{MaintenanceStatusMetricMetadata.MetricFamilyName}" + $"{{{labelMatchers}}}";
+    (Boolean, String?) result = (false, null);
+    try {
+      var queryResponse = await this._prometheusClient.QueryAsync(promQuery, DateTime.UtcNow, cancellationToken: cancellationToken);
+
+      if (queryResponse.Status is ResponseStatus.Error) {
+        this._logger.LogError(
+          message: "Querying {metricName} returned error: {queryError}",
+          MaintenanceStatusMetricMetadata.MetricFamilyName,
+          queryResponse.Error);
+      } else {
+        // Query succeeded
+        // Find distinct results based on Maintenance Type and aggregate into comma separated string.
+        if (queryResponse.Data?.Result.Count > 0) {
+          result = (true, queryResponse.Data.Result.Select(series =>
+              series.Labels.TryGetValue(MaintenanceStatusMetricMetadata.MaintenanceTypeLabel, out var maintenanceType) ?
+                maintenanceType :
+                null
+            )
+            .Where(s => !String.IsNullOrEmpty(s))
+            .Distinct()
+            .Aggregate((current, next) => $"{current},{next}"));
+        }
+      }
+    } catch (Exception e) {
+      this._logger.LogError(
+        exception: e,
+        message: "Unexpected error querying {metricName}.",
+        MaintenanceStatusMetricMetadata.MetricFamilyName);
+    }
+
+    return result;
   }
 }

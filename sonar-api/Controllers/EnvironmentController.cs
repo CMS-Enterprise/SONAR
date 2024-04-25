@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,6 +14,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Environment = Cms.BatCave.Sonar.Data.Environment;
 using ProblemDetails = Microsoft.AspNetCore.Mvc.ProblemDetails;
+using Cms.BatCave.Sonar.Helpers.Maintenance;
+using Cms.BatCave.Sonar.Prometheus;
 
 namespace Cms.BatCave.Sonar.Controllers;
 
@@ -23,15 +26,20 @@ public class EnvironmentController : ControllerBase {
   private readonly DataContext _dbContext;
   private readonly EnvironmentDataHelper _environmentDataHelper;
   private readonly TenantDataHelper _tenantDataHelper;
-
+  private readonly MaintenanceDataHelper<ScheduledEnvironmentMaintenance> _scheduledEnvironmentMaintenanceDataHelper;
+  private readonly IPrometheusService _prometheusService;
   public EnvironmentController(
     DataContext dbContext,
     EnvironmentDataHelper environmentDataHelper,
-    TenantDataHelper tenantDataHelper) {
+    TenantDataHelper tenantDataHelper,
+    MaintenanceDataHelper<ScheduledEnvironmentMaintenance> scheduledEnvironmentMaintenanceDataHelper,
+    IPrometheusService prometheusService) {
 
     this._dbContext = dbContext;
     this._environmentDataHelper = environmentDataHelper;
     this._tenantDataHelper = tenantDataHelper;
+    this._scheduledEnvironmentMaintenanceDataHelper = scheduledEnvironmentMaintenanceDataHelper;
+    this._prometheusService = prometheusService;
   }
 
   [HttpPost(Name = "CreateEnvironment")]
@@ -63,14 +71,23 @@ public class EnvironmentController : ControllerBase {
         cancellationToken
       );
 
+    var createdEnvMaintenances = await this.AddEnvironmentMaintenance(entity, environmentModel, cancellationToken);
+
     await this._dbContext.SaveChangesAsync(cancellationToken);
 
     await tx.CommitAsync(cancellationToken);
 
     return this.Created(
-      this.Url.Action(nameof(GetEnvironment), new { environment = entity.Name }) ?? "",
-      new EnvironmentModel(entity.Name, environmentModel.IsNonProd)
-    );
+         this.Url.Action(nameof(GetEnvironment), new { environment = entity.Name }) ?? "",
+         new EnvironmentModel(
+           name: entity.Name,
+           isNonProd: entity.IsNonProd,
+           createdEnvMaintenances.Select(e => new ScheduledMaintenanceConfiguration(
+             e.ScheduleExpression,
+             e.DurationMinutes,
+             e.ScheduleTimeZone
+           )).ToImmutableList())
+       );
   }
 
   /// <summary>
@@ -110,9 +127,25 @@ public class EnvironmentController : ControllerBase {
 
     await this._dbContext.SaveChangesAsync(cancellationToken);
 
+    // Remove existing scheduled maintenance
+    await this._scheduledEnvironmentMaintenanceDataHelper
+      .ExecuteDeleteByAssocEntityIdAsync(existingEnv.Id, cancellationToken);
+
+    // add the new schedule maintenance to the database
+    var updatedScheduledMaintenances = await this.AddEnvironmentMaintenance(entity, environmentModel, cancellationToken);
+
     await tx.CommitAsync(cancellationToken);
 
-    return this.Ok(existingEnv);
+    return this.Ok(
+      new EnvironmentModel(
+        existingEnv.Name,
+        existingEnv.IsNonProd,
+        updatedScheduledMaintenances.Select(e => new ScheduledMaintenanceConfiguration(
+          e.ScheduleExpression,
+          e.DurationMinutes,
+          e.ScheduleTimeZone
+          )).ToImmutableList())
+      );
   }
 
   /// <summary>
@@ -128,8 +161,49 @@ public class EnvironmentController : ControllerBase {
     var environments = await this._environmentDataHelper.FetchAllExistingEnvAsync(cancellationToken);
 
     foreach (var environment in environments) {
-      var tenantsHealth = await this._tenantDataHelper.GetTenantsInfo(environment, cancellationToken);
-      environmentList.Add(ToEnvironmentHealth(tenantsHealth, environment));
+      var tenantsHealth = await this._tenantDataHelper.GetTenantsInfo(environment, null, cancellationToken);
+      var (isInMaintenance, maintenanceTypes) = await this._prometheusService.GetScopedCurrentMaintenanceStatus(
+        environment: environment.Name,
+        tenant: null,
+        service: null,
+        scope: MaintenanceScope.Environment,
+        cancellationToken: cancellationToken);
+
+      environmentList.Add(ToEnvironmentHealth(tenantsHealth, environment, isInMaintenance, maintenanceTypes));
+    }
+
+    return this.Ok(environmentList);
+  }
+
+  /// <summary>
+  ///   Fetch a list of all environments without health data
+  /// </summary>
+  [HttpGet("view", Name = "GetEnvironmentsView")]
+  [ProducesResponseType(typeof(EnvironmentModel[]), statusCode: 200)]
+  [ProducesResponseType(typeof(ProblemDetails), statusCode: 404)]
+  [AllowAnonymous]
+  public async Task<ActionResult> GetEnvironmentsView(
+    CancellationToken cancellationToken = default) {
+    var environmentList = new List<EnvironmentModel>();
+    var environments = await this._environmentDataHelper.FetchAllExistingEnvAsync(cancellationToken);
+
+    // populate scheduled maintenance for each environment
+    foreach (var environment in environments) {
+      ImmutableList<ScheduledMaintenanceConfiguration>? scheduledMaintenanceConfig = null;
+      var scheduledMaintenance =
+        await this._scheduledEnvironmentMaintenanceDataHelper.SingleOrDefaultByAssocEntityIdAsync(environment.Id,
+          cancellationToken);
+      if (scheduledMaintenance != null) {
+        scheduledMaintenanceConfig = ImmutableList<ScheduledMaintenanceConfiguration>.Empty.Add(
+          new ScheduledMaintenanceConfiguration(
+            scheduledMaintenance.ScheduleExpression,
+            scheduledMaintenance.DurationMinutes,
+            scheduledMaintenance.ScheduleTimeZone));
+      }
+      environmentList.Add(new EnvironmentModel(
+        environment.Name,
+        environment.IsNonProd,
+        scheduledMaintenanceConfig));
     }
 
     return this.Ok(environmentList);
@@ -152,8 +226,15 @@ public class EnvironmentController : ControllerBase {
     var existing =
       await this._environmentDataHelper.FetchExistingEnvAsync(environment, cancellationToken);
 
-    var tenantsHealth = await this._tenantDataHelper.GetTenantsInfo(existing, cancellationToken);
-    return this.Ok(ToEnvironmentHealth(tenantsHealth, existing));
+    var tenantsHealth = await this._tenantDataHelper.GetTenantsInfo(existing, null, cancellationToken);
+    var (isInMaintenance, maintenanceTypes) = await this._prometheusService.GetScopedCurrentMaintenanceStatus(
+        environment: environment,
+        tenant: null,
+        service: null,
+        scope: MaintenanceScope.Environment,
+        cancellationToken: cancellationToken);
+
+    return this.Ok(ToEnvironmentHealth(tenantsHealth, existing, isInMaintenance, maintenanceTypes));
   }
 
   [HttpDelete("{environment}", Name = "DeleteEnvironment")]
@@ -190,7 +271,9 @@ public class EnvironmentController : ControllerBase {
 
   private static EnvironmentHealth ToEnvironmentHealth(
     IList<TenantInfo> tenantsHealths,
-    Environment environment
+    Environment environment,
+    Boolean isInMaintenance,
+    String? maintenanceTypes
   ) {
     HealthStatus? aggregateStatus = HealthStatus.Unknown;
     DateTime? statusTimestamp = null;
@@ -219,6 +302,39 @@ public class EnvironmentController : ControllerBase {
       }
     }
 
-    return new EnvironmentHealth(environment.Name, statusTimestamp, aggregateStatus, environment.IsNonProd);
+    return new EnvironmentHealth(
+      environment.Name,
+      statusTimestamp,
+      aggregateStatus,
+      environment.IsNonProd,
+      isInMaintenance,
+      maintenanceTypes);
+  }
+
+  private static ScheduledEnvironmentMaintenance ToScheduledEnvironmentMaintenance(
+    Environment environment,
+    ScheduledMaintenanceConfiguration configModel) {
+    return ScheduledEnvironmentMaintenance.New(
+      scheduleExpression: configModel.ScheduleExpression,
+      scheduleTimeZone: configModel.ScheduleTimeZone,
+      durationMinutes: configModel.DurationMinutes,
+      environmentId: environment.Id
+    );
+  }
+
+  private async Task<IImmutableList<ScheduledEnvironmentMaintenance>> AddEnvironmentMaintenance(
+    Environment entity,
+    EnvironmentModel environmentModel,
+    CancellationToken cancellationToken) {
+    var scheduledEnvironmentMaintenances = environmentModel.ScheduledMaintenances?
+        .Select(c => ToScheduledEnvironmentMaintenance(entity, c))
+      ?? Enumerable.Empty<ScheduledEnvironmentMaintenance>();
+
+    var createdEnvMaintenances = await this._scheduledEnvironmentMaintenanceDataHelper.AddAllAsync(
+      scheduledEnvironmentMaintenances,
+      cancellationToken
+    );
+
+    return createdEnvMaintenances;
   }
 }

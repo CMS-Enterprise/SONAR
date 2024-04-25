@@ -188,6 +188,54 @@ public class DataContext : DbContext {
           .HasForeignKey(ar => ar.AlertReceiverId)
           .OnDelete(DeleteBehavior.Cascade);
       })
+      .Entity<AdHocMaintenance>(entity => {
+        entity.HasOne<User>()
+          .WithMany()
+          .HasForeignKey(k => k.AppliedByUserId)
+          .OnDelete(DeleteBehavior.Cascade);
+        entity.Property(x => x.IsRecording)
+          .HasDefaultValue(false);
+      })
+      .Entity<AdHocEnvironmentMaintenance>(entity => {
+        entity.HasOne<Environment>()
+          .WithOne()
+          .HasForeignKey<AdHocEnvironmentMaintenance>(k => k.EnvironmentId)
+          .OnDelete(DeleteBehavior.Cascade);
+      })
+      .Entity<AdHocTenantMaintenance>(entity => {
+        entity.HasOne<Tenant>()
+          .WithOne()
+          .HasForeignKey<AdHocTenantMaintenance>(k => k.TenantId)
+          .OnDelete(DeleteBehavior.Cascade);
+      })
+      .Entity<AdHocServiceMaintenance>(entity => {
+        entity.HasOne<Service>()
+          .WithOne()
+          .HasForeignKey<AdHocServiceMaintenance>(k => k.ServiceId)
+          .OnDelete(DeleteBehavior.Cascade);
+      })
+      .Entity<ScheduledMaintenance>(entity => {
+        entity.Property(x => x.IsRecording)
+          .HasDefaultValue(false);
+      })
+      .Entity<ScheduledEnvironmentMaintenance>(entity => {
+        entity.HasOne<Environment>()
+          .WithMany()
+          .HasForeignKey(k => k.EnvironmentId)
+          .OnDelete(DeleteBehavior.Cascade);
+      })
+      .Entity<ScheduledTenantMaintenance>(entity => {
+        entity.HasOne<Tenant>()
+          .WithMany()
+          .HasForeignKey(k => k.TenantId)
+          .OnDelete(DeleteBehavior.Cascade);
+      })
+      .Entity<ScheduledServiceMaintenance>(entity => {
+        entity.HasOne<Service>()
+          .WithMany()
+          .HasForeignKey(k => k.ServiceId)
+          .OnDelete(DeleteBehavior.Cascade);
+      })
       .Entity<ServiceVersionCache>();
   }
 }
