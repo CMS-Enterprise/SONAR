@@ -1,20 +1,22 @@
 using System;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Cms.BatCave.Sonar.Configuration;
-using Cms.BatCave.Sonar.Controllers;
 using Cms.BatCave.Sonar.Data;
 using Cms.BatCave.Sonar.Enumeration;
 using Cms.BatCave.Sonar.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Text;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.EntityFrameworkCore;
 
 namespace Cms.BatCave.Sonar.Tests;
 
@@ -46,6 +48,11 @@ public class ApiIntegrationTestFixture : IDisposable, ILoggerProvider {
       );
 
     build(builder);
+
+    // Add additional auth scheme for testing endpoints using JWT based authentication.
+    var auth = new AuthenticationBuilder(builder.Services);
+    auth
+      .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.TestAuthScheme, null);
 
     // Use the in-process ASP.NET TestServer instead of the normal HTTP server.
     builder.WebHost.UseTestServer();
@@ -128,12 +135,22 @@ public class ApiIntegrationTestFixture : IDisposable, ILoggerProvider {
     });
   }
 
+  // extension method for adding an email claim JWT
+  public RequestBuilder CreateFakeJwtRequest(String url, String email) {
+    return this.Server.CreateRequest(url)
+      .And(req => {
+        req.Headers.Authorization =
+          new AuthenticationHeaderValue(TestAuthHandler.TestAuthScheme, Convert.ToBase64String(Encoding.UTF8.GetBytes(email)));
+      });
+  }
+
   public RequestBuilder CreateAuthenticatedRequest(String url, Guid apiKeyId, String apiKey) {
-    var updatedApiKey = apiKeyId + ":" + apiKey;
 
     return this.Server.CreateRequest(url)
       .And(req => {
-        req.Headers.Add("ApiKey", updatedApiKey);
+        req.Headers.Authorization = new AuthenticationHeaderValue(
+          "ApiKey",
+          apiKey);
       });
   }
 
@@ -161,6 +178,29 @@ public class ApiIntegrationTestFixture : IDisposable, ILoggerProvider {
     var repository = scope.ServiceProvider.GetRequiredService<IApiKeyRepository>();
 
     return repository.AddAsync(new ApiKeyDetails(type, environment, tenant), CancellationToken.None).Result;
+  }
+
+  public async Task<User> CreateGlobalAdminUser() {
+    var userId = Guid.NewGuid();
+    var userEmail = $"{userId}@test.com";
+    var permissionId = Guid.NewGuid();
+    var user = new User(userId, userEmail, $"Test User {userId}");
+    var permission = new UserPermission(
+      id: permissionId,
+      userId: userId,
+      environmentId: null,
+      tenantId: null,
+      permission: PermissionType.Admin);
+    await this.WithDependenciesAsync(async (services, cancellationToken) => {
+      var db = services.GetRequiredService<DataContext>();
+      var users = services.GetRequiredService<DbSet<User>>();
+      var permissions = services.GetRequiredService<DbSet<UserPermission>>();
+      await users.AddAsync(user, cancellationToken);
+      await permissions.AddAsync(permission, cancellationToken);
+      await db.SaveChangesAsync(cancellationToken);
+    });
+
+    return user;
   }
 
   public async Task<(String, String)> CreateEmptyTestConfiguration() {

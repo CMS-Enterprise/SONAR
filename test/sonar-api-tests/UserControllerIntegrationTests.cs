@@ -144,6 +144,24 @@ public class UserControllerIntegrationTests : ApiControllerTestsBase {
     });
   }
 
+  [Fact]
+  public async Task UpdateCurrentUser_Success() {
+    var user = await this.Fixture.CreateGlobalAdminUser();
+    var res = await this.Fixture.CreateFakeJwtRequest("api/v2/user", user.Email)
+      .And(req => {
+        req.Content = JsonContent.Create(new {
+          IsEnabled = true
+        });
+      }).PostAsync();
+    Assert.Equal(expected: HttpStatusCode.Created, res.StatusCode);
+    var body = await res.Content.ReadFromJsonAsync<CurrentUserView>(SerializerOptions);
+    Assert.NotNull(body);
+    Assert.Equal(expected: user.Email, actual: body.Email);
+    // We don't include a 'name' claim in the fake auth scheme,
+    // so the full name will default to the user email when handled by controller
+    Assert.Equal(expected: user.Email, actual: body.FullName);
+  }
+
   internal async Task BuildUserPermissionDbTables() {
     await this.Fixture.WithDependenciesAsync(async (services, cancellationToken) => {
       var dbContext = services.GetRequiredService<DataContext>();

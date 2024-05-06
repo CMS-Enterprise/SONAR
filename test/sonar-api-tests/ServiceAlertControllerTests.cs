@@ -15,6 +15,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using Xunit;
 using Xunit.Abstractions;
+using Environment = Cms.BatCave.Sonar.Data.Environment;
 
 namespace Cms.BatCave.Sonar.Tests;
 
@@ -557,6 +558,62 @@ public class ServiceAlertControllerTests : ApiControllerTestsBase {
       Assert.False(a.IsSilenced);
       Assert.Null(a.SilenceDetails);
     });
+  }
+
+  [Fact]
+  public async Task CreateAlertSilence_Success() {
+    var (environment, tenant, service, alert) = await CreateBasicAlertingConfiguration();
+    var user = await this.Fixture.CreateGlobalAdminUser();
+    var createSilenceResponse = await this.Fixture.CreateFakeJwtRequest($"api/v2/alerts/silences/{environment}/tenants/{tenant}/services/{service}", user.Email)
+      .And(req => {
+        req.Content = JsonContent.Create(new {
+          Name = alert
+        });
+      }).PostAsync();
+    Assert.Equal(expected: HttpStatusCode.NoContent, createSilenceResponse.StatusCode);
+  }
+
+  [Fact]
+  public async Task RemoveAlertSilence_Success() {
+    var (environment, tenant, service, alert) = await CreateBasicAlertingConfiguration();
+    var user = await this.Fixture.CreateGlobalAdminUser();
+    var removeSilenceResponse = await this.Fixture.CreateFakeJwtRequest($"api/v2/alerts/silences/{environment}/tenants/{tenant}/services/{service}", user.Email)
+      .And(req => {
+        req.Content = JsonContent.Create(new {
+          Name = alert
+        });
+      }).SendAsync("PUT");
+    Assert.Equal(expected: HttpStatusCode.NoContent, removeSilenceResponse.StatusCode);
+  }
+
+  private async Task<(String environment, String tenant, String service, String alertName)>
+    CreateBasicAlertingConfiguration() {
+    const String serviceName = "service-1";
+    const String alertReceiverName = "receiver-1";
+    const String alertName = "rule-1";
+
+    var alertingRules = ImmutableList.Create(
+      new AlertingRuleConfiguration(
+        name: alertName,
+        threshold: HealthStatus.Degraded,
+        receiverName: alertReceiverName));
+
+    var (environmentName, tenantName) = await this.CreateTestConfiguration(
+      new ServiceHierarchyConfiguration(
+        rootServices: ImmutableHashSet.Create(serviceName),
+        services: ImmutableList.Create(
+          new ServiceConfiguration(
+            name: serviceName,
+            displayName: serviceName,
+            alertingRules: alertingRules)),
+        alerting: new AlertingConfiguration(
+          receivers: ImmutableList.Create(
+            new AlertReceiverConfiguration(
+              name: alertReceiverName,
+              receiverType: AlertReceiverType.Email,
+              options: new AlertReceiverOptionsEmail(
+                address: "test@test.test"))))));
+    return (environmentName, tenantName, serviceName, alertName);
   }
 
 }
