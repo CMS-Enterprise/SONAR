@@ -1,4 +1,6 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine3.19 AS build
+LABEL org.opencontainers.image.licenses="CC0-1.0"
+LABEL io.artifacthub.package.license="CC0-1.0"
 WORKDIR /sonar/sonar-api
 COPY sonar-api/sonar-api.csproj .
 RUN mkdir /sonar/sonar-core
@@ -10,7 +12,8 @@ COPY sonar-core /sonar/sonar-core
 RUN dotnet build -c Release
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine3.19
-
+LABEL org.opencontainers.image.licenses="CC0-1.0"
+LABEL io.artifacthub.package.license="CC0-1.0"
 RUN apk add --no-cache snappy-dev
 RUN apk add --no-cache tzdata
 
