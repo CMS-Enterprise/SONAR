@@ -1,0 +1,28 @@
+global:
+  # The default SMTP From header field.
+  smtp_from: noreply+sonar@cms.hhs.gov
+  smtp_smarthost: smtp.cloud.internal.cms.gov:465
+  smtp_auth_password_file: /sonar-config/secrets/smtp_password.txt
+  smtp_require_tls: false
+
+route:
+  receiver: "null-receiver"
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  group_by: [cluster, alertname]
+
+  # All alerts that do not match the following child routes
+  # will remain at the root node and be dispatched to 'default-receiver'.
+  routes:
+  - matchers:
+      - environment="ado-environment"
+      - tenant="ado-tenant"
+      - service="ado-service"
+    receiver: "environment_name-tenant_name-receiver_name"
+
+receivers:
+ - name: null-receiver
+ - name: environment_name-tenant_name-receiver_name
+   email_configs:
+     - to: test@host.com

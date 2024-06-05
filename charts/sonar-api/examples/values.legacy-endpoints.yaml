@@ -1,0 +1,29 @@
+legacyEndpoint:
+  serviceMapping:
+    - LegacyName: "shared-services"
+      Description: "ADO Shared Services"
+      Children: ["dev-tools", "logging-monitoring"]
+    - LegacyName: "dev-tools"
+      Description: "DevSecOps Enablement"
+      Children: ["sourcecode"]
+    - LegacyName: "sourcecode"
+      DisplayName: "GitLab"
+      Environment: "batcave-dev"
+      Tenant: "batcave-dev"
+      Name: "source-code"
+    - LegacyName: "logging-monitoring-alerting"
+      Description: "Logging, Monitoring, and Alerting"
+      Children: ["monitoring", "alerting"]
+    - LegacyName: "monitoring"
+      DisplayName: "Grafana"
+      Environment: "batcave-dev"
+      Tenant: "batcave-dev"
+      Name: "monitoring"
+    - LegacyName: "alerting"
+      DisplayName: "alerting"
+      Environment: "batcave-dev"
+      Tenant: "batcave-dev"
+    - LegacyName: "applications"
+      Description: "Applications"
+      Children: []
+  rootServices: ["shared-services", "applications"]

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: database-configmap
+data:
+  DATABASE__HOST: {{ include "dbHost" . }}
+  DATABASE__USERNAME: {{ quote .Values.sonarDatabase.username }}

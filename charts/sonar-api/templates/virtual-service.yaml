@@ -1,0 +1,26 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: "sonar"
+spec:
+  hosts:
+    - {{ quote .Values.hosts }}
+  gateways:
+    - "istio-system/main"
+  http:
+    - name: api-route
+      route:
+        - destination:
+            host: {{ include "sonar-api.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+            port:
+              number: 80
+      match:
+        - uri:
+            prefix: "/api"
+    - name: fallback-route
+      route:
+        - destination:
+            host: sonar-ui
+            port:
+              number: 80
+

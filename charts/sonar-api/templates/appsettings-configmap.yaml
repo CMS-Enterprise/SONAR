@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sonar-api-settings
+data:
+  appsettings.json: |
+    {
+      "Logging": {
+        "LogLevel": {
+          "Default": "Information",
+          "Microsoft.AspNetCore": "Warning",
+          "System.Net.Http.HttpClient.IPrometheusRemoteProtocolClient" : "Warning",
+          "System.Net.Http.HttpClient.IAlertmanagerClient": "Warning"
+        }
+      },
+      "Alerting": {
+        "SmtpSettings": {
+          "Sender": {{ quote .Values.smtpSettings.sender }},
+          "Host": {{ quote .Values.smtpSettings.host }},
+          "Port": {{ .Values.smtpSettings.port }}
+        }
+      },
+      "KubernetesApiAccess": {
+        "IsEnabled": {{ .Values.kubernetesApiAccess.isEnabled }},
+        "IsInCluster": {{ .Values.kubernetesApiAccess.isInCluster }},
+        "TargetNamespace": {{ quote .Values.kubernetesApiAccess.targetNamespace }}
+      },
+      "Okta": {
+        "OktaDomain": {{ quote .Values.okta.oktaDomain }},
+        "AuthorizationServerId": {{ quote .Values.okta.authorizationServerId }},
+        "Audience": {{ quote .Values.okta.audience }}
+      },
+      "WebHost": {
+        "AllowedOrigins": {{ .Values.allowedOrigin | toJson }}
+      },
+      "Database": {
+        {{- if .Values.sonarDatabase.port }}
+        "Port": {{ quote .Values.sonarDatabase.port }},
+        {{- end }}
+        {{- if .Values.sonarDatabase.protocol }}
+        "Protocol": {{ quote .Values.sonarDatabase.protocol }},
+        {{- end }}
+        "Host": {{ include "dbHost" . | quote }},
+        "Username": {{ quote .Values.sonarDatabase.username }}
+      },
+      "Prometheus": {
+        {{- if .Values.sonarPrometheus.port }}
+        "Port": {{ quote .Values.sonarPrometheus.host }},
+        {{- end }}
+        {{- if .Values.sonarPrometheus.protocol }}
+        "Protocol": {{ quote .Values.sonarPrometheus.protocol }},
+        {{- end }}
+        "Host": {{ include "prometheusHost" . | quote }}
+      },
+      "Alertmanager": {
+        {{- if .Values.sonarAlertmanager.port }}
+        "Port": {{ quote .Values.sonarAlertmanager.port }},
+        {{- end }}
+        {{- if .Values.sonarAlertmanager.protocol }}
+        "Protocol": {{ quote .Values.sonarAlertmanager.protocol }},
+        {{- end }}
+        "Host": {{ include "alertmanagerHost" . | quote }}
+      },
+      "SonarHealthCheck": {
+        "SonarEnvironment": {{ quote .Values.sonarEnvironment }}
+      },
+      "LegacyEndpoint": {
+        "Enabled": {{ .Values.legacyEndpoint.enabled }},
+        {{- if .Values.legacyEndpoint.serviceMapping }}
+        "ServiceMapping":
+          {{ .Values.legacyEndpoint.serviceMapping | toJson }},
+        {{- end }}
+        {{- if .Values.legacyEndpoint.rootServices }}
+        "RootServices":
+          {{ .Values.legacyEndpoint.rootServices | toJson }}
+        {{- end }}
+      }
+    }

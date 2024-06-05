@@ -78,7 +78,7 @@ loki:
   protocol: null
   port: null
 
-# To enable sonar-argent to load configuration from your Kubernetes cluster set the
+# To enable sonar-agent to load configuration from your Kubernetes cluster set the
 # kubernetesServiceConfig.enabled flag to true and specify a ServiceAccount name.
 kubernetesServiceConfig:
   enabled: false

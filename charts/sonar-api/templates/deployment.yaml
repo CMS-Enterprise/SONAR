@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sonar-api.fullname" . }}
+  labels:
+    {{- include "sonar-api.labels" . | nindent 4 }}
+spec:
+  revisionHistoryLimit: 2
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "sonar-api.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  template:
+    metadata:
+      labels:
+        {{- include "sonar-api.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.serviceAccountName }}
+      serviceAccountName: {{ .Values.serviceAccountName }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          args:
+            - "--appsettings-location"
+            - "config"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          ports:
+            - containerPort: 8081
+          workingDir: /sonar/sonar-api
+          volumeMounts:
+            - mountPath: /sonar/sonar-api/config
+              name: sonar-api-settings-volume
+          env:
+            - name: Database__Password
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.sonarSecretName }}
+                  key: POSTGRES_PASSWORD
+            - name: Security__DefaultApiKey
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.sonarSecretName }}
+                  key: DEFAULT_APIKEY
+      initContainers:
+        - name: sonar-api-init
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          args:
+            - migratedb
+          imagePullPolicy: Always
+          resources:
+            limits:
+              cpu: "0.25"
+              memory: "512Mi"
+            requests:
+              cpu: "0.1"
+              memory: "64Mi"
+          workingDir: /sonar/sonar-api
+          envFrom:
+            - configMapRef:
+                name: database-configmap
+          env:
+            - name: Database__Password
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.sonarSecretName }}
+                  key: POSTGRES_PASSWORD
+      volumes:
+        - name: sonar-api-settings-volume
+          configMap:
+            name: sonar-api-settings
+      terminationGracePeriodSeconds: 15
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      {{- else if .Values.registryCredentials }}
+      imagePullSecrets:
+        - name: artifactoryRegistry
+      {{- end }}

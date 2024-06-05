@@ -1,0 +1,24 @@
+{{ define "email.sonar-alerts.text" }}
+{{ .Alerts | len }} Alert{{ if gt (len .Alerts) 1 }}s{{ end }}
+{{ if gt (len .Alerts.Firing) 0 }}
+[{{ .Alerts.Firing | len }}] Firing
+{{ range .Alerts.Firing }}
+  Alert Name: {{ .Labels.alertname }}
+    Environment: {{ .Labels.environment }}
+    Tenant: {{ .Labels.tenant }}
+    Service: {{ .Labels.service }}
+    View current service status in SONAR dashboard: {{ .Annotations.sonar_dashboard_uri }}
+{{ end }}
+{{ end }}
+{{ if gt (len .Alerts.Resolved) 0 }}
+[{{ .Alerts.Resolved | len }}] Resolved
+{{ range .Alerts.Resolved }}
+  Alert Name: {{ .Labels.alertname }}
+    Environment: {{ .Labels.environment }}
+    Tenant: {{ .Labels.tenant }}
+    Service: {{ .Labels.service }}
+    View current service status in SONAR dashboard: {{ .Annotations.sonar_dashboard_uri }}
+{{ end }}
+{{ end }}
+Sent by SONAR Alertmanager
+{{ end }}
