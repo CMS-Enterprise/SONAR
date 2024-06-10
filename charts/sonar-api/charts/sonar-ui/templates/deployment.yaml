@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "sonar-ui.name" . }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "sonar-ui.selectorLabels" . | nindent 6 }}
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  template:
+    metadata:
+      labels:
+        {{- include "sonar-ui.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - mountPath: /usr/share/nginx/html/config
+              name: ui-configmap-vol
+      volumes:
+        - name: ui-configmap-vol
+          configMap:
+            name: ui-configmap-file
+      terminationGracePeriodSeconds: 15
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      {{- else if .Values.registryCredentials }}
+      imagePullSecrets:
+        - name: artifactoryRegistry
+      {{- end }}

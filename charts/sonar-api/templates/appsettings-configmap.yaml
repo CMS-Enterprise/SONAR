@@ -15,64 +15,64 @@ data:
       },
       "Alerting": {
         "SmtpSettings": {
-          "Sender": {{ quote .Values.smtpSettings.sender }},
-          "Host": {{ quote .Values.smtpSettings.host }},
-          "Port": {{ .Values.smtpSettings.port }}
+          "Sender": {{ quote .Values.sonarConfig.smtpSettings.sender }},
+          "Host": {{ quote .Values.sonarConfig.smtpSettings.host }},
+          "Port": {{ .Values.sonarConfig.smtpSettings.port }}
         }
       },
       "KubernetesApiAccess": {
-        "IsEnabled": {{ .Values.kubernetesApiAccess.isEnabled }},
-        "IsInCluster": {{ .Values.kubernetesApiAccess.isInCluster }},
-        "TargetNamespace": {{ quote .Values.kubernetesApiAccess.targetNamespace }}
+        "IsEnabled": {{ .Values.sonarConfig.kubernetesApiAccess.isEnabled }},
+        "IsInCluster": {{ .Values.sonarConfig.kubernetesApiAccess.isInCluster }},
+        "TargetNamespace": {{ quote .Values.sonarConfig.kubernetesApiAccess.targetNamespace }}
       },
       "Okta": {
-        "OktaDomain": {{ quote .Values.okta.oktaDomain }},
-        "AuthorizationServerId": {{ quote .Values.okta.authorizationServerId }},
-        "Audience": {{ quote .Values.okta.audience }}
+        "OktaDomain": {{ quote .Values.global.okta.oktaDomain }},
+        "AuthorizationServerId": {{ quote .Values.global.okta.authorizationServerId }},
+        "Audience": {{ quote .Values.global.okta.audience }}
       },
       "WebHost": {
-        "AllowedOrigins": {{ .Values.allowedOrigin | toJson }}
+        "AllowedOrigins": {{ .Values.sonarConfig.allowedOrigin | toJson }}
       },
       "Database": {
-        {{- if .Values.sonarDatabase.port }}
-        "Port": {{ quote .Values.sonarDatabase.port }},
+        {{- if .Values.sonarConfig.database.port }}
+        "Port": {{ quote .Values.sonarConfig.database.port }},
         {{- end }}
-        {{- if .Values.sonarDatabase.protocol }}
-        "Protocol": {{ quote .Values.sonarDatabase.protocol }},
+        {{- if .Values.sonarConfig.database.protocol }}
+        "Protocol": {{ quote .Values.sonarConfig.database.protocol }},
         {{- end }}
         "Host": {{ include "dbHost" . | quote }},
-        "Username": {{ quote .Values.sonarDatabase.username }}
+        "Username": {{ quote .Values.sonarConfig.database.username }}
       },
       "Prometheus": {
-        {{- if .Values.sonarPrometheus.port }}
-        "Port": {{ quote .Values.sonarPrometheus.host }},
+        {{- if .Values.sonarConfig.prometheus.port }}
+        "Port": {{ quote .Values.sonarConfig.prometheus.host }},
         {{- end }}
-        {{- if .Values.sonarPrometheus.protocol }}
-        "Protocol": {{ quote .Values.sonarPrometheus.protocol }},
+        {{- if .Values.sonarConfig.prometheus.protocol }}
+        "Protocol": {{ quote .Values.sonarConfig.prometheus.protocol }},
         {{- end }}
         "Host": {{ include "prometheusHost" . | quote }}
       },
       "Alertmanager": {
-        {{- if .Values.sonarAlertmanager.port }}
-        "Port": {{ quote .Values.sonarAlertmanager.port }},
+        {{- if .Values.sonarConfig.alertmanager.port }}
+        "Port": {{ quote .Values.sonarConfig.alertmanager.port }},
         {{- end }}
-        {{- if .Values.sonarAlertmanager.protocol }}
-        "Protocol": {{ quote .Values.sonarAlertmanager.protocol }},
+        {{- if .Values.sonarConfig.alertmanager.protocol }}
+        "Protocol": {{ quote .Values.sonarConfig.alertmanager.protocol }},
         {{- end }}
         "Host": {{ include "alertmanagerHost" . | quote }}
       },
       "SonarHealthCheck": {
-        "SonarEnvironment": {{ quote .Values.sonarEnvironment }}
+        "SonarEnvironment": {{ quote .Values.sonarConfig.sonarEnvironment }}
       },
       "LegacyEndpoint": {
-        "Enabled": {{ .Values.legacyEndpoint.enabled }},
-        {{- if .Values.legacyEndpoint.serviceMapping }}
+        "Enabled": {{ .Values.sonarConfig.legacyEndpoint.enabled }},
+        {{- if .Values.sonarConfig.legacyEndpoint.serviceMapping }}
         "ServiceMapping":
-          {{ .Values.legacyEndpoint.serviceMapping | toJson }},
+          {{ .Values.sonarConfig.legacyEndpoint.serviceMapping | toJson }},
         {{- end }}
-        {{- if .Values.legacyEndpoint.rootServices }}
+        {{- if .Values.sonarConfig.legacyEndpoint.rootServices }}
         "RootServices":
-          {{ .Values.legacyEndpoint.rootServices | toJson }}
+          {{ .Values.sonarConfig.legacyEndpoint.rootServices | toJson }}
         {{- end }}
       }
     }

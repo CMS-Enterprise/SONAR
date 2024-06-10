@@ -1,0 +1,10 @@
+apiVersion: v2
+name: sonar-ui
+description: A Helm chart for Kubernetes
+type: application
+
+# The version of this helm chart
+version: 0.7.0
+
+# The version of sonar-ui this helm chart deploys
+appVersion: "0.7.0"

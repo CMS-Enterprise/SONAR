@@ -11,8 +11,8 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 If release name contains chart name it will be used as a full name.
 */}}
 {{- define "sonar-api.fullname" -}}
-{{- if .Values.fullnameOverride }}
-{{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
+{{- if .Values.nameOverride }}
+{{- .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
 {{- $name := default .Chart.Name .Values.nameOverride }}
 {{- if contains $name .Release.Name }}
@@ -51,7 +51,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
-Create the name of the service account to use tehre should always be a service account
+Create the name of the service account to use, there should always be a service account for the api
 */}}
 {{- define "serviceAccountName" -}}
 {{- if .Values.serviceAccountName -}}
@@ -112,24 +112,24 @@ define host names
 */}}
 
 {{- define "dbHost" -}}
-{{- if .Values.sonarDatabase.host -}}
-{{ .Values.sonarDatabase.host }}
+{{- if .Values.sonarConfig.database.host -}}
+{{ .Values.sonarConfig.database.host }}
 {{- else -}}
 {{ print "sonar-api-postgresql." .Release.Namespace ".svc.cluster.local" }}
 {{- end }}
 {{- end }}
 
 {{- define "prometheusHost" -}}
-{{- if .Values.sonarPrometheus.host -}}
-{{ .Values.sonarPrometheus.host }}
+{{- if .Values.sonarConfig.prometheus.host -}}
+{{ .Values.sonarConfig.prometheus.host }}
 {{- else -}}
 {{ print "sonar-api-prometheus-server-headless." .Release.Namespace ".svc.cluster.local" }}
 {{- end }}
 {{- end }}
 
 {{- define "alertmanagerHost" -}}
-{{- if .Values.sonarAlertmanager.host -}}
-{{ .Values.sonarAlertmanager.host }}
+{{- if .Values.sonarConfig.alertmanager.host -}}
+{{ .Values.sonarConfig.alertmanager.host }}
 {{- else -}}
 {{ print "sonar-api-alertmanager-headless." .Release.Namespace ".svc.cluster.local" }}
 {{- end }}

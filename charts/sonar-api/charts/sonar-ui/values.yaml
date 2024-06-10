@@ -1,0 +1,21 @@
+nameOverride: null
+
+image:
+  repository: artifactory.cloud.cms.gov/batcave-docker/ado-repositories/oit/waynetech/sonar-ui
+  # override to specify a specific image tag, defaults to the appVersion of the chart
+  # tag: latest
+  pullPolicy: Always
+
+tolerations:
+  - key: "sonar"
+    operator: "Exists"
+    effect: "NoSchedule"
+  - key: "bat_app"
+    operator: "Equal"
+    value: "sonar"
+    effect: "NoSchedule"
+
+apiUrl: http://localhost:8088
+
+
+

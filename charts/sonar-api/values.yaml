@@ -3,7 +3,15 @@
 # Declare variables to be passed into your templates.
 nameOverride: null
 serviceAccountName: sonar-api-service-account
-hosts: sonar.k3d.com
+hosts: "*"
+createSonarSecret: true
+sonarSecretName: sonar-api-secrets
+
+global:
+  okta:
+    oktaDomain: https://impl.idp.idm.cms.gov
+    authorizationServerId: auscal28z5MWVemkB297
+    audience: 0oak4bxc9roSv6aLz297
 
 replicaCount: 1
 
@@ -37,50 +45,44 @@ tolerations: []
 
 affinity: {}
 
-smtpSettings:
-  sender: noreply+sonar-alerts@cms.hhs.gov
-  host: smtp.cloud.internal.cms.gov
-  port: 465
+sonarConfig:
+  legacyEndpoint:
+    enabled: false
+  UI:
+    enabled: true
 
-kubernetesApiAccess:
-  isEnabled: true
-  isInCluster: true
-  targetNamespace: sonar
+  apiKey: test+api+key+do+not+use+in+production+xxxxx=
+  allowedOrigin: ["*"]
+  sonarEnvironment: sonar
 
-okta:
-  oktaDomain: https://impl.idp.idm.cms.gov
-  authorizationServerId: auscal28z5MWVemkB297
-  audience: 0oak4bxc9roSv6aLz297
+  smtpSettings:
+    sender: noreply+sonar-alerts@cms.hhs.gov
+    host: smtp.cloud.internal.cms.gov
+    port: 465
 
-allowedOrigin: []
+  kubernetesApiAccess:
+    isEnabled: true
+    isInCluster: true
+    targetNamespace: sonar
 
-sonarEnvironment: sonar
+  database:
+    enabled: false #Helm deployment of postgresql
+    host: host.k3d.internal #sonar-api-postgresql.sonar.svc.cluster.local
+    protocol: null
+    port: null
+    username: root
+    password: password
+    database: sonar
 
-createSonarSecret: true
-sonarSecretName: sonar-api-secrets
-apiKey: test+api+key+do+not+use+in+production+xxxxx=
+  prometheus:
+    host: null #sonar-api-prometheus-server-headless.sonar.svc.cluster.local
+    protocol: null
+    port: null
 
-legacyEndpoint:
-  enabled: false
-
-sonarDatabase:
-  enabled: false #Helm deployment of postgresql
-  host: host.k3d.internal #sonar-api-postgresql.sonar.svc.cluster.local
-  protocol: null
-  port: null
-  username: root
-  password: password
-  database: sonar
-
-sonarPrometheus:
-  host: null #sonar-api-prometheus-server-headless.sonar.svc.cluster.local
-  protocol: null
-  port: null
-
-sonarAlertmanager:
-  host: null #sonar-api-alertmanager-headless.sonar.svc.cluster.local
-  protocol: null
-  port: null
+  alertmanager:
+    host: null #sonar-api-alertmanager-headless.sonar.svc.cluster.local
+    protocol: null
+    port: null
 
 postgresql:
   auth:

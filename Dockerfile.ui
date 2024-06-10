@@ -1,4 +1,4 @@
-FROM artifactory.cloud.cms.gov/docker/node:18.18-alpine3.18 AS builder
+FROM node:18.18-alpine3.18 AS builder
 LABEL org.opencontainers.image.licenses="CC0-1.0"
 LABEL io.artifacthub.package.license="CC0-1.0"
 
@@ -11,7 +11,7 @@ RUN npm run build
 
 CMD ["npm", "start"]
 
-FROM artifactory.cloud.cms.gov/docker/nginx:1.25-alpine-slim
+FROM nginx:1.25-alpine-slim
 LABEL org.opencontainers.image.licenses="CC0-1.0"
 LABEL io.artifacthub.package.license="CC0-1.0"
 # make sure we are running the most recent version of these libraries

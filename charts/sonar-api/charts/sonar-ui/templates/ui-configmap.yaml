@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ui-configmap-file
+data:
+  settings.js: |
+    window.API_URL = '{{ .Values.apiUrl }}'
+  oktaClientId.js: |
+    window.OKTA_CLIENTID = '{{ .Values.global.okta.audience }}'
+  oktaIssuer.js: |
+    window.OKTA_ISSUER = '{{ .Values.global.okta.oktaDomain  }}/oauth2/{{ .Values.global.okta.audience }}'

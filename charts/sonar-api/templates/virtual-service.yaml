@@ -11,7 +11,7 @@ spec:
     - name: api-route
       route:
         - destination:
-            host: {{ include "sonar-api.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+            host: sonar-api
             port:
               number: 80
       match:
