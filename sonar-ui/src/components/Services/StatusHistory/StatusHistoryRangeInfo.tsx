@@ -1,5 +1,7 @@
 import React from 'react';
 import { getTimeDiffAsString } from 'helpers/StatusHistoryHelper';
+import { ToolTipText } from '../../../utils/constants';
+import InlineToolTip from '../../Common/ThemedInlineTooltip';
 
 const StatusHistoryRangeInfo: React.FC<{
   isCustomRange: boolean,
@@ -21,6 +23,7 @@ const StatusHistoryRangeInfo: React.FC<{
   return (
     <div>
       <span>{rangeStepInfo}</span>
+      <InlineToolTip title={ToolTipText.statusHistory.stepTip}/>
     </div>
   )
 }

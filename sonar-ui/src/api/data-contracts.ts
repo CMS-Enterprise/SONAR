@@ -217,6 +217,7 @@ export enum HealthCheckType {
   PrometheusMetric = "PrometheusMetric",
   LokiMetric = "LokiMetric",
   HttpRequest = "HttpRequest",
+  ArgoCd = "ArgoCd",
   Internal = "Internal",
 }
 

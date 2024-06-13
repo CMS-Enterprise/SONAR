@@ -23,7 +23,7 @@ const bodyConditionFragments = (c: IHealthCheckHttpCondition) => {
   return rv;
 }
 
-export function HttpHealthCheckConditionsList({conditions}: {conditions?: IHealthCheckHttpCondition[]}) {
+export function HttpMetricHealthCheckConditionsList({conditions}: {conditions?: IHealthCheckHttpCondition[]}) {
   const elements = (conditions || []).flatMap((c) => {
     switch (c.type) {
       case 'HttpStatusCode':

@@ -3,8 +3,8 @@ import React, { useState } from 'react';
 import Chart from 'react-apexcharts';
 import { ApexOptions } from "apexcharts";
 import { IHealthCheckCondition, IHealthCheckDefinition, IHealthCheckHttpCondition } from 'types';
-import { HealthStatus } from '../../../api/data-contracts';
-import { getStatusColors } from '../../../helpers/StyleHelper';
+import { HealthStatus } from '../../../../../api/data-contracts';
+import { getStatusColors } from '../../../../../helpers/StyleHelper';
 import { v4 as uuidv4 } from 'uuid';
 
 function hmsToSecondsOnly(str: string | undefined) {
@@ -23,7 +23,7 @@ function hmsToSecondsOnly(str: string | undefined) {
   return s;
 }
 
-const HealthStatusDataTimeSeriesChart: React.FC<{
+const MetricHealthCheckDataTimeSeriesChart: React.FC<{
   svcDefinitions: IHealthCheckDefinition | null,
   healthCheckName: string,
   timeSeriesData: number[][],
@@ -211,4 +211,4 @@ const HealthStatusDataTimeSeriesChart: React.FC<{
     </div>
   )
 }
-export default HealthStatusDataTimeSeriesChart;
+export default MetricHealthCheckDataTimeSeriesChart;

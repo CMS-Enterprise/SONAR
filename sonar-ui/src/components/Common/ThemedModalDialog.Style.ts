@@ -7,7 +7,7 @@ export const getDialogStyle : (theme: Theme) => SerializedStyles = theme => css(
   '& header': {
     borderBottom: `3px solid ${theme.accentColor}`,
     justifyContent: "center",
-    '& button': {
+    '> button': {
       display: "none"
     }
   }

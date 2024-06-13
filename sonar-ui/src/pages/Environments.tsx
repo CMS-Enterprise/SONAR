@@ -6,12 +6,14 @@ import { useUserContext } from 'components/AppContext/AppContextProvider';
 import AccordionToggleAllButton from 'components/Environments/AccordionToggleAllButton';
 import { EnvironmentHealth } from '../api/data-contracts';
 import ThemedFab from '../components/Common/ThemedFab';
+import ThemedInlineTooltip from '../components/Common/ThemedInlineTooltip';
 import ThemedModalDialog from '../components/Common/ThemedModalDialog';
 import CreateEnvironmentForm from '../components/Environments/CreateEnvironmentForm';
 import EnvironmentFilterBar from '../components/Environments/EnvironmentFilterBar';
 import { useGetEnvironments } from '../components/Environments/Environments.Hooks';
 import {useSearchParams} from 'react-router-dom';
 import ToggleSwitch from '../components/Environments/ToggleSwitch';
+import { ToolTipText } from '../utils/constants';
 
 const Environments = () => {
   const [createEnvOpen, setCreateEnvOpen] = useState(false);
@@ -105,7 +107,11 @@ const Environments = () => {
         </span> : null}
       {createEnvOpen ? (
         <ThemedModalDialog
-          heading={'Add Environment'}
+          heading={
+            <div>
+              Add Environment <ThemedInlineTooltip title={ToolTipText.environmentTip} placement={'bottom'} />
+            </div>
+          }
           onClose={handleModalToggle}
           onExit={handleModalToggle}
           actions={<CreateEnvironmentForm handleModalToggle={handleModalToggle} />}

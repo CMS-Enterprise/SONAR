@@ -1,9 +1,9 @@
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableRow } from '@cmsgov/design-system';
-import { TextAlignCenter, getChartsTablePropertiesStyle } from './HealthStatus.Style';
+import { TextAlignCenter, getChartsTablePropertiesStyle } from './MetricHealthCheck.Style';
 import { DynamicTextFontStyle } from 'App.Style';
 
-const HealthStatusDataTable: React.FC<{
+const MetricHealthCheckDataTable: React.FC<{
   healthCheckName: string
   timeSeriesData: number[][],
   isResponseTimeCondition: boolean
@@ -31,4 +31,4 @@ const HealthStatusDataTable: React.FC<{
   );
 };
 
-export default HealthStatusDataTable;
+export default MetricHealthCheckDataTable;

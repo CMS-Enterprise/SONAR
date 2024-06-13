@@ -8,13 +8,12 @@ import { getOperatorPunctuation } from 'helpers/ServiceHierarchyHelper';
 import { IHealthCheckCondition, IHealthCheckDefinition } from 'types';
 import { DynamicTextFontStyle } from 'App.Style'
 import ExternalLinkIcon from 'components/Icons/ExternalLinkIcon';
-import { HttpHealthCheckConditionsList } from './HealthCheckConditionsList';
+import { HttpMetricHealthCheckConditionsList } from './HttpMetricHealthCheckConditionsList';
 
-const HealthMetricThresholds: React.FC<{
+const MetricHealthCheckThresholds: React.FC<{
   service: ServiceConfiguration,
-  healthCheck: HealthCheckModel,
-  healthCheckStatus: string
-}> = ({ service, healthCheck, healthCheckStatus }) => {
+  healthCheck: HealthCheckModel
+}> = ({ service, healthCheck }) => {
 
   const displayThreshold = (metricType?: HealthCheckType, definition?: IHealthCheckDefinition) => {
     switch (metricType) {
@@ -31,7 +30,7 @@ const HealthMetricThresholds: React.FC<{
               </p>
             )}
 
-            <HttpHealthCheckConditionsList conditions={definition?.conditions}/>
+            <HttpMetricHealthCheckConditionsList conditions={definition?.conditions}/>
           </div>
         )
       case HealthCheckType.LokiMetric:
@@ -70,4 +69,4 @@ const HealthMetricThresholds: React.FC<{
   )
 }
 
-export default HealthMetricThresholds;
+export default MetricHealthCheckThresholds;

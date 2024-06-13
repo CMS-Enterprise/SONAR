@@ -24,3 +24,23 @@ export interface IHealthCheckHttpCondition {
   status: string,
   type?: string
 }
+
+export enum ArgoCheckType {
+  HealthStatus,
+  SyncStatus
+}
+
+export interface IArgoHealthCheckDefinition extends HealthCheckDefinition {
+  applicationName: string,
+  argoBaseUrl: string,
+  checkType: string,
+  argoDashboardUrl: string,
+}
+
+export interface IArgoAppHealthStatusCheckDefinition extends IArgoHealthCheckDefinition {
+  healthStatusMappings: Record<string, string>
+}
+
+export interface IArgoAppSyncStatusCheckDefinition extends IArgoHealthCheckDefinition {
+  syncStatusMappings: Record<string, string>
+}
