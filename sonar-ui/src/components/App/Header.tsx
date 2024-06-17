@@ -4,6 +4,8 @@ import Toggle from 'react-toggle';
 import DarkIcon from 'components/Icons/DarkIcon';
 import LightIcon from 'components/Icons/LightIcon';
 import 'react-toggle/style.css';
+import HelpCircleIcon from '../Icons/HelpCircleIcon';
+import { FaqButtonStyle, FaqLinkStyle } from './Header.Style';
 import * as styles from './Header.Style';
 import LoginButton from './LoginButton';
 
@@ -28,6 +30,9 @@ const Header = (props: HeaderProps) => {
         </Link>
         <div css={styles.NavBarRightSideStyle}>
           <LoginButton />
+          <Link to="/faq" css={FaqLinkStyle}>
+            <HelpCircleIcon css={FaqButtonStyle} />
+          </Link>
           <label css={styles.GetThemeToggleLabelStyle} className="ds-u-focus-within" data-test="navbar-toggle-section">
             <span> Light </span>
             <Toggle

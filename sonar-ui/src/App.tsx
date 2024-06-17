@@ -10,6 +10,7 @@ import Header from './components/App/Header';
 import Environment from './pages/Environment';
 import ApiKeys from './pages/ApiKeys';
 import Environments from './pages/Environments';
+import Faq from './pages/Faq';
 import MaintenanceManagement from './pages/MaintenanceManagement';
 import Service from './pages/Service';
 import Tenant from './pages/Tenant';
@@ -68,6 +69,7 @@ function App() {
                   <Route path="environments/:environment/tenants/:tenant" element={<ErrorReportsForTenant />}/>
                   <Route path="environments/:environment/tenants/:tenant/services/*" element={<ErrorReportsForTenant />}/>
                 </Route>
+                <Route path="/faq" element={<Faq />} />
               </Routes>
             </main>
           </AlertContextProvider>

@@ -102,3 +102,23 @@ export const DropdownLine: (theme: Theme) => SerializedStyles = theme => css({
   borderTop: '1px solid' + theme.textColor,
   margin: '0 10px'
 });
+
+export const FaqButtonStyle: (theme: Theme) => SerializedStyles = theme => css({
+  strokeWidth: 1.75,
+  fill: 'none',
+  marginLeft: 5,
+  marginRight: 15,
+  color: theme.accentColor,
+  '&:hover, &:focus, &:focus:hover': {
+    color: theme.foregroundColor,
+    backgroundColor: theme.accentColor
+  },
+  borderRadius: '100%',
+  fontSize: 20
+});
+
+export const FaqLinkStyle: (theme: Theme) => SerializedStyles = theme => css({
+  '&:focus': {
+    color: theme.textColor
+  }
+});

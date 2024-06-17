@@ -44,3 +44,8 @@ export interface IArgoAppHealthStatusCheckDefinition extends IArgoHealthCheckDef
 export interface IArgoAppSyncStatusCheckDefinition extends IArgoHealthCheckDefinition {
   syncStatusMappings: Record<string, string>
 }
+
+export interface FaqContent {
+  header: string,
+  body: string
+}
